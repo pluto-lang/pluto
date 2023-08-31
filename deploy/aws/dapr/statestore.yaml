@@ -1,0 +1,20 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+spec:
+  type: state.aws.dynamodb
+  version: v1
+  metadata:
+  - name: table
+    value: "statestore-dc20764"
+  # - name: accessKey
+  #   value: "AKIA32AGWPFWBBQ2AKFW" # Optional
+  # - name: secretKey
+  #   value: "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" # Optional
+  # - name: endpoint
+  #   value: "http://localhost:3000" # Optional
+  # - name: region
+  #   value: "us-east-1" # Optional
+  - name: partitionKey
+    value: "Id" # Optional

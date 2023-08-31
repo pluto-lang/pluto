@@ -1,0 +1,53 @@
+2023-08-30T05:58:41.411Z	17f81ab6-0634-4e75-b107-0de022363c89	INFO	{
+  version: '2.0',
+  routeKey: '$default',
+  rawPath: '/hello',
+  rawQueryString: 'name=zsj',
+  headers: {
+    'x-amzn-lambda-proxying-cell': '0',
+    'content-length': '0',
+    'x-amzn-tls-version': 'TLSv1.2',
+    'sec-fetch-site': 'none',
+    'x-forwarded-port': '443',
+    'sec-fetch-user': '?1',
+    'x-amzn-lambda-proxy-auth': 'HmacSHA256, SignedHeaders=x-amzn-lambda-forwarded-client-ip;x-amzn-lambda-forwarded-host;x-amzn-lambda-proxying-cell, Signature=hg3zKT21k/ZQu7ENqfybAnoySPD0H4WujXzA5UIcDUA=',
+    'x-amzn-tls-cipher-suite': 'ECDHE-RSA-AES128-GCM-SHA256',
+    'sec-ch-ua-mobile': '?0',
+    host: 'ofgtmql46l6f7uvjfcfx3jxryi0fymbr.cell-1-lambda-url.us-east-1.on.aws',
+    'upgrade-insecure-requests': '1',
+    'x-amzn-lambda-forwarded-host': 'ofgtmql46l6f7uvjfcfx3jxryi0fymbr.lambda-url.us-east-1.on.aws',
+    'cache-control': 'max-age=0',
+    'sec-fetch-mode': 'navigate',
+    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    'x-forwarded-proto': 'https',
+    'x-forwarded-for': '120.26.165.80',
+    accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'x-amzn-lambda-forwarded-client-ip': '120.26.165.80',
+    'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
+    'x-amzn-trace-id': 'Self=1-64eeda91-08b14ad9511862473e12ed44;Root=1-64eeda91-76690ac515ec5e71772508a6',
+    'sec-ch-ua-platform': '"macOS"',
+    'accept-encoding': 'gzip, deflate, br',
+    'sec-fetch-dest': 'document',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+  },
+  queryStringParameters: { name: 'zsj' },
+  requestContext: {
+    accountId: 'anonymous',
+    apiId: 'ofgtmql46l6f7uvjfcfx3jxryi0fymbr',
+    domainName: 'ofgtmql46l6f7uvjfcfx3jxryi0fymbr.cell-1-lambda-url.us-east-1.on.aws',
+    domainPrefix: 'ofgtmql46l6f7uvjfcfx3jxryi0fymbr',
+    http: {
+      method: 'GET',
+      path: '/hello',
+      protocol: 'HTTP/1.1',
+      sourceIp: '120.26.165.80',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+    },
+    requestId: '17f81ab6-0634-4e75-b107-0de022363c89',
+    routeKey: '$default',
+    stage: '$default',
+    time: '30/Aug/2023:05:58:41 +0000',
+    timeEpoch: 1693375121402
+  },
+  isBase64Encoded: false
+}

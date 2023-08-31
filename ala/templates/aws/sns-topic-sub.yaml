@@ -1,0 +1,68 @@
+resources:
+  snsSubscription:
+    type: aws:sns:TopicSubscription
+    properties:
+      endpoint: ${lambda.arn}
+      protocol: lambda
+      topic: ${%{global.defs[props.topic].title}.arn}
+  snsTrigger:
+    type: aws:lambda:Permission
+    properties:
+      action: lambda:InvokeFunction
+      function: ${lambda.name}
+      principal: sns.amazonaws.com
+      sourceArn: ${%{global.defs[props.topic].title}.arn} 
+
+  repp:
+    type: awsx:ecr:Repository
+  image:
+    type: awsx:ecr:Image
+    properties:
+      repositoryUrl: ${repp.url}
+      path: %{global.fn_root[props.topic]}
+  lambda:
+    type: aws:lambda:Function
+    properties:
+      packageType: Image
+      imageUri: ${image.imageUri}
+      role: ${iam.arn}
+  
+  iam:
+    type: aws:iam:Role
+    properties:
+      assumeRolePolicy: ${assumeRole.json}
+  policy:
+    type: aws:iam:Policy
+    properties:
+      policy: ${policyDocument.json}
+  policyAttach:
+    type: aws:iam:PolicyAttachment
+    properties:
+      roles:
+        - ${iam.name}
+      policyArn: ${policy.arn}
+
+variables:
+  assumeRole:
+    fn::invoke:
+      function: aws:iam:getPolicyDocument
+      arguments:
+        statements:
+          - effect: Allow
+            principals:
+              - type: Service
+                identifiers:
+                  - lambda.amazonaws.com
+            actions:
+              - sts:AssumeRole
+  policyDocument:
+    fn::invoke:
+      function: aws:iam:getPolicyDocument
+      arguments:
+        statements:
+          - effect: Allow
+            actions:
+              - logs:*
+              - sns:*
+            resources:
+              - '*'

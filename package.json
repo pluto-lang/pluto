@@ -1,0 +1,21 @@
+{
+  "name": "pulumi-dapr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "aws-runtime.ts",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "node dist/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@dapr/dapr": "^3.1.2",
+    "express": "^4.18.2"
+  }
+}

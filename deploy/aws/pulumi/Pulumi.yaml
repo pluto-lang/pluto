@@ -1,0 +1,125 @@
+name: pulumi-dapr
+runtime: yaml
+description: use dapr and pulumi to build a aws application
+outputs:
+  storeName: ${statestore.id}
+  httpFnName: ${httpFn.id}
+  httpFnARN: ${httpFn.arn}
+  url: ${httpFnUrl.functionUrl}
+  topicARN: ${snsTopic.arn}
+  # repoUrl: ${pulumiDaprHttpRepo.url}
+  # imageUri: ${pulumiDaprHttpImage.imageUri}
+
+resources:
+  # pulumiDaprHttpRepo:
+  #   type: awsx:ecr:Repository
+  # pulumiDaprHttpImage:
+  #   type: awsx:ecr:Image
+  #   properties:
+  #     repositoryUrl: ${pulumiDaprHttpRepo.url}
+  #     path: "../../../"
+
+  statestore:
+    type: aws:dynamodb:Table
+    properties:
+      readCapacity: 10
+      writeCapacity: 10
+      hashKey: Id
+      attributes:
+        - name: Id
+          type: S
+  
+  iamForLambda:
+    type: aws:iam:Role
+    properties:
+      assumeRolePolicy: ${assumeRole.json}
+  policyPolicy:
+    type: aws:iam:Policy
+    properties:
+      description: attach writting log and accessing dynamoDB
+      policy: ${policyDocument.json}
+  policyAttach:
+    type: aws:iam:PolicyAttachment
+    properties:
+      roles:
+        - ${iamForLambda.name}
+      policyArn: ${policyPolicy.arn}
+
+  httpFn:
+    type: aws:lambda:Function
+    properties:
+      packageType: Image
+      # imageUri: ${pulumiDaprHttpImage.imageUri}
+      imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:http
+      role: ${iamForLambda.arn}
+      timeout: 120
+      environment:
+        variables:
+          CIR_PATH: /app/cir/http
+    options:
+      replaceOnChanges: ["environment.variables"]
+  httpFnUrl:
+    type: aws:lambda:FunctionUrl
+    properties:
+      functionName: ${httpFn.arn}
+      authorizationType: NONE
+
+  subFn:
+    type: aws:lambda:Function
+    properties:
+      packageType: Image
+      # imageUri: ${pulumiDaprHttpImage.imageUri}
+      imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:sub
+      role: ${iamForLambda.arn}
+      timeout: 120
+      environment:
+        variables:
+          CIR_PATH: /app/cir/sub
+    options:
+      replaceOnChanges: ["environment.variables"]
+
+  snsTopic:
+    type: aws:sns:Topic
+    properties:
+      name: "access"
+      tags:
+        dapr-topic-name: access
+  snsSubscription:
+    type: aws:sns:TopicSubscription
+    properties:
+      endpoint: ${subFn.arn}
+      protocol: lambda
+      topic: ${snsTopic.arn}
+  snsTrigger:
+    type: aws:lambda:Permission
+    properties:
+      action: lambda:InvokeFunction
+      function: ${subFn.name}
+      principal: sns.amazonaws.com
+      sourceArn: ${snsTopic.arn}
+
+variables:
+  assumeRole:
+    fn::invoke:
+      function: aws:iam:getPolicyDocument
+      arguments:
+        statements:
+          - effect: Allow
+            principals:
+              - type: Service
+                identifiers:
+                  - lambda.amazonaws.com
+            actions:
+              - sts:AssumeRole
+  policyDocument:
+    fn::invoke:
+      function: aws:iam:getPolicyDocument
+      arguments:
+        statements:
+          - effect: Allow
+            actions:
+              - dynamodb:*
+              - logs:*
+              - sns:*
+            resources:
+              - '*'

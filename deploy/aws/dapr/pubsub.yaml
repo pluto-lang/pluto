@@ -1,0 +1,16 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub
+spec:
+  type: pubsub.aws.snssqs
+  version: v1
+  metadata:
+    - name: accessKey
+      value: AKIA32AGWPFWBBQ2AKFW
+    - name: secretKey
+      value: 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
+    - name: region
+      value: us-east-1
+    - name: topicARN
+      value: arn:aws:sns:us-east-1:811762874732:access

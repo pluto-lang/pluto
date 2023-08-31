@@ -1,0 +1,12 @@
+class: 
+  - State
+resources:
+  %{props.name}:
+    type: aws:dynamodb:Table
+    properties:
+      readCapacity: 10
+      writeCapacity: 10
+      hashKey: Id
+      attributes:
+        - name: Id
+          type: S
