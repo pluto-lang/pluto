@@ -4,14 +4,20 @@ export class Request {
 
     static fromAws(event: any) {
         const req = new Request();
-        req.path = event.rawPath;
-
-        const pairs = event.rawQueryString.split('&');
-        pairs.forEach((pair: any) => {
-            const parts = pair.split('=');
-            req.query[parts[0]] = parts[1];
-        })
-
+        if ('rawPath' in event) {  // Directly access the lambda url
+            req.path = event.rawPath;
+            const pairs = event.rawQueryString.split('&');
+            pairs.forEach((pair: any) => {
+                const parts = pair.split('=');
+                req.query[parts[0]] = parts[1];
+            })
+        
+        } else {  // Access through the ApiGateway
+            req.path = event.path;
+            if (event.queryStringParameters != null) {
+                req.query = event.queryStringParameters;
+            }
+        }
         return req;
     }
 }
@@ -28,7 +34,6 @@ export class Router {
         this.routes[path] = handler;
     }
 }
-
 
 
 

@@ -1,10 +1,6 @@
 FROM public.ecr.aws/lambda/nodejs:16
 
-ARG CIR_DIR=/app/cir
-
 WORKDIR /app
-
-ENV CIR_DIR=${CIR_DIR}
 
 # Copy function code
 COPY package.json /app/package.json

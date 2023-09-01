@@ -6,11 +6,8 @@ rsync -aP ../../dapr/dapr/dist/daprd-linux-amd64-aws-static .dapr/bin/daprd
 rm -r dist/
 npm run build
 
-docker build --platform=linux/amd64 --tag $IMAGE_NAME:http  --build-arg CIR_DIR=/app/cir/http .
-docker push $IMAGE_NAME:http
-
-docker build --platform=linux/amd64 --tag $IMAGE_NAME:sub  --build-arg CIR_DIR=/app/cir/sub .
-docker push $IMAGE_NAME:sub
+docker build --platform=linux/amd64 --tag $IMAGE_NAME:latest .
+docker push $IMAGE_NAME:latest
 
 
 # docker run -p 3000:3000 $IMAGE_NAME

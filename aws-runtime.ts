@@ -23,11 +23,13 @@ function importCIR(dirPath: string): Promise<any>[] {
 }
 
 const CIR_DIR = process.env.CIR_DIR || "/app/cir";
+console.log("CIR_DIR: ", CIR_DIR);
 const promises = importCIR(CIR_DIR);
 
 exports.handler = async (event: any) => {
     await Promise.all(promises);
 
+    console.log(event);
     if ('Records' in event) {  // Trigger Event
         for (const record of event['Records']) {
             const event = Event.fromAws(record);
