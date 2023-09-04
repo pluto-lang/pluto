@@ -1,10 +1,15 @@
 import { DaprClient } from "@dapr/dapr";
 import getClient from "./client";
 
+export interface IState {
+    get(key: string): Promise<string>;
+    set(key: string, value: any): any;
+}
+
 /**
  * @infra baas
  */
-export default class State {
+export default class State implements IState  {
     name: string;
     client: DaprClient;
 
@@ -17,7 +22,8 @@ export default class State {
      * @infra permission
      */
     async get(key: string) {
-        return await this.client.state.get(this.name, key);
+        const value = await this.client.state.get(this.name, key);
+        return value.toString();
     }
 
     /**

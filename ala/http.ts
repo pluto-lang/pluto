@@ -27,9 +27,15 @@ export class Request {
 type HttpHandler = (req: Request) => Promise<string>;
 const routers: Router[] = [];
 
+/**
+ * @infra baas
+ */
 export class Router {
     routes: { [key: string]: HttpHandler } = {}
 
+    /**
+     * @infra faas
+     */
     public get(path: string, handler: HttpHandler) {
         this.routes[path] = handler;
     }

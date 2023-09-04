@@ -7,7 +7,7 @@ spec:
   version: v1
   metadata:
   - name: table
-    value: "statestore-dc20764"
+    value: "statestore-8c88df4"
   # - name: accessKey
   #   value: "AKIA32AGWPFWBBQ2AKFW" # Optional
   # - name: secretKey

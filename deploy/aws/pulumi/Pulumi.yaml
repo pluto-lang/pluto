@@ -71,7 +71,7 @@ resources:
       # imageUri: ${pulumiDaprHttpImage.imageUri}
       imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest
       role: ${iamForLambda.arn}
-      timeout: 120
+      timeout: 121
       environment:
         variables:
           CIR_DIR: "/app/cir/http_store"
@@ -90,12 +90,12 @@ resources:
       # imageUri: ${pulumiDaprHttpImage.imageUri}
       imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest
       role: ${iamForLambda.arn}
-      timeout: 120
+      timeout: 121
       environment:
         variables:
           CIR_DIR: /app/cir/sub
     options:
-      replaceOnChanges: ["environment.variables"]
+      replaceOnChanges: ["environment.variables", "timeout"]
 
   apiGateway:
     type: aws:apigateway:RestApi
