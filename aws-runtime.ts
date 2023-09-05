@@ -1,14 +1,17 @@
-import { Request, processRequest } from './ala/http';
-import { processEvent } from './ala/queue';
-import { Event } from './ala/event';
+import { Request } from './pluto/request';
+import { processRequest } from './pluto/router';
+import { processEvent } from './pluto/queue';
+import { Event } from './pluto/event';
 import { setupDapr } from './setup';
-import { lstatSync, readdirSync } from 'fs';
+import { existsSync, lstatSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 setupDapr();
 
 function importCIR(dirPath: string): Promise<any>[] {
     const promises: Promise<any>[] = []
+    if (!existsSync(dirPath)) return promises;
+
     const files = readdirSync(dirPath);
     for (const file of files) {
         const filepath = join(dirPath, file);

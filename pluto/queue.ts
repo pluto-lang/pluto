@@ -1,8 +1,11 @@
 import { DaprClient } from "@dapr/dapr";
 import getClient from "./client";
 import { Event } from "./event";
-import assert from "assert";
+import { assert } from "console";
 
+/**
+ * @infra faas
+ */
 type EventHandler = (event: any) => Promise<string>;
 
 /**
@@ -17,12 +20,15 @@ export class Queue {
         this.client = getClient();
     }
 
+    /**
+     * @infra permission
+     */
     public async push(message: any) {
         await this.client.pubsub.publish(getPubsubName(), this.topic, message);
     }
 
     /**
-     * @infra faas
+     * @infra baas
      */
     public subscribe(handler: EventHandler) {
         const key = `${getPubsubName()}-${this.topic}`

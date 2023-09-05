@@ -1,5 +1,4 @@
-import { Request, Router, start } from '../../ala/http';
-import { Queue } from '../../ala/queue';
+import { Router, State, Request, Queue } from "@pluto";
 
 const queue = new Queue("access");
 
@@ -11,5 +10,3 @@ router.get("/hello", async function helloHandler(req: Request): Promise<string> 
     await queue.push({ name, message });
     return `Publish a message: ${message}`;
 })
-
-start(router);

@@ -1,9 +1,0 @@
-outputs:
-  topicARN: ${snsTopic.arn}
-resources:
-  %{props.topic}:
-      type: aws:sns:Topic
-      properties:
-        name: %{props.topic}
-        tags:
-          dapr-topic-name: %{props.topic}

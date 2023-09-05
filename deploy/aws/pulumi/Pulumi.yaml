@@ -1,5 +1,5 @@
 name: pulumi-dapr
-runtime: yaml
+runtime: nodejs
 description: use dapr and pulumi to build a aws application
 outputs:
   storeName: ${statestore.id}
@@ -52,7 +52,7 @@ resources:
       # imageUri: ${pulumiDaprHttpImage.imageUri}
       imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest
       role: ${iamForLambda.arn}
-      timeout: 121
+      timeout: 120
       environment:
         variables:
           CIR_DIR: "/app/cir/http_hello"
@@ -71,7 +71,7 @@ resources:
       # imageUri: ${pulumiDaprHttpImage.imageUri}
       imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest
       role: ${iamForLambda.arn}
-      timeout: 121
+      timeout: 120
       environment:
         variables:
           CIR_DIR: "/app/cir/http_store"
@@ -90,7 +90,7 @@ resources:
       # imageUri: ${pulumiDaprHttpImage.imageUri}
       imageUri: 811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest
       role: ${iamForLambda.arn}
-      timeout: 121
+      timeout: 120
       environment:
         variables:
           CIR_DIR: /app/cir/sub

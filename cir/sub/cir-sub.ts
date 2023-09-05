@@ -1,6 +1,4 @@
-import { Event } from "../../ala/event";
-import { Queue } from "../../ala/queue";
-import State from "../../ala/state";
+import { Event, Queue, State } from "@pluto";
 
 const state = new State("statestore");
 const queue = new Queue("access");

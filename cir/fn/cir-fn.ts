@@ -1,4 +1,4 @@
-import { Variable } from "../../ala/variable";
+import { Variable } from "@pluto";
 
 let counter = new Variable("counter", Number.prototype);
 

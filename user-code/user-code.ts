@@ -1,8 +1,20 @@
-import { Event } from './ala/event';
-import { Request, Router, start } from './ala/http';
-import { Queue } from './ala/queue';
-import { emit } from './ala/faas';
-import State from './ala/state';
+import { Event, Request, Router, Queue, State, emit } from '@pluto';
+
+import * as aws from "@pulumi/aws"
+const bucketName = "bucket";
+const bucket = new aws.s3.Bucket(bucketName)
+bucket.onObjectCreated("event-handler", async () => {
+    console.log("create an object");
+})
+
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+const client = new S3Client();
+client.send(new PutObjectCommand({
+    Bucket: bucketName,
+    Key: "all",
+    Body: "test",
+}))
+
 
 const state = new State("statestore");
 const queue = new Queue("access");
@@ -15,7 +27,12 @@ function count(name: string): Number {
     return name.length;
 }
 
-router.get("/hello", async function helloHandler(req: Request): Promise<string> {
+// http get request.get("/baidu.com")  => result
+// 1. PoC界面固定，1-2 case； 2. 验证阶段。
+
+// Function Pattern
+
+router.get("/hello", async (req: Request): Promise<string> => {
     const name = req.query['name'] ?? "Anonym";
     const message = `${name} access at ${Date.now()}`
     await queue.push({ name, message });
@@ -34,5 +51,3 @@ queue.subscribe(async (event: Event): Promise<string> => {
     await state.set(data['name'], data['message']);
     return 'receive an event';
 })
-
-start(router);

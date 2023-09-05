@@ -9,7 +9,7 @@ export interface IState {
 /**
  * @infra baas
  */
-export default class State implements IState  {
+export class State implements IState  {
     name: string;
     client: DaprClient;
 
