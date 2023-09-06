@@ -1,16 +1,20 @@
 import * as ts from "typescript";
+import * as fs from "fs";
+import * as path from "path";
 
 const emitSkipped = true;
 const handlerFuncNamePrefix = "anonymous-handler-"
 const mainFile = "main.ts"
 const iacFile = "pulumi.ts"
 const target = "AWS"
+const outputDir = process.argv[2] || '_output'
 
 function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     if (fileNames.length == 0) {
         return;
     }
     let iacSource = `import { iac } from "@pluto";\n`
+    let postIacSource = ''
     let iacDepSource = ``
     let stateStoreSource = ``
     let program = ts.createProgram(fileNames, options);
@@ -42,7 +46,10 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
         // VariableStatement: Maybe IaC Definition
         if (ts.isVariableStatement(node)) {
             if (node.declarationList.declarations[0].initializer && ts.isNewExpression(node.declarationList.declarations[0].initializer)) {
+                // TODO: declarations.forEach()
                 let newExpr = node.declarationList.declarations[0].initializer;
+                let variable = node.declarationList.declarations[0].name;
+                const name = variable.getText(sourceFile)
                 let symbol = checker.getSymbolAtLocation(newExpr.expression)
                 // TODO: use `ts.factory.createIdentifier("factorial")` to replace.
                 if (symbol) {
@@ -70,27 +77,31 @@ spec:
 `
                     } else if (ty.symbol.escapedName == "Router") {
                         iacSource = iacSource + node.getText(sourceFile).replace("Router", "iac.aws.ApiGatewayDef") + "\n"
+                        postIacSource += `${name}.postProcess()\n`;
                         hasIaC = true;
                     }
                 }
             }
         }
         // ExpressionStatement: Maybe FaaS router handler
+        // lookup `router.get()` form
         if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression) && ts.isPropertyAccessExpression(node.expression.expression)) {
             let symbol = checker.getSymbolAtLocation(node.expression.expression.expression)
             if (symbol) {
                 let ty = checker.getTypeOfSymbol(symbol)
+                // TODO: use router Type
                 if (ty.symbol.escapedName == "Router") {
                     // Deal Handler
                     console.log("Deal Handler")
                     let handlerSource = iacDepSource + node.getText(sourceFile) + "\n"
                     handlerSources.push(handlerSource)
+                    let routerName = symbol.escapedName
 
                     // TODO: read-write set ana
                     let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
                     lambdaSource += `fn${handlerIndex}.grantPermission("set", state.fuzzyArn());\n`
                     lambdaSource += `fn${handlerIndex}.grantPermission("get", state.fuzzyArn());\n`
-                    lambdaSource += `router.addHandler(${node.expression.expression.name.getText()}, fn${handlerIndex}, { path: ${node.expression.arguments[0].getText()} })\n`;
+                    lambdaSource += `${routerName}.addHandler("${node.expression.expression.name.getText()}", fn${handlerIndex}, { path: ${node.expression.arguments[0].getText()} })\n`;
                     iacSource += lambdaSource + "\n"
                     handlerIndex += 1
                 }
@@ -103,16 +114,28 @@ spec:
     if (emitSkipped) {
         exitCode = 0
     }
-    console.log(`IaC Source \n`, iacSource)
+    // console.log(`IaC Source \n`, iacSource)
+    writeToFile('pulumi.ts', iacSource + postIacSource);
     handlerSources.forEach((h, i) => {
-        console.log(`Handler Source ${i + 1} \n`, h)
+        // console.log(`Handler Source ${i + 1} \n`, h)
+        writeToFile(`${handlerFuncNamePrefix}${i + 1}.ts`, h);
     })
-    console.log(`State Source \n`, stateStoreSource)
+    // console.log(`State Source \n`, stateStoreSource)
+    writeToFile(`dapr/statestore.yaml`, stateStoreSource);
     console.log(`Process exiting with code '${exitCode}'.`);
     process.exit(exitCode);
 }
 
-compilePluto(process.argv.slice(2), {
+function writeToFile(filename: string, content: string) {
+    // Ensure the directory exists
+    const dirpath = path.join(outputDir, filename.substring(0, filename.lastIndexOf('/')));
+    fs.mkdirSync(dirpath, { recursive: true });
+
+    const filepath = path.join(outputDir, filename);
+    fs.writeFileSync(filepath, content);
+}
+
+compilePluto(process.argv.slice(3), {
     noEmitOnError: true,
     noImplicitAny: true,
     target: ts.ScriptTarget.ES5,

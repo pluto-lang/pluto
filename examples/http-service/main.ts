@@ -1,7 +1,7 @@
 import { Request, Router, State } from '@pluto';
 
 const state = new State("statestore");
-const router = new Router();
+const router = new Router("http-service");
 
 const defaultName = "Anonym";
 
