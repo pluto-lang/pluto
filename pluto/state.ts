@@ -1,5 +1,6 @@
 import { DaprClient } from "@dapr/dapr";
 import getClient from "./client";
+import { API } from "./api";
 
 export interface IState {
     get(key: string): Promise<string>;
@@ -9,7 +10,7 @@ export interface IState {
 /**
  * @infra baas
  */
-export class State implements IState  {
+export class State implements IState, API  {
     name: string;
     client: DaprClient;
 
