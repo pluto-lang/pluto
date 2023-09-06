@@ -1,3 +1,4 @@
+import { API } from "./api";
 import { Request } from "./request";
 
 /**
@@ -5,13 +6,11 @@ import { Request } from "./request";
  */
 type HttpHandler = (req: Request) => Promise<string>;
 
-
-
 /**
  * @infra baas
  */
-export class Router {
-    name: string = "default";
+export class Router implements API {
+    private name: string = "default";
     /**
      * @infra baas
      */
@@ -19,7 +18,6 @@ export class Router {
         routes[path] = handler;
     }
 }
-
 
 const routes: { [key: string]: HttpHandler } = {}
 

@@ -1,6 +1,7 @@
 import { Event, Request, Router, Queue, State, emit } from '@pluto';
 
 import * as aws from "@pulumi/aws"
+
 const bucketName = "bucket";
 const bucket = new aws.s3.Bucket(bucketName)
 bucket.onObjectCreated("event-handler", async () => {
