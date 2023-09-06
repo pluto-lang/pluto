@@ -33,6 +33,7 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
     let hasIaC = false;
     let handlerIndex = 1;
+    let stateStoreIndex = 1;
 
     // Loop through the root AST nodes of the file
     ts.forEachChild(sourceFile, node => {
@@ -50,7 +51,8 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
                     if (ty.symbol.escapedName == "State") {
                         iacSource = iacSource + node.getText(sourceFile).replace("State", "iac.aws.DynamoDBDef") + "\n"
                         hasIaC = true;
-                        let stateName = newExpr.arguments?.[0].getText() || "statestore"
+                        let stateName = newExpr.arguments?.[0].getText() || `statestore${stateStoreIndex}`
+                        stateStoreIndex += 1
                         stateStoreSource = `
 link: State
 apiVersion: dapr.io/v1alpha1
@@ -85,7 +87,7 @@ spec:
                     handlerSources.push(handlerSource)
 
                     // TODO: read-write set ana
-                    let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-1");\n`
+                    let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
                     lambdaSource += `fn${handlerIndex}.grantPermission("set", state.fuzzyArn());\n`
                     lambdaSource += `fn${handlerIndex}.grantPermission("get", state.fuzzyArn());\n`
                     lambdaSource += `router.addHandler(${node.expression.expression.name.getText()}, fn${handlerIndex}, { path: ${node.expression.arguments[0].getText()} })\n`;
