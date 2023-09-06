@@ -1,0 +1,6 @@
+name: pulumi-dapr
+runtime:
+  name: nodejs
+  options:
+    typescript: false
+description: A pluto language project

@@ -37,7 +37,7 @@ export class LambdaDef extends pulumi.ComponentResource {
             role: iam.arn,
             environment: {
                 variables: {
-                    foo: "bar",
+                    CIR_DIR: `/app/${name}.js`,
                 },
             },
             timeout: 120,
@@ -45,15 +45,15 @@ export class LambdaDef extends pulumi.ComponentResource {
 
         this.lambda = fn;
         this.iam = iam;
-        this.grantPermission(Ops.WATCH_LOG, "");
+        this.grantPermission(Ops.WATCH_LOG, "arn:aws:logs:*:*:*");
 
         this.registerOutputs();
     }
 
     grantPermission(op: string, resourceArn: string) {
-        switch (op) {
+        switch (op.toUpperCase()) {
             case Ops.WATCH_LOG:
-                const logGroup = new aws.cloudwatch.LogGroup(`${this.name}-logGroup`, { retentionInDays: 14 });
+                // const logGroup = new aws.cloudwatch.LogGroup(`${this.name}-logGroup`, { retentionInDays: 14 });
                 const lambdaLoggingPolicyDocument = aws.iam.getPolicyDocument({
                     statements: [{
                         effect: "Allow",
@@ -62,7 +62,7 @@ export class LambdaDef extends pulumi.ComponentResource {
                             "logs:CreateLogStream",
                             "logs:PutLogEvents",
                         ],
-                        resources: ["arn:aws:logs:*:*:*"],
+                        resources: [resourceArn],
                     }],
                 });
                 const lambdaLoggingPolicy = new aws.iam.Policy(`${this.name}-logPolicy`, {
@@ -82,7 +82,6 @@ export class LambdaDef extends pulumi.ComponentResource {
                         effect: "Allow",
                         actions: [
                             "dynamodb:GetItem",
-                            "dynamodb:BatchGetItem",
                         ],
                         resources: [resourceArn],
                     }],
@@ -103,8 +102,7 @@ export class LambdaDef extends pulumi.ComponentResource {
                     statements: [{
                         effect: "Allow",
                         actions: [
-                            "dynamodb:GetItem",
-                            "dynamodb:BatchGetItem",
+                            "dynamodb:*",
                         ],
                         resources: [resourceArn],
                     }],

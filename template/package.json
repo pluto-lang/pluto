@@ -1,0 +1,17 @@
+{
+    "name": "%{project_name}",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/pulumi.js",
+    "scripts": {
+        "build": "npx tsc"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {},
+    "dependencies": {
+        "@dapr/dapr": "^3.1.2",
+        "@pulumi/aws": "^6.0.3",
+        "@pulumi/pulumi": "^3.80.0"
+    }
+}

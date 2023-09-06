@@ -12,11 +12,12 @@ export class DynamoDBDef extends pulumi.ComponentResource {
 
     arn: pulumi.Output<string>;
 
-    constructor(name:string, opts?: {}) {
+    constructor(name: string, opts?: {}) {
         super("pluto:aws:DynamoDB", name, opts);
         this.name = name;
 
         const db = new aws.dynamodb.Table(name, {
+            name: name,
             attributes: [
                 {
                     name: "Id",
@@ -27,7 +28,7 @@ export class DynamoDBDef extends pulumi.ComponentResource {
             readCapacity: 10,
             writeCapacity: 10,
         })
-        
+
         this.arn = db.arn;
 
         this.registerOutputs({
@@ -35,7 +36,7 @@ export class DynamoDBDef extends pulumi.ComponentResource {
         });
     }
 
-    fuzzyArn(){
-        return `arn:aws:dynamodb:::table/${this.name}*`;
+    fuzzyArn() {
+        return `arn:aws:dynamodb:*:*:table/${this.name}`;
     }
 }

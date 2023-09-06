@@ -1,0 +1,6 @@
+name: %{project_name}
+runtime:
+  name: nodejs
+  options:
+    typescript: false
+description: A pluto language project

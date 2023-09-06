@@ -1,8 +1,4 @@
-import { Request } from './pluto/request';
-import { processRequest } from './pluto/router';
-import { processEvent } from './pluto/queue';
-import { Event } from './pluto/event';
-import { setupDapr } from './setup';
+import { Request, processEvent, processRequest, Event, setupDapr } from '@pluto';
 import { existsSync, lstatSync, readdirSync } from 'fs';
 import { join } from 'path';
 
@@ -11,6 +7,12 @@ setupDapr();
 function importCIR(dirPath: string): Promise<any>[] {
     const promises: Promise<any>[] = []
     if (!existsSync(dirPath)) return promises;
+
+    if (lstatSync(dirPath).isFile()) {
+        console.log('Import CIR: ', dirPath);
+        promises.push(import(dirPath));
+        return promises;
+    }
 
     const files = readdirSync(dirPath);
     for (const file of files) {

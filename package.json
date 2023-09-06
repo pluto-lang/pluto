@@ -20,7 +20,6 @@
     "@aws-sdk/client-s3": "^3.405.0",
     "@dapr/dapr": "^3.1.2",
     "@pulumi/aws": "^6.0.3",
-    "@pulumi/pulumi": "^3.80.0",
-    "express": "^4.18.2"
+    "@pulumi/pulumi": "^3.80.0"
   }
 }
