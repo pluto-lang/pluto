@@ -10,3 +10,6 @@ router.addHandler("get", fn1, { path: "/hello" });
 const fn2 = new iac.aws.LambdaDef("anonymous-handler-2");
 fn2.grantPermission("get", state.fuzzyArn());
 router.addHandler("get", fn2, { path: "/store" });
+
+router.postProcess()
+export const { url } = router

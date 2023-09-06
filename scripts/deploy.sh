@@ -5,18 +5,8 @@ STAGE="staging"
 SCRIPT_DIR=$(cd $(dirname $0);pwd)
 LANG_ROOT=$(dirname $SCRIPT_DIR)
 
-SCRIPT_DIR=$(cd $(dirname $0);pwd)
-LANG_ROOT=$(dirname $SCRIPT_DIR)
-
-APP_FILE="$LANG_ROOT/examples/http-service/main.ts"
-OUT_PATH="$LANG_ROOT/examples/http-service/_output"
-
-rm -r $OUT_PATH
-
-### split user code and generate IaC
-pushd $LANG_ROOT
-npm run plutoc $OUT_PATH $APP_FILE 
-popd
+APP_FILE=${1-$LANG_ROOT/examples/http-service/main.ts}
+OUT_PATH=${2-$LANG_ROOT/examples/http-service/_output}
 
 
 cd $OUT_PATH

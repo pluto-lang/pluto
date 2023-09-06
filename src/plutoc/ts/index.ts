@@ -78,6 +78,7 @@ spec:
                     } else if (ty.symbol.escapedName == "Router") {
                         iacSource = iacSource + node.getText(sourceFile).replace("Router", "iac.aws.ApiGatewayDef") + "\n"
                         postIacSource += `${name}.postProcess()\n`;
+                        postIacSource += `export const { url } = ${name}\n`;
                         hasIaC = true;
                     }
                 }

@@ -10,6 +10,7 @@ export class ApiGatewayDef extends pulumi.ComponentResource {
 
     apiGateway: Api;
     routes: Route[];
+    url: pulumi.Output<string> = pulumi.interpolate `unkonwn`;
 
     constructor(name: string, opts?: {}) {
         super("pluto:aws:ApiGateway", name, opts);
@@ -67,5 +68,6 @@ export class ApiGatewayDef extends pulumi.ComponentResource {
             deploymentId: deployment.id,
             name: "dev",
         })
+        this.url = stage.invokeUrl
     }
 }
