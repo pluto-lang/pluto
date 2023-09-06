@@ -5,6 +5,9 @@ STAGE="staging"
 SCRIPT_DIR=$(cd $(dirname $0);pwd)
 LANG_ROOT=$(dirname $SCRIPT_DIR)
 
+SCRIPT_DIR=$(cd $(dirname $0);pwd)
+LANG_ROOT=$(dirname $SCRIPT_DIR)
+
 APP_FILE="$LANG_ROOT/examples/http-service/main.ts"
 OUT_PATH="$LANG_ROOT/examples/http-service/_output"
 
@@ -46,8 +49,8 @@ cp -r dapr ./dist/.dapr/components
 
 
 ### build container image
-docker build --platform=linux/amd64 --tag $IMAGE_NAME:latest .
-docker push $IMAGE_NAME:latest
+docker build --platform=linux/amd64 --tag $IMAGE_NAME .
+docker push $IMAGE_NAME
 
 
 ### deploy

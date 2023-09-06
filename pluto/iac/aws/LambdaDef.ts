@@ -1,5 +1,6 @@
 //link:Fn
 import * as aws from "@pulumi/aws"
+import * as awsx from "@pulumi/awsx"
 import * as pulumi from "@pulumi/pulumi"
 import { DynamoDbOps } from "./DynamoDBDef";
 import { Role } from "@pulumi/aws/iam";
@@ -31,9 +32,19 @@ export class LambdaDef extends pulumi.ComponentResource {
 
         const iam = new aws.iam.Role(`${name}-iam`, { assumeRolePolicy: role.then(assumeRole => assumeRole.json) });
 
+        // const repo = new awsx.ecr.Repository(`${name}-repo`, {
+        //     forceDelete: true,
+        // });
+        // const image = new awsx.ecr.Image(`${name}-image`, {
+        //     repositoryUrl: repo.url,
+        //     path: "./",
+        //     extraOptions: ['--platform', 'linux/amd64'],
+        // });
+
         const fn = new aws.lambda.Function(`${name}-fn`, {
             packageType: "Image",
-            imageUri: "811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest", //TODO
+            // imageUri: image.imageUri, //TODO
+            imageUri: '811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest',
             role: iam.arn,
             environment: {
                 variables: {
