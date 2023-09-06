@@ -1,5 +1,6 @@
 //link:Fn
 import * as aws from "@pulumi/aws"
+import * as awsx from "@pulumi/awsx"
 import * as pulumi from "@pulumi/pulumi"
 import { DynamoDbOps } from "./DynamoDBDef";
 import { Role } from "@pulumi/aws/iam";
@@ -31,13 +32,23 @@ export class LambdaDef extends pulumi.ComponentResource {
 
         const iam = new aws.iam.Role(`${name}-iam`, { assumeRolePolicy: role.then(assumeRole => assumeRole.json) });
 
+        // const repo = new awsx.ecr.Repository(`${name}-repo`, {
+        //     forceDelete: true,
+        // });
+        // const image = new awsx.ecr.Image(`${name}-image`, {
+        //     repositoryUrl: repo.url,
+        //     path: "./",
+        //     extraOptions: ['--platform', 'linux/amd64'],
+        // });
+
         const fn = new aws.lambda.Function(`${name}-fn`, {
             packageType: "Image",
-            imageUri: "811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest", //TODO
+            // imageUri: image.imageUri, //TODO
+            imageUri: '811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest',
             role: iam.arn,
             environment: {
                 variables: {
-                    foo: "bar",
+                    CIR_DIR: `/app/${name}.js`,
                 },
             },
             timeout: 120,
@@ -45,15 +56,15 @@ export class LambdaDef extends pulumi.ComponentResource {
 
         this.lambda = fn;
         this.iam = iam;
-        this.grantPermission(Ops.WATCH_LOG, "");
+        this.grantPermission(Ops.WATCH_LOG, "arn:aws:logs:*:*:*");
 
         this.registerOutputs();
     }
 
     grantPermission(op: string, resourceArn: string) {
-        switch (op) {
+        switch (op.toUpperCase()) {
             case Ops.WATCH_LOG:
-                const logGroup = new aws.cloudwatch.LogGroup(`${this.name}-logGroup`, { retentionInDays: 14 });
+                // const logGroup = new aws.cloudwatch.LogGroup(`${this.name}-logGroup`, { retentionInDays: 14 });
                 const lambdaLoggingPolicyDocument = aws.iam.getPolicyDocument({
                     statements: [{
                         effect: "Allow",
@@ -62,7 +73,7 @@ export class LambdaDef extends pulumi.ComponentResource {
                             "logs:CreateLogStream",
                             "logs:PutLogEvents",
                         ],
-                        resources: ["arn:aws:logs:*:*:*"],
+                        resources: [resourceArn],
                     }],
                 });
                 const lambdaLoggingPolicy = new aws.iam.Policy(`${this.name}-logPolicy`, {
@@ -82,7 +93,6 @@ export class LambdaDef extends pulumi.ComponentResource {
                         effect: "Allow",
                         actions: [
                             "dynamodb:GetItem",
-                            "dynamodb:BatchGetItem",
                         ],
                         resources: [resourceArn],
                     }],
@@ -103,8 +113,7 @@ export class LambdaDef extends pulumi.ComponentResource {
                     statements: [{
                         effect: "Allow",
                         actions: [
-                            "dynamodb:GetItem",
-                            "dynamodb:BatchGetItem",
+                            "dynamodb:*",
                         ],
                         resources: [resourceArn],
                     }],

@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 
-const daprSetupCmd = `/.dapr/bin/dapr --runtime-path / run --app-port 8080 --app-id pulumi-dapr --app-protocol http --dapr-http-port 3500`;
+const daprSetupCmd = `/app/.dapr/bin/dapr --runtime-path /app/ run --app-port 8080 --app-id pulumi-dapr --app-protocol http --dapr-http-port 3500`;
 
 export async function setupDapr() {
     console.log(Date.now(), " start dapr");

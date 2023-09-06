@@ -13,7 +13,7 @@ export class Request {
             })
         
         } else {  // Access through the ApiGateway
-            req.path = event.path;
+            req.path = event.resource;
             if (event.queryStringParameters != null) {
                 req.query = event.queryStringParameters;
             }

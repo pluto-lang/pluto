@@ -11,6 +11,11 @@ type HttpHandler = (req: Request) => Promise<string>;
  */
 export class Router implements API {
     private name: string = "default";
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
     /**
      * @infra baas
      */
