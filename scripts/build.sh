@@ -1,12 +1,12 @@
 IMAGE_NAME='811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr'
-PROJECT_NAME='pulumi-dapr'
-STAGE="staging"
+PROJECT_NAME=${1-pulumi-dapr}
+STAGE=${2-staging}
 
 SCRIPT_DIR=$(cd $(dirname $0);pwd)
 LANG_ROOT=$(dirname $SCRIPT_DIR)
 
-APP_FILE=${1-$LANG_ROOT/examples/http-service/main.ts}
-OUT_PATH=${2-$LANG_ROOT/examples/http-service/_output}
+APP_FILE=${3-$LANG_ROOT/examples/http-service/main.ts}
+OUT_PATH=${4-$LANG_ROOT/examples/http-service/_output}
 
 
 cd $OUT_PATH
@@ -44,4 +44,4 @@ docker push $IMAGE_NAME
 
 
 ### deploy
-pulumi up -s $STAGE -y
+# pulumi up -s $STAGE -y
