@@ -17,6 +17,7 @@ mv ./Pulumi.prod.yaml ./Pulumi.$STAGE.yaml
 
 
 ### compile CIR(biz + runtime ts) and PIR(pulumi ts) to js
+rm -r dist
 cp -r $LANG_ROOT/pluto ./
 cp $LANG_ROOT/aws-runtime.ts ./
 npm run build

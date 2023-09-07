@@ -17,6 +17,7 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     let postIacSource = ''
     let iacDepSource = ``
     let stateStoreSource = ``
+    let queueSource = ``
     let program = ts.createProgram(fileNames, options);
     let allDiagnostics = ts.getPreEmitDiagnostics(program)
     let handlerSources: string[] = [];
@@ -38,6 +39,7 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     let hasIaC = false;
     let handlerIndex = 1;
     let stateStoreIndex = 1;
+    let queueIndex = 1;
 
     // Loop through the root AST nodes of the file
     ts.forEachChild(sourceFile, node => {
@@ -61,7 +63,6 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
                         let stateName = newExpr.arguments?.[0].getText() || `statestore${stateStoreIndex}`
                         stateStoreIndex += 1
                         stateStoreSource = `
-link: State
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
@@ -80,6 +81,30 @@ spec:
                         postIacSource += `${name}.postProcess()\n`;
                         postIacSource += `export const { url } = ${name}\n`;
                         hasIaC = true;
+                    
+                    } else if (ty.symbol.escapedName == "Queue") {
+                        iacSource = iacSource + node.getText(sourceFile).replace("Queue", "iac.aws.SNSDef") + "\n"
+                        postIacSource += `${name}.postProcess()\n`;
+                        hasIaC = true;
+
+                        let queueName = newExpr.arguments?.[0].getText() || `queue${queueIndex}`
+                        queueIndex += 1
+                        queueSource = `
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: ${queueName}
+spec:
+  type: pubsub.aws.snssqs
+  version: v1
+  metadata:
+  - name: accessKey
+    value: AKIA32AGWPFWBBQ2AKFW
+  - name: secretKey
+    value: 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
+  - name: region
+    value: us-east-1
+`
                     }
                 }
             }
@@ -91,18 +116,24 @@ spec:
             if (symbol) {
                 let ty = checker.getTypeOfSymbol(symbol)
                 // TODO: use router Type
-                if (ty.symbol.escapedName == "Router") {
+                if (["Router", "Queue"].indexOf(ty.symbol.escapedName.toString()) !== -1) {
                     // Deal Handler
                     console.log("Deal Handler")
                     let handlerSource = iacDepSource + node.getText(sourceFile) + "\n"
                     handlerSources.push(handlerSource)
-                    let routerName = symbol.escapedName
+                    let objName = symbol.escapedName
 
-                    // TODO: read-write set ana
+                    let paramsText = '{}'
+                    if (ty.symbol.escapedName == 'Router') {
+                        paramsText = `{ path: ${node.expression.arguments[0].getText()} }`
+                    }
+
+                    // TODO: read-write set ana, and fetch host name
                     let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
                     lambdaSource += `fn${handlerIndex}.grantPermission("set", state.fuzzyArn());\n`
                     lambdaSource += `fn${handlerIndex}.grantPermission("get", state.fuzzyArn());\n`
-                    lambdaSource += `${routerName}.addHandler("${node.expression.expression.name.getText()}", fn${handlerIndex}, { path: ${node.expression.arguments[0].getText()} })\n`;
+                    lambdaSource += `fn${handlerIndex}.grantPermission("push", queue.fuzzyArn());\n`
+                    lambdaSource += `${objName}.addHandler("${node.expression.expression.name.getText()}", fn${handlerIndex}, ${paramsText})\n`;
                     iacSource += lambdaSource + "\n"
                     handlerIndex += 1
                 }
@@ -117,12 +148,22 @@ spec:
     }
     // console.log(`IaC Source \n`, iacSource)
     writeToFile('pulumi.ts', iacSource + postIacSource);
+    
     handlerSources.forEach((h, i) => {
         // console.log(`Handler Source ${i + 1} \n`, h)
         writeToFile(`${handlerFuncNamePrefix}${i + 1}.ts`, h);
     })
-    // console.log(`State Source \n`, stateStoreSource)
-    writeToFile(`dapr/statestore.yaml`, stateStoreSource);
+    
+    if (stateStoreIndex > 1) {
+        // console.log(`State Source \n`, stateStoreSource)
+        writeToFile(`dapr/statestore.yaml`, stateStoreSource);
+    }
+
+    if (queueIndex > 1) {
+        // console.log(`Queue Source \n`, queueSource)
+        writeToFile(`dapr/pubsub.yaml`, queueSource);
+    }
+    
     console.log(`Process exiting with code '${exitCode}'.`);
     process.exit(exitCode);
 }
