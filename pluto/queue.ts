@@ -14,7 +14,7 @@ type EventHandler = (event: any) => Promise<string>;
 export class Queue {
     topic: string;
     client: DaprClient;
-    
+
     constructor(topic: string) {
         this.topic = topic;
         this.client = getClient();
@@ -24,14 +24,14 @@ export class Queue {
      * @infra permission
      */
     public async push(message: any) {
-        await this.client.pubsub.publish(getPubsubName(), this.topic, message);
+        await this.client.pubsub.publish(this.topic, this.topic, message);
     }
 
     /**
      * @infra baas
      */
     public subscribe(handler: EventHandler) {
-        const key = `${getPubsubName()}-${this.topic}`
+        const key = this.topic
         assert(!(key in subHandlers), `${key} handler already exists.`);
         subHandlers[key] = handler;
     }
@@ -42,15 +42,11 @@ const subHandlers: { [key: string]: EventHandler } = {}
 
 export async function processEvent(event: Event) {
     console.log('receive an event: ', event);
-    
-    const key = `${event.name}-${event.topic}`
+
+    const key = event.topic
     if (!(key in subHandlers)) {
         console.error(`no such event handler for ${key}`);
-        return ;
+        return;
     }
     await (subHandlers[key](event));
-}
-
-function getPubsubName(): string {
-    return 'pubsub';
 }

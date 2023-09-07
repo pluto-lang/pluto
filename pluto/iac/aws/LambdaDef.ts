@@ -128,6 +128,27 @@ export class LambdaDef extends pulumi.ComponentResource {
                     policyArn: dbSetPolicy.arn,
                 });
                 break;
+
+            case DynamoDbOps.PUSH:
+                const snsPush = aws.iam.getPolicyDocument({
+                    statements: [{
+                        effect: "Allow",
+                        actions: [
+                            "sns:*",
+                        ],
+                        resources: [resourceArn],
+                    }],
+                });
+                const snsPushPolicy = new aws.iam.Policy(`${this.name}-snsPushPolicy`, {
+                    path: "/",
+                    description: "IAM policy for setting dynamodb item from a lambda",
+                    policy: snsPush.then(snsPush => snsPush.json),
+                });
+                new aws.iam.RolePolicyAttachment(`${this.name}-snsPushAttach`, {
+                    role: this.iam.name,
+                    policyArn: snsPushPolicy.arn,
+                });
+                break;
         }
     }
 }

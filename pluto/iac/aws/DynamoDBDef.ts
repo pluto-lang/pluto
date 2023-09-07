@@ -4,7 +4,8 @@ import * as pulumi from "@pulumi/pulumi"
 
 export enum DynamoDbOps {
     GET = "GET",
-    SET = "SET"
+    SET = "SET",
+    PUSH = "PUSH"
 }
 
 export class DynamoDBDef extends pulumi.ComponentResource {

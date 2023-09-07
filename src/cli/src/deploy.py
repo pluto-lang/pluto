@@ -38,7 +38,7 @@ def deploy(proj: Project, stack_name, filepath, output):
     p.wait()
 
     print('Deploying...')
-    p = subprocess.Popen(f'pulumi up -s {stack_name} -y'.split(' '), cwd=output, stdout=OUT_STREAM)
+    p = subprocess.Popen(f'pulumi up -s {stack_name} -y -f'.split(' '), cwd=output, stdout=OUT_STREAM)
     p.wait()
 
     print('\nOutput:')
