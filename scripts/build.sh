@@ -1,5 +1,5 @@
 IMAGE_NAME='811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr'
-PROJECT_NAME=${1-pulumi-dapr}
+PROJECT_NAME=${1-"pulumi-dapr"}
 STAGE=${2-staging}
 
 SCRIPT_DIR=$(cd $(dirname $0);pwd)
