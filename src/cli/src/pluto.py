@@ -2,6 +2,7 @@
 
 import argparse
 
+from new import process_new
 from compile import process_compile
 from deploy import process_deploy
 
@@ -12,13 +13,15 @@ def main():
     subparser = parser.add_subparsers(dest="subcmd", title="subcmd")
 
     applyCmd = subparser.add_parser("deploy", help="Deploy the application to runtime")
-    applyCmd.add_argument('filepath', nargs=1, help="Path to application source code")
-    applyCmd.add_argument('--target', default="aws", help="Target runtime (default: aws)")
-    applyCmd.add_argument('--output', help="Path to output files")
+    applyCmd.add_argument('filepath', nargs='*', help="Path to application source code (defalut: main.ts)", default=["main.ts"])
+    applyCmd.add_argument('-s', '--stack', default="dev", help="Target runtime (default: dev)")
+    applyCmd.add_argument('--output', help="Path to output files", default=".pluto/output")
 
     compileCmd = subparser.add_parser("compile", help="Compile the application source code to CIR and PIR")
     compileCmd.add_argument('filepath', nargs=1, help="Path to application source code")
-    compileCmd.add_argument('--output', help="Path to output files")
+    compileCmd.add_argument('--output', help="Path to output files", default=".pluto/output")
+
+    newCmd = subparser.add_parser("new", help="Create a new project in the current directory")
     
     args = parser.parse_args()
     if not args.subcmd:
@@ -28,6 +31,8 @@ def main():
 
 
 def process_command(args):
+    if args.subcmd == 'new':
+        process_new(args)
     if args.subcmd == 'compile':
         process_compile(args)
     elif args.subcmd == 'deploy':
