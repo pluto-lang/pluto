@@ -5,6 +5,7 @@ import argparse
 from new import process_new
 from compile import process_compile
 from deploy import process_deploy
+from destroy import process_destroy
 
 
 def main(): 
@@ -22,6 +23,9 @@ def main():
     compileCmd.add_argument('--output', help="Path to output files", default=".pluto/output")
 
     newCmd = subparser.add_parser("new", help="Create a new project in the current directory")
+
+    destroyCmd = subparser.add_parser("destroy", help="Destroy the stack")
+    destroyCmd.add_argument('-s', '--stack', default="dev", help="Target runtime (default: dev)")
     
     args = parser.parse_args()
     if not args.subcmd:
@@ -31,12 +35,13 @@ def main():
 
 
 def process_command(args):
-    if args.subcmd == 'new':
-        process_new(args)
-    if args.subcmd == 'compile':
-        process_compile(args)
-    elif args.subcmd == 'deploy':
-        process_deploy(args)
+    cmd_handler_mapping = {
+        'new': process_new,
+        'compile': process_compile,
+        'deploy': process_deploy,
+        'destroy': process_destroy
+    }
+    cmd_handler_mapping[args.subcmd](args)
 
 
 if __name__ == '__main__':

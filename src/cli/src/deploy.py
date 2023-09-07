@@ -1,9 +1,9 @@
 import os
 import sys
-import yaml
 import subprocess
 
 from models import Project
+from config import get_project_config
 from compile import compile
 from constants import LANG_ROOT, OUT_STREAM
 
@@ -15,12 +15,6 @@ def process_deploy(args):
     
     proj = get_project_config()
     deploy(proj, stack, filepath, output)
-
-
-def get_project_config():
-    with open(os.path.join(os.getcwd(), '.pluto/Pluto.yaml'), 'r') as f:
-        proj = yaml.load(f.read(), Loader=yaml.UnsafeLoader)
-    return proj
 
 
 def deploy(proj: Project, stack_name, filepath, output):
