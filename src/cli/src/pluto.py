@@ -6,6 +6,7 @@ from new import process_new
 from compile import process_compile
 from deploy import process_deploy
 from destroy import process_destroy
+from state import process_state
 
 
 def main(): 
@@ -26,6 +27,9 @@ def main():
 
     destroyCmd = subparser.add_parser("destroy", help="Destroy the stack")
     destroyCmd.add_argument('-s', '--stack', default="dev", help="Target runtime (default: dev)")
+
+    stateCmd = subparser.add_parser("state", help="Fetch or watch the resource state")
+    stateCmd.add_argument('-s', '--stack', default="dev", help="Target runtime (default: dev)")
     
     args = parser.parse_args()
     if not args.subcmd:
@@ -39,7 +43,8 @@ def process_command(args):
         'new': process_new,
         'compile': process_compile,
         'deploy': process_deploy,
-        'destroy': process_destroy
+        'destroy': process_destroy,
+        'state': process_state
     }
     cmd_handler_mapping[args.subcmd](args)
 

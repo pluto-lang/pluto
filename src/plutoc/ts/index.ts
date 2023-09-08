@@ -41,6 +41,8 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     let stateStoreIndex = 1;
     let queueIndex = 1;
 
+    const resGroup: { [key: string]: string[] } = {}
+
     // Loop through the root AST nodes of the file
     ts.forEachChild(sourceFile, node => {
         let name = "";
@@ -58,6 +60,11 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
                     // TODO: use decorator mapping on SDK? The SDK auto workflow
                     let ty = checker.getTypeOfSymbol(symbol)
                     if (ty.symbol.escapedName == "State") {
+                        if (!('State' in resGroup)) {
+                            resGroup['State'] = []
+                        }
+                        resGroup['State'].push(name)
+
                         iacSource = iacSource + node.getText(sourceFile).replace("State", "iac.aws.DynamoDBDef") + "\n"
                         hasIaC = true;
                         let stateName = newExpr.arguments?.[0].getText() || `statestore${stateStoreIndex}`
@@ -83,6 +90,11 @@ spec:
                         hasIaC = true;
                     
                     } else if (ty.symbol.escapedName == "Queue") {
+                        if (!('Queue' in resGroup)) {
+                            resGroup['Queue'] = []
+                        }
+                        resGroup['Queue'].push(name)
+
                         iacSource = iacSource + node.getText(sourceFile).replace("Queue", "iac.aws.SNSDef") + "\n"
                         postIacSource += `${name}.postProcess()\n`;
                         hasIaC = true;
@@ -130,9 +142,17 @@ spec:
 
                     // TODO: read-write set ana, and fetch host name
                     let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
-                    lambdaSource += `fn${handlerIndex}.grantPermission("set", state.fuzzyArn());\n`
-                    lambdaSource += `fn${handlerIndex}.grantPermission("get", state.fuzzyArn());\n`
-                    lambdaSource += `fn${handlerIndex}.grantPermission("push", queue.fuzzyArn());\n`
+                    for (let resType in resGroup) {
+                        // TODO: get operations and resources from the body of handler
+                        resGroup[resType].forEach((resName) => {
+                            if (resType == 'State') {
+                                lambdaSource += `fn${handlerIndex}.grantPermission("set", ${resName}.fuzzyArn());\n`
+                                lambdaSource += `fn${handlerIndex}.grantPermission("get", ${resName}.fuzzyArn());\n`
+                            } else if (resType == 'Queue') {
+                                lambdaSource += `fn${handlerIndex}.grantPermission("push", ${resName}.fuzzyArn());\n`
+                            }
+                        })
+                    }
                     lambdaSource += `${objName}.addHandler("${node.expression.expression.name.getText()}", fn${handlerIndex}, ${paramsText})\n`;
                     iacSource += lambdaSource + "\n"
                     handlerIndex += 1

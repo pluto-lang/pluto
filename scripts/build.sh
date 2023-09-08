@@ -40,9 +40,11 @@ cp -r dapr ./dist/.dapr/components
 
 
 ### build container image
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 811762874732.dkr.ecr.us-east-1.amazonaws.com
 docker build --platform=linux/amd64 --tag $IMAGE_NAME .
 docker push $IMAGE_NAME
 
 
-### deploy
+### init pulumi stack
+pulumi stack init --stack $STAGE
 # pulumi up -s $STAGE -y
