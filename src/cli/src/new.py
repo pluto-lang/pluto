@@ -54,15 +54,30 @@ def build_aws_runtime():
     return runtime
 
 
-example_code = """import { Request, Router, State } from '@pluto';
+example_code = """import { Event, Request, Router, Queue, State } from '@pluto';
 
+const state = new State("statestore");
+const queue = new Queue("access");
 const router = new Router("hello");
-const state = new State("state");
 
 router.get("/hello", async (req: Request): Promise<string> => {
-    await state.set("key", "value");
-    return `Hello, PlutoLang`;
-});
+    const name = req.query['name'] ?? "Anonym";
+    const message = `${name} access at ${Date.now()}`
+    await queue.push({ name, message });
+    return `Publish a message: ${message}`;
+})
+
+router.get("/store", async function storeHandler(req: Request): Promise<string> {
+    const name = req.query['name'] ?? "Anonym";
+    const message = await state.get(name);
+    return `Fetch ${name} access message: ${message}.`;
+})
+
+queue.subscribe(async (event: Event): Promise<string> => {
+    const data = event.data;
+    await state.set(data['name'], data['message']);
+    return 'receive an event';
+})
 """
 
 package_json = """{
