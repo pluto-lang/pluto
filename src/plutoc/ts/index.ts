@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import * as fs from "fs";
 import * as path from "path";
+import { assert } from "console";
 
 const emitSkipped = true;
 const handlerFuncNamePrefix = "anonymous-handler-"
@@ -8,6 +9,104 @@ const mainFile = "main.ts"
 const iacFile = "pulumi.ts"
 const target = "AWS"
 const outputDir = process.argv[2] || '_output'
+
+const CloudResourceType = ['Router', 'Queue', 'State']
+
+class Resource {
+    id: string;
+    type: string;
+    constructInfo: string;
+
+    parent: Resource | null;
+    children: Resource[];
+
+    constructor(id: string, type: string, parent: Resource | null, constructInfo: string = "") {
+        this.id = id;
+        this.type = type;
+        this.constructInfo = constructInfo;
+
+        this.parent = parent;
+        this.children = [];
+    }
+}
+
+const root = new Resource("App", "Root", null);  // Resource Tree
+const edges: any[][] = []  // Resource Access Relationship
+
+const nodeMapping: { [id: string]: Resource } = {}
+nodeMapping[root.id] = root;
+
+function addNode(parId: string, nd: Resource) {
+    if (!(parId in nodeMapping)) {
+        throw new Error(`cannot find this node '${parId}'`);
+    }
+    const par = nodeMapping[parId];
+    nd.parent = par;
+
+    par.children.push(nd);
+    nodeMapping[nd.id] = nd;
+}
+
+function addEdge(fromId: string, toId: string, op: string) {
+    assert(fromId in nodeMapping && toId in nodeMapping);
+    const from = nodeMapping[fromId];
+    const to = nodeMapping[toId];
+    edges.push([from, to, op]);
+}
+
+function printNode(nd: Resource) {
+    for (let child of nd.children) {
+        console.log(`${nd.type}(${nd.id}) - ${child.constructInfo} -> ${child.type}(${child.id})`)
+    }
+    for (let child of nd.children) {
+        printNode(child);
+    }
+}
+
+function printEdge(edges: any[][]) {
+    for (let edge of edges) {
+        const from = edge[0];
+        const to = edge[1];
+        const op = edge[2];
+        console.log(`${from.type}(${from.id}) - ${op} -> ${to.type}(${to.id})`)
+    }
+}
+
+function outputDot(root: Resource, edges: any[][]): string {
+    const getResAlias = (res: Resource) => {
+        return res.id;
+    }
+    let dotSource = 'strict digraph {\n';
+
+    const que: Resource[] = []
+    que.push(root);
+    while (que.length > 0) {
+        const curNode = que.pop()!;
+
+        let partSource = `  ${getResAlias(curNode)} [label="<<${curNode.type}>>\\n${curNode.id}"];\n`;
+        for (let child of curNode.children) {
+            partSource += `  ${getResAlias(curNode)} -> ${getResAlias(child)} [label="${child.constructInfo.toUpperCase()}"];\n`;
+            que.push(child);
+        }
+
+        // if (curNode.parent == root) {
+        //     partSource = `  subgraph cluster_${clusterIdx} {\n    style=filled;\n    color=lightgrey;\n` + partSource + '  }\n'
+        //     clusterIdx++;
+        // }
+        dotSource += partSource + '\n';
+    }
+
+    for (let edge of edges) {
+        const from = edge[0];
+        const to = edge[1];
+        const op = edge[2];
+        dotSource += `  ${getResAlias(from)} -> ${getResAlias(to)} [label="${op}", color=blue];\n`;
+    }
+
+    dotSource += '}';
+    return dotSource
+}
+
 
 function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     if (fileNames.length == 0) {
@@ -59,6 +158,7 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
                 if (symbol) {
                     // TODO: use decorator mapping on SDK? The SDK auto workflow
                     let ty = checker.getTypeOfSymbol(symbol)
+                    addNode(root.id, new Resource(name, ty.symbol.escapedName.toString(), null, "new"));
                     if (ty.symbol.escapedName == "State") {
                         if (!('State' in resGroup)) {
                             resGroup['State'] = []
@@ -88,7 +188,7 @@ spec:
                         postIacSource += `${name}.postProcess()\n`;
                         postIacSource += `export const { url } = ${name}\n`;
                         hasIaC = true;
-                    
+
                     } else if (ty.symbol.escapedName == "Queue") {
                         if (!('Queue' in resGroup)) {
                             resGroup['Queue'] = []
@@ -130,30 +230,27 @@ spec:
                 // TODO: use router Type
                 if (["Router", "Queue"].indexOf(ty.symbol.escapedName.toString()) !== -1) {
                     // Deal Handler
-                    console.log("Deal Handler")
                     let handlerSource = iacDepSource + node.getText(sourceFile) + "\n"
                     handlerSources.push(handlerSource)
-                    let objName = symbol.escapedName
 
+                    let objName = symbol.escapedName
+                    const op = node.expression.expression.name.getText()
+
+                    const fnName = `fn${handlerIndex}`
+                    addNode(objName.toString(), new Resource(fnName, 'Lambda', null, op));
+
+                    let anonymFn: ts.Expression;
                     let paramsText = '{}'
                     if (ty.symbol.escapedName == 'Router') {
                         paramsText = `{ path: ${node.expression.arguments[0].getText()} }`
+                        anonymFn = node.expression.arguments[1];
+                    } else { // Queue
+                        anonymFn = node.expression.arguments[0];
                     }
 
-                    // TODO: read-write set ana, and fetch host name
                     let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
-                    for (let resType in resGroup) {
-                        // TODO: get operations and resources from the body of handler
-                        resGroup[resType].forEach((resName) => {
-                            if (resType == 'State') {
-                                lambdaSource += `fn${handlerIndex}.grantPermission("set", ${resName}.fuzzyArn());\n`
-                                lambdaSource += `fn${handlerIndex}.grantPermission("get", ${resName}.fuzzyArn());\n`
-                            } else if (resType == 'Queue') {
-                                lambdaSource += `fn${handlerIndex}.grantPermission("push", ${resName}.fuzzyArn());\n`
-                            }
-                        })
-                    }
-                    lambdaSource += `${objName}.addHandler("${node.expression.expression.name.getText()}", fn${handlerIndex}, ${paramsText})\n`;
+                    lambdaSource += detectPermission(fnName, anonymFn, checker);
+                    lambdaSource += `${objName}.addHandler("${op}", fn${handlerIndex}, ${paramsText})\n`;
                     iacSource += lambdaSource + "\n"
                     handlerIndex += 1
                 }
@@ -168,12 +265,12 @@ spec:
     }
     // console.log(`IaC Source \n`, iacSource)
     writeToFile('pulumi.ts', iacSource + postIacSource);
-    
+
     handlerSources.forEach((h, i) => {
         // console.log(`Handler Source ${i + 1} \n`, h)
         writeToFile(`${handlerFuncNamePrefix}${i + 1}.ts`, h);
     })
-    
+
     if (stateStoreIndex > 1) {
         // console.log(`State Source \n`, stateStoreSource)
         writeToFile(`dapr/statestore.yaml`, stateStoreSource);
@@ -183,9 +280,48 @@ spec:
         // console.log(`Queue Source \n`, queueSource)
         writeToFile(`dapr/pubsub.yaml`, queueSource);
     }
-    
-    console.log(`Process exiting with code '${exitCode}'.`);
-    process.exit(exitCode);
+
+    // console.log(`Process exiting with code '${exitCode}'.`);
+    // process.exit(exitCode);
+}
+
+function detectPermission(fnName: string, fnNode: ts.Expression, tyChecker: ts.TypeChecker): string {
+    let permSource = ''
+    const checkPermission = (node: ts.Node) => {
+        let propAccessExp;
+        // Write operation, e.g. state.set(), queue.push()
+        if (ts.isExpressionStatement(node) && ts.isAwaitExpression(node.expression) &&
+            ts.isCallExpression(node.expression.expression) && ts.isPropertyAccessExpression(node.expression.expression.expression)) {
+            propAccessExp = node.expression.expression.expression;
+
+        } else if (ts.isVariableStatement(node)) { // Read operation, e.g. state.get()
+            const initExp = node.declarationList.declarations[0].initializer
+            if (initExp && ts.isAwaitExpression(initExp) && ts.isCallExpression(initExp.expression) && ts.isPropertyAccessExpression(initExp.expression.expression)) {
+                propAccessExp = initExp.expression.expression;
+            }
+        }
+
+        // fetch permission
+        if (propAccessExp) {
+            let objSymbol = tyChecker.getSymbolAtLocation(propAccessExp.expression);
+            let typ = tyChecker.getTypeOfSymbol(objSymbol!);
+            if (CloudResourceType.indexOf(typ.symbol.escapedName.toString()) == -1) {
+                return;
+            }
+            let opSymbol = tyChecker.getSymbolAtLocation(propAccessExp);
+            assert(opSymbol);
+
+            const resName = objSymbol!.escapedName.toString();
+            const opName = opSymbol!.escapedName.toString();
+            permSource += `${fnName}.grantPermission("${opName}", ${resName}.fuzzyArn());\n`
+
+            addEdge(fnName, resName, opName)
+        }
+    }
+
+    const fnBody = fnNode.getChildAt(fnNode.getChildCount() - 1)
+    fnBody.forEachChild(checkPermission);
+    return permSource;
 }
 
 function writeToFile(filename: string, content: string) {
@@ -207,3 +343,9 @@ compilePluto(process.argv.slice(3), {
     },
     esModuleInterop: true,
 });
+
+// printNode(root);
+// printEdge(edges);
+
+const dotSource = outputDot(root, edges);
+writeToFile("graph.dot", dotSource);
