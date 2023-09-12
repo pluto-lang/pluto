@@ -4,17 +4,16 @@ import { Api, Route } from "@pulumi/aws/apigatewayv2";
 import * as pulumi from "@pulumi/pulumi"
 import { LambdaDef } from "./LambdaDef";
 import { assert } from "console";
+import { Router } from "../../router2";
+import { FaasResource } from "../FaasResource";
 
-export class ApiGatewayDef extends pulumi.ComponentResource {
-    name: string;
-
+export class ApiGatewayDef extends Router {
     apiGateway: Api;
     routes: Route[];
     url: pulumi.Output<string> = pulumi.interpolate `unkonwn`;
 
     constructor(name: string, opts?: {}) {
         super("pluto:aws:ApiGateway", name, opts);
-        this.name = name;
 
         this.apiGateway = new aws.apigatewayv2.Api(`${name}-apigateway`, {
             protocolType: "HTTP",
@@ -27,9 +26,15 @@ export class ApiGatewayDef extends pulumi.ComponentResource {
         });
     }
 
-    addHandler(op: string, fn: LambdaDef, params: { [key: string]: any }) {
+    public get(path: string, fn: FaasResource): void {
+        assert(fn instanceof LambdaDef, 'Fn is not a subclass of LambdaDef.');
+        const lambda = fn as LambdaDef
+
+        this.addHandler('GET', path, lambda)
+    }
+
+    private addHandler(op: string, path: string, fn: LambdaDef) {
         assert(["GET", "POST", "PUT", "DELETE"].indexOf(op.toUpperCase()) != -1, `${op} method not allowed`);
-        const path = params['path'];
         const resourceNamePrefix = `${fn.name}-${path.replace('/', '_')}-${op}`
 
         // 创建一个集成

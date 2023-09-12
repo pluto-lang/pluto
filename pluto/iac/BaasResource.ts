@@ -1,10 +1,17 @@
 import { ComponentResource } from "@pulumi/pulumi";
-import { FaasResource } from "./FaasResource";
 
 export abstract class BaasResource extends ComponentResource {
     name: string = "default";
 
-    public abstract addHandler(op: string, fn: FaasResource, params?: { [key: string]: any }): void;
+    constructor(type: string, name: string, opts?:any) {
+        super(type, name, opts)
+
+        this.name = name;
+    }
+
+    public static  buildClient(name: string): any {
+        throw new Error("Method not implemented.");
+    };
 
     public postProcess() {};
 }

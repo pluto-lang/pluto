@@ -1,9 +1,9 @@
 export { Request } from './request';
-export { Router, processRequest } from './router';
-export { State } from './state';
+export { Router } from './router2';
+export { State } from './state2';
 export { Event } from './event';
 export { emit } from './faas';
-export { Queue, processEvent } from './queue';
+export { Queue } from './queue2';
 export { Variable } from './variable';
 export { setupDapr } from './setup';
 

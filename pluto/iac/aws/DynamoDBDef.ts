@@ -1,6 +1,7 @@
 //link:State
 import * as aws from "@pulumi/aws"
 import * as pulumi from "@pulumi/pulumi"
+import { State } from "../../state2";
 
 export enum DynamoDbOps {
     GET = "GET",
@@ -8,14 +9,11 @@ export enum DynamoDbOps {
     PUSH = "PUSH"
 }
 
-export class DynamoDBDef extends pulumi.ComponentResource {
-    name: string;
-
+export class DynamoDBDef extends State {
     arn: pulumi.Output<string>;
 
     constructor(name: string, opts?: {}) {
         super("pluto:aws:DynamoDB", name, opts);
-        this.name = name;
 
         const db = new aws.dynamodb.Table(name, {
             name: name,

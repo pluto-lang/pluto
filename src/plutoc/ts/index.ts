@@ -48,7 +48,7 @@ function addNode(parId: string, nd: Resource) {
 }
 
 function addEdge(fromId: string, toId: string, op: string) {
-    assert(fromId in nodeMapping && toId in nodeMapping);
+    assert(fromId in nodeMapping && toId in nodeMapping, 'resource not in mapping');
     const from = nodeMapping[fromId];
     const to = nodeMapping[toId];
     edges.push([from, to, op]);
@@ -117,14 +117,29 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
 const RUNTIME_TYPE = process.env['RUNTIME_TYPE'] || "aws";
 const reg: IRegistry = new Registry();
 
+
 import { register as plutoRegister } from "@pluto";
 plutoRegister(reg);
+
 
 let resDefCls = null;
 
 `
     let postIacSource = ''
-    let iacDepSource = ``
+    let iacDepSource = `import { IRegistry, Registry } from "@pluto";
+const reg: IRegistry = new Registry();
+
+const RUNTIME_TYPE = process.env['RUNTIME_TYPE'] || "";
+if(RUNTIME_TYPE == "") throw new Error('cannot find env "RUNTIME_TYPE".')
+
+
+import { register as plutoRegister } from "@pluto";
+plutoRegister(reg);
+
+
+let resDef = null;
+
+`
     let stateStoreSource = ``
     let queueSource = ``
     let program = ts.createProgram(fileNames, options);
@@ -171,6 +186,10 @@ let resDefCls = null;
                     let resDefSource = `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${resType}');\n`
                     resDefSource += `const ${name} = new resDefCls(${newExpr.arguments![0].getText()});\n\n`
                     iacSource += resDefSource;
+
+                    let resCliSource = `resDef = reg.getResourceDef(RUNTIME_TYPE, '${resType}');\n`
+                    resCliSource += `const ${name} = resDef.buildClient(${newExpr.arguments![0].getText()});\n\n`
+                    iacDepSource += resCliSource;
 
                     addNode(root.id, new Resource(name, resType, null, "new"));
                     
@@ -229,40 +248,42 @@ spec:
         if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression) && ts.isPropertyAccessExpression(node.expression.expression)) {
             let symbol = checker.getSymbolAtLocation(node.expression.expression.expression)
             if (symbol) {
+                console.log(symbol.escapedName.toString())
                 let ty = checker.getTypeOfSymbol(symbol)
                 // TODO: use router Type
                 if (["Router", "Queue"].indexOf(ty.symbol.escapedName.toString()) !== -1) {
-                    // Deal Handler
-                    let handlerSource = iacDepSource + node.getText(sourceFile) + "\n"
-                    handlerSources.push(handlerSource)
-
                     let objName = symbol.escapedName
                     const op = node.expression.expression.name.getText()
 
-                    const fnName = `fn${handlerIndex}`
-                    addNode(objName.toString(), new Resource(fnName, 'Lambda', null, op));
+                    let lambdaSource = ``;
+                    const iacArgs = []
+                    for (let arg of node.expression.arguments) {
+                        if (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg)) {
+                            const fnName = `fn${handlerIndex}`
+                            const resType = 'Lambda';
 
-                    let anonymFn: ts.Expression;
-                    let paramsText = '{}'
-                    if (ty.symbol.escapedName == 'Router') {
-                        paramsText = `{ path: ${node.expression.arguments[0].getText()} }`
-                        anonymFn = node.expression.arguments[1];
-                    } else { // Queue
-                        anonymFn = node.expression.arguments[0];
+                            addNode(objName.toString(), new Resource(fnName, 'Lambda', null, op));
+
+                            let handlerSource = 'export default ' + arg.getText(sourceFile) + "\n";
+                            handlerSources.push(iacDepSource + handlerSource);
+
+                            lambdaSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${resType}');\n`
+                            lambdaSource += `const ${fnName} = new resDefCls("anonymous-handler-${handlerIndex}");\n`
+                            lambdaSource += detectPermission(fnName, arg, checker);
+
+                            iacArgs.push(fnName);
+                            handlerIndex ++;
+                        
+                        } else {
+                            iacArgs.push(arg.getText())
+                        }
                     }
 
-                    const resType = 'Lambda';
-                    let lambdaSource = `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${resType}');\n`
-                    lambdaSource += `const fn${handlerIndex} = new resDefCls("anonymous-handler-${handlerIndex}");\n\n`
-
-                    // let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
-                    lambdaSource += detectPermission(fnName, anonymFn, checker);
-                    lambdaSource += `${objName}.addHandler("${op}", fn${handlerIndex}, ${paramsText})\n`;
+                    lambdaSource += `${objName}.${op}(${iacArgs.join(', ')});\n`
                     iacSource += lambdaSource + "\n"
-                    handlerIndex += 1
                 }
             }
-        } else {
+        } else if (ts.isImportDeclaration(node)) {
             iacDepSource = iacDepSource + node.getText() + "\n"
         }
     });
@@ -316,7 +337,7 @@ function detectPermission(fnName: string, fnNode: ts.Expression, tyChecker: ts.T
                 return;
             }
             let opSymbol = tyChecker.getSymbolAtLocation(propAccessExp);
-            assert(opSymbol);
+            assert(opSymbol, 'Op Symbol is undefined');
 
             const resName = objSymbol!.escapedName.toString();
             const opName = opSymbol!.escapedName.toString();

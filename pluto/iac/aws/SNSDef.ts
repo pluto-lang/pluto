@@ -1,17 +1,15 @@
 //link:Queue
 import * as aws from "@pulumi/aws"
-import * as pulumi from "@pulumi/pulumi"
 import { LambdaDef } from "./LambdaDef";
 import { assert } from "console";
+import { Queue } from "../../queue2";
+import { FaasResource } from "../FaasResource";
 
-export class SNSDef extends pulumi.ComponentResource {
-    name: string;
-
+export class SNSDef extends Queue {
     topic: aws.sns.Topic;
 
     constructor(name: string, opts?: {}) {
         super("pluto:aws:SNS", name, opts);
-        this.name = name;
 
         this.topic = new aws.sns.Topic(name, {
             name: name,
@@ -23,13 +21,15 @@ export class SNSDef extends pulumi.ComponentResource {
         this.registerOutputs();
     }
 
-    addHandler(op: string, fn: LambdaDef, params: { [key: string]: any }) {
-        assert(["SUBSCRIBE"].indexOf(op.toUpperCase()) != -1, `${op} method not allowed`);
-        const resourceNamePrefix = `${this.name}-${fn.name}`
+    public subscribe(fn: FaasResource): void {
+        assert(fn instanceof LambdaDef, 'Fn is not a subclass of LambdaDef.');
+        const lambda = fn as LambdaDef
+
+        const resourceNamePrefix = `${this.name}-${lambda.name}`
 
         // create topic subscription
         new aws.sns.TopicSubscription(`${resourceNamePrefix}-subscription`, {
-            endpoint: fn.lambda.arn,
+            endpoint: lambda.lambda.arn,
             protocol: 'lambda',
             topic: this.topic.arn,
         })
@@ -37,7 +37,7 @@ export class SNSDef extends pulumi.ComponentResource {
         // create sns trigger
         new aws.lambda.Permission(`${resourceNamePrefix}-httpTrigger`, {
             action: "lambda:InvokeFunction",
-            function: fn.lambda.name,
+            function: lambda.lambda.name,
             principal: "sns.amazonaws.com",
             sourceArn: this.topic.arn
         })

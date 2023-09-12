@@ -30,12 +30,16 @@ fn2.grantPermission("get", state.fuzzyArn());
 fn2.grantPermission("push", queue.fuzzyArn());
 router.addHandler("get", fn2, { path: "/store" })
 
+router.get("/path", fn2);
+
 resDefCls = reg.getResourceDef(RUNTIME_TYPE, 'Lambda');
 const fn3 = new resDefCls("anonymous-handler-3");
 fn3.grantPermission("set", state.fuzzyArn());
 fn3.grantPermission("get", state.fuzzyArn());
 fn3.grantPermission("push", queue.fuzzyArn());
 queue.addHandler("subscribe", fn3, {})
+
+queue.subscribe(fn3);
 
 queue.postProcess()
 router.postProcess()
