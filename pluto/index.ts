@@ -9,3 +9,6 @@ export { setupDapr } from './setup';
 
 import * as iac from './iac';
 export { iac };
+
+export { register } from './register';
+export { IRegistry, Registry } from './registry';
