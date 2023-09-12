@@ -3,3 +3,4 @@ dist/
 **/bin/
 **/_output/
 .pluto/
+**/hello-pluto/

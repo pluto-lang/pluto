@@ -112,7 +112,17 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     if (fileNames.length == 0) {
         return;
     }
-    let iacSource = `import { iac } from "@pluto";\n`
+    let iacSource = `import { iac, IRegistry, Registry } from "@pluto";
+
+const RUNTIME_TYPE = process.env['RUNTIME_TYPE'] || "aws";
+const reg: IRegistry = new Registry();
+
+import { register as plutoRegister } from "@pluto";
+plutoRegister(reg);
+
+let resDefCls = null;
+
+`
     let postIacSource = ''
     let iacDepSource = ``
     let stateStoreSource = ``
@@ -140,8 +150,6 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
     let stateStoreIndex = 1;
     let queueIndex = 1;
 
-    const resGroup: { [key: string]: string[] } = {}
-
     // Loop through the root AST nodes of the file
     ts.forEachChild(sourceFile, node => {
         let name = "";
@@ -158,14 +166,16 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
                 if (symbol) {
                     // TODO: use decorator mapping on SDK? The SDK auto workflow
                     let ty = checker.getTypeOfSymbol(symbol)
-                    addNode(root.id, new Resource(name, ty.symbol.escapedName.toString(), null, "new"));
-                    if (ty.symbol.escapedName == "State") {
-                        if (!('State' in resGroup)) {
-                            resGroup['State'] = []
-                        }
-                        resGroup['State'].push(name)
+                    let resType = ty.symbol.escapedName.toString();
 
-                        iacSource = iacSource + node.getText(sourceFile).replace("State", "iac.aws.DynamoDBDef") + "\n"
+                    let resDefSource = `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${resType}');\n`
+                    resDefSource += `const ${name} = new resDefCls(${newExpr.arguments![0].getText()});\n\n`
+                    iacSource += resDefSource;
+
+                    addNode(root.id, new Resource(name, resType, null, "new"));
+                    
+                    if (ty.symbol.escapedName == "State") {
+                        // iacSource = iacSource + node.getText(sourceFile).replace("State", "iac.aws.DynamoDBDef") + "\n"
                         hasIaC = true;
                         let stateName = newExpr.arguments?.[0].getText() || `statestore${stateStoreIndex}`
                         stateStoreIndex += 1
@@ -184,18 +194,11 @@ spec:
     value: "Id" # Optional       
 `
                     } else if (ty.symbol.escapedName == "Router") {
-                        iacSource = iacSource + node.getText(sourceFile).replace("Router", "iac.aws.ApiGatewayDef") + "\n"
                         postIacSource += `${name}.postProcess()\n`;
                         postIacSource += `export const { url } = ${name}\n`;
                         hasIaC = true;
 
                     } else if (ty.symbol.escapedName == "Queue") {
-                        if (!('Queue' in resGroup)) {
-                            resGroup['Queue'] = []
-                        }
-                        resGroup['Queue'].push(name)
-
-                        iacSource = iacSource + node.getText(sourceFile).replace("Queue", "iac.aws.SNSDef") + "\n"
                         postIacSource += `${name}.postProcess()\n`;
                         hasIaC = true;
 
@@ -248,7 +251,11 @@ spec:
                         anonymFn = node.expression.arguments[0];
                     }
 
-                    let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
+                    const resType = 'Lambda';
+                    let lambdaSource = `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${resType}');\n`
+                    lambdaSource += `const fn${handlerIndex} = new resDefCls("anonymous-handler-${handlerIndex}");\n\n`
+
+                    // let lambdaSource = `const fn${handlerIndex} = new iac.aws.LambdaDef("anonymous-handler-${handlerIndex}");\n`
                     lambdaSource += detectPermission(fnName, anonymFn, checker);
                     lambdaSource += `${objName}.addHandler("${op}", fn${handlerIndex}, ${paramsText})\n`;
                     iacSource += lambdaSource + "\n"
