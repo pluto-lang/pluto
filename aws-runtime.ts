@@ -7,7 +7,7 @@ if (CIR_DIR === "") throw new Error("cannot find 'CIR_DIR' env.");
 const handleImporter = import(CIR_DIR);
 
 exports.handler = async (event: any) => {
-    const handle = await handleImporter;
+    const handle = (await handleImporter).default;
 
     console.log(event);
     if ('Records' in event) {  // Trigger Event

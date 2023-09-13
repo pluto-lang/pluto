@@ -1,4 +1,3 @@
-//link:Fn
 import * as aws from "@pulumi/aws"
 import * as awsx from "@pulumi/awsx"
 import * as pulumi from "@pulumi/pulumi"
@@ -48,6 +47,7 @@ export class LambdaDef extends FaasResource {
             environment: {
                 variables: {
                     CIR_DIR: `/app/${name}.js`,
+                    RUNTIME_TYPE: 'AWS',
                 },
             },
             timeout: 120,

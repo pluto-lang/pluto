@@ -2,14 +2,14 @@
 import * as aws from "@pulumi/aws"
 import { LambdaDef } from "./LambdaDef";
 import { assert } from "console";
-import { Queue } from "../../queue2";
+import { Queue } from "../../queue";
 import { FaasResource } from "../FaasResource";
 
 export class SNSDef extends Queue {
     topic: aws.sns.Topic;
 
     constructor(name: string, opts?: {}) {
-        super("pluto:aws:SNS", name, opts);
+        super(name, "pluto:aws:SNS", opts);
 
         this.topic = new aws.sns.Topic(name, {
             name: name,

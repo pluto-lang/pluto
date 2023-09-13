@@ -248,7 +248,6 @@ spec:
         if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression) && ts.isPropertyAccessExpression(node.expression.expression)) {
             let symbol = checker.getSymbolAtLocation(node.expression.expression.expression)
             if (symbol) {
-                console.log(symbol.escapedName.toString())
                 let ty = checker.getTypeOfSymbol(symbol)
                 // TODO: use router Type
                 if (["Router", "Queue"].indexOf(ty.symbol.escapedName.toString()) !== -1) {

@@ -1,17 +1,43 @@
 import { DaprClient } from "@dapr/dapr";
+import { BaasResource } from "./iac/BaasResource";
+import { FaasResource } from "./iac/FaasResource";
 import getClient from "./client";
 import { Event } from "./event";
-import { assert } from "console";
 
-/**
- * @infra faas
- */
-type EventHandler = (event: any) => Promise<string>;
+type EventHandler = (evt: Event) => Promise<string>;
 
-/**
- * @infra baas
- */
-export class Queue {
+export interface QueueDef {
+    subscribe(fn: FaasResource): void;
+}
+
+export interface QueueClient {
+    push(msg: any): void;
+}
+
+export interface Queue extends QueueDef, QueueClient { }
+
+// TODO: abstract class
+export class Queue extends BaasResource implements QueueDef {
+    constructor(name: string, type?: string, opts?: {}) {
+        super(type!, name, opts);
+    }
+
+    public subscribe(fn: EventHandler | FaasResource): void {
+        throw new Error('use a subclass instead.')
+    };
+
+    public static buildClient(name: string): QueueClient {
+        const rtType = process.env['RUNTIME_TYPE'];
+        switch (rtType?.toUpperCase()) {
+            case 'AWS':
+                return new DaprQueueClient(name);
+            default:
+                throw new Error(`not support this runtime '${rtType}'`)
+        }
+    }
+}
+
+class DaprQueueClient implements QueueClient {
     topic: string;
     client: DaprClient;
 
@@ -20,33 +46,7 @@ export class Queue {
         this.client = getClient();
     }
 
-    /**
-     * @infra permission
-     */
     public async push(message: any) {
         await this.client.pubsub.publish(this.topic, this.topic, message);
     }
-
-    /**
-     * @infra baas
-     */
-    public subscribe(handler: EventHandler) {
-        const key = this.topic
-        assert(!(key in subHandlers), `${key} handler already exists.`);
-        subHandlers[key] = handler;
-    }
-}
-
-
-const subHandlers: { [key: string]: EventHandler } = {}
-
-export async function processEvent(event: Event) {
-    console.log('receive an event: ', event);
-
-    const key = event.topic
-    if (!(key in subHandlers)) {
-        console.error(`no such event handler for ${key}`);
-        return;
-    }
-    await (subHandlers[key](event));
 }
