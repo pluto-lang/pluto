@@ -1,37 +1,24 @@
-import { API } from "./api";
+import { BaasResource } from "./iac/BaasResource";
+import { FaasResource } from "./iac/FaasResource";
 import { Request } from "./request";
 
-/**
- * @infra faas
- */
-type HttpHandler = (req: Request) => Promise<string>;
+type RequestHandler = (req: Request) => Promise<string>;
 
-/**
- * @infra baas
- */
-export class Router implements API {
-    private name: string = "default";
-
-    constructor(name: string) {
-        this.name = name;
-    }
-
-    /**
-     * @infra baas
-     */
-    public get(path: string, handler: HttpHandler) {
-        routes[path] = handler;
-    }
+export interface RouterDef {
+    get(path: string, fn: FaasResource): void;
 }
 
-const routes: { [key: string]: HttpHandler } = {}
-
-export async function processRequest(req: Request): Promise<string> {
-    console.log('receive a http request: ', req);
-
-    let result = "No Handler";
-    if (req.path in routes) {
-        result = await (routes[req.path](req));
+// TODO: abstract class
+export class Router extends BaasResource implements RouterDef {
+    constructor(name: string, type?: string, opts?: {}) {
+        super(type!, name, opts);
     }
-    return result;
+
+    public get(path: string, fn: RequestHandler | FaasResource): void {
+        throw new Error('use a subclass instead.')
+    }
+
+    public static buildClient(name: string): any {
+        return null;
+    }
 }

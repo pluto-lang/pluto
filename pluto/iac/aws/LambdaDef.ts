@@ -1,23 +1,21 @@
-//link:Fn
 import * as aws from "@pulumi/aws"
 import * as awsx from "@pulumi/awsx"
 import * as pulumi from "@pulumi/pulumi"
 import { DynamoDbOps } from "./DynamoDBDef";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
+import { FaasResource } from "../FaasResource";
 
 export enum Ops {
     WATCH_LOG = "WATCH_LOG"
 }
 
-export class LambdaDef extends pulumi.ComponentResource {
-    name: string;
+export class LambdaDef extends FaasResource {
     lambda: Function;
     iam: Role;
 
     constructor(name: string, opts?: {}) {
         super("pluto:aws:Lambda", name, opts);
-        this.name = name;
 
         const role = aws.iam.getPolicyDocument({
             statements: [{
@@ -49,6 +47,7 @@ export class LambdaDef extends pulumi.ComponentResource {
             environment: {
                 variables: {
                     CIR_DIR: `/app/${name}.js`,
+                    RUNTIME_TYPE: 'AWS',
                 },
             },
             timeout: 120,
