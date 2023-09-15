@@ -4,3 +4,4 @@ dist/
 **/_output/
 .pluto/
 **/hello-pluto/
+**/__pycache__/

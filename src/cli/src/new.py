@@ -1,7 +1,7 @@
 import os
-import re
 import yaml
 import shutil
+import getpass
 import subprocess
 
 from models import Project, Stack, AwsRuntime
@@ -37,12 +37,12 @@ def build_runtime(type):
 
 def build_aws_runtime():
     region = input("Region(us-east-1): ") or "us-east-1"
-    access_key_id = input("AWS Access Key ID: ")
+    access_key_id = getpass.getpass("AWS Access Key ID: ")
     if access_key_id == "":
         print("AWS Access Key ID cannot be empty.")
         exit(1)
 
-    secret_access_key = input("AWS Secret Access Key: ")
+    secret_access_key = getpass.getpass("AWS Secret Access Key: ")
     if secret_access_key == "":
         print("AWS Secret Access Key cannot be empty.")
         exit(1)
