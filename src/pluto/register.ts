@@ -1,4 +1,4 @@
-import { iac } from "@pluto";
+import { iac } from ".";
 import { IRegistry } from "./registry";
 
 export function register(reg: IRegistry) {
