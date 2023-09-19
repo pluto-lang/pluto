@@ -18,7 +18,7 @@ mv ./Pulumi.prod.yaml ./Pulumi.$STAGE.yaml
 
 ### compile CIR(biz + runtime ts) and PIR(pulumi ts) to js
 rm -r dist
-cp -r $LANG_ROOT/pluto ./
+cp -r $LANG_ROOT/src/pluto ./
 cp $LANG_ROOT/aws-runtime.ts ./
 npm run build
 rm -r ./pluto
@@ -31,7 +31,8 @@ cp -r $LANG_ROOT/node_modules ./dist/
 # pushd ./dist
 # npm install
 # popd
-mv dist/pluto dist/node_modules/@pluto
+mkdir dist/node_modules/@pluto
+mv dist/pluto dist/node_modules/@pluto/pluto
 
 
 ### add and configure Dapr

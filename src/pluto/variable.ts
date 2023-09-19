@@ -1,5 +1,5 @@
 import { DaprClient } from "@dapr/dapr";
-import getClient from "./client";
+import getClient from "./dapr/client";
 import { State } from "./state";
 
 export class Variable {

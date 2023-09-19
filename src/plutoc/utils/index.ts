@@ -1,0 +1,1 @@
+export { writeToFile } from './file';

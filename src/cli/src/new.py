@@ -54,7 +54,7 @@ def build_aws_runtime():
     return runtime
 
 
-example_code = """import { Event, Request, Router, Queue, State } from '@pluto';
+example_code = """import { Event, Request, Router, Queue, State } from '@pluto/pluto';
 
 const state = new State("statestore");
 const queue = new Queue("access");

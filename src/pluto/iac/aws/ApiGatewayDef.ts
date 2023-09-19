@@ -1,19 +1,17 @@
-//link:Router
 import * as aws from "@pulumi/aws"
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
 import * as pulumi from "@pulumi/pulumi"
 import { LambdaDef } from "./LambdaDef";
 import { assert } from "console";
-import { Router } from "../../router";
-import { FaasResource } from "../FaasResource";
+import { BaasResource, FaasResource, RouterDef, RouterOptions } from "@pluto/pluto";
 
-export class ApiGatewayDef extends Router {
+export class ApiGatewayDef extends BaasResource implements RouterDef {
     apiGateway: Api;
     routes: Route[];
-    url: pulumi.Output<string> = pulumi.interpolate `unkonwn`;
+    url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
 
-    constructor(name: string, opts?: {}) {
-        super(name, "pluto:aws:ApiGateway", opts);
+    constructor(name: string, opts?: RouterOptions) {
+        super("pluto:aws:ApiGateway", name, opts);
 
         this.apiGateway = new aws.apigatewayv2.Api(`${name}-apigateway`, {
             protocolType: "HTTP",
@@ -27,7 +25,7 @@ export class ApiGatewayDef extends Router {
     }
 
     public get(path: string, fn: FaasResource): void {
-        if(!(fn instanceof LambdaDef)) throw new Error('Fn is not a subclass of LambdaDef.');
+        if (!(fn instanceof LambdaDef)) throw new Error('Fn is not a subclass of LambdaDef.');
         const lambda = fn as LambdaDef
 
         this.addHandler('GET', path, lambda)

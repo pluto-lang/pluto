@@ -1,2 +1,1 @@
-import * as aws from './aws';
-export { aws };
+export { register } from "./register";

@@ -4,7 +4,7 @@ import subprocess
 
 from models import Project
 from config import get_project_config
-from compile import compile
+from compile import compile, gen_ir
 from constants import LANG_ROOT, OUT_STREAM
 
 
@@ -20,6 +20,8 @@ def process_deploy(args):
 def deploy(proj: Project, stack_name, filepath, output):
     print('Compiling...')
     compile(filepath, output)
+    arch_path = os.path.join(output, 'arch.yaml')
+    gen_ir(arch_path, output)
 
     print('Building...')
     env = os.environ.copy()

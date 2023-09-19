@@ -1,6 +1,5 @@
 import { DaprClient } from "@dapr/dapr";
-import { BaasResource } from "./iac/BaasResource";
-import getClient from "./client";
+import getClient from "./dapr/client";
 
 export interface StateDef { }
 
@@ -9,14 +8,11 @@ export interface StateClient {
     set(key: string, val: string): Promise<void>;
 }
 
-export interface State extends StateDef, StateClient { }
+export interface StateOptions { }
 
 // TODO: abstract class
-export class State extends BaasResource implements StateDef {
-    constructor(name: string, type?: string, opts?: {}) {
-        super(type!, name, opts)
-        // throw new Error('This class cannot be instantiated, please use a subclass instead.')
-    }
+export class State implements StateClient {
+    constructor(name: string, type?: string, opts?: {}) { }
 
     public static buildClient(name: string): StateClient {
         const rtType = process.env['RUNTIME_TYPE'];
@@ -47,3 +43,5 @@ class DaprStateClient implements StateClient {
         await this.client.state.save(this.name, [{ key, value }]);
     }
 }
+
+export interface State extends StateDef, StateClient { }

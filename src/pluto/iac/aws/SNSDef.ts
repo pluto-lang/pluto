@@ -1,15 +1,13 @@
-//link:Queue
 import * as aws from "@pulumi/aws"
 import { LambdaDef } from "./LambdaDef";
 import { assert } from "console";
-import { Queue } from "../../queue";
-import { FaasResource } from "../FaasResource";
+import { BaasResource, FaasResource, QueueDef, QueueOptions } from "@pluto/pluto";
 
-export class SNSDef extends Queue {
+export class SNSDef extends BaasResource implements QueueDef {
     topic: aws.sns.Topic;
 
-    constructor(name: string, opts?: {}) {
-        super(name, "pluto:aws:SNS", opts);
+    constructor(name: string, opts?: QueueOptions) {
+        super("pluto:aws:SNS", name, opts);
 
         this.topic = new aws.sns.Topic(name, {
             name: name,
