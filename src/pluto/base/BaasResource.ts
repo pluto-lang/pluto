@@ -8,8 +8,8 @@ export abstract class BaasResource extends ComponentResource {
         this.name = name;
     }
 
-    public static buildClient(name: string): any {
-        throw new Error("Method not implemented.");
+    public fuzzyArn(): string {
+        throw new Error('Method not implemented.')
     };
 
     public postProcess() { };

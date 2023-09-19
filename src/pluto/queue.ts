@@ -1,30 +1,23 @@
 import { DaprClient } from "@dapr/dapr";
-import { BaasResource } from "./iac/BaasResource";
-import { FaasResource } from "./iac/FaasResource";
-import getClient from "./client";
+import getClient from "./dapr/client";
 import { Event } from "./event";
+import { FaasResource } from "@pluto/pluto";
 
 type EventHandler = (evt: Event) => Promise<string>;
 
 export interface QueueDef {
-    subscribe(fn: FaasResource): void;
+    subscribe(fn: FaasResource | EventHandler): void;
 }
 
 export interface QueueClient {
     push(msg: any): void;
 }
 
-export interface Queue extends QueueDef, QueueClient { }
+export interface QueueOptions { }
 
 // TODO: abstract class
-export class Queue extends BaasResource implements QueueDef {
-    constructor(name: string, type?: string, opts?: {}) {
-        super(type!, name, opts);
-    }
-
-    public subscribe(fn: EventHandler | FaasResource): void {
-        throw new Error('use a subclass instead.')
-    };
+export class Queue implements QueueClient {
+    constructor(name: string, opts?: QueueOptions) { }
 
     public static buildClient(name: string): QueueClient {
         const rtType = process.env['RUNTIME_TYPE'];
@@ -50,3 +43,5 @@ class DaprQueueClient implements QueueClient {
         await this.client.pubsub.publish(this.topic, this.topic, message);
     }
 }
+
+export interface Queue extends QueueDef, QueueClient { }

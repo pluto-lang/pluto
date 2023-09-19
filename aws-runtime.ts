@@ -1,4 +1,4 @@
-import { Request, Event, setupDapr } from '@pluto';
+import { Request, Event, setupDapr } from '@pluto/pluto';
 
 setupDapr();
 

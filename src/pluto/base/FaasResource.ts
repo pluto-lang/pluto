@@ -8,9 +8,5 @@ export abstract class FaasResource extends ComponentResource {
         this.name = name;
     }
 
-    public static buildClient(name: string): any {
-        throw new Error("Method not implemented.");
-    };
-
     public abstract grantPermission(op: string, resourceArn: string): void;
 }

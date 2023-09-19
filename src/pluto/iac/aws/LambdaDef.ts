@@ -4,7 +4,7 @@ import * as pulumi from "@pulumi/pulumi"
 import { DynamoDbOps } from "./DynamoDBDef";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
-import { FaasResource } from "../FaasResource";
+import { FaasResource } from "@pluto/pluto";
 
 export enum Ops {
     WATCH_LOG = "WATCH_LOG"

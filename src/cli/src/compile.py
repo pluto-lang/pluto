@@ -3,8 +3,6 @@ import subprocess
 
 from constants import OUT_STREAM
 
-# plutoc_cmd = 'ts-node /Users/zhengsj/code/pluto-lang/src/plutoc/ts/index.ts'
-plutoc_cmd = "npm run plutoc"
 
 def process_compile(args):
     filepath = os.path.realpath(os.path.join(os.getcwd(), args.filepath[0]))
@@ -12,11 +10,22 @@ def process_compile(args):
 
     print("Compiling...")
     compile(filepath, output)
+
+    arch_path = os.path.join(output, 'arch.yaml')
+    static_ir_path = os.path.join(output, 'static')
+    gen_ir(arch_path, static_ir_path)
     print("Done")
     
 
 def compile(filepath, output):
     env = os.environ.copy()
-    cmd = '{} {} {}'.format(plutoc_cmd, output, filepath)
+    cmd = 'npm run plutoc {} {}'.format(output, filepath)
+    p = subprocess.Popen(cmd.split(' '), stdout=OUT_STREAM, env=env)
+    p.wait()
+
+
+def gen_ir(arch_path, output):
+    env = os.environ.copy()
+    cmd = 'npm run genir {} {}'.format(arch_path, output)
     p = subprocess.Popen(cmd.split(' '), stdout=OUT_STREAM, env=env)
     p.wait()

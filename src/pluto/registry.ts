@@ -1,6 +1,6 @@
 import { assert } from "console";
 
-type ClsType = { new(...args: any[]): any, buildClient(name: string): any }
+type ClsType = { new(...args: any[]): any }
 
 export interface IRegistry {
     register(rtType: string, resType: string, cls: ClsType): void;

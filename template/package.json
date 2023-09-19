@@ -2,7 +2,7 @@
     "name": "%{project_name}",
     "version": "1.0.0",
     "description": "",
-    "main": "dist/pulumi.js",
+    "main": "dist/pir-pulumi.js",
     "scripts": {
         "build": "npx tsc"
     },
