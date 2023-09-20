@@ -11,16 +11,14 @@ OUT_PATH=${4-$LANG_ROOT/examples/http-service/_output}
 
 cd $OUT_PATH
 ### generate building configuration
-cp -r $LANG_ROOT/template/* ./
-sed -i "" "s/%{project_name}/${PROJECT_NAME}/g" ./package.json ./Pulumi.yaml
-mv ./Pulumi.prod.yaml ./Pulumi.$STAGE.yaml
+cp -r $LANG_ROOT/template/Dockerfile $LANG_ROOT/template/tsconfig.json ./
 
 
 ### compile CIR(biz + runtime ts) and PIR(pulumi ts) to js
 rm -r dist
 cp -r $LANG_ROOT/src/pluto ./
 cp $LANG_ROOT/aws-runtime.ts ./
-npm run build
+npx tsc --outDir dist
 rm -r ./pluto
 rm ./aws-runtime.ts
 
@@ -44,8 +42,3 @@ cp -r dapr ./dist/.dapr/components
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 811762874732.dkr.ecr.us-east-1.amazonaws.com
 docker build --platform=linux/amd64 --tag $IMAGE_NAME .
 docker push $IMAGE_NAME
-
-
-### init pulumi stack
-pulumi stack init --stack $STAGE
-# pulumi up -s $STAGE -y
