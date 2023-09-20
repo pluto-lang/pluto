@@ -5,3 +5,5 @@ dist/
 .pluto/
 **/hello-pluto/
 **/__pycache__/
+.vscode/
+tftest/

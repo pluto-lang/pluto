@@ -1,11 +1,11 @@
 import os
-import yaml
 import shutil
 import getpass
 import subprocess
 
 from models import Project, Stack, AwsRuntime
 from constants import LANG_ROOT
+from config import save_project_config
 
 
 def process_new(args):
@@ -105,14 +105,7 @@ package_json = """{
 
 
 def create_project(proj: Project):
-    os.makedirs(os.path.join(proj.name, '.pluto'))
-    with open(os.path.join(proj.name, '.pluto/Pluto.yaml'), "w") as f:
-        text = yaml.dump(proj, sort_keys=False)
-        # text = re.sub('!!python.*', '', text)
-        # text = re.sub('^(\s*)\n', '', text)
-        # text = re.sub('-(\s*)\n(\s*)', '- ', text)
-        f.write(text)
-
+    save_project_config(f'./{proj.name}', proj)
     with open(os.path.join(proj.name, "main.ts"), "w") as f:
         f.write(example_code)
 

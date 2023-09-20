@@ -15,10 +15,11 @@ def main():
     
     subparser = parser.add_subparsers(dest="subcmd", title="subcmd")
 
-    applyCmd = subparser.add_parser("deploy", help="Deploy the application to runtime")
-    applyCmd.add_argument('filepath', nargs='*', help="Path to application source code (defalut: main.ts)", default=["main.ts"])
-    applyCmd.add_argument('-s', '--stack', default="dev", help="Target runtime (default: dev)")
-    applyCmd.add_argument('--output', help="Path to output files", default=".pluto/output")
+    deployCmd = subparser.add_parser("deploy", help="Deploy the application to runtime")
+    deployCmd.add_argument('filepath', nargs='*', help="Path to application source code (defalut: main.ts)", default=["main.ts"])
+    deployCmd.add_argument('-s', '--stack', default="dev", help="Target runtime (default: dev)")
+    deployCmd.add_argument('--output', help="Path to output files", default=".pluto/output")
+    deployCmd.add_argument('-e', '--engine', default='pulumi', help='Specified IaC engine (default: pulumi)')
 
     compileCmd = subparser.add_parser("compile", help="Compile the application source code to CIR and PIR")
     compileCmd.add_argument('filepath', nargs='*', help="Path to application source code (defalut: main.ts)", default=["main.ts"])
