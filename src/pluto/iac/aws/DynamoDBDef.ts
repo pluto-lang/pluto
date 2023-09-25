@@ -26,7 +26,7 @@ export class DynamoDBDef extends BaasResource implements StateDef {
             hashKey: "Id",
             readCapacity: 10,
             writeCapacity: 10,
-        })
+        }, { parent: this })
 
         new dapr.state.State(name, {
             name: name,
@@ -35,7 +35,7 @@ export class DynamoDBDef extends BaasResource implements StateDef {
                 table: name,
                 partitionKey: "Id",
             }
-        })
+        }, { parent: this })
 
         this.arn = db.arn;
 

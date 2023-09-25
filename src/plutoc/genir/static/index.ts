@@ -20,13 +20,28 @@ let resDefCls = null;
 
 `
 
-    // Resource definition
+    // Resource definition, first for BaaS, second for FaaS
     for (let resName in arch.resources) {
         const res = arch.getResource(resName);
-        if (res.type == 'Root') continue;
+        if (res.type == 'Root' || res.type == 'Lambda') continue;
 
         iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${res.type}');
 const ${resName} = new resDefCls(${res.getParamString()});\n\n`
+    }
+
+    // Specify the dependency of FaaS on this particular BaaS, because the building image process needs to be performed after exporting Dapr YAML.
+    for (let resName in arch.resources) {
+        const res = arch.getResource(resName);
+        if (res.type != 'Lambda') continue;
+
+        const deps = []
+        for (let relat of arch.relationships) {
+            if (relat.from != res || relat.type != RelatType.ACCESS) continue;
+            deps.push(relat.to.name);
+        }
+
+        iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${res.type}');
+const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${deps.join(',')}] });\n\n`
     }
 
     // Establish resource dependencies, including triggering and accessing.

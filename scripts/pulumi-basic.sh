@@ -13,6 +13,7 @@ if [ "up" = $CMD ]; then
     sed -i "" "s/%{project_name}/${PROJECT_NAME}/g" ./package.json ./Pulumi.yaml
     mv ./Pulumi.prod.yaml ./Pulumi.$STAGE.yaml
 
+    yarn link @pulumi/dapr
     pulumi stack init --stack $STAGE > /dev/null 2>&1
     pulumi up --stack $STAGE -y -f
 

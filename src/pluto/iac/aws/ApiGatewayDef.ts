@@ -15,7 +15,7 @@ export class ApiGatewayDef extends BaasResource implements RouterDef {
 
         this.apiGateway = new aws.apigatewayv2.Api(`${name}-apigateway`, {
             protocolType: "HTTP",
-        });
+        }, { parent: this });
 
         this.routes = [];
 
@@ -41,7 +41,7 @@ export class ApiGatewayDef extends BaasResource implements RouterDef {
             integrationType: "AWS_PROXY",
             integrationMethod: "POST",
             integrationUri: fn.lambda.invokeArn,
-        });
+        }, { parent: this });
 
         // 创建一个路由
         const route = new aws.apigatewayv2.Route(`${resourceNamePrefix}-apiRoute`, {
@@ -49,7 +49,7 @@ export class ApiGatewayDef extends BaasResource implements RouterDef {
             routeKey: `${op.toUpperCase()} ${path}`,
             target: pulumi.interpolate`integrations/${integration.id}`,
             authorizationType: "NONE",
-        });
+        }, { parent: this });
         this.routes.push(route);
 
         // 创建一个 HTTP 触发器
@@ -58,19 +58,19 @@ export class ApiGatewayDef extends BaasResource implements RouterDef {
             function: fn.lambda.name,
             principal: "apigateway.amazonaws.com",
             sourceArn: pulumi.interpolate`${this.apiGateway.executionArn}/*`
-        })
+        }, { parent: this })
     }
 
     postProcess() {
         const deployment = new aws.apigatewayv2.Deployment(`${this.name}-deployment`, {
             apiId: this.apiGateway.id,
-        }, { dependsOn: this.routes });
+        }, { dependsOn: this.routes, parent: this });
 
         const stage = new aws.apigatewayv2.Stage(`${this.name}-stage`, {
             apiId: this.apiGateway.id,
             deploymentId: deployment.id,
             name: "dev",
-        })
+        }, { parent: this })
         this.url = stage.invokeUrl
     }
 }

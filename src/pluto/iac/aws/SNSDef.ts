@@ -15,17 +15,15 @@ export class SNSDef extends BaasResource implements QueueDef {
             tags: {
                 "dapr-topic-name": name
             }
-        })
+        }, { parent: this })
 
         new dapr.pubsub.Pubsub(name, {
             name: name,
             type: "pubsub.aws.snssqs",
             metadata: {
                 region: "us-east-1",
-                accessKey: "AKIA32AGWPFWBBQ2AKFW",
-                secretKey: "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",
             }
-        })
+        }, { parent: this })
 
         this.registerOutputs();
     }
@@ -41,7 +39,7 @@ export class SNSDef extends BaasResource implements QueueDef {
             endpoint: lambda.lambda.arn,
             protocol: 'lambda',
             topic: this.topic.arn,
-        })
+        }, { parent: this })
 
         // create sns trigger
         new aws.lambda.Permission(`${resourceNamePrefix}-httpTrigger`, {
@@ -49,7 +47,7 @@ export class SNSDef extends BaasResource implements QueueDef {
             function: lambda.lambda.name,
             principal: "sns.amazonaws.com",
             sourceArn: this.topic.arn
-        })
+        }, { parent: this })
     }
 
     postProcess() { }
