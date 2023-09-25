@@ -1,4 +1,5 @@
-import * as aws from "@pulumi/aws"
+import * as aws from "@pulumi/aws";
+import * as dapr from "@pulumi/dapr";
 import { LambdaDef } from "./LambdaDef";
 import { assert } from "console";
 import { BaasResource, FaasResource, QueueDef, QueueOptions } from "@pluto/pluto";
@@ -13,6 +14,16 @@ export class SNSDef extends BaasResource implements QueueDef {
             name: name,
             tags: {
                 "dapr-topic-name": name
+            }
+        })
+
+        new dapr.pubsub.Pubsub(name, {
+            name: name,
+            type: "pubsub.aws.snssqs",
+            metadata: {
+                region: "us-east-1",
+                accessKey: "AKIA32AGWPFWBBQ2AKFW",
+                secretKey: "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",
             }
         })
 

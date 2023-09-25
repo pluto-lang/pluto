@@ -1,2 +1,3 @@
 config:
   aws:region: us-east-1
+  dapr:outdir: .dapr

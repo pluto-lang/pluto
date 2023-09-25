@@ -18,9 +18,6 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
         return;
     }
 
-    let daprStateSource = ``
-    let daprQueueSource = ``
-
     let program = ts.createProgram(fileNames, options);
     let allDiagnostics = ts.getPreEmitDiagnostics(program)
     // Emit errors
@@ -79,20 +76,7 @@ function compilePluto(fileNames: string[], options: ts.CompilerOptions): void {
                         hasIaC = true;
                         let stateName = newExpr.arguments?.[0].getText() || `statestore${stateStoreIndex}`
                         stateStoreIndex += 1
-                        daprStateSource = `
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: ${stateName}
-spec:
-  type: state.aws.dynamodb
-  version: v1
-  metadata:
-  - name: table
-    value: ${stateName}
-  - name: partitionKey
-    value: "Id" # Optional       
-`
+
                     } else if (ty.symbol.escapedName == "Router") {
                         hasIaC = true;
 
@@ -101,22 +85,6 @@ spec:
 
                         let queueName = newExpr.arguments?.[0].getText() || `queue${queueIndex}`
                         queueIndex += 1
-                        daprQueueSource = `
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: ${queueName}
-spec:
-  type: pubsub.aws.snssqs
-  version: v1
-  metadata:
-  - name: accessKey
-    value: AKIA32AGWPFWBBQ2AKFW
-  - name: secretKey
-    value: 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
-  - name: region
-    value: us-east-1
-`
                     }
                 }
             }
@@ -177,16 +145,6 @@ spec:
             }
         }
     });
-
-    if (stateStoreIndex > 1) {
-        // console.log(`State Source \n`, stateStoreSource)
-        writeToFile(outputDir, `dapr/statestore.yaml`, daprStateSource);
-    }
-
-    if (queueIndex > 1) {
-        // console.log(`Queue Source \n`, queueSource)
-        writeToFile(outputDir, `dapr/pubsub.yaml`, daprQueueSource);
-    }
 }
 
 function detectPermission(fnName: string, fnNode: ts.Expression, tyChecker: ts.TypeChecker) {

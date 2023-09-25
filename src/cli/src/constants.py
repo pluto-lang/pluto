@@ -5,5 +5,5 @@ import subprocess
 dir_path = os.path.dirname(os.path.realpath(__file__))
 LANG_ROOT = os.path.realpath(os.path.join(dir_path, '../../../'))
 
-DEBUG = False
+DEBUG = True
 OUT_STREAM = sys.stdout if DEBUG else subprocess.DEVNULL

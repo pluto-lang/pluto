@@ -18,6 +18,7 @@ cp -r $LANG_ROOT/template/Dockerfile $LANG_ROOT/template/tsconfig.json ./
 rm -r dist
 cp -r $LANG_ROOT/src/pluto ./
 cp $LANG_ROOT/aws-runtime.ts ./
+yarn link @pulumi/dapr
 npx tsc --outDir dist
 rm -r ./pluto
 rm ./aws-runtime.ts
