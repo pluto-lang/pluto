@@ -2,7 +2,7 @@ node_modules/
 dist/
 **/bin/
 **/_output/
-.pluto/
+**/.pluto/
 **/hello-pluto/
 **/__pycache__/
 .vscode/

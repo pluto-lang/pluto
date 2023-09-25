@@ -1,10 +1,10 @@
-import { ComponentResource } from "@pulumi/pulumi";
+import { ComponentResource, ComponentResourceOptions } from "@pulumi/pulumi";
 
 export abstract class FaasResource extends ComponentResource {
     name: string;
 
-    constructor(type: string, name: string, opts: any) {
-        super(type, name, opts);
+    constructor(type: string, name: string, args: any, opts?: ComponentResourceOptions) {
+        super(type, name, args, opts);
         this.name = name;
     }
 

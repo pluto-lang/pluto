@@ -1,5 +1,6 @@
 import * as aws from "@pulumi/aws"
 import * as pulumi from "@pulumi/pulumi"
+import * as dapr from "@pulumi/dapr"
 import { BaasResource, StateDef } from "@pluto/pluto";
 
 export enum DynamoDbOps {
@@ -25,7 +26,16 @@ export class DynamoDBDef extends BaasResource implements StateDef {
             hashKey: "Id",
             readCapacity: 10,
             writeCapacity: 10,
-        })
+        }, { parent: this })
+
+        new dapr.state.State(name, {
+            name: name,
+            type: "state.aws.dynamodb",
+            metadata: {
+                table: name,
+                partitionKey: "Id",
+            }
+        }, { parent: this })
 
         this.arn = db.arn;
 

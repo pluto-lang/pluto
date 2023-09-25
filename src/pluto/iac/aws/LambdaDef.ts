@@ -6,6 +6,8 @@ import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
 import { FaasResource } from "@pluto/pluto";
 
+import * as fs from 'fs';
+
 export enum Ops {
     WATCH_LOG = "WATCH_LOG"
 }
@@ -14,8 +16,8 @@ export class LambdaDef extends FaasResource {
     lambda: Function;
     iam: Role;
 
-    constructor(name: string, opts?: {}) {
-        super("pluto:aws:Lambda", name, opts);
+    constructor(name: string, args?: {}, opts?: pulumi.ComponentResourceOptions) {
+        super("pluto:aws:Lambda", name, args, opts);
 
         const role = aws.iam.getPolicyDocument({
             statements: [{
@@ -26,23 +28,45 @@ export class LambdaDef extends FaasResource {
                 }],
                 actions: ["sts:AssumeRole"],
             }],
-        });
+        }, { parent: this });
 
         const iam = new aws.iam.Role(`${name}-iam`, { assumeRolePolicy: role.then(assumeRole => assumeRole.json) });
 
-        // const repo = new awsx.ecr.Repository(`${name}-repo`, {
-        //     forceDelete: true,
-        // });
-        // const image = new awsx.ecr.Image(`${name}-image`, {
-        //     repositoryUrl: repo.url,
-        //     path: "./",
-        //     extraOptions: ['--platform', 'linux/amd64'],
-        // });
+        const repo = new awsx.ecr.Repository(`${name}-repo`, {
+            forceDelete: true,
+        });
+
+        const dockerfileBody = `FROM public.ecr.aws/lambda/nodejs:16
+
+WORKDIR /app
+
+COPY dist/aws-runtime.js /app/
+COPY dist/.dapr /app/.dapr
+COPY dapr /app/.dapr/components
+COPY package.json /app/
+COPY dist/${name}.js /app/
+
+RUN npm install --omit=dev
+
+COPY dist/pluto /app/node_modules/@pluto/pluto
+
+# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
+CMD [ "/app/aws-runtime.handler" ]
+`
+        const filename = `${name}.Dockerfile`;
+        fs.writeFileSync(filename, dockerfileBody);
+
+        const image = new awsx.ecr.Image(`${name}-image`, {
+            repositoryUrl: repo.url,
+            path: "./",
+            extraOptions: ['--platform', 'linux/amd64'],
+            dockerfile: filename,
+        }, { parent: this });
 
         const fn = new aws.lambda.Function(`${name}-fn`, {
             packageType: "Image",
-            // imageUri: image.imageUri, //TODO
-            imageUri: '811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest',
+            imageUri: image.imageUri, //TODO
+            // imageUri: '811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest',
             role: iam.arn,
             environment: {
                 variables: {
@@ -51,7 +75,7 @@ export class LambdaDef extends FaasResource {
                 },
             },
             timeout: 120,
-        });
+        }, { parent: this });
 
         this.lambda = fn;
         this.iam = iam;

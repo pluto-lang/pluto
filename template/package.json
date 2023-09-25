@@ -8,10 +8,11 @@
     },
     "author": "",
     "license": "ISC",
-    "devDependencies": {},
+    "devDependencies": {
+        "@pulumi/aws": "^6.0.3"
+    },
     "dependencies": {
         "@dapr/dapr": "^3.1.2",
-        "@pulumi/aws": "^6.0.3",
         "@pulumi/pulumi": "^3.80.0"
     }
 }
