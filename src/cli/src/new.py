@@ -3,7 +3,7 @@ import shutil
 import getpass
 import subprocess
 
-from models import Project, Stack, AwsRuntime
+from models import Project, Stack, AwsRuntime, K8sRuntime
 from constants import LANG_ROOT
 from config import save_project_config
 
@@ -30,7 +30,8 @@ def process_new(args):
 
 def build_runtime(type):
     runtime_builder_mapping = {
-        "aws": build_aws_runtime
+        "aws": build_aws_runtime,
+        "k8s": build_k8s_runtime
     }
     return runtime_builder_mapping[type]()
 
@@ -51,6 +52,11 @@ def build_aws_runtime():
     runtime.region = region
     runtime.account["access_key_id"] = access_key_id
     runtime.account["secret_access_key"] = secret_access_key
+    return runtime
+
+
+def build_k8s_runtime():
+    runtime = K8sRuntime()
     return runtime
 
 

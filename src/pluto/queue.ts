@@ -23,6 +23,7 @@ export class Queue implements QueueClient {
         const rtType = process.env['RUNTIME_TYPE'];
         switch (rtType?.toUpperCase()) {
             case 'AWS':
+            case 'K8S':
                 return new DaprQueueClient(name);
             default:
                 throw new Error(`not support this runtime '${rtType}'`)

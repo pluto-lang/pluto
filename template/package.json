@@ -13,6 +13,8 @@
     },
     "dependencies": {
         "@dapr/dapr": "^3.1.2",
-        "@pulumi/pulumi": "^3.80.0"
+        "@pulumi/pulumi": "^3.80.0",
+        "cloudevents": "^8.0.0",
+        "body-parser": "^1.20.2"
     }
 }

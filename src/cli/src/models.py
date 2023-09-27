@@ -14,6 +14,10 @@ class AwsRuntime:
             "secret_access_key": ""
         }
 
+class K8sRuntime:
+    def __init__(self) -> None:
+        self.type = "k8s"
+
 class Project:
     def __init__(self, name) -> None:
         self.name = name
