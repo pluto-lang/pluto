@@ -18,6 +18,7 @@ export class State implements StateClient {
         const rtType = process.env['RUNTIME_TYPE'];
         switch (rtType?.toUpperCase()) {
             case 'AWS':
+            case 'K8S':
                 return new DaprStateClient(name);
             default:
                 throw new Error(`not support this runtime '${rtType}'`)

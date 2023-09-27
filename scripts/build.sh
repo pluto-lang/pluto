@@ -18,11 +18,11 @@ sed -i "" "s/%{project_name}/${PROJECT_NAME}/g" ./package.json
 ### compile CIR(biz + runtime ts) and PIR(pulumi ts) to js
 rm -r dist
 cp -r $LANG_ROOT/src/pluto ./
-cp $LANG_ROOT/aws-runtime.ts ./
+cp $LANG_ROOT/*-runtime.ts ./
 yarn link @pulumi/dapr
 npx tsc --outDir dist
-rm -r ./pluto
-rm ./aws-runtime.ts
+# rm -r ./pluto
+# rm ./aws-runtime.ts
 
 
 ### add dependencies

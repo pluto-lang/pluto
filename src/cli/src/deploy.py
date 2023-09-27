@@ -30,9 +30,11 @@ def deploy(proj: Project, stack: Stack, engine, filepath, output):
     gen_ir(arch_path, output)
     
     env = os.environ.copy()
-    env['AWS_REGION'] = stack.runtime.region
-    env['AWS_ACCESS_KEY_ID'] = stack.runtime.account['access_key_id']
-    env['AWS_SECRET_ACCESS_KEY'] = stack.runtime.account['secret_access_key']
+    env['RUNTIME_TYPE'] = stack.runtime.type
+    if stack.runtime.type == 'aws':
+        env['AWS_REGION'] = stack.runtime.region
+        env['AWS_ACCESS_KEY_ID'] = stack.runtime.account['access_key_id']
+        env['AWS_SECRET_ACCESS_KEY'] = stack.runtime.account['secret_access_key']
     
     print('Building...')
     cmd = 'bash {}/scripts/build.sh {} {} {} {}'.format(LANG_ROOT, proj.name, stack.name, filepath, output)

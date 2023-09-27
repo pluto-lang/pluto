@@ -64,8 +64,9 @@ export class Architecture {
         }
         for (let relat of this.relationships) {
             let label = relat.type == RelatType.CREATE ? relat.operation.toUpperCase() : relat.operation;
+            let color = relat.type == RelatType.CREATE ? "black" : "blue";
             label += ' ' + relat.parameters.map((p) => `${p.name}\:${p.value}`).join(',').replace(/"/g, "\\\"");
-            dotSource += `  ${relat.from.name} -> ${relat.to.name} [label="${label}"];\n`;
+            dotSource += `  ${relat.from.name} -> ${relat.to.name} [label="${label}",color="${color}"];\n`;
         }
         dotSource += '}';
         return dotSource;
