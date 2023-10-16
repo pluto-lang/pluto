@@ -1,12 +1,16 @@
 import chalk from "chalk";
 
 class Logger {
-  public error(msg: string) {
-    console.error(chalk.bold.red("Error:"), msg);
+  public error(...msg: any[]) {
+    console.error(chalk.bold.red("Error:"), ...msg);
   }
 
-  public info(msg: string) {
-    console.info(chalk.blue("Info: "), msg);
+  public info(...msg: any[]) {
+    console.info(chalk.blue("Info: "), ...msg);
+  }
+
+  public debug(...msg: any[]) {
+    console.log(chalk.gray("Debug:"), ...msg);
   }
 }
 

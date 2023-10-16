@@ -18,6 +18,11 @@
     "pluto": "./bin/pluto"
   },
   "main": "./dist/main.js",
+  "files": [
+    "bin/",
+    "dist/",
+    "template/"
+  ],
   "scripts": {
     "compile": "tsc",
     "watch": "tsc --watch",

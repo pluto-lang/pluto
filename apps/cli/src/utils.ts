@@ -28,7 +28,6 @@ export function loadConfig(): model.Project {
 export function saveConfig(proj: model.Project, basedir: string = "") {
   const dirpath = path.join(basedir, PLUTO_DIR);
   const configPath = path.join(basedir, PLUTO_CONFIG_FILE);
-  console.log(dirpath, configPath);
   if (!fs.existsSync(dirpath)) {
     fs.mkdirSync(dirpath, { recursive: true });
   }
