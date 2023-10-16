@@ -1,0 +1,1 @@
+export { GraphvizGenerator } from "./generator";

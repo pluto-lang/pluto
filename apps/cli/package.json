@@ -1,0 +1,42 @@
+{
+  "name": "@pluto/cli",
+  "version": "0.0.0",
+  "description": "The command line of Pluto-lang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pluto-lang/pluto.git",
+    "directory": "apps/cli"
+  },
+  "author": {
+    "name": "pluto"
+  },
+  "keywords": [
+    "cli",
+    "npmtool"
+  ],
+  "bin": {
+    "pluto": "./bin/pluto"
+  },
+  "main": "./dist/main.js",
+  "scripts": {
+    "compile": "tsc",
+    "watch": "tsc --watch",
+    "dev": "./bin/pluto"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^3.2.0",
+    "@pluto/base": "workspace:^",
+    "@pluto/static-deducer": "workspace:^",
+    "@pluto/static-generator": "workspace:^",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "js-yaml": "^4.1.0",
+    "yaml": "^2.3.3"
+  },
+  "devDependencies": {
+    "@pluto/pluto": "workspace:^",
+    "@types/js-yaml": "^4.0.7",
+    "@types/node": "^20.8.4",
+    "typescript": "^5.2.2"
+  }
+}
