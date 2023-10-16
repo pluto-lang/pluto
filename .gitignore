@@ -8,3 +8,4 @@ dist/
 .vscode/
 tftest/
 **/.DS_store
+**/.turbo

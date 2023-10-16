@@ -7,19 +7,65 @@
    <a href="./README_zh.md"> 简体中文 </a>
 </p>
 
-Pluto 是一种帮助用户轻松上云的开源编程语言，旨在帮助没有任何云背景的开发者也能按照最佳实践架构将应用程序轻松发布到云上。开发者像往常一样面向运行时编写业务代码，不需要感知业务代码与基础设施代码之间的差异，同时不需要了解各种云的技术栈与背景知识。除编码外的一切事情，全部交给 Pluto！
+Pluto 是一种新型开源编程语言，旨在帮助没有任何云背景的开发者也能按照最佳实践架构将应用程序轻松发布到云上。开发者不需要关心函数封装、触发器配置等繁琐过程，只需编写业务代码，选择目标平台（如AWS、GCP、Kubernetes等），执行一条命令pluto deploy，就能完成应用程序的发布。
 
-来看一个酷炫的例子。
+## Example
 
-==Demo 展示==
+![](./assets/demo-biz-logic.png)
 
-这个例子中，开发者写了一份纯 TypeScript 代码，包含 1 个路由、1 个消息队列、1 个数据库、2 个 HTTP API 和 1 个消息队列订阅者，所有代码都在这一个文件中，这甚至比一个 `express.js` 后端服务更简单。
+看一个简单的例子，在这个例子中业务逻辑由 3 个过程构成：
 
-![Pluto Deploy](./assets/pluto-deploy.png)
+1. Function-1：当用户访问 /hello 时执行该函数，记录该用户的访问时间，并发布到一个消息队列中。
+2. Function-2：作为消息队列的订阅者，当有新消息发布时被执行，并将消息存储到KV数据库中。
+3. Function-3：当用户访问 /store 时执行该函数，获取指定用户上次访问的时间。
 
-然后，执行了一条魔法命令 `pluto deploy`，所有的基础设施资源与业务模块就有序地部署到了 AWS 云上。路由将发布为 `ApiGateway` 组件，消息队列将发布为 `SNS` 组件，数据库将发布为 `DynamoDB` 组件，HTTP API 和消息队列的处理函数将发布为 3 个 `Lambda` 函数。同时，还会自动构建触发器、IAM 角色、权限等资源配置。这一切都由 Pluto 自动完成。
+如果在 AWS 上部署这个应用，需要配置 Lambda、IAM、ApiGateway、Route、Deployment、SNS、Trigger 等多种资源，手动配置非常繁琐，并且很容易出错。
 
-此外，如果开发者想要将服务重新发布到 Azure 等其他公有云或 Kubernetes 环境上，不需要修改任何代码，只需新建一份环境配置，就能直接部署。
+如果采用 Pluto 编写这个例子，只需一份 TypeScript 代码文件即可。在文件中，就像编写单体应用程序一样。首先，定义所需的资源变量，包括 1 个数据库 state、1 个消息队列 queue、1 个路由 router，细粒度的资源能力配置可以通过额外的配置项完成。然后，给 router 编写相应路径的处理过程，以及 queue 的订阅处理过程，并在处理过程中使用资源提供的方法实现业务逻辑。以上，就完成了全部的代码编写过程。
+
+```typescript
+import { Event, Request, Router, Queue, State } from "@pluto";
+
+// Define the resources
+const state = new State("statestore", {
+  /* additional configuration */
+}); // Key-Value Store
+const queue = new Queue("access"); // Message Queue
+const router = new Router("hello"); // ApiGateway
+
+// Function-1
+router.get("/hello", async (req: Request): Promise<string> => {
+  const name = req.query["name"] ?? "Anonym";
+  const message = `${name} access at ${Date.now()}`;
+  await queue.push({ name, message });
+  return `Publish a message: ${message}`;
+});
+
+// Function-2
+queue.subscribe(async (event: Event): Promise<string> => {
+  const data = event.data;
+  await state.set(data["name"], data["message"]);
+  return "receive an event";
+});
+
+// Function-3
+router.get(
+  "/store",
+  async function storeHandler(req: Request): Promise<string> {
+    const name = req.query["name"] ?? "Anonym";
+    const message = await state.get(name);
+    return `Fetch ${name} access message: ${message}.`;
+  }
+);
+```
+
+![](./assets/aws-deploy.png)
+
+然后，执行了一条魔法命令 pluto deploy，所有的基础设施资源与业务模块就有序地部署到了 AWS 云上。路由将发布为 ApiGateway 组件，消息队列将发布为 SNS 组件，数据库将发布为 DynamoDB 组件，HTTP API 和消息队列的处理函数将发布为 3 个 Lambda 函数。同时，还会自动构建触发器、IAM 角色、权限等资源配置。这一切都由 Pluto 自动完成。
+
+此外，如果开发者想要将服务重新发布到 Azure 等其他公有云或 Kubernetes 环境上，不需要修改任何代码，只需执行pluto stack new新建一份环境配置，就能直接部署。
+
+[点击观看完整的视频演示](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/)
 
 **想要了解更多案例？**
 
@@ -48,7 +94,7 @@ Pluto 是一种帮助用户轻松上云的开源编程语言，旨在帮助没�
 - **状态偏移自动纠正\*：** 通过检测 SDK 的更新，获知基础设施的目标状态发生变化，自动将云上应用程序状态修正到与目标状态一致。
 - **AI 辅助开发\*：** AI 辅助开发 SDK，进一步降低云资源扩展难度。
 
-标 * 特性正在加紧开发中
+标 \* 特性正在加紧开发中
 
 ## 🚀 快速开始
 
