@@ -11,7 +11,9 @@ Pluto 是一种新型开源编程语言，旨在帮助没有任何云背景的�
 
 ## Example
 
-![](./assets/demo-biz-logic.png)
+<p align="center">
+   <img src="./assets/demo-biz-logic.png" alt="business logic" width="450">
+</p>
 
 看一个简单的例子，在这个例子中业务逻辑由 3 个过程构成：
 
@@ -49,23 +51,22 @@ queue.subscribe(async (event: Event): Promise<string> => {
 });
 
 // Function-3
-router.get(
-  "/store",
-  async function storeHandler(req: Request): Promise<string> {
-    const name = req.query["name"] ?? "Anonym";
-    const message = await state.get(name);
-    return `Fetch ${name} access message: ${message}.`;
-  }
-);
+router.get("/store", async (req: Request): Promise<string> => {
+  const name = req.query["name"] ?? "Anonym";
+  const message = await state.get(name);
+  return `Fetch ${name} access message: ${message}.`;
+});
 ```
 
-![](./assets/aws-deploy.png)
+<p align="center">
+   <img src="./assets/aws-deploy.png" alt="AWS architecture" width="350">
+</p>
 
 然后，执行了一条魔法命令 pluto deploy，所有的基础设施资源与业务模块就有序地部署到了 AWS 云上。路由将发布为 ApiGateway 组件，消息队列将发布为 SNS 组件，数据库将发布为 DynamoDB 组件，HTTP API 和消息队列的处理函数将发布为 3 个 Lambda 函数。同时，还会自动构建触发器、IAM 角色、权限等资源配置。这一切都由 Pluto 自动完成。
 
 此外，如果开发者想要将服务重新发布到 Azure 等其他公有云或 Kubernetes 环境上，不需要修改任何代码，只需执行pluto stack new新建一份环境配置，就能直接部署。
 
-[点击观看完整的视频演示](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/)
+[点击观看完整的视频演示。](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/)
 
 **想要了解更多案例？**
 
