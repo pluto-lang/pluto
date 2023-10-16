@@ -7,3 +7,4 @@ dist/
 **/__pycache__/
 .vscode/
 tftest/
+**/.DS_store

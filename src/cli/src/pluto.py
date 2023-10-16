@@ -8,6 +8,7 @@ from deploy import process_deploy
 from destroy import process_destroy
 from state import process_state
 from graph import process_graph
+from stack import process_stack
 
 
 def main(): 
@@ -36,6 +37,9 @@ def main():
     graphCmd = subparser.add_parser("graph", help="Export the dependency graph to a svg.")
     graphCmd.add_argument('filepath', nargs='*', help="Path to application source code (defalut: main.ts)", default=["main.ts"])
     graphCmd.add_argument('--output', help="Path to output files", default=".pluto/output")
+
+    stateCmd = subparser.add_parser("stack", help="Manage stacks")
+    stateCmd.add_argument('op', nargs='*', help="The subcommand operation to execute")
     
     args = parser.parse_args()
     if not args.subcmd:
@@ -52,6 +56,7 @@ def process_command(args):
         'destroy': process_destroy,
         'state': process_state,
         'graph': process_graph,
+        'stack': process_stack,
     }
     cmd_handler_mapping[args.subcmd](args)
 
