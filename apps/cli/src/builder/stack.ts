@@ -1,7 +1,6 @@
 import os from "os";
-import { input, select } from "@inquirer/prompts";
-import { engine, runtime } from "@pluto/base";
-import * as model from "../model";
+import { input, select, password } from "@inquirer/prompts";
+import { engine, runtime, project } from "@pluto/base";
 
 export interface CreateStackArgs {
   name?: string;
@@ -9,7 +8,7 @@ export interface CreateStackArgs {
   engType?: engine.Type;
 }
 
-export async function createStack(args: CreateStackArgs): Promise<model.Stack> {
+export async function createStack(args: CreateStackArgs): Promise<project.Stack> {
   args.name =
     args.name ??
     (await input({
@@ -62,11 +61,11 @@ export async function createStack(args: CreateStackArgs): Promise<model.Stack> {
       ],
     }));
 
-  return new model.Stack(args.name, rt, args.engType);
+  return new project.Stack(args.name, rt, args.engType);
 }
 
-async function createRuntimeByType(rtType: runtime.Type): Promise<model.Runtime> {
-  const rtBuilderMapping: { [key in runtime.Type]?: () => Promise<model.Runtime> } = {
+async function createRuntimeByType(rtType: runtime.Type): Promise<project.Runtime> {
+  const rtBuilderMapping: { [key in runtime.Type]?: () => Promise<project.Runtime> } = {
     [runtime.Type.AWS]: createAwsRuntime,
     [runtime.Type.K8s]: createK8sRuntime,
   };
@@ -77,7 +76,7 @@ async function createRuntimeByType(rtType: runtime.Type): Promise<model.Runtime>
   return await rtBuilderMapping[rtType]!();
 }
 
-async function createAwsRuntime(): Promise<model.AwsRuntime> {
+async function createAwsRuntime(): Promise<project.AwsRuntime> {
   const region = await select({
     message: "Select a region",
     choices: [
@@ -91,25 +90,27 @@ async function createAwsRuntime(): Promise<model.AwsRuntime> {
       },
     ],
   });
-  const accessKeyId = await input({
+  const accessKeyId = await password({
     message: "Access key ID",
+    mask: true,
     validate: (val: string) => {
       return val.length > 0;
     },
   });
-  const secretAccessKey = await input({
+  const secretAccessKey = await password({
     message: "Secret access key",
+    mask: true,
     validate: (val: string) => {
       return val.length > 0;
     },
   });
-  return new model.AwsRuntime(region, accessKeyId, secretAccessKey);
+  return new project.AwsRuntime(region, accessKeyId, secretAccessKey);
 }
 
-async function createK8sRuntime(): Promise<model.K8sRuntime> {
+async function createK8sRuntime(): Promise<project.K8sRuntime> {
   const kubeConfigPath = await input({
     message: "Kubeconfig path",
     default: `${os.homedir}/.kube/config`,
   });
-  return new model.K8sRuntime(kubeConfigPath);
+  return new project.K8sRuntime(kubeConfigPath);
 }

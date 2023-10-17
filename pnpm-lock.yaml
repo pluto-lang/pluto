@@ -23,6 +23,9 @@ importers:
       '@inquirer/prompts':
         specifier: ^3.2.0
         version: 3.2.0
+      '@pluto/adapters':
+        specifier: workspace:^
+        version: link:../../components/adapters
       '@pluto/base':
         specifier: workspace:^
         version: link:../../packages/base
@@ -41,16 +44,35 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
-      yaml:
-        specifier: ^2.3.3
-        version: 2.3.3
     devDependencies:
       '@pluto/pluto':
         specifier: workspace:^
         version: link:../../packages/pluto
+      '@pluto/pluto-infra':
+        specifier: workspace:^
+        version: link:../../packages/pluto-infra
       '@types/js-yaml':
         specifier: ^4.0.7
         version: 4.0.7
+      '@types/node':
+        specifier: ^20.8.4
+        version: 20.8.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
+  components/adapters:
+    dependencies:
+      '@pluto/base':
+        specifier: workspace:^
+        version: link:../../packages/base
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
+    devDependencies:
       '@types/node':
         specifier: ^20.8.4
         version: 20.8.4
@@ -3467,11 +3489,6 @@ packages:
 
   /yallist@4.0.0:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
-    dev: false
-
-  /yaml@2.3.3:
-    resolution: {integrity: sha512-zw0VAJxgeZ6+++/su5AFoqBbZbrEakwu+X0M5HmcwUiBL7AzcuPKjj5we4xfQLp78LkEMpD0cOnUhmgOVy3KdQ==}
-    engines: {node: '>= 14'}
     dev: false
 
   /yargs-parser@21.1.1:

@@ -1,13 +1,15 @@
-import { engine, runtime } from "@pluto/base";
+import * as engine from "./engine";
+import * as runtime from "./runtime";
 
 export class Project {
   name: string;
   stacks: Stack[];
-  current?: string;
+  current: string;
 
   constructor(name: string) {
     this.name = name;
     this.stacks = [];
+    this.current = "";
   }
 
   public addStack(s: Stack) {

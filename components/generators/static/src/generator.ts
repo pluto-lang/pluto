@@ -1,9 +1,10 @@
 import * as fs from "fs";
 import { GenerateOptions, Generator, arch } from "@pluto/base";
 import { writeToFile } from "./utils";
+import path from "path";
 
 export class StaticGenerator implements Generator {
-  public async generate(opts: GenerateOptions): Promise<void> {
+  public async generate(opts: GenerateOptions): Promise<string> {
     const pirCode = genPirCode(opts.archRef);
     writeToFile(opts.outdir, "pir-pulumi.ts", pirCode);
 
@@ -12,17 +13,21 @@ export class StaticGenerator implements Generator {
       const filename = `cir-${cir.resource.name}.ts`;
       writeToFile(opts.outdir, filename, cir.code);
     });
+
+    return path.join(opts.outdir, "pir-pulumi.ts");
   }
 }
 
 export function genPirCode(archRef: arch.Architecture): string {
-  let iacSource = `import { IRegistry, Registry } from "@pluto/pluto";
+  let iacSource = `import { Registry } from "@pluto/base";
 
-const RUNTIME_TYPE = process.env['RUNTIME_TYPE'] || "aws";
-const reg: IRegistry = new Registry();
+const RUNTIME_TYPE = process.env['RUNTIME_TYPE'];
+const ENGINE_TYPE = process.env['ENGINE_TYPE'];
+const reg: Registry = new Registry();
 
 
-import { register as plutoRegister } from "@pluto/pluto/iac";
+import { Queue, Router, KVStore, Lambda } from "@pluto/pluto";
+import { register as plutoRegister } from "@pluto/pluto-infra";
 plutoRegister(reg);
 
 
@@ -35,7 +40,7 @@ let resDefCls = null;
     const res = archRef.getResource(resName);
     if (res.type == "Root" || res.type == "Lambda") continue;
 
-    iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${res.type}');
+    iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, ENGINE_TYPE, ${res.type});
 const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
   }
 
@@ -50,7 +55,7 @@ const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
       deps.push(relat.to.name);
     }
 
-    iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, '${res.type}');
+    iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, ENGINE_TYPE, ${res.type});
 const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${deps.join(
       ","
     )}] });\n\n`;
@@ -85,7 +90,7 @@ interface ComputeIR {
 
 function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
   const genCirCode = (res: arch.Resource): string => {
-    let cirCode = `import { Event, Request, Router, Queue, State } from '@pluto/pluto';\n\n`;
+    let cirCode = `import { Event, Request, Router, Queue, KVStore } from '@pluto/pluto';\n\n`;
 
     // Find the dependencies of this CIR and build corresponding instances.
     for (let relat of archRef.relationships) {

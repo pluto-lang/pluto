@@ -2,9 +2,10 @@ import { GenerateOptions, Generator, arch } from "@pluto/base";
 import { writeToFile } from "./utils";
 
 export class GraphvizGenerator implements Generator {
-  public async generate(opts: GenerateOptions): Promise<void> {
+  public async generate(opts: GenerateOptions): Promise<string> {
     const dotText = archToGraphviz(opts.archRef);
     writeToFile("", opts.outdir + "/arch.dot", dotText);
+    return opts.outdir + "/arch.dot";
   }
 }
 

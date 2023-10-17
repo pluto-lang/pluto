@@ -51,7 +51,7 @@ async function main() {
   program
     .command("deploy")
     .description("Deploy this project to the platform specified in the stack")
-    .argument("[files...]", "The files need to be compiled.", ".")
+    .argument("[files...]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
     .option(
       "-d, --deducer <deducer>",
@@ -63,13 +63,13 @@ async function main() {
       "Specify a generator by setting the package name. Make sure that the package is already installed.",
       "@pluto/static-generator"
     )
-    .action(cmd.compile);
+    .action(cmd.deploy);
 
   program
     .command("destroy")
     .description("Take the application offline and revoke all deployed resources")
     .option("-s, --stack <stack>", "Specified stack")
-    .action(cmd.compile);
+    .action(cmd.destroy);
 
   program.command("stack", "Manage stacks");
 
@@ -77,7 +77,7 @@ async function main() {
     program
       .command("compile")
       .description("Compile the source code to IR")
-      .argument("[files...]", "The files need to be compiled.", ".")
+      .argument("[files...]", "The files need to be compiled.", "src/index.ts")
       .option(
         "-d, --deducer <deducer>",
         "Specify a deducer by setting the package name. Make sure that the package is already installed.",

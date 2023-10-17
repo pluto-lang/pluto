@@ -5,6 +5,11 @@
     "compile": "tsc",
     "watch": "tsc --watch"
   },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "dependencies": {
     "@pluto/base": "workspace:^",
     "@pluto/pluto": "workspace:^",

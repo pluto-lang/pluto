@@ -6,5 +6,5 @@ export interface GenerateOptions {
 }
 
 export interface Generator {
-  generate(opts: GenerateOptions): Promise<void>;
+  generate(opts: GenerateOptions): Promise<string>;
 }

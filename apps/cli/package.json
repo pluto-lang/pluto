@@ -30,16 +30,17 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^3.2.0",
+    "@pluto/adapters": "workspace:^",
     "@pluto/base": "workspace:^",
     "@pluto/static-deducer": "workspace:^",
     "@pluto/static-generator": "workspace:^",
     "chalk": "^4.1.2",
     "commander": "^11.0.0",
-    "js-yaml": "^4.1.0",
-    "yaml": "^2.3.3"
+    "js-yaml": "^4.1.0"
   },
   "devDependencies": {
     "@pluto/pluto": "workspace:^",
+    "@pluto/pluto-infra": "workspace:^",
     "@types/js-yaml": "^4.0.7",
     "@types/node": "^20.8.4",
     "typescript": "^5.2.2"

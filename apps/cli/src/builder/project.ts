@@ -1,6 +1,5 @@
 import { input } from "@inquirer/prompts";
-import { engine, runtime } from "@pluto/base";
-import * as model from "../model";
+import { engine, runtime, project } from "@pluto/base";
 import { createStack } from "./stack";
 
 export interface CreateProjectArgs {
@@ -10,7 +9,7 @@ export interface CreateProjectArgs {
   engType?: engine.Type;
 }
 
-export async function createProject(args: CreateProjectArgs): Promise<model.Project> {
+export async function createProject(args: CreateProjectArgs): Promise<project.Project> {
   args.name =
     args.name ??
     (await input({
@@ -20,7 +19,7 @@ export async function createProject(args: CreateProjectArgs): Promise<model.Proj
 
   const sta = await createStack({ name: args.stack, rtType: args.rtType, engType: args.engType });
 
-  const proj = new model.Project(args.name);
+  const proj = new project.Project(args.name);
   proj.addStack(sta);
   proj.current = sta.name;
   return proj;

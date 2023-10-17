@@ -15,7 +15,6 @@ export class StaticDeducer implements Deducer {
     const tsconfigPath = path.resolve("./", "tsconfig.json");
     const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     const configJson = ts.parseJsonConfigFileContent(configFile.config, ts.sys, "./");
-    configJson.options.rootDir = "./";
     return await compilePluto(filepaths, configJson.options);
   }
 }
@@ -28,6 +27,7 @@ async function compilePluto(
   const root = new arch.Resource("App", "Root"); // Resource Root
   archRef.addResource(root);
 
+  console.log(fileNames, options);
   let program = ts.createProgram(fileNames, options);
   let allDiagnostics = ts.getPreEmitDiagnostics(program);
   // Emit errors
