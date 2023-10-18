@@ -29,6 +29,9 @@ importers:
       '@pluto/base':
         specifier: workspace:^
         version: link:../../packages/base
+      '@pluto/graphviz-generator':
+        specifier: workspace:^
+        version: link:../../components/generators/graphviz
       '@pluto/static-deducer':
         specifier: workspace:^
         version: link:../../components/deducers/static
@@ -104,6 +107,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      ts-graphviz:
+        specifier: ^1.8.1
+        version: 1.8.1
     devDependencies:
       '@types/node':
         specifier: ^20.8.4
@@ -3195,6 +3201,11 @@ packages:
 
   /tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
+    dev: false
+
+  /ts-graphviz@1.8.1:
+    resolution: {integrity: sha512-54/fe5iu0Jb6X0pmDmzsA2UHLfyHjUEUwfHtZcEOR0fZ6Myf+dFoO6eNsyL8CBDMJ9u7WWEewduVaiaXlvjSVw==}
+    engines: {node: '>=14.16'}
     dev: false
 
   /ts-node@7.0.1:

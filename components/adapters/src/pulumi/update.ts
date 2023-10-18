@@ -1,9 +1,9 @@
+import path from "path";
 import { InlineProgramArgs, LocalWorkspace, ConfigMap } from "@pulumi/pulumi/automation";
 import { project, runtime } from "@pluto/base";
-import { ApplyArgs } from "../adapter";
-import path from "path";
+import { ApplyArgs, ApplyResult } from "../adapter";
 
-export async function update(args: ApplyArgs) {
+export async function update(args: ApplyArgs): Promise<ApplyResult> {
   const pulumiFile = path.resolve("./", args.entrypoint);
   const pulumiArgs: InlineProgramArgs = {
     stackName: args.stack.name,
@@ -17,18 +17,24 @@ export async function update(args: ApplyArgs) {
       ENGINE_TYPE: args.stack.engine,
     },
   });
-  process.env["RUNTIME_TYPE"] = args.stack.runtime.type;
-  process.env["ENGINE_TYPE"] = args.stack.engine;
-
   const pulumiConfig = genPulumiConfigByRuntime(args.stack);
   await pulumiStack.setAllConfig(pulumiConfig);
 
-  const upRes = await pulumiStack.up({
-    // onOutput: console.info,
-    program: pulumiProgram(pulumiFile),
-  });
+  process.env["RUNTIME_TYPE"] = args.stack.runtime.type;
+  process.env["ENGINE_TYPE"] = args.stack.engine;
+  process.env["WORK_DIR"] = path.dirname(pulumiFile);
 
-  console.log(upRes.outputs);
+  try {
+    const upRes = await pulumiStack.up();
+    return { outputs: upRes.outputs };
+  } catch (e) {
+    if (process.env.DEBUG) {
+      console.error("------------- PULUMI UPDATE ERROR ---------------");
+      console.error(e);
+      console.error("------------- END PULUMI UPDATE ERROR -----------");
+    }
+    return { error: "Pulumi update error" };
+  }
 }
 
 const pulumiProgram = (pulumiFile: string) => {

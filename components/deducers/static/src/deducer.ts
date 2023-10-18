@@ -27,7 +27,6 @@ async function compilePluto(
   const root = new arch.Resource("App", "Root"); // Resource Root
   archRef.addResource(root);
 
-  console.log(fileNames, options);
   let program = ts.createProgram(fileNames, options);
   let allDiagnostics = ts.getPreEmitDiagnostics(program);
   // Emit errors

@@ -1,4 +1,5 @@
-import * as fs from "fs";
+import fs from "fs";
+import path from "path";
 import * as aws from "@pulumi/aws";
 import * as awsx from "@pulumi/awsx";
 import * as pulumi from "@pulumi/pulumi";
@@ -10,6 +11,11 @@ import { DynamoDbOps } from "./dynamoKVStore";
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
 }
+
+if (!process.env["WORK_DIR"]) {
+  throw new Error("Missing environment variable WORK_DIR");
+}
+const WORK_DIR = process.env["WORK_DIR"]!;
 
 export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
   readonly name: string;
@@ -65,13 +71,13 @@ COPY dist/pluto /app/node_modules/@pluto/pluto
 CMD [ "/app/aws-runtime.handler" ]
 `;
     const filename = `${name}.Dockerfile`;
-    fs.writeFileSync(filename, dockerfileBody);
+    fs.writeFileSync(path.join(WORK_DIR, filename), dockerfileBody);
 
     const image = new awsx.ecr.Image(
       `${name}-image`,
       {
         repositoryUrl: repo.url,
-        path: "./",
+        path: WORK_DIR,
         extraOptions: ["--platform", "linux/amd64"],
         dockerfile: filename,
       },

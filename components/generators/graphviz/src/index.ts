@@ -1,1 +1,1 @@
-export { GraphvizGenerator } from "./generator";
+export { GraphvizGenerator as default } from "./generator";

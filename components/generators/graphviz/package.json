@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@pluto/base": "workspace:^",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "ts-graphviz": "^1.8.1"
   },
   "devDependencies": {
     "@types/node": "^20.8.4",

@@ -35,16 +35,37 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 
   // construct the arch ref from user code
+  logger.info("Deducing...");
   const archRef = await loadAndDeduce(opts.deducer, files);
 
   // generate the IR code based on the arch ref
+  logger.info("Generating...");
   const outdir = path.join(".pluto", sta.name);
-  await loadAndGenerate(opts.generator, archRef, outdir);
+  const entrypointFile = await loadAndGenerate(opts.generator, archRef, outdir);
+  if (process.env.DEBUG) {
+    logger.debug("Entrypoint file: ", entrypointFile);
+  }
 
-  await apply(proj.name, sta, ".pluto/dev/pir-pulumi.js");
-}
-
-async function apply(projName: string, sta: project.Stack, entrypoint: string) {
+  // build the adapter based on the engine type
   const adpt = BuildAdapterByEngine(sta.engine);
-  await adpt.apply({ projName: projName, stack: sta, entrypoint: entrypoint });
+  if (!adpt) {
+    logger.error("No such engine.");
+    process.exit(1);
+  }
+
+  logger.info("Applying...");
+  const applyResult = await adpt.apply({
+    projName: proj.name,
+    stack: sta,
+    entrypoint: entrypointFile,
+  });
+  if (applyResult.error) {
+    logger.error(applyResult.error);
+    process.exit(1);
+  }
+
+  logger.info("Successfully applied!");
+  for (let key in applyResult.outputs) {
+    logger.info(`${key}: ${applyResult.outputs[key]}`);
+  }
 }

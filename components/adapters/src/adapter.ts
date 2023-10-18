@@ -7,15 +7,23 @@ export interface ApplyArgs {
   entrypoint: string;
 }
 
+export interface ApplyResult {
+  outputs?: { [key: string]: any };
+  error?: string;
+}
+
 type AdapterClass = { new (...args: any[]): Adapter };
 
 export interface Adapter {
-  apply(args: ApplyArgs): Promise<void>;
+  apply(args: ApplyArgs): Promise<ApplyResult>;
 }
 
-export function BuildAdapterByEngine(engType: engine.Type): Adapter {
+export function BuildAdapterByEngine(engType: engine.Type): Adapter | undefined {
   const engMapping: { [key in engine.Type]?: AdapterClass } = {
     [engine.Type.pulumi]: PulumiAdapter,
   };
+  if (!(engType in engMapping)) {
+    return;
+  }
   return new engMapping[engType]!();
 }

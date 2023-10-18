@@ -1,24 +1,40 @@
-import * as fs from "fs";
+import path from "path";
+import fs from "fs";
+import * as ts from "typescript";
 import { GenerateOptions, Generator, arch } from "@pluto/base";
 import { writeToFile } from "./utils";
-import path from "path";
+
+// The name of the compiled entrypoint
+const ENTRYPOINT_FILENAME = "pulumi";
+// The name of the compiled compute module for each resource
+const COMP_MOD_FILENAME = (resName: string) => `${resName}-module`;
 
 export class StaticGenerator implements Generator {
   public async generate(opts: GenerateOptions): Promise<string> {
-    const pirCode = genPirCode(opts.archRef);
-    writeToFile(opts.outdir, "pir-pulumi.ts", pirCode);
+    const compiledDir = path.join(opts.outdir, "compiled");
+
+    const pirTsCode = genPirCode(opts.archRef);
+    writeToFile(opts.outdir, ENTRYPOINT_FILENAME + ".ts", pirTsCode);
+    const pirJsCode = compileTs(pirTsCode);
+    writeToFile(compiledDir, ENTRYPOINT_FILENAME + ".js", pirJsCode);
 
     const cirCodes = genAllCirCode(opts.archRef);
     cirCodes.forEach((cir) => {
-      const filename = `cir-${cir.resource.name}.ts`;
-      writeToFile(opts.outdir, filename, cir.code);
+      writeToFile(opts.outdir, COMP_MOD_FILENAME(cir.resource.name) + ".ts", cir.code);
+      const cirJsCode = compileTs(cir.code);
+      writeToFile(compiledDir, COMP_MOD_FILENAME(cir.resource.name) + ".js", cirJsCode);
     });
 
-    return path.join(opts.outdir, "pir-pulumi.ts");
+    return path.join(compiledDir, ENTRYPOINT_FILENAME + ".js");
   }
 }
 
-export function genPirCode(archRef: arch.Architecture): string {
+function compileTs(code: string): string {
+  return ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS } })
+    .outputText;
+}
+
+function genPirCode(archRef: arch.Architecture): string {
   let iacSource = `import { Registry } from "@pluto/base";
 
 const RUNTIME_TYPE = process.env['RUNTIME_TYPE'];

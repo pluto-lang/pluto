@@ -4,6 +4,8 @@ import { arch } from "@pluto/base";
 import logger from "../log";
 import { loadConfig } from "../utils";
 
+const GRAPHVIZ_GENERATOR_PKG = "@pluto/graphviz-generator";
+
 export interface CompileOptions {
   stack?: string;
   deducer: string;
@@ -26,7 +28,7 @@ export async function compile(files: string[], opts: CompileOptions) {
   // construct the arch ref from user code
   const archRef = await loadAndDeduce(opts.deducer, files);
 
-  // generate the IR code based on the arch ref
+  // get current stack, and set the output directory
   const proj = loadConfig();
   const sta = proj.getStack(proj.current);
   if (!sta) {
@@ -34,6 +36,11 @@ export async function compile(files: string[], opts: CompileOptions) {
     process.exit(1);
   }
   const outdir = path.join(".pluto", sta.name);
+
+  // generate the graphviz file
+  await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, archRef, outdir);
+
+  // generate the IR code based on the arch ref
   await loadAndGenerate(opts.generator, archRef, outdir);
 }
 
@@ -71,6 +78,9 @@ export async function loadAndGenerate(
       outdir: outdir,
     });
   } catch (err) {
+    if (process.env.DEBUG) {
+      logger.error(err);
+    }
     logger.error(
       `Failed to generate. Have you provided a correct package name '${generatorName}' and installed it?`
     );

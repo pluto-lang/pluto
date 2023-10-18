@@ -32,6 +32,7 @@
     "@inquirer/prompts": "^3.2.0",
     "@pluto/adapters": "workspace:^",
     "@pluto/base": "workspace:^",
+    "@pluto/graphviz-generator": "workspace:^",
     "@pluto/static-deducer": "workspace:^",
     "@pluto/static-generator": "workspace:^",
     "chalk": "^4.1.2",
