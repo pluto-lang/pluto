@@ -29,7 +29,12 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
     const progressOut = process.env.DEBUG ? console.log : undefined;
     // await pulumiStack.cancel();
     const upRes = await pulumiStack.up({ onOutput: progressOut });
-    return { outputs: upRes.outputs };
+
+    const outputs: { [key: string]: string } = {};
+    for (const key in upRes.outputs) {
+      outputs[key] = upRes.outputs[key].value;
+    }
+    return { outputs: outputs };
   } catch (e) {
     if (process.env.DEBUG) {
       console.error("------------- PULUMI UPDATE ERROR ---------------");

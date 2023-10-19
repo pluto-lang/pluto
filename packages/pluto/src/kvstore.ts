@@ -1,5 +1,5 @@
 import { Resource, runtime } from "@pluto/base";
-import { aws } from "./clients";
+import { aws, k8s } from "./clients";
 
 /**
  * Define the methods for KVStore, which operate during compilation.
@@ -36,6 +36,8 @@ export class KVStore implements Resource {
     switch (rtType) {
       case runtime.Type.AWS:
         return new aws.DynamoKVStore(name, opts);
+      case runtime.Type.K8s:
+        return new k8s.RedisKVStore(name, opts);
       default:
         throw new Error(`not support this runtime '${rtType}'`);
     }
