@@ -1,7 +1,10 @@
 import { FnResource, Resource, runtime } from "@pluto/base";
 import { aws } from "./clients";
 
-export type CloudEvent = any;
+export interface CloudEvent {
+  timestamp: number;
+  data: string;
+}
 
 export interface EventHandler extends FnResource {
   (evt: CloudEvent): Promise<void>;

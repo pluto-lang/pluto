@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import * as aws from "@pulumi/aws";
-import * as awsx from "@pulumi/awsx";
+import * as archive from "@pulumi/archive";
 import * as pulumi from "@pulumi/pulumi";
 import { ResourceInfra } from "@pluto/base";
 import { Role } from "@pulumi/aws/iam";
@@ -46,68 +46,50 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
       { parent: this }
     );
 
-    const iam = new aws.iam.Role(`${name}-iam`, {
+    this.iam = new aws.iam.Role(`${name}-iam`, {
       assumeRolePolicy: role.then((assumeRole) => assumeRole.json),
     });
 
-    const repo = new awsx.ecr.Repository(`${name}-repo`, {
-      forceDelete: true,
-    });
+    // copy the compute module and runtime to a directory
+    const moduleFilename = `${this.name}.js`;
+    const runtimeFilename = "runtime.js";
+    const modulePath = path.join(WORK_DIR, moduleFilename);
+    const runtimePath = path.join(__dirname, runtimeFilename);
+    const sourceDir = path.join(WORK_DIR, `${this.name}-payload`);
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.copyFileSync(modulePath, path.join(sourceDir, moduleFilename));
+    fs.copyFileSync(runtimePath, path.join(sourceDir, runtimeFilename));
 
-    const dockerfileBody = `FROM public.ecr.aws/lambda/nodejs:16
-
-WORKDIR /app
-
-COPY dist/aws-runtime.js /app/
-COPY dist/.dapr /app/.dapr
-COPY dapr /app/.dapr/components
-COPY package.json /app/
-COPY dist/${name}.js /app/
-
-RUN npm install --omit=dev
-
-COPY dist/pluto /app/node_modules/@pluto/pluto
-
-# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)
-CMD [ "/app/aws-runtime.handler" ]
-`;
-    const filename = `${name}.Dockerfile`;
-    fs.writeFileSync(path.join(WORK_DIR, filename), dockerfileBody);
-
-    const image = new awsx.ecr.Image(
-      `${name}-image`,
+    // build the zip file
+    const outputPath = path.join(WORK_DIR, `${this.name}-payload.zip`);
+    archive.getFile(
       {
-        repositoryUrl: repo.url,
-        path: WORK_DIR,
-        extraOptions: ["--platform", "linux/amd64"],
-        dockerfile: filename,
+        type: "zip",
+        outputPath: outputPath,
+        sourceDir: sourceDir,
       },
       { parent: this }
     );
 
-    const fn = new aws.lambda.Function(
-      `${name}-fn`,
+    this.lambda = new aws.lambda.Function(
+      `${this.name}-lambda`,
       {
-        packageType: "Image",
-        imageUri: image.imageUri, //TODO
-        // imageUri: '811762874732.dkr.ecr.us-east-1.amazonaws.com/pulumi-dapr:latest',
-        role: iam.arn,
+        code: new pulumi.asset.FileArchive(outputPath),
+        role: this.iam.arn,
+        handler: "runtime.default",
+        runtime: "nodejs18.x",
         environment: {
           variables: {
-            CIR_DIR: `/app/${name}.js`,
+            COMPUTE_MODULE: moduleFilename,
             RUNTIME_TYPE: "AWS",
           },
         },
-        timeout: 120,
+        timeout: 30,
       },
       { parent: this }
     );
 
-    this.lambda = fn;
-    this.iam = iam;
     this.getPermission(Ops.WATCH_LOG, this);
-
-    this.registerOutputs();
   }
 
   public getPermission(op: string, resource: ResourceInfra) {

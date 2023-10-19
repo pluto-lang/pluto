@@ -12,6 +12,7 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
   };
 
   const pulumiStack = await LocalWorkspace.createOrSelectStack(pulumiArgs, {
+    workDir: path.dirname(pulumiFile),
     envVars: {
       RUNTIME_TYPE: args.stack.runtime.type,
       ENGINE_TYPE: args.stack.engine,
@@ -26,6 +27,7 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
 
   try {
     const progressOut = process.env.DEBUG ? console.log : undefined;
+    // await pulumiStack.cancel();
     const upRes = await pulumiStack.up({ onOutput: progressOut });
     return { outputs: upRes.outputs };
   } catch (e) {

@@ -8,7 +8,7 @@ import { writeToFile } from "./utils";
 // The name of the compiled entrypoint
 const ENTRYPOINT_FILENAME = "pulumi";
 // The name of the compiled compute module for each resource
-const COMP_MOD_FILENAME = (resName: string) => `${resName}-module`;
+const COMP_MOD_FILENAME = (resName: string) => `${resName}`;
 
 export class StaticGenerator implements Generator {
   public async generate(opts: GenerateOptions): Promise<string> {
@@ -31,13 +31,17 @@ export class StaticGenerator implements Generator {
 }
 
 function bundle(tsPath: string, outdir: string): void {
-  esbuild.buildSync({
+  const result = esbuild.buildSync({
     bundle: true,
-    // minify: true,
+    minify: false,
     entryPoints: [tsPath],
     platform: "node",
+    target: "node18",
     outdir: outdir,
   });
+  if (result.errors.length > 0) {
+    throw new Error("Failed to bundle: " + result.errors[0].text);
+  }
 }
 
 function compileTs(code: string): string {
@@ -118,7 +122,7 @@ interface ComputeIR {
 
 function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
   const genCirCode = (res: arch.Resource): string => {
-    let cirCode = `import { Event, Request, Router, Queue, KVStore } from '@pluto/pluto';\n\n`;
+    let cirCode = `import { CloudEvent, HttpRequest, HttpResponse, Router, Queue, KVStore } from '@pluto/pluto';\n\n`;
 
     // Find the dependencies of this CIR and build corresponding instances.
     for (let relat of archRef.relationships) {

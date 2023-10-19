@@ -40,10 +40,10 @@ export class DynamoKVStore extends pulumi.ComponentResource implements ResourceI
     const actions: string[] = [];
     switch (op) {
       case DynamoDbOps.GET:
-        actions.push("dynamodb:GetItem");
+        actions.push("dynamodb:*");
         break;
       case DynamoDbOps.SET:
-        actions.push("dynamodb:PutItem");
+        actions.push("dynamodb:*");
         break;
       default:
         throw new Error(`Unknown operation: ${op}`);

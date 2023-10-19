@@ -1,9 +1,20 @@
 import { FnResource, Resource } from "@pluto/base";
 
-export type Request = any;
+export interface HttpRequest {
+  path: string;
+  method: string;
+  headers: Record<string, string>;
+  query: Record<string, string>;
+  body: string | undefined;
+}
+
+export interface HttpResponse {
+  statusCode: number;
+  body: string;
+}
 
 export interface RequestHandler extends FnResource {
-  (request: Request): void;
+  (request: HttpRequest): Promise<HttpResponse>;
 }
 
 /**
