@@ -1,0 +1,19 @@
+{
+  "name": "${project_name}",
+  "version": "0.0.0",
+  "scripts": {
+    "test:dev": "pluto test --sim",
+    "test:prod": "pluto test",
+    "deploy": "pluto deploy",
+    "destroy": "pluto destroy"
+  },
+  "dependencies": {
+    "@pluto/pluto": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^16",
+    "typescript": "^5.2.2",
+    "@pluto/pluto-infra": "workspace:^"
+  },
+  "main": "dist/index.js"
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@pluto/static-generator",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pluto-lang/pluto.git",
+    "directory": "components/generators/static"
+  },
+  "author": {
+    "name": "pluto"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "compile": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@pluto/base": "workspace:^",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.4",
+    "typescript": "^5.2.2"
+  }
+}

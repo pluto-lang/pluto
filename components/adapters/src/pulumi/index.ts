@@ -1,0 +1,1 @@
+export { PulumiAdapter } from "./pulumi";

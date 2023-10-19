@@ -1,1 +1,0 @@
-export { writeToFile } from './file';

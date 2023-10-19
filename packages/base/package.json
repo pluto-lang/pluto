@@ -1,0 +1,20 @@
+{
+  "name": "@pluto/base",
+  "version": "0.0.0",
+  "description": "",
+  "main": "./dist/index.js",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "compile": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.7",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
