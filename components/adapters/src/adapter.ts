@@ -12,10 +12,20 @@ export interface ApplyResult {
   error?: string;
 }
 
-type AdapterClass = { new (...args: any[]): Adapter };
+export interface DestroyArgs {
+  projName: string;
+  stack: project.Stack;
+}
+
+export interface DestroyResult {
+  error?: string;
+}
+
+type AdapterClass = { new (): Adapter };
 
 export interface Adapter {
   apply(args: ApplyArgs): Promise<ApplyResult>;
+  destroy(args: DestroyArgs): Promise<DestroyResult>;
 }
 
 export function BuildAdapterByEngine(engType: engine.Type): Adapter | undefined {
