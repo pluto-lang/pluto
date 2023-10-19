@@ -1,5 +1,5 @@
 export interface Parameter {
-    index: number;
-    name: string;
-    value: string;
+  index: number;
+  name: string;
+  value: string;
 }
