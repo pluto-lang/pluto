@@ -25,7 +25,8 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
   process.env["WORK_DIR"] = path.dirname(pulumiFile);
 
   try {
-    const upRes = await pulumiStack.up();
+    const progressOut = process.env.DEBUG ? console.log : undefined;
+    const upRes = await pulumiStack.up({ onOutput: progressOut });
     return { outputs: upRes.outputs };
   } catch (e) {
     if (process.env.DEBUG) {

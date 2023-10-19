@@ -123,7 +123,7 @@ async function compilePluto(
             const arg = node.expression.arguments[argIdx];
             if (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg)) {
               const fnName = `fn${handlerIndex}`;
-              const resType = "Lambda";
+              const resType = "FnResource";
 
               const startPos = sourceFile.getLineAndCharacterOfPosition(arg.getStart(sourceFile));
               const endPos = sourceFile.getLineAndCharacterOfPosition(arg.getEnd());

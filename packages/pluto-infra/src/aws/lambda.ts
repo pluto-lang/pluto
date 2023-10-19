@@ -6,7 +6,6 @@ import * as pulumi from "@pulumi/pulumi";
 import { ResourceInfra } from "@pluto/base";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
-import { DynamoDbOps } from "./dynamoKVStore";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
@@ -22,10 +21,12 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
 
   lambda: Function;
   iam: Role;
+  statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
   constructor(name: string, args?: {}, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:lambda:aws/Lambda", name, args, opts);
     this.name = name;
+    this.statements = [];
 
     const role = aws.iam.getPolicyDocument(
       {
@@ -104,101 +105,44 @@ CMD [ "/app/aws-runtime.handler" ]
 
     this.lambda = fn;
     this.iam = iam;
-    this.grantPermission(Ops.WATCH_LOG, "arn:aws:logs:*:*:*");
+    this.getPermission(Ops.WATCH_LOG, this);
 
     this.registerOutputs();
   }
 
-  grantPermission(op: string, resourceArn: string) {
-    switch (op.toUpperCase()) {
-      case Ops.WATCH_LOG:
-        // const logGroup = new aws.cloudwatch.LogGroup(`${this.name}-logGroup`, { retentionInDays: 14 });
-        const lambdaLoggingPolicyDocument = aws.iam.getPolicyDocument({
-          statements: [
-            {
-              effect: "Allow",
-              actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
-              resources: [resourceArn],
-            },
-          ],
-        });
-        const lambdaLoggingPolicy = new aws.iam.Policy(`${this.name}-logPolicy`, {
-          path: "/",
-          description: "IAM policy for logging from a lambda",
-          policy: lambdaLoggingPolicyDocument.then(
-            (lambdaLoggingPolicyDocument) => lambdaLoggingPolicyDocument.json
-          ),
-        });
-        new aws.iam.RolePolicyAttachment(`${this.name}-logAttach`, {
-          role: this.iam.name,
-          policyArn: lambdaLoggingPolicy.arn,
-        });
-        break;
+  public getPermission(op: string, resource: ResourceInfra) {
+    const WATCH_LOG_ARN = "arn:aws:logs:*:*:*";
 
-      case DynamoDbOps.GET:
-        const dbGet = aws.iam.getPolicyDocument({
-          statements: [
-            {
-              effect: "Allow",
-              actions: ["dynamodb:GetItem"],
-              resources: [resourceArn],
-            },
-          ],
-        });
-        const dbGetPolicy = new aws.iam.Policy(`${this.name}-dbGetPolicy`, {
-          path: "/",
-          description: "IAM policy for getting dynamodb item from a lambda",
-          policy: dbGet.then((dbGet) => dbGet.json),
-        });
-        new aws.iam.RolePolicyAttachment(`${this.name}-dbGetAttach`, {
-          role: this.iam.name,
-          policyArn: dbGetPolicy.arn,
-        });
-        break;
-
-      case DynamoDbOps.SET:
-        const dbSet = aws.iam.getPolicyDocument({
-          statements: [
-            {
-              effect: "Allow",
-              actions: ["dynamodb:*"],
-              resources: [resourceArn],
-            },
-          ],
-        });
-        const dbSetPolicy = new aws.iam.Policy(`${this.name}-dbSetPolicy`, {
-          path: "/",
-          description: "IAM policy for setting dynamodb item from a lambda",
-          policy: dbSet.then((dbSet) => dbSet.json),
-        });
-        new aws.iam.RolePolicyAttachment(`${this.name}-dbSetAttach`, {
-          role: this.iam.name,
-          policyArn: dbSetPolicy.arn,
-        });
-        break;
-
-      case DynamoDbOps.PUSH:
-        const snsPush = aws.iam.getPolicyDocument({
-          statements: [
-            {
-              effect: "Allow",
-              actions: ["sns:*"],
-              resources: [resourceArn],
-            },
-          ],
-        });
-        const snsPushPolicy = new aws.iam.Policy(`${this.name}-snsPushPolicy`, {
-          path: "/",
-          description: "IAM policy for setting dynamodb item from a lambda",
-          policy: snsPush.then((snsPush) => snsPush.json),
-        });
-        new aws.iam.RolePolicyAttachment(`${this.name}-snsPushAttach`, {
-          role: this.iam.name,
-          policyArn: snsPushPolicy.arn,
-        });
-        break;
+    if (resource !== this) {
+      const stat: aws.types.input.iam.GetPolicyDocumentStatement = resource.getPermission(op);
+      this.statements.push(stat);
+    } else {
+      switch (op.toUpperCase()) {
+        case Ops.WATCH_LOG:
+          this.statements.push({
+            effect: "Allow",
+            actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+            resources: [WATCH_LOG_ARN],
+          });
+          break;
+        default:
+          throw new Error(`Unknown op: ${op}`);
+      }
     }
   }
 
-  public postProcess(): void {}
+  public postProcess(): void {
+    const policyDocument = aws.iam.getPolicyDocument({
+      statements: this.statements,
+    });
+    const policy = new aws.iam.Policy(`${this.name}-iam-policy`, {
+      path: "/",
+      description: "IAM policy",
+      policy: policyDocument.then((policyDocument) => policyDocument.json),
+    });
+    new aws.iam.RolePolicyAttachment(`${this.name}-iam-attachment`, {
+      role: this.iam.name,
+      policyArn: policy.arn,
+    });
+  }
 }

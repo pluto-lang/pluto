@@ -1,15 +1,17 @@
-import { Resource, runtime } from "@pluto/base";
+import { FnResource, Resource, runtime } from "@pluto/base";
 import { aws } from "./clients";
 
-interface Handler extends Resource {
-  (): void;
+export type CloudEvent = any;
+
+export interface EventHandler extends FnResource {
+  (evt: CloudEvent): Promise<void>;
 }
 
 /**
  * Define the methods for Queue, which operate during compilation.
  */
 export interface QueueInfra {
-  subscribe(fn: Handler): Promise<string>;
+  subscribe(fn: EventHandler): void;
 }
 /**
  * Define the access methods for Queue that operate during runtime.
@@ -46,4 +48,6 @@ export class Queue implements Resource {
   }
 }
 
-export interface Queue extends QueueInfra, QueueClient {}
+export interface Queue extends QueueInfra, QueueClient {
+  new (name: string, opts?: QueueOptions): Queue;
+}

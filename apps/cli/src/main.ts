@@ -1,6 +1,7 @@
 import { Option, Command } from "commander";
 import * as cmd from "./commands";
 import { version } from "./utils";
+import logger from "./log";
 
 async function main() {
   const program = new Command();
@@ -102,6 +103,6 @@ Examples:
 }
 
 main().catch((err) => {
-  console.error(err);
+  logger.error(err);
   process.exit(1);
 });

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import * as yaml from "js-yaml";
 import { arch } from "@pluto/base";
 import logger from "../log";
 import { loadConfig } from "../utils";
@@ -25,9 +26,6 @@ export async function compile(files: string[], opts: CompileOptions) {
     }
   });
 
-  // construct the arch ref from user code
-  const archRef = await loadAndDeduce(opts.deducer, files);
-
   // get current stack, and set the output directory
   const proj = loadConfig();
   const sta = proj.getStack(proj.current);
@@ -37,6 +35,11 @@ export async function compile(files: string[], opts: CompileOptions) {
   }
   const outdir = path.join(".pluto", sta.name);
 
+  // construct the arch ref from user code
+  const archRef = await loadAndDeduce(opts.deducer, files);
+  const yamlText = yaml.dump(archRef, { noRefs: true });
+  fs.writeFileSync(path.join(outdir, "arch.yml"), yamlText);
+  
   // generate the graphviz file
   await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, archRef, outdir);
 

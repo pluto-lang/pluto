@@ -1,17 +1,19 @@
-import { Resource } from "@pluto/base";
+import { FnResource, Resource } from "@pluto/base";
 
-interface Handler extends Resource {
-  (): void;
+export type Request = any;
+
+export interface RequestHandler extends FnResource {
+  (request: Request): void;
 }
 
 /**
  * Define the methods for Router, which operate during compilation.
  */
 export interface RouterInfra {
-  get(path: string, fn: Handler): void;
-  post(path: string, fn: Handler): void;
-  put(path: string, fn: Handler): void;
-  delete(path: string, fn: Handler): void;
+  get(path: string, fn: RequestHandler): void;
+  post(path: string, fn: RequestHandler): void;
+  put(path: string, fn: RequestHandler): void;
+  delete(path: string, fn: RequestHandler): void;
 }
 
 export interface RouterInfraOptions {}
