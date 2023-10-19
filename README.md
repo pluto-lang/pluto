@@ -1,5 +1,3 @@
-Pluto
-
 <h1 align="center"> Pluto</h1>
 <p align="center"> 
    <a href="./README.md"> English </a> 
