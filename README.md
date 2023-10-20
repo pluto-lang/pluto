@@ -75,7 +75,7 @@ During this process, the router will be published as an ApiGateway component, th
 
 Additionally, if developers want to redeploy the service to other public clouds or Kubernetes environments such as Azure without modifying any code, they only need to execute `pluto stack new` to create a new environment configuration and directly deploy it.
 
-Click [here](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/) to watch the complete video demonstration. 
+Click [here](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/) to watch the complete video demonstration.
 
 **Want to see more examples?**
 
@@ -86,17 +86,17 @@ Click [here](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/) to watch t
 
 You can learn why we created Pluto from here. In short, we want to solve several pain points that you may frequently encounter.
 
-+ **High learning curve**: Developing a cloud application requires mastering both the business and infrastructure technology stacks, and it is also difficult to test and debug, resulting in developers spending a lot of effort outside of writing business logic.
-+ **Difficult architecture selection**: Cloud service providers currently offer hundreds of capabilities, and Kubernetes has an infinite combination of capabilities. It is difficult for ordinary developers to determine a suitable architecture selection for their own business.
-+ **Intrusion of infrastructure configuration into business programming**: Developers need to differentiate between infrastructure code and business code when programming, know the specific location of each statement and file, understand clearly which code will be executed locally, and where the code to be deployed to the cloud needs to be written. It is far from being as simple as writing a single machine program.
-+ **Vendor lock-in**: Programming for specific service providers results in poor flexibility of the final code. When it is necessary to migrate to other cloud platforms due to cost and other factors, a lot of code modification is required to adapt to the new runtime environment.
+- **High learning curve**: Developing a cloud application requires mastering both the business and infrastructure technology stacks, and it is also difficult to test and debug, resulting in developers spending a lot of effort outside of writing business logic.
+- **Difficult architecture selection**: Cloud service providers currently offer hundreds of capabilities, and Kubernetes has an infinite combination of capabilities. It is difficult for ordinary developers to determine a suitable architecture selection for their own business.
+- **Intrusion of infrastructure configuration into business programming**: Developers need to differentiate between infrastructure code and business code when programming, know the specific location of each statement and file, understand clearly which code will be executed locally, and where the code to be deployed to the cloud needs to be written. It is far from being as simple as writing a single machine program.
+- **Vendor lock-in**: Programming for specific service providers results in poor flexibility of the final code. When it is necessary to migrate to other cloud platforms due to cost and other factors, a lot of code modification is required to adapt to the new runtime environment.
 
 ## 🌟 Features
 
-+ **Zero learning curve**: The programming interface is fully compatible with TypeScript and supports the use of most dependency libraries directly.
-+ **Focus on pure business logic**: Static deduction of source code dependencies on infrastructure at compile time, so developers do not need to distinguish between infrastructure code and business code when programming.
-+ **One-click deployment**: The CLI provides basic capabilities such as compilation and deployment. Except for coding and basic configuration, everything is automatically completed by Pluto.
-+ **Support for multiple runtime**: Unified abstraction of multiple runtime based on SDK, allowing developers to migrate between multiple runtime environments without modifying the source code.
+- **Zero learning curve**: The programming interface is fully compatible with TypeScript and supports the use of most dependency libraries directly.
+- **Focus on pure business logic**: Static deduction of source code dependencies on infrastructure at compile time, so developers do not need to distinguish between infrastructure code and business code when programming.
+- **One-click deployment**: The CLI provides basic capabilities such as compilation and deployment. Except for coding and basic configuration, everything is automatically completed by Pluto.
+- **Support for multiple runtime**: Unified abstraction of multiple runtime based on SDK, allowing developers to migrate between multiple runtime environments without modifying the source code.
 
 ## 🔧 How Pluto Works?
 
@@ -112,12 +112,12 @@ You can learn more about the workflow of Pluto [here](./docs/en/how-pluto-works.
 
 The key difference between Pluto and other products is that it uses program analysis technology to directly infer resource dependencies from user code and generate IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code. This provides developers with an experience of not having to worry about infrastructure configuration when writing code.
 
-+ Compared to BaaS products like Supabase and Appwrite, Pluto helps developers create their own infrastructure environment on the target cloud platform instead of providing self-managed components.
-+ Compared to PaaS products like Fly.io, render, and Heroku, Pluto is not responsible for container hosting, but generates more fine-grained compute modules through compilation to leverage the capabilities provided by the cloud platform, such as FaaS.
-+ Compared to scaffolding tools like Serverless Framework and Serverless Devs, Pluto does not provide an application programming framework for specific cloud vendors or frameworks, but provides a consistent programming interface for users.
-+ Compared to pure annotation-based Infra from Code (IfC) products like Klotho, Pluto directly infers resource dependencies from user code without additional annotations.
-+ Compared to SDK-based IfC products like Shuttle and Nitric, Pluto obtains resource dependencies of applications through static program analysis rather than executing user code.
-+ Both Winglang and Pluto are IfC products based on programming languages, but compared to Winglang, Pluto generates IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code.
+- Compared to BaaS products like Supabase and Appwrite, Pluto helps developers create their own infrastructure environment on the target cloud platform instead of providing self-managed components.
+- Compared to PaaS products like Fly.io, render, and Heroku, Pluto is not responsible for container hosting, but generates more fine-grained compute modules through compilation to leverage the capabilities provided by the cloud platform, such as FaaS.
+- Compared to scaffolding tools like Serverless Framework and Serverless Devs, Pluto does not provide an application programming framework for specific cloud vendors or frameworks, but provides a consistent programming interface for users.
+- Compared to pure annotation-based Infra from Code (IfC) products like Klotho, Pluto directly infers resource dependencies from user code without additional annotations.
+- Compared to SDK-based IfC products like Shuttle and Nitric, Pluto obtains resource dependencies of applications through static program analysis rather than executing user code.
+- Both Winglang and Pluto are IfC products based on programming languages, but compared to Winglang, Pluto generates IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code.
 
 You can learn more about the differences with other project [here](./docs/en/whats-different.md).
 
@@ -149,16 +149,16 @@ Pluto is currently in the PoC stage, and we welcome interested people to contrib
 
 ## 🐎 Roadmap
 
-+ [ ] Complete implementation of resource static deduction process
-  + [ ] Resource type checking
-  + [ ] Conversion of local variables to cloud resources
-+ [ ] SDK development
-  + [ ] API SDK development
-  + [ ] IaC SDK development
-  + [ ] Support for more resources and platforms
-+ [ ] More engine support
-  + [ ] Terraform
-  + [ ] ...
+- [ ] Complete implementation of resource static deduction process
+  - [ ] Resource type checking
+  - [ ] Conversion of local variables to cloud resources
+- [ ] SDK development
+  - [ ] API SDK development
+  - [ ] IaC SDK development
+  - [ ] Support for more resources and platforms
+- [ ] More engine support
+  - [ ] Terraform
+  - [ ] ...
 
 See [Issues](https://github.com/pluto-lang/pluto/issues) for more details.
 
@@ -167,4 +167,5 @@ See [Issues](https://github.com/pluto-lang/pluto/issues) for more details.
 Join our community!
 
 <!--+ [Slack](https://pluto-lang.slack.com)-->
-+ Dingtalk: 40015003990
+
+- Dingtalk: 40015003990

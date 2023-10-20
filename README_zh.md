@@ -149,17 +149,17 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
 
 ## 🐎 路线规划
 
-+ [ ] 资源静态推导过程完整实现
-  + [ ] 资源类型检查
-  + [ ] local 变量转换 cloud 资源
-+ [ ] SDK 研发
-  + [ ] API SDK 研发
-  + [ ] IaC SDK 研发
-  + [ ] 更多资源及更多平台支持
-+ [ ] 引擎扩展支持
-  + [ ] Terraform
-  + [ ] ...
-+ [ ] 本地模拟测试功能
+- [ ] 资源静态推导过程完整实现
+  - [ ] 资源类型检查
+  - [ ] local 变量转换 cloud 资源
+- [ ] SDK 研发
+  - [ ] API SDK 研发
+  - [ ] IaC SDK 研发
+  - [ ] 更多资源及更多平台支持
+- [ ] 引擎扩展支持
+  - [ ] Terraform
+  - [ ] ...
+- [ ] 本地模拟测试功能
 
 详见 [Issue 列表](https://github.com/pluto-lang/pluto/issues)
 
@@ -168,4 +168,5 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
 欢迎加入我们的社区
 
 <!--+ [Slack](https://pluto-lang.slack.com)-->
-+ Dingtalk: 40015003990
+
+- Dingtalk: 40015003990

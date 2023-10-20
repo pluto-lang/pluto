@@ -45,8 +45,8 @@ export class Queue implements Resource {
     switch (rtType) {
       case runtime.Type.AWS:
         return new aws.SNSQueue(name, opts);
-        case runtime.Type.K8s:
-          return new k8s.RedisQueue(name, opts);
+      case runtime.Type.K8s:
+        return new k8s.RedisQueue(name, opts);
       default:
         throw new Error(`not support this runtime '${rtType}'`);
     }
