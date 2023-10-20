@@ -73,7 +73,7 @@ async function compilePluto(
           const startPos = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
           const endPos = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
           const loc: arch.Location = {
-            file: "main.ts",
+            file: fileNames[0],
             linenum: {
               start: `${startPos.line}-${startPos.character}`,
               end: `${endPos.line}-${endPos.character}`,
