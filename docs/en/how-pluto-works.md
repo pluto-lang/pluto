@@ -10,9 +10,9 @@ This document will introduce how Pluto works.
 
 `Write - Test - Deploy` is the workflow provided by Pluto to users.
 
-+ **In the `Write` phase**, users rely on the SDK to develop their applications. In the code, users define the resource variables they need.
-+ **In the `Test` phase**, Pluto provides the capability to perform unit testing in both simulated and real environments. Users can choose according to the development stage. Testing in a real environment ensures the consistency between the test environment and the production environment, allowing for the discovery of potential issues before deployment. Testing in a simulated environment avoids the time-consuming process of testing in a real environment and quickly verifies the correctness of the business logic.
-+ **In the `Deploy` phase**, users specify the cloud platform to deploy to, and Pluto automates the entire process from code to runtime.
+- **In the `Write` phase**, users rely on the SDK to develop their applications. In the code, users define the resource variables they need.
+- **In the `Test` phase**, Pluto provides the capability to perform unit testing in both simulated and real environments. Users can choose according to the development stage. Testing in a real environment ensures the consistency between the test environment and the production environment, allowing for the discovery of potential issues before deployment. Testing in a simulated environment avoids the time-consuming process of testing in a real environment and quickly verifies the correctness of the business logic.
+- **In the `Deploy` phase**, users specify the cloud platform to deploy to, and Pluto automates the entire process from code to runtime.
 
 ## Engine Workflow
 
