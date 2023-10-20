@@ -1,5 +1,7 @@
 import path from "path";
-import { project } from "@pluto/base";
+import { table, TableUserConfig } from "table";
+import { confirm } from "@inquirer/prompts";
+import { arch, project } from "@pluto/base";
 import { BuildAdapterByEngine } from "@pluto/adapters";
 import logger from "../log";
 import { loadConfig } from "../utils";
@@ -35,11 +37,17 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 
   // construct the arch ref from user code
-  logger.info("Deducing...");
+  logger.info("Generating reference architecture...");
   const archRef = await loadAndDeduce(opts.deducer, files);
 
+  const confirmed = await confirmArch(archRef);
+  if (!confirmed) {
+    logger.info("You can modify your code and try again.");
+    process.exit(1);
+  }
+
   // generate the IR code based on the arch ref
-  logger.info("Generating...");
+  logger.info("Generating the IaC Code and computing modules...");
   const outdir = path.join(".pluto", sta.name);
   const entrypointFile = await loadAndGenerate(opts.generator, archRef, outdir);
   if (process.env.DEBUG) {
@@ -68,4 +76,57 @@ export async function deploy(files: string[], opts: DeployOptions) {
   for (let key in applyResult.outputs) {
     logger.info(`${key}: ${applyResult.outputs[key]}`);
   }
+}
+
+async function confirmArch(archRef: arch.Architecture): Promise<boolean> {
+  // Create the resource table for printing.
+  const resData = [["Name", "Type", "Location"]];
+  for (let resName in archRef.resources) {
+    const resource = archRef.resources[resName];
+    if (resource.type == "Root") continue;
+
+    let position = "";
+    if (resource.locations.length > 0) {
+      const loc = resource.locations[0];
+      position = path.basename(loc.file) + `:${loc.linenum.start},${loc.linenum.end}`;
+    }
+    resData.push([resName, resource.type, position]);
+  }
+
+  // To display the resource table, which includes the resources in the arch ref
+  const resConfig: TableUserConfig = {
+    drawHorizontalLine: (lineIndex: number, rowCount: number) => {
+      return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
+    },
+    header: {
+      content: "Resource in Architecture Reference",
+    },
+  };
+  console.log(table(resData, resConfig));
+
+  // Create the relationship table for printing.
+  const relatData = [["From", "To", "Type", "Operation"]];
+  for (let relat of archRef.relationships) {
+    if (relat.from.type == "Root") continue;
+
+    const typ = relat.type == "access" ? "Access" : "Create";
+    relatData.push([relat.from.name, relat.to.name, typ, relat.operation]);
+  }
+
+  // To display the relationship table, which includes the relationships among resources in the arch ref.
+  const relatConfig: TableUserConfig = {
+    drawHorizontalLine: (lineIndex: number, rowCount: number) => {
+      return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
+    },
+    header: {
+      content: "Relationship between Resources",
+    },
+  };
+  console.log(table(relatData, relatConfig));
+
+  const result = await confirm({
+    message: "Does this reference architecture satisfy the design of your application?",
+    default: true,
+  });
+  return result;
 }
