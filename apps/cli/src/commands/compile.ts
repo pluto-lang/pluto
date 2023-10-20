@@ -39,7 +39,7 @@ export async function compile(files: string[], opts: CompileOptions) {
   const archRef = await loadAndDeduce(opts.deducer, files);
   const yamlText = yaml.dump(archRef, { noRefs: true });
   fs.writeFileSync(path.join(outdir, "arch.yml"), yamlText);
-  
+
   // generate the graphviz file
   await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, archRef, outdir);
 
