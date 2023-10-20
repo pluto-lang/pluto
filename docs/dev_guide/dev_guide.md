@@ -22,7 +22,6 @@ This documentation is _NOT_ intended to be comprehensive; it is meant to be a qu
 Before asking a question, make sure you have:
 
 - Searched open and closed:
-
   - [Pluto GitHub Issues](https://github.com/pluto-lang/pluto/issues)
 
 - Read the documentations:
