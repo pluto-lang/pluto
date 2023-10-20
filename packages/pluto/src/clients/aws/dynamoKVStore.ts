@@ -33,22 +33,13 @@ export class DynamoKVStore implements KVStoreClient {
   }
 
   public async set(key: string, val: string): Promise<void> {
-    console.log(key, val, this.tableName);
-    try {
-      const client = new DynamoDBClient();
-      const docClient = DynamoDBDocumentClient.from(client);
-      const command = new PutCommand({
-        TableName: "kvstore",
-        Item: {
-          Id: key,
-          Value: val,
-        },
-      });
-      console.log("Start sending");
-      const response = await docClient.send(command);
-      console.log("Response: ", response);
-    } catch (e) {
-      console.log("Error: ", e);
-    }
+    const command = new PutCommand({
+      TableName: "kvstore",
+      Item: {
+        Id: key,
+        Value: val,
+      },
+    });
+    await this.docClient.send(command);
   }
 }

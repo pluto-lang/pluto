@@ -9,26 +9,24 @@ const mod = import(COMPUTE_MODULE);
 
 export default async (event: any, context: any) => {
   const handler = (await mod).default;
-  console.log("AWS: ", event, context);
 
   const accountId = context.invokedFunctionArn.split(":")[4];
   process.env["AWS_ACCOUNT_ID"] = accountId;
 
   if ("Records" in event) {
     // Event Handler
-    event["Records"].forEach(async (record: any) => {
+    for (const record of event["Records"]) {
       if (!("Sns" in record)) {
         throw new Error(`Unsupported event type ${JSON.stringify(record)}`);
       }
 
       const payload = record["Sns"]["Message"];
-      console.log(record, payload, typeof payload);
       const event: CloudEvent = JSON.parse(payload);
-      console.log(event);
+      console.log("Pluto: Handling event: ", event);
       await handler(event).catch((e: any) => {
         console.log("Faild to handle event: ", e);
       });
-    });
+    }
   } else {
     // HTTP Handler
     const request: HttpRequest = {
@@ -38,6 +36,7 @@ export default async (event: any, context: any) => {
       query: event.queryStringParameters,
       body: event.body,
     };
+    console.log("Pluto: Handling HTTP request: ", request);
     return await handler(request).catch((e: any) => {
       console.log("Faild to handle http request: ", e);
     });
