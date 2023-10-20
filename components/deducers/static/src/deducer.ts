@@ -122,8 +122,8 @@ async function compilePluto(
           for (let argIdx = 0; argIdx < node.expression.arguments.length; argIdx++) {
             const arg = node.expression.arguments[argIdx];
             if (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg)) {
-              const fnName = `fn${handlerIndex}`;
-              const resType = "Lambda";
+              const fnName = `lambda${handlerIndex}`;
+              const resType = "FnResource";
 
               const startPos = sourceFile.getLineAndCharacterOfPosition(arg.getStart(sourceFile));
               const endPos = sourceFile.getLineAndCharacterOfPosition(arg.getEnd());
@@ -137,7 +137,7 @@ async function compilePluto(
               const param: arch.Parameter = {
                 index: 0,
                 name: "name",
-                value: `"cir-fn${handlerIndex}"`,
+                value: `"lambda${handlerIndex}"`,
               };
               const newRes = new arch.Resource(fnName, resType, [loc], [param]);
               archRef.addResource(newRes);

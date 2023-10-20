@@ -2,14 +2,18 @@ import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Resource, ResourceInfra } from "@pluto/base";
-import { QueueClientOptions } from "@pluto/pluto/dist/queue";
+import { QueueInfra, QueueInfraOptions } from "@pluto/pluto/dist/queue";
 import { Lambda } from "./lambda";
 
-export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra {
+export enum SNSOps {
+  PUSH = "push",
+}
+
+export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra, QueueInfra {
   readonly name: string;
   topic: aws.sns.Topic;
 
-  constructor(name: string, opts?: QueueClientOptions) {
+  constructor(name: string, opts?: QueueInfraOptions) {
     super("pluto:queue:aws/SNS", name, opts);
     this.name = name;
 
@@ -55,9 +59,26 @@ export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra 
     );
   }
 
+  public getPermission(op: string): any {
+    const actions = [];
+    switch (op) {
+      case SNSOps.PUSH:
+        actions.push("sns:*");
+        break;
+      default:
+        throw new Error(`Unknown operation: ${op}`);
+    }
+
+    return {
+      effect: "Allow",
+      actions: actions,
+      resources: [this.fuzzyArn()],
+    };
+  }
+
   public postProcess() {}
 
-  fuzzyArn() {
+  private fuzzyArn() {
     return `arn:aws:sns:*:*:${this.name}`;
   }
 }

@@ -1,27 +1,32 @@
-import { Router, Queue, KVStore } from "@pluto/pluto";
+import { Router, Queue, KVStore, CloudEvent, HttpRequest } from "@pluto/pluto";
+import { HttpResponse } from "@pluto/pluto/dist/router";
 
 const kvstore = new KVStore("kvstore");
 const queue = new Queue("queue");
 const router = new Router("router");
 
-router.get("/hello", async (): Promise<string> => {
-  // const name = req.query["name"] ?? "Anonym";
-  const name = "Anonym";
+router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
+  const name = req.query["name"] ?? "Anonym";
   const message = `${name} access at ${Date.now()}`;
-  await queue.push("{ name, message }");
-  return `Publish a message: ${message}`;
+  await queue.push(JSON.stringify({ name, message }));
+  return {
+    statusCode: 200,
+    body: `Publish a message: ${message}`,
+  };
 });
 
-router.get("/store", async (): Promise<string> => {
-  // const name = req.query["name"] ?? "Anonym";
-  const name = "Anonym";
+router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
+  const name = req.query["name"] ?? "Anonym";
   const message = await kvstore.get(name);
-  return `Fetch ${name} access message: ${message}.`;
+  return {
+    statusCode: 200,
+    body: `Fetch ${name} access message: ${message}.`,
+  };
 });
 
-queue.subscribe(async (): Promise<string> => {
-  // const data = event.data;
-  const data = { name: "foo", message: "bar" };
+queue.subscribe(async (evt: CloudEvent): Promise<void> => {
+  const data = JSON.parse(evt.data);
+  console.log(data);
   await kvstore.set(data["name"], data["message"]);
-  return "receive an event";
+  return;
 });

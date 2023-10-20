@@ -1,6 +1,7 @@
 import { Option, Command } from "commander";
 import * as cmd from "./commands";
 import { version } from "./utils";
+import logger from "./log";
 
 async function main() {
   const program = new Command();
@@ -36,15 +37,18 @@ async function main() {
     .argument("[files...]", "The files need to be compiled.", ".")
     .option("-s, --stack <stack>", "Specified stack")
     .option("--sim", "Run tests in the simulator environment.")
-    .option(
-      "-d, --deducer <deducer>",
-      "Specify a deducer by setting the package name. Make sure that the package is already installed.",
-      "@pluto/static-deducer"
+    .addOption(
+      new Option(
+        "-d, --deducer <deducer>",
+        "Specify a deducer by setting the package name. Make sure that the package is already installed."
+      )
+        .default("@pluto/static-deducer")
+        .hideHelp()
     )
-    .option(
-      "-g, --generator <generator>",
-      "Specify a generator by setting the package name. Make sure that the package is already installed.",
-      "@pluto/static-generator"
+    .addOption(
+      new Option("-g, --generator <generator>", "Specify a generator by setting the package name.")
+        .default("@pluto/static-generator")
+        .hideHelp()
     )
     .action(cmd.compile);
 
@@ -53,15 +57,18 @@ async function main() {
     .description("Deploy this project to the platform specified in the stack")
     .argument("[files...]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
-    .option(
-      "-d, --deducer <deducer>",
-      "Specify a deducer by setting the package name. Make sure that the package is already installed.",
-      "@pluto/static-deducer"
+    .addOption(
+      new Option(
+        "-d, --deducer <deducer>",
+        "Specify a deducer by setting the package name. Make sure that the package is already installed."
+      )
+        .default("@pluto/static-deducer")
+        .hideHelp()
     )
-    .option(
-      "-g, --generator <generator>",
-      "Specify a generator by setting the package name. Make sure that the package is already installed.",
-      "@pluto/static-generator"
+    .addOption(
+      new Option("-g, --generator <generator>", "Specify a generator by setting the package name.")
+        .default("@pluto/static-generator")
+        .hideHelp()
     )
     .action(cmd.deploy);
 
@@ -78,15 +85,21 @@ async function main() {
       .command("compile")
       .description("Compile the source code to IR")
       .argument("[files...]", "The files need to be compiled.", "src/index.ts")
-      .option(
-        "-d, --deducer <deducer>",
-        "Specify a deducer by setting the package name. Make sure that the package is already installed.",
-        "@pluto/static-deducer"
+      .addOption(
+        new Option(
+          "-d, --deducer <deducer>",
+          "Specify a deducer by setting the package name. Make sure that the package is already installed."
+        )
+          .default("@pluto/static-deducer")
+          .hideHelp()
       )
-      .option(
-        "-g, --generator <generator>",
-        "Specify a generator by setting the package name. Make sure that the package is already installed.",
-        "@pluto/static-generator"
+      .addOption(
+        new Option(
+          "-g, --generator <generator>",
+          "Specify a generator by setting the package name."
+        )
+          .default("@pluto/static-generator")
+          .hideHelp()
       )
       .action(cmd.compile);
   }
@@ -102,6 +115,6 @@ Examples:
 }
 
 main().catch((err) => {
-  console.error(err);
+  logger.error(err);
   process.exit(1);
 });

@@ -3,7 +3,7 @@ import * as runtime from "./runtime";
 import { Resource, ResourceInfra } from "./resource";
 
 type InfraCls = { new (name: string, opts?: any): ResourceInfra };
-type ResourceCls = { new (name: string, opts?: any): Resource };
+type ResourceCls = { new (name: string, opts?: any): Resource } | "FnResource";
 
 export interface Registry {
   register(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls, cls: InfraCls): void;
@@ -39,6 +39,7 @@ export class Registry implements Registry {
   }
 
   private getKey(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls) {
-    return `${rtType}/${engType}/${resType.name}`;
+    const resName = typeof resType === "string" ? resType : resType.name;
+    return `${rtType}/${engType}/${resName}`;
   }
 }

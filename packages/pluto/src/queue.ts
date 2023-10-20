@@ -1,15 +1,20 @@
-import { Resource, runtime } from "@pluto/base";
-import { aws } from "./clients";
+import { FnResource, Resource, runtime } from "@pluto/base";
+import { aws, k8s } from "./clients";
 
-interface Handler extends Resource {
-  (): void;
+export interface CloudEvent {
+  timestamp: number;
+  data: string;
+}
+
+export interface EventHandler extends FnResource {
+  (evt: CloudEvent): Promise<void>;
 }
 
 /**
  * Define the methods for Queue, which operate during compilation.
  */
 export interface QueueInfra {
-  subscribe(fn: Handler): Promise<string>;
+  subscribe(fn: EventHandler): void;
 }
 /**
  * Define the access methods for Queue that operate during runtime.
@@ -40,10 +45,14 @@ export class Queue implements Resource {
     switch (rtType) {
       case runtime.Type.AWS:
         return new aws.SNSQueue(name, opts);
+        case runtime.Type.K8s:
+          return new k8s.RedisQueue(name, opts);
       default:
         throw new Error(`not support this runtime '${rtType}'`);
     }
   }
 }
 
-export interface Queue extends QueueInfra, QueueClient {}
+export interface Queue extends QueueInfra, QueueClient {
+  new (name: string, opts?: QueueOptions): Queue;
+}

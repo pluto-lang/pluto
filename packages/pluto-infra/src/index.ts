@@ -1,10 +1,16 @@
 import { Registry, engine, runtime } from "@pluto/base";
-import { KVStore, Lambda, Queue, Router } from "@pluto/pluto";
+import { KVStore, Queue, Router } from "@pluto/pluto";
 import * as aws from "./aws";
+import * as k8s from "./k8s";
 
 export function register(reg: Registry) {
   reg.register(runtime.Type.AWS, engine.Type.pulumi, Router, aws.ApiGatewayRouter);
   reg.register(runtime.Type.AWS, engine.Type.pulumi, KVStore, aws.DynamoKVStore);
   reg.register(runtime.Type.AWS, engine.Type.pulumi, Queue, aws.SNSQueue);
-  reg.register(runtime.Type.AWS, engine.Type.pulumi, Lambda, aws.Lambda);
+  reg.register(runtime.Type.AWS, engine.Type.pulumi, "FnResource", aws.Lambda);
+
+  reg.register(runtime.Type.K8s, engine.Type.pulumi, Router, k8s.IngressRouter);
+  reg.register(runtime.Type.K8s, engine.Type.pulumi, KVStore, k8s.RedisKVStore);
+  reg.register(runtime.Type.K8s, engine.Type.pulumi, Queue, k8s.RedisQueue);
+  reg.register(runtime.Type.K8s, engine.Type.pulumi, "FnResource", k8s.ServiceLambda);
 }

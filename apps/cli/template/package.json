@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/node": "^16",
     "typescript": "^5.2.2",
+    "@pluto/base": "workspace:^",
     "@pluto/pluto-infra": "workspace:^"
   },
   "main": "dist/index.js"

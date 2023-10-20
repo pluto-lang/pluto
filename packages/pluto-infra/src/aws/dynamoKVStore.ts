@@ -1,15 +1,14 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { ResourceInfra } from "@pluto/base";
-import { KVStoreInfraOptions } from "@pluto/pluto";
+import { KVStoreInfra, KVStoreInfraOptions } from "@pluto/pluto";
 
 export enum DynamoDbOps {
-  GET = "GET",
-  SET = "SET",
-  PUSH = "PUSH",
+  GET = "get",
+  SET = "set",
 }
 
-export class DynamoKVStore extends pulumi.ComponentResource implements ResourceInfra {
+export class DynamoKVStore extends pulumi.ComponentResource implements ResourceInfra, KVStoreInfra {
   readonly name: string;
   arn: pulumi.Output<string>;
 
@@ -37,9 +36,29 @@ export class DynamoKVStore extends pulumi.ComponentResource implements ResourceI
     this.arn = db.arn;
   }
 
-  fuzzyArn() {
-    return `arn:aws:dynamodb:*:*:table/${this.name}`;
+  public getPermission(op: string): any {
+    const actions: string[] = [];
+    switch (op) {
+      case DynamoDbOps.GET:
+        actions.push("dynamodb:*");
+        break;
+      case DynamoDbOps.SET:
+        actions.push("dynamodb:*");
+        break;
+      default:
+        throw new Error(`Unknown operation: ${op}`);
+    }
+
+    return {
+      effect: "Allow",
+      actions: actions,
+      resources: [this.fuzzyArn()],
+    };
   }
 
   public postProcess(): void {}
+
+  private fuzzyArn() {
+    return `arn:aws:dynamodb:*:*:table/${this.name}`;
+  }
 }

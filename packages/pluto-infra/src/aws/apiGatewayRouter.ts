@@ -109,6 +109,12 @@ export class ApiGatewayRouter
     );
   }
 
+  public getPermission(op: string, resource?: ResourceInfra | undefined) {
+    op;
+    resource;
+    throw new Error("Method not implemented.");
+  }
+
   public postProcess() {
     const deployment = new aws.apigatewayv2.Deployment(
       `${this.name}-deployment`,
