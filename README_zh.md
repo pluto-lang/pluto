@@ -1,5 +1,7 @@
-<h1 align="center"> Pluto：专注业务，轻松上云 </h1>
 <p align="center"> 
+    <img src="assets/pluto-logo.png" width="400">
+    <br/>
+    <br/>
    <a href="./README.md"> English </a> 
    ｜ 
    <a href="./README_zh.md"> 简体中文 </a>
@@ -7,9 +9,9 @@
 
 Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用程序，降低云服务的使用难度。开发者可以根据业务需求，在代码中**直接使用所需资源，例如 KV 数据库、消息队列**等。Pluto 通过**静态分析**代码获取应用依赖的**基础设施资源拓扑**，并在指定的云平台上部署相应的资源实例和应用程序。
 
-**⚠️ 注意：** Pluto 仍处于 PoC 阶段，尚不能产品化使用。
+**⚠️ 注意：Pluto 仍处于 PoC 阶段，尚未准备好用于生产环境。**
 
-## 示例
+## 🌟 示例
 
 <p align="center">
   <img src="./assets/demo-biz-logic.png" alt="business logic" width="450">
@@ -73,35 +75,12 @@ router.get("/store", async (req: Request): Promise<string> => {
 
 此外，如果开发者想要将服务重新发布到 Azure 等其他公有云或 Kubernetes 环境上，不需要修改任何代码，只需执行 `pluto stack new` 新建一份环境配置，就能直接部署。
 
-[点击观看完整的视频演示。](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/)
+[点击](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/)观看完整的视频演示。
 
 **想要了解更多案例？**
 
 - 基于 OpenAI API 快速构建属于你自己的聊天机器人
 - 每个清晨的一封问候信息
-
-## Pluto 工作原理
-
-<p align="center">
-  <img src="./assets/pluto-arch.jpg" alt="Pluto Architecture" width="800">
-</p>
-
-整体上，Pluto 首先从用户代码中推导出所需云资源及资源间依赖关系，构建云参考架构（architecture reference）。然后，依据 arch ref 生成一份独立于用户代码的 IaC 代码，并将用户代码拆分成多个业务模块。最终，由 IaC 引擎适配器根据 IaC 代码的类型调用相应 IaC 引擎执行部署，将应用程序发布到指定的云平台上。
-
-可以在[这篇文章](./docs/zh-CN/how-pluto-works.md)中详细了解 Pluto 的工作流程。
-
-## 与其他项目的不同?
-
-Pluto 与其他产品的关键区别在于：它利用程序分析技术直接从用户代码中推导资源依赖，并生成独立于用户代码的 IaC 代码，使得编译时执行的代码与用户代码没有直接关联。这给开发者提供了在编写代码时无需关注基础设施配置的体验。
-
-- 与 BaaS 产品（如 Supabase、Appwrite）相比，Pluto 帮助开发者在目标云平台上创建属于自己账户的基础设施环境，而不是提供自管组件。
-- 与 PaaS 产品（如 Fly.io、render、Heroku）相比，Pluto 不负责容器托管，而是通过编译生成更细粒度的计算模块，以利用云平台提供的 FaaS 等能力。
-- 与脚手架工具（如 Serverless Framework、Serverless Devs）相比，Pluto 没有针对特定云厂商或框架提供应用编程框架，而是为用户提供了一致的编程界面。
-- 与基于纯注释的 IfC（Infra from Code）产品（如 Klotho）相比，Pluto 直接从用户代码中推导资源依赖，无需额外的注释。
-- 与基于 SDK 的 IfC 产品（如 Shuttle、Nitric）相比，Pluto 通过静态程序分析获取应用的资源依赖，而不是通过执行用户代码来获取。
-- Winglang 和 Pluto 都属于基于编程语言的 IfC 产品，但与 Winglang 相比，Pluto 会生成独立于用户代码的 IaC 代码，使得编译时执行的代码与用户代码没有直接关联。
-
-可以在[这篇文档](./docs/zh-CN/whats-different.md)中详细了解与其他产品的不同之处。
 
 ## 🤯 痛点
 
@@ -119,7 +98,30 @@ Pluto 与其他产品的关键区别在于：它利用程序分析技术直接�
 - **一键上云**：CLI 提供编译、部署等基本能力，除了编码和基本配置外，一切由 Pluto 自动完成。
 - **支持多种运行时环境**：基于 SDK 提供多运行时的统一抽象，让开发者不需要修改源代码，就能够在多种运行时环境之间进行迁移。
 
-## 🚀 快速开始
+## 🔧 Pluto 是如何工作的?
+
+<p align="center">
+  <img src="./assets/pluto-arch.jpg" alt="Pluto Architecture" width="800">
+</p>
+
+整体上，Pluto 首先从用户代码中推导出所需云资源及资源间依赖关系，构建云参考架构（architecture reference）。然后，依据 arch ref 生成一份独立于用户代码的 IaC 代码，并将用户代码拆分成多个业务模块。最终，由 IaC 引擎适配器根据 IaC 代码的类型调用相应 IaC 引擎执行部署，将应用程序发布到指定的云平台上。
+
+可以在[这篇文章](./docs/zh-CN/how-pluto-works.md)中详细了解 Pluto 的工作流程。
+
+## 🤔️ 与其他项目的不同?
+
+Pluto 与其他产品的关键区别在于：它利用程序分析技术直接从用户代码中推导资源依赖，并生成独立于用户代码的 IaC 代码，使得编译时执行的代码与用户代码没有直接关联。这给开发者提供了在编写代码时无需关注基础设施配置的体验。
+
+- 与 BaaS 产品（如 Supabase、Appwrite）相比，Pluto 帮助开发者在目标云平台上创建属于自己账户的基础设施环境，而不是提供自管组件。
+- 与 PaaS 产品（如 Fly.io、render、Heroku）相比，Pluto 不负责容器托管，而是通过编译生成更细粒度的计算模块，以利用云平台提供的 FaaS 等能力。
+- 与脚手架工具（如 Serverless Framework、Serverless Devs）相比，Pluto 没有针对特定云厂商或框架提供应用编程框架，而是为用户提供了一致的编程界面。
+- 与基于纯注释的 IfC（Infra from Code）产品（如 Klotho）相比，Pluto 直接从用户代码中推导资源依赖，无需额外的注释。
+- 与基于 SDK 的 IfC 产品（如 Shuttle、Nitric）相比，Pluto 通过静态程序分析获取应用的资源依赖，而不是通过执行用户代码来获取。
+- Winglang 和 Pluto 都属于基于编程语言的 IfC 产品，但与 Winglang 相比，Pluto 会生成独立于用户代码的 IaC 代码，使得编译时执行的代码与用户代码没有直接关联。
+
+可以在[这篇文档](./docs/zh-CN/whats-different.md)中详细了解与其他产品的不同之处。
+
+## 🚀 快速开始 (WIP)
 
 1. 安装 Pluto
 
@@ -130,12 +132,15 @@ npm install pluto
 2. 准备 AWS 访问凭据
 
 ```shell
+export AWS_ACCESS_KEY_ID="AKIAQZDxxxx" # replace it with your AccessKey
+export AWS_SECRET_ACCESS_KEY="oE/xxxx" # replace it with your SecretKey
+export AWS_PROVIDER_REGION="xx-xxxx-x" # replace it with your AWS Region
 ```
 
 3. 使用 Pluto 部署您的应用
 
 ```shell
-pluto deploy
+cd apps/cli/examples && pluto deploy
 ```
 
 ## 👏 参与贡献
@@ -153,6 +158,7 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
   + [ ] 更多资源及更多平台支持
 + [ ] 引擎扩展支持
   + [ ] Terraform
+  + [ ] ...
 + [ ] 本地模拟测试功能
 
 详见 [Issue 列表](https://github.com/pluto-lang/pluto/issues)
@@ -161,5 +167,5 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
 
 欢迎加入我们的社区
 
-+ Slack: [https://pluto-lang.slack.com](https://pluto-lang.slack.com)
-+ Dingtalk: 
+<!--+ [Slack](https://pluto-lang.slack.com)-->
++ Dingtalk: 40015003990
