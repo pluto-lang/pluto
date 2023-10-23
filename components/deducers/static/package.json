@@ -12,6 +12,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "compile": "tsc",
+    "test": "vitest run --coverage",
     "watch": "tsc --watch"
   },
   "dependencies": {
@@ -20,6 +21,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.8.4",
-    "typescript": "^5.2.2"
+    "@vitest/coverage-v8": "^0.34.6",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   }
 }

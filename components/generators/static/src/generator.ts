@@ -51,19 +51,18 @@ function compileTs(code: string): string {
 }
 
 function genPirCode(archRef: arch.Architecture): string {
-  let iacSource = `import { Registry } from "@pluto/base";
+  let iacSource = `// Register all IaC SDK
+import { Registry } from "@pluto/base";
 
 const RUNTIME_TYPE = process.env['RUNTIME_TYPE'];
 const ENGINE_TYPE = process.env['ENGINE_TYPE'];
 const reg: Registry = new Registry();
 
-
-import { Queue, Router, KVStore } from "@pluto/pluto";
 import { register as plutoRegister } from "@pluto/pluto-infra";
 plutoRegister(reg);
 
 
-let resDefCls = null;
+let resDefCls;
 
 `;
 
@@ -71,6 +70,8 @@ let resDefCls = null;
   for (let resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type == "Root" || res.type == "FnResource") continue;
+
+    iacSource += res.getImports().join("\n") + "\n";
 
     iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, ENGINE_TYPE, ${res.type});
 const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
@@ -121,13 +122,18 @@ interface ComputeIR {
 }
 
 function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
+  let rootRes: arch.Resource = archRef.getResource("App");
+
   const genCirCode = (res: arch.Resource): string => {
-    let cirCode = `import { CloudEvent, HttpRequest, HttpResponse, Router, Queue, KVStore } from '@pluto/pluto';\n\n`;
+    let cirCode = res.getImports().join("\n") + "\n";
+    // Append all direct import statments to generated code
+    cirCode += rootRes.getImports().join("\n") + "\n";
 
     // Find the dependencies of this CIR and build corresponding instances.
     for (let relat of archRef.relationships) {
       if (relat.from != res) continue;
       // TODO: verify if the buildClient function exists. If it does not, use the original statement.
+      cirCode += relat.to.getImports() + "\n";
       cirCode += `const ${relat.to.name} = ${
         relat.to.type
       }.buildClient(${relat.to.getParamString()});\n`;

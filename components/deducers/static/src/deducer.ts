@@ -2,6 +2,13 @@ import * as ts from "typescript";
 import * as path from "path";
 import { assert } from "console";
 import { DeduceOptions, Deducer, arch } from "@pluto/base";
+import {
+  ImportElement,
+  ImportStore,
+  ImportType,
+  extractImportElements,
+  genImportStats,
+} from "./imports";
 
 const CloudResourceType = ["Router", "Queue", "KVStore"];
 
@@ -50,8 +57,14 @@ async function compilePluto(
   let stateStoreIndex = 1;
   let queueIndex = 1;
 
+  const importStore: ImportStore = new ImportStore();
   // Loop through the root AST nodes of the file
   ts.forEachChild(sourceFile, (node) => {
+    if (ts.isImportDeclaration(node)) {
+      importStore.update(extractImportElements(sourceFile, node));
+      return;
+    }
+
     // VariableStatement: Maybe IaC Definition
     if (ts.isVariableStatement(node)) {
       if (
@@ -61,7 +74,7 @@ async function compilePluto(
         // TODO: declarations.forEach()
         let newExpr = node.declarationList.declarations[0].initializer;
         let variable = node.declarationList.declarations[0].name;
-        const name = variable.getText(sourceFile);
+        const varName = variable.getText(sourceFile);
         let symbol = checker.getSymbolAtLocation(newExpr.expression);
         // TODO: use `ts.factory.createIdentifier("factorial")` to replace.
         if (symbol) {
@@ -69,6 +82,14 @@ async function compilePluto(
           let ty = checker.getTypeOfSymbol(symbol);
           let resType = ty.symbol.escapedName.toString();
           const param1 = newExpr.arguments![0].getText();
+
+          // Get the dependency of this class
+          const initFn = newExpr.expression.getText(sourceFile);
+          const elemName = initFn.split(".")[0];
+          const elem = importStore.searchElement(elemName);
+          if (elem == undefined) {
+            throw new Error(`Cannot find the element for ${elemName}`);
+          }
 
           const startPos = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
           const endPos = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
@@ -80,7 +101,9 @@ async function compilePluto(
             },
           };
           const param: arch.Parameter = { index: 0, name: "name", value: param1 };
-          const newRes = new arch.Resource(name, resType, [loc], [param]);
+          const newRes = new arch.Resource(varName, resType, [loc], [param]);
+          // TODO: get additional dependencies in the parameters.
+          newRes.addImports(...genImportStats([elem]));
           const relat = new arch.Relationship(root, newRes, arch.RelatType.CREATE, "new");
           archRef.addResource(newRes);
           archRef.addRelationship(relat);
@@ -111,8 +134,9 @@ async function compilePluto(
       let symbol = checker.getSymbolAtLocation(node.expression.expression.expression);
       if (symbol) {
         let ty = checker.getTypeOfSymbol(symbol);
+        const className = ty.symbol.escapedName.toString();
         // TODO: use router Type
-        if (["Router", "Queue"].indexOf(ty.symbol.escapedName.toString()) !== -1) {
+        if (["Router", "Queue"].indexOf(className) !== -1) {
           let objName = symbol.escapedName;
           const op = node.expression.expression.name.getText();
 
@@ -143,6 +167,15 @@ async function compilePluto(
               archRef.addResource(newRes);
               resources.push(newRes);
 
+              // Constructs the import statments of this function
+              const deps: ImportElement[] = resolveBodyDeps(sourceFile, importStore, arg);
+              const importStats = genImportStats(deps);
+              if (process.env.DEBUG) {
+                console.log(`Generate ${importStats.length} import statments: `);
+                console.log(importStats.join("\n"));
+              }
+              newRes.addImports(...importStats);
+
               detectPermission(archRef, fnName, arg, checker);
 
               // TODO: get the parameter name
@@ -165,7 +198,55 @@ async function compilePluto(
     }
   });
 
+  // Add direct import statment to Root
+  const elems = importStore.listAllElementsByType(ImportType.Direct);
+  root.addImports(...genImportStats(elems));
   return archRef;
+}
+
+function resolveBodyDeps(
+  sourceFile: ts.SourceFile,
+  importStore: ImportStore,
+  fnNode: ts.ArrowFunction | ts.FunctionExpression
+): ImportElement[] {
+  // Iterate through all nodes in this function.
+  const resolveNodeDeps = (node: ts.Node): ImportElement[] => {
+    if (ts.isTypeNode(node)) {
+      // Check if this node is a TypeNode. If it is true and it is not a Promise, return the discovery.
+      const typeName = node.getText(sourceFile);
+      if (!typeName.startsWith("Promise")) {
+        if (process.env.DEBUG) {
+          console.log("Found a dependent type:", typeName);
+        }
+        // If the type format is 'ns.type', search for the first part.
+        const elemName = typeName.split(".")[0];
+        const elem = importStore.searchElement(elemName);
+        if (typeName == "void") {
+          return [];
+        }
+        if (elem == undefined) {
+          throw new Error(`Cannot find the type from import elements: ${typeName}.`);
+        }
+        return [elem];
+      }
+    }
+
+    const deps: ImportElement[] = [];
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      // Handle formats that package property access, such as 'pkg.access', but ignore object property access.
+      const callerName = node.expression.expression.getText(sourceFile);
+      const elem = importStore.searchElement(callerName);
+      if (elem) {
+        deps.push(elem);
+      }
+    }
+
+    node.forEachChild((node) => {
+      deps.push(...resolveNodeDeps(node));
+    });
+    return deps;
+  };
+  return resolveNodeDeps(fnNode);
 }
 
 function detectPermission(

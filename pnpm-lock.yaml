@@ -110,9 +110,15 @@ importers:
       '@types/node':
         specifier: ^20.8.4
         version: 20.8.4
+      '@vitest/coverage-v8':
+        specifier: ^0.34.6
+        version: 0.34.6(vitest@0.34.6)
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
+      vitest:
+        specifier: ^0.34.6
+        version: 0.34.6
 
   components/generators/graphviz:
     dependencies:
