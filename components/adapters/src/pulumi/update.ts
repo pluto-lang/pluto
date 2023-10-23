@@ -18,7 +18,7 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
       ENGINE_TYPE: args.stack.engine,
     },
   });
-  const pulumiConfig = genPulumiConfigByRuntime(args.stack);
+  const pulumiConfig = await genPulumiConfigByRuntime(args.stack);
   await pulumiStack.setAllConfig(pulumiConfig);
 
   process.env["RUNTIME_TYPE"] = args.stack.runtime.type;

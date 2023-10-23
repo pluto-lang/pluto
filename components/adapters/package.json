@@ -18,6 +18,7 @@
   "dependencies": {
     "@pluto/base": "workspace:^",
     "@pulumi/pulumi": "^3.88.0",
+    "@smithy/shared-ini-file-loader": "^2.2.2",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

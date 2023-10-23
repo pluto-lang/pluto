@@ -48,14 +48,10 @@ export abstract class Runtime {
 
 export class AwsRuntime extends Runtime {
   region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
 
-  constructor(region: string, ak: string, sk: string) {
+  constructor(region: string) {
     super(runtime.Type.AWS);
     this.region = region;
-    this.accessKeyId = ak;
-    this.secretAccessKey = sk;
   }
 }
 

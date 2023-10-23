@@ -16,7 +16,7 @@ importers:
         version: 3.0.3
       turbo:
         specifier: latest
-        version: 1.10.15
+        version: 1.10.16
 
   apps/cli:
     dependencies:
@@ -38,6 +38,9 @@ importers:
       '@pluto/static-generator':
         specifier: workspace:^
         version: link:../../components/generators/static
+      '@smithy/shared-ini-file-loader':
+        specifier: ^2.2.2
+        version: 2.2.2
       chalk:
         specifier: ^4.1.2
         version: 4.1.2
@@ -75,6 +78,9 @@ importers:
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
+      '@smithy/shared-ini-file-loader':
+        specifier: ^2.2.2
+        version: 2.2.2
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
@@ -136,6 +142,25 @@ importers:
       esbuild:
         specifier: 0.19.5
         version: 0.19.5
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
+  examples/hello-pluto:
+    dependencies:
+      '@pluto/pluto':
+        specifier: workspace:^
+        version: link:../../packages/pluto
+    devDependencies:
+      '@pluto/base':
+        specifier: workspace:^
+        version: link:../../packages/base
+      '@pluto/pluto-infra':
+        specifier: workspace:^
+        version: link:../../packages/pluto-infra
+      '@types/node':
+        specifier: ^16
+        version: 16.0.0
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
@@ -490,7 +515,7 @@ packages:
       '@aws-sdk/types': 3.425.0
       '@smithy/credential-provider-imds': 2.0.16
       '@smithy/property-provider': 2.0.12
-      '@smithy/shared-ini-file-loader': 2.2.0
+      '@smithy/shared-ini-file-loader': 2.2.2
       '@smithy/types': 2.3.5
       tslib: 2.6.2
     transitivePeerDependencies:
@@ -509,7 +534,7 @@ packages:
       '@aws-sdk/types': 3.425.0
       '@smithy/credential-provider-imds': 2.0.16
       '@smithy/property-provider': 2.0.12
-      '@smithy/shared-ini-file-loader': 2.2.0
+      '@smithy/shared-ini-file-loader': 2.2.2
       '@smithy/types': 2.3.5
       tslib: 2.6.2
     transitivePeerDependencies:
@@ -522,7 +547,7 @@ packages:
     dependencies:
       '@aws-sdk/types': 3.425.0
       '@smithy/property-provider': 2.0.12
-      '@smithy/shared-ini-file-loader': 2.2.0
+      '@smithy/shared-ini-file-loader': 2.2.2
       '@smithy/types': 2.3.5
       tslib: 2.6.2
     dev: false
@@ -535,7 +560,7 @@ packages:
       '@aws-sdk/token-providers': 3.427.0
       '@aws-sdk/types': 3.425.0
       '@smithy/property-provider': 2.0.12
-      '@smithy/shared-ini-file-loader': 2.2.0
+      '@smithy/shared-ini-file-loader': 2.2.2
       '@smithy/types': 2.3.5
       tslib: 2.6.2
     transitivePeerDependencies:
@@ -684,7 +709,7 @@ packages:
       '@smithy/node-http-handler': 2.1.7
       '@smithy/property-provider': 2.0.12
       '@smithy/protocol-http': 3.0.7
-      '@smithy/shared-ini-file-loader': 2.2.0
+      '@smithy/shared-ini-file-loader': 2.2.2
       '@smithy/smithy-client': 2.1.11
       '@smithy/types': 2.3.5
       '@smithy/url-parser': 2.0.11
@@ -1663,7 +1688,7 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       '@smithy/property-provider': 2.0.12
-      '@smithy/shared-ini-file-loader': 2.2.0
+      '@smithy/shared-ini-file-loader': 2.2.2
       '@smithy/types': 2.3.5
       tslib: 2.6.2
     dev: false
@@ -1716,11 +1741,11 @@ packages:
       '@smithy/types': 2.3.5
     dev: false
 
-  /@smithy/shared-ini-file-loader@2.2.0:
-    resolution: {integrity: sha512-xFXqs4vAb5BdkzHSRrTapFoaqS4/3m/CGZzdw46fBjYZ0paYuLAoMY60ICCn1FfGirG+PiJ3eWcqJNe4/SkfyA==}
+  /@smithy/shared-ini-file-loader@2.2.2:
+    resolution: {integrity: sha512-noyQUPn7b1M8uB0GEXc/Zyxq+5K2b7aaqWnLp+hgJ7+xu/FCvtyWy5eWLDjQEsHnAet2IZhS5QF8872OR69uNg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      '@smithy/types': 2.3.5
+      '@smithy/types': 2.4.0
       tslib: 2.6.2
     dev: false
 
@@ -1752,6 +1777,13 @@ packages:
     engines: {node: '>=14.0.0'}
     dependencies:
       tslib: 2.6.2
+
+  /@smithy/types@2.4.0:
+    resolution: {integrity: sha512-iH1Xz68FWlmBJ9vvYeHifVMWJf82ONx+OybPW8ZGf5wnEv2S0UXcU4zwlwJkRXuLKpcSLHrraHbn2ucdVXLb4g==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      tslib: 2.6.2
+    dev: false
 
   /@smithy/url-parser@2.0.11:
     resolution: {integrity: sha512-h89yXMCCF+S5k9XIoKltMIWTYj+FcEkU/IIFZ6RtE222fskOTL4Iak6ZRG+ehSvZDt8yKEcxqheTDq7JvvtK3g==}
@@ -1951,6 +1983,10 @@ packages:
       '@types/node': 20.8.4
       form-data: 4.0.0
     dev: false
+
+  /@types/node@16.0.0:
+    resolution: {integrity: sha512-TmCW5HoZ2o2/z2EYi109jLqIaPIi9y/lc2LmDCWzuCi35bcaQ+OtUh6nwBiFK7SOu25FAU5+YKdqFZUwtqGSdg==}
+    dev: true
 
   /@types/node@20.8.4:
     resolution: {integrity: sha512-ZVPnqU58giiCjSxjVUESDtdPk4QR5WQhhINbc9UBrKLU68MX5BF6kbQzTrkwbolyr0X8ChBpXfavr5mZFKZQ5A==}
@@ -4005,64 +4041,64 @@ packages:
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
-  /turbo-darwin-64@1.10.15:
-    resolution: {integrity: sha512-Sik5uogjkRTe1XVP9TC2GryEMOJCaKE2pM/O9uLn4koQDnWKGcLQv+mDU+H+9DXvKLnJnKCD18OVRkwK5tdpoA==}
+  /turbo-darwin-64@1.10.16:
+    resolution: {integrity: sha512-+Jk91FNcp9e9NCLYlvDDlp2HwEDp14F9N42IoW3dmHI5ZkGSXzalbhVcrx3DOox3QfiNUHxzWg4d7CnVNCuuMg==}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-darwin-arm64@1.10.15:
-    resolution: {integrity: sha512-xwqyFDYUcl2xwXyGPmHkmgnNm4Cy0oNzMpMOBGRr5x64SErS7QQLR4VHb0ubiR+VAb8M+ECPklU6vD1Gm+wekg==}
+  /turbo-darwin-arm64@1.10.16:
+    resolution: {integrity: sha512-jqGpFZipIivkRp/i+jnL8npX0VssE6IAVNKtu573LXtssZdV/S+fRGYA16tI46xJGxSAivrZ/IcgZrV6Jk80bw==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-64@1.10.15:
-    resolution: {integrity: sha512-dM07SiO3RMAJ09Z+uB2LNUSkPp3I1IMF8goH5eLj+d8Kkwoxd/+qbUZOj9RvInyxU/IhlnO9w3PGd3Hp14m/nA==}
+  /turbo-linux-64@1.10.16:
+    resolution: {integrity: sha512-PpqEZHwLoizQ6sTUvmImcRmACyRk9EWLXGlqceogPZsJ1jTRK3sfcF9fC2W56zkSIzuLEP07k5kl+ZxJd8JMcg==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-arm64@1.10.15:
-    resolution: {integrity: sha512-MkzKLkKYKyrz4lwfjNXH8aTny5+Hmiu4SFBZbx+5C0vOlyp6fV5jZANDBvLXWiDDL4DSEAuCEK/2cmN6FVH1ow==}
+  /turbo-linux-arm64@1.10.16:
+    resolution: {integrity: sha512-TMjFYz8to1QE0fKVXCIvG/4giyfnmqcQIwjdNfJvKjBxn22PpbjeuFuQ5kNXshUTRaTJihFbuuCcb5OYFNx4uw==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-64@1.10.15:
-    resolution: {integrity: sha512-3TdVU+WEH9ThvQGwV3ieX/XHebtYNHv9HARHauPwmVj3kakoALkpGxLclkHFBLdLKkqDvmHmXtcsfs6cXXRHJg==}
+  /turbo-windows-64@1.10.16:
+    resolution: {integrity: sha512-+jsf68krs0N66FfC4/zZvioUap/Tq3sPFumnMV+EBo8jFdqs4yehd6+MxIwYTjSQLIcpH8KoNMB0gQYhJRLZzw==}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-arm64@1.10.15:
-    resolution: {integrity: sha512-l+7UOBCbfadvPMYsX08hyLD+UIoAkg6ojfH+E8aud3gcA1padpjCJTh9gMpm3QdMbKwZteT5uUM+wyi6Rbbyww==}
+  /turbo-windows-arm64@1.10.16:
+    resolution: {integrity: sha512-sKm3hcMM1bl0B3PLG4ifidicOGfoJmOEacM5JtgBkYM48ncMHjkHfFY7HrJHZHUnXM4l05RQTpLFoOl/uIo2HQ==}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo@1.10.15:
-    resolution: {integrity: sha512-mKKkqsuDAQy1wCCIjCdG+jOCwUflhckDMSRoeBPcIL/CnCl7c5yRDFe7SyaXloUUkt4tUR0rvNIhVCcT7YeQpg==}
+  /turbo@1.10.16:
+    resolution: {integrity: sha512-2CEaK4FIuSZiP83iFa9GqMTQhroW2QryckVqUydmg4tx78baftTOS0O+oDAhvo9r9Nit4xUEtC1RAHoqs6ZEtg==}
     hasBin: true
     optionalDependencies:
-      turbo-darwin-64: 1.10.15
-      turbo-darwin-arm64: 1.10.15
-      turbo-linux-64: 1.10.15
-      turbo-linux-arm64: 1.10.15
-      turbo-windows-64: 1.10.15
-      turbo-windows-arm64: 1.10.15
+      turbo-darwin-64: 1.10.16
+      turbo-darwin-arm64: 1.10.16
+      turbo-linux-64: 1.10.16
+      turbo-linux-arm64: 1.10.16
+      turbo-windows-64: 1.10.16
+      turbo-windows-arm64: 1.10.16
     dev: true
 
   /type-check@0.4.0:

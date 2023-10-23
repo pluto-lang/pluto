@@ -131,6 +131,12 @@ npm install pluto
 
 2. Prepare AWS access credentials
 
+If you have multiple profiles, you can specify which profile to use with Pluto through one of the following methods:
+
+```shell
+export AWS_PROFILE="dev" # replace it with your specified profile
+```
+
 ```shell
 export AWS_ACCESS_KEY_ID="AKIAQZDxxxx" # replace it with your AccessKey
 export AWS_SECRET_ACCESS_KEY="oE/xxxx" # replace it with your SecretKey
