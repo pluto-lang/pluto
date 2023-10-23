@@ -10,7 +10,7 @@ export async function destroy(args: DestroyArgs): Promise<DestroyResult> {
   };
 
   const pulumiStack = await LocalWorkspace.createOrSelectStack(pulumiArgs);
-  const pulumiConfig = genPulumiConfigByRuntime(args.stack);
+  const pulumiConfig = await genPulumiConfigByRuntime(args.stack);
   await pulumiStack.setAllConfig(pulumiConfig);
 
   try {
