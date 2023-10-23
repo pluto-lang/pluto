@@ -47,11 +47,8 @@ export abstract class Runtime {
 }
 
 export class AwsRuntime extends Runtime {
-  region: string;
-
-  constructor(region: string) {
+  constructor() {
     super(runtime.Type.AWS);
-    this.region = region;
   }
 }
 
