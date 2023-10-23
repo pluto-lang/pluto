@@ -2,13 +2,15 @@
   "name": "@pluto/base",
   "version": "0.0.0",
   "description": "",
+  "author": "plutolang",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist/"
   ],
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.7",

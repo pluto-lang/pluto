@@ -6,13 +6,15 @@
     "url": "git+https://github.com/pluto-lang/pluto.git",
     "directory": "components/generators/graphviz"
   },
-  "author": {
-    "name": "pluto"
-  },
+  "author": "plutolang",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
   },
   "dependencies": {
     "@pluto/base": "workspace:^",

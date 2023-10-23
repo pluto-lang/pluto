@@ -1,10 +1,12 @@
 {
   "name": "@pluto/pluto-infra",
+  "version": "0.0.0",
   "description": "",
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
   },
+  "author": "plutolang",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -15,7 +17,6 @@
     "@pluto/pluto": "workspace:^",
     "@pulumi/archive": "^0.0.2",
     "@pulumi/aws": "^6.4.1",
-    "@pulumi/awsx": "^1.0.6",
     "@pulumi/docker": "^4.4.3",
     "@pulumi/kubernetes": "^4.3.0",
     "@pulumi/pulumi": "^3.88.0"

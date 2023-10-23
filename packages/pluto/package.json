@@ -1,13 +1,15 @@
 {
   "name": "@pluto/pluto",
+  "version": "0.0.0",
   "description": "",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist/"
   ],
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.427.0",

@@ -55,7 +55,13 @@ function genPirCode(archRef: arch.Architecture): string {
 import { Registry } from "@pluto/base";
 
 const RUNTIME_TYPE = process.env['RUNTIME_TYPE'];
+if (!RUNTIME_TYPE) {
+  throw new Error("Missing RUNTIME_TYPE");
+}
 const ENGINE_TYPE = process.env['ENGINE_TYPE'];
+if (!ENGINE_TYPE) {
+  throw new Error("Missing ENGINE_TYPE");
+}
 const reg: Registry = new Registry();
 
 import { register as plutoRegister } from "@pluto/pluto-infra";

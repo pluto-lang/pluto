@@ -3,7 +3,6 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "compile": "turbo run compile",
     "watch": "turbo run watch --parallel",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
@@ -11,6 +10,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "@changesets/cli": "^2.26.2",
     "eslint": "^8.48.0",
     "prettier": "^3.0.3",
     "turbo": "latest"

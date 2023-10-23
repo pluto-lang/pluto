@@ -70,6 +70,7 @@ async function main() {
         .default("@pluto/static-generator")
         .hideHelp()
     )
+    .option("--apply", "No deduction or generation, only application.", false)
     .action(cmd.deploy);
 
   program

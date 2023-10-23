@@ -19,8 +19,6 @@ export async function genPulumiConfigForAWS(sta: project.Stack): Promise<ConfigM
   const creds = await getAwsCredentials();
   return {
     "aws:region": { value: creds.region },
-    "aws:accessKey": { value: creds.accessKeyId },
-    "aws:secretKey": { value: creds.secretAccessKey },
   };
 }
 
@@ -33,8 +31,6 @@ async function genPulumiConfigForK8s(sta: project.Stack): Promise<ConfigMap> {
 
 interface AwsCredentials {
   region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
 }
 
 export async function getAwsCredentials(): Promise<AwsCredentials> {
@@ -44,16 +40,13 @@ export async function getAwsCredentials(): Promise<AwsCredentials> {
   const profile = process.env.AWS_PROFILE ?? "default";
   const awsConfig = await loadSharedConfigFiles();
   const profileConfig = awsConfig.configFile[profile];
-  const profileCreds = awsConfig.credentialsFile[profile];
-  if (profileCreds) {
+  if (profileConfig) {
     const region = profileConfig["region"];
-    const accessKeyId = profileCreds["aws_access_key_id"];
-    const secretAccessKey = profileCreds["aws_secret_access_key"];
-    if (region && accessKeyId && secretAccessKey) {
+    if (region) {
       if (process.env.DEBUG) {
         console.log("Got credentials from file.");
       }
-      return { region, accessKeyId, secretAccessKey };
+      return { region };
     }
   }
   if (process.env.DEBUG) {
@@ -62,13 +55,11 @@ export async function getAwsCredentials(): Promise<AwsCredentials> {
 
   // Get from enviroment variables.
   const region = process.env.AWS_REGION;
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-  if (region && accessKeyId && secretAccessKey) {
+  if (region) {
     if (process.env.DEBUG) {
       console.log("Got credentials from env.");
     }
-    return { region, accessKeyId, secretAccessKey };
+    return { region };
   }
   if (process.env.DEBUG) {
     console.log("Failed to retrieve credentials from env var.");

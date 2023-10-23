@@ -11,6 +11,7 @@ export interface DeployOptions {
   stack?: string;
   deducer: string;
   generator: string;
+  apply: boolean;
 }
 
 export async function deploy(files: string[], opts: DeployOptions) {
@@ -36,22 +37,26 @@ export async function deploy(files: string[], opts: DeployOptions) {
     }
   }
 
-  // construct the arch ref from user code
-  logger.info("Generating reference architecture...");
-  const archRef = await loadAndDeduce(opts.deducer, files);
+  let entrypointFile: string | undefined;
+  // No deduction or generation, only application.
+  if (!opts.apply) {
+    // construct the arch ref from user code
+    logger.info("Generating reference architecture...");
+    const archRef = await loadAndDeduce(opts.deducer, files);
 
-  const confirmed = await confirmArch(archRef);
-  if (!confirmed) {
-    logger.info("You can modify your code and try again.");
-    process.exit(1);
-  }
+    const confirmed = await confirmArch(archRef);
+    if (!confirmed) {
+      logger.info("You can modify your code and try again.");
+      process.exit(1);
+    }
 
-  // generate the IR code based on the arch ref
-  logger.info("Generating the IaC Code and computing modules...");
-  const outdir = path.join(".pluto", sta.name);
-  const entrypointFile = await loadAndGenerate(opts.generator, archRef, outdir);
-  if (process.env.DEBUG) {
-    logger.debug("Entrypoint file: ", entrypointFile);
+    // generate the IR code based on the arch ref
+    logger.info("Generating the IaC Code and computing modules...");
+    const outdir = path.join(".pluto", sta.name);
+    entrypointFile = await loadAndGenerate(opts.generator, archRef, outdir);
+    if (process.env.DEBUG) {
+      logger.debug("Entrypoint file: ", entrypointFile);
+    }
   }
 
   // build the adapter based on the engine type
@@ -65,7 +70,8 @@ export async function deploy(files: string[], opts: DeployOptions) {
   const applyResult = await adpt.apply({
     projName: proj.name,
     stack: sta,
-    entrypoint: entrypointFile,
+    // TODO: Store the last entrypoint for use in 'apply only' mode.
+    entrypoint: entrypointFile ?? `.pluto/${sta.name}/compiled/${sta.engine}.js`,
   });
   if (applyResult.error) {
     logger.error(applyResult.error);

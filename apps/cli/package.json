@@ -1,21 +1,20 @@
 {
-  "name": "@pluto/cli",
-  "version": "0.0.0",
+  "name": "plutolang",
+  "version": "0.0.1",
   "description": "The command line of Pluto-lang",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",
     "directory": "apps/cli"
   },
-  "author": {
-    "name": "pluto"
-  },
+  "author": "plutolang",
   "keywords": [
     "cli",
     "npmtool"
   ],
   "bin": {
-    "pluto": "./bin/pluto"
+    "pluto": "bin/pluto",
+    "pluto-stack": "bin/pluto-stack"
   },
   "main": "./dist/main.js",
   "files": [
@@ -24,7 +23,7 @@
     "template/"
   ],
   "scripts": {
-    "compile": "tsc",
+    "build": "tsc",
     "watch": "tsc --watch",
     "dev": "./bin/pluto"
   },

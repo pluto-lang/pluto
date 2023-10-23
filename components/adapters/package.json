@@ -1,21 +1,22 @@
 {
   "name": "@pluto/adapters",
-  "private": true,
   "version": "0.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",
     "directory": "components/deducers/static"
   },
-  "author": {
-    "name": "pluto"
-  },
+  "author": "plutolang",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
   "scripts": {
-    "compile": "tsc",
+    "build": "tsc",
+    "watch": "npm run build -- --watch",
     "test": "vitest run --coverage",
-    "test:watch": "vitest",
-    "watch": "tsc --watch"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@pluto/base": "workspace:^",
