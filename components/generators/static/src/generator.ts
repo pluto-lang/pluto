@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import * as ts from "typescript";
 import * as esbuild from "esbuild";
-import { GenerateOptions, Generator, arch } from "@pluto/base";
+import { GenerateOptions, Generator, arch } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 // The name of the compiled entrypoint
@@ -52,13 +52,19 @@ function compileTs(code: string): string {
 
 function genPirCode(archRef: arch.Architecture): string {
   let iacSource = `// Register all IaC SDK
-import { Registry } from "@pluto/base";
+import { Registry } from "@plutolang/base";
 
 const RUNTIME_TYPE = process.env['RUNTIME_TYPE'];
+if (!RUNTIME_TYPE) {
+  throw new Error("Missing RUNTIME_TYPE");
+}
 const ENGINE_TYPE = process.env['ENGINE_TYPE'];
+if (!ENGINE_TYPE) {
+  throw new Error("Missing ENGINE_TYPE");
+}
 const reg: Registry = new Registry();
 
-import { register as plutoRegister } from "@pluto/pluto-infra";
+import { register as plutoRegister } from "@plutolang/pluto-infra";
 plutoRegister(reg);
 
 

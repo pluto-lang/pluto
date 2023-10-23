@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { engine, project } from "@pluto/base";
+import { engine, project } from "@plutolang/base";
 import { genPulumiConfigForAWS } from "./utils";
 
 // TODO: Enable testing in CI and other environments.

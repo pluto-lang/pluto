@@ -1,8 +1,8 @@
 import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@pluto/base";
-import { RouterInfra, RouterInfraOptions } from "@pluto/pluto";
+import { Resource, ResourceInfra } from "@plutolang/base";
+import { RouterInfra, RouterInfraOptions } from "@plutolang/pluto";
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
 import { Lambda } from "./lambda";
 

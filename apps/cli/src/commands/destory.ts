@@ -1,5 +1,5 @@
-import { project } from "@pluto/base";
-import { BuildAdapterByEngine } from "@pluto/adapters";
+import { project } from "@plutolang/base";
+import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
 import { loadConfig } from "../utils";
 

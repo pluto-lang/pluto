@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { ResourceInfra } from "@pluto/base";
-import { KVStoreInfra, KVStoreInfraOptions } from "@pluto/pluto";
+import { ResourceInfra } from "@plutolang/base";
+import { KVStoreInfra, KVStoreInfraOptions } from "@plutolang/pluto";
 
 export enum DynamoDbOps {
   GET = "get",

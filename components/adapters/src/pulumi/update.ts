@@ -1,33 +1,40 @@
 import path from "path";
-import { InlineProgramArgs, LocalWorkspace } from "@pulumi/pulumi/automation";
+import { LocalWorkspace } from "@pulumi/pulumi/automation";
 import { ApplyArgs, ApplyResult } from "../adapter";
 import { genPulumiConfigByRuntime } from "./utils";
 
 export async function update(args: ApplyArgs): Promise<ApplyResult> {
   const pulumiFile = path.resolve("./", args.entrypoint);
-  const pulumiArgs: InlineProgramArgs = {
-    stackName: args.stack.name,
-    projectName: args.projName,
-    program: pulumiProgram(pulumiFile),
-  };
+  const pulumiWorkDir = path.dirname(pulumiFile);
 
-  const pulumiStack = await LocalWorkspace.createOrSelectStack(pulumiArgs, {
-    workDir: path.dirname(pulumiFile),
-    envVars: {
-      RUNTIME_TYPE: args.stack.runtime.type,
-      ENGINE_TYPE: args.stack.engine,
+  const pulumiStack = await LocalWorkspace.createOrSelectStack(
+    {
+      stackName: args.stack.name,
+      workDir: pulumiWorkDir,
     },
-  });
+    {
+      workDir: pulumiWorkDir,
+      envVars: {
+        RUNTIME_TYPE: args.stack.runtime.type,
+        ENGINE_TYPE: args.stack.engine,
+      },
+      projectSettings: {
+        runtime: "nodejs",
+        name: args.projName,
+        main: pulumiFile,
+      },
+    }
+  );
+
   const pulumiConfig = await genPulumiConfigByRuntime(args.stack);
   await pulumiStack.setAllConfig(pulumiConfig);
 
   process.env["RUNTIME_TYPE"] = args.stack.runtime.type;
   process.env["ENGINE_TYPE"] = args.stack.engine;
-  process.env["WORK_DIR"] = path.dirname(pulumiFile);
+  process.env["WORK_DIR"] = pulumiWorkDir;
 
   try {
     const progressOut = process.env.DEBUG ? console.log : undefined;
-    // await pulumiStack.cancel();
     const upRes = await pulumiStack.up({ onOutput: progressOut });
 
     const outputs: { [key: string]: string } = {};

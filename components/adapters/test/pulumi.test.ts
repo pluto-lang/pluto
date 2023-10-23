@@ -1,6 +1,6 @@
 import path from "path";
 import { test } from "vitest";
-import { engine, project } from "@pluto/base";
+import { engine, project } from "@plutolang/base";
 import { PulumiAdapter } from "../src/pulumi";
 
 const projectName = "pulumi-test";

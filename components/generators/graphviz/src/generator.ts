@@ -1,6 +1,6 @@
 import path from "path";
 import { toFile } from "ts-graphviz/adapter";
-import { GenerateOptions, Generator, arch } from "@pluto/base";
+import { GenerateOptions, Generator, arch } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 export class GraphvizGenerator implements Generator {

@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
 import * as yaml from "js-yaml";
-import { arch } from "@pluto/base";
+import { arch } from "@plutolang/base";
 import logger from "../log";
 import { loadConfig } from "../utils";
 
-const GRAPHVIZ_GENERATOR_PKG = "@pluto/graphviz-generator";
+const GRAPHVIZ_GENERATOR_PKG = "@plutolang/graphviz-generator";
 
 export interface CompileOptions {
   stack?: string;

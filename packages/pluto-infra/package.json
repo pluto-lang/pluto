@@ -1,21 +1,22 @@
 {
-  "name": "@pluto/pluto-infra",
+  "name": "@plutolang/pluto-infra",
+  "version": "0.0.2",
   "description": "",
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
   },
+  "author": "plutolang",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist/"
   ],
   "dependencies": {
-    "@pluto/base": "workspace:^",
-    "@pluto/pluto": "workspace:^",
+    "@plutolang/base": "workspace:^",
+    "@plutolang/pluto": "workspace:^",
     "@pulumi/archive": "^0.0.2",
     "@pulumi/aws": "^6.4.1",
-    "@pulumi/awsx": "^1.0.6",
     "@pulumi/docker": "^4.4.3",
     "@pulumi/kubernetes": "^4.3.0",
     "@pulumi/pulumi": "^3.88.0"

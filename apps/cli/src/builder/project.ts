@@ -1,5 +1,5 @@
 import { input } from "@inquirer/prompts";
-import { engine, runtime, project } from "@pluto/base";
+import { engine, runtime, project } from "@plutolang/base";
 import { createStack } from "./stack";
 
 export interface CreateProjectArgs {

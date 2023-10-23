@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as path from "path";
 import { assert } from "console";
-import { DeduceOptions, Deducer, arch } from "@pluto/base";
+import { DeduceOptions, Deducer, arch } from "@plutolang/base";
 import {
   ImportElement,
   ImportStore,

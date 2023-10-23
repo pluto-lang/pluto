@@ -1,0 +1,7 @@
+name: quickstart
+stacks:
+  - name: dev
+    runtime:
+      type: AWS
+    engine: pulumi
+current: dev

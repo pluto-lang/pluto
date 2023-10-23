@@ -1,4 +1,4 @@
-import { FnResource, Resource, runtime } from "@pluto/base";
+import { FnResource, Resource, runtime } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
 export interface CloudEvent {

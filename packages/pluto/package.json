@@ -1,19 +1,21 @@
 {
-  "name": "@pluto/pluto",
+  "name": "@plutolang/pluto",
+  "version": "0.0.2",
   "description": "",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist/"
   ],
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc --watch"
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.427.0",
     "@aws-sdk/client-sns": "^3.427.0",
     "@aws-sdk/lib-dynamodb": "^3.431.0",
-    "@pluto/base": "workspace:^",
+    "@plutolang/base": "workspace:^",
     "redis": "^4.6.10"
   },
   "devDependencies": {
