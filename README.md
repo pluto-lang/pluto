@@ -123,27 +123,29 @@ You can learn more about the differences with other project [here](./docs/en/wha
 
 ## 🚀 Quick Start (WIP)
 
-1. Install Pluto
+### Install Pluto
 
 ```shell
 npm install pluto
 ```
 
-2. Prepare AWS access credentials
+### Prepare AWS access credentials
 
-If you have multiple profiles, you can specify which profile to use with Pluto through one of the following methods:
+If you have already installed and configured the AWS CLI, Pluto will utilize the credentials that you have previously set up. In case you have multiple profiles, you can employ environment variables to choose the desired profile to be activated.
 
 ```shell
 export AWS_PROFILE="dev" # replace it with your specified profile
 ```
 
+If you are not using AWS CLI, you need to configure your credentials using the following environment variables.
+
 ```shell
 export AWS_ACCESS_KEY_ID="AKIAQZDxxxx" # replace it with your AccessKey
 export AWS_SECRET_ACCESS_KEY="oE/xxxx" # replace it with your SecretKey
-export AWS_PROVIDER_REGION="xx-xxxx-x" # replace it with your AWS Region
+export AWS_REGION="xx-xxxx-x"          # replace it with your AWS Region
 ```
 
-3. Deploy your application using Pluto
+### Deploy your application using Pluto
 
 ```shell
 cd apps/cli/examples && pluto deploy

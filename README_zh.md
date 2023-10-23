@@ -123,21 +123,29 @@ Pluto 与其他产品的关键区别在于：它利用程序分析技术直接�
 
 ## 🚀 快速开始 (WIP)
 
-1. 安装 Pluto
+### 安装 Pluto
 
 ```shell
 npm install pluto
 ```
 
-2. 准备 AWS 访问凭据
+### 准备 AWS 访问凭证
+
+如果你之前已经安装并配置了 AWS CLI， Pluto 将使用你已经配置的凭证信息。如果你有多份配置信息，你可以使用环境变量选用要启用的配置。
 
 ```shell
-export AWS_ACCESS_KEY_ID="AKIAQZDxxxx" # replace it with your AccessKey
-export AWS_SECRET_ACCESS_KEY="oE/xxxx" # replace it with your SecretKey
-export AWS_PROVIDER_REGION="xx-xxxx-x" # replace it with your AWS Region
+export AWS_PROFILE="dev" # 替换成你指定的配置
 ```
 
-3. 使用 Pluto 部署您的应用
+如果你没有使用 AWS CLI，你需要使用以下环境变量配置你的凭证信息。
+
+```shell
+export AWS_ACCESS_KEY_ID="AKIAQZDxxxx" # 替换成你的 AccessKey
+export AWS_SECRET_ACCESS_KEY="oE/xxxx" # 替换成你的 SecretKey
+export AWS_REGION="xx-xxxx-x"          # 替换成你期望部署的 Region
+```
+
+### 使用 Pluto 部署您的应用
 
 ```shell
 cd apps/cli/examples && pluto deploy
