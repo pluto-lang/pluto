@@ -13,6 +13,8 @@ export default async (event: any, context: any) => {
   const accountId = context.invokedFunctionArn.split(":")[4];
   process.env["AWS_ACCOUNT_ID"] = accountId;
 
+  console.log("AWS Event: ", event);
+
   if ("Records" in event) {
     // Event Handler
     for (const record of event["Records"]) {
@@ -27,6 +29,11 @@ export default async (event: any, context: any) => {
         console.log("Faild to handle event: ", e);
       });
     }
+  } else if ("detail-type" in event && event["detail-type"] === "Scheduled Event") {
+    // Schedule Event Handler
+    await handler().catch((e: any) => {
+      console.log("Faild to handle event: ", e);
+    });
   } else {
     // HTTP Handler
     const request: HttpRequest = {

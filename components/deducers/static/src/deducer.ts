@@ -10,7 +10,7 @@ import {
   genImportStats,
 } from "./imports";
 
-const CloudResourceType = ["Router", "Queue", "KVStore"];
+const CloudResourceType = ["Router", "Queue", "KVStore", "Schedule"];
 
 export class StaticDeducer implements Deducer {
   public async deduce(opts: DeduceOptions): Promise<arch.Architecture> {
@@ -136,7 +136,7 @@ async function compilePluto(
         let ty = checker.getTypeOfSymbol(symbol);
         const className = ty.symbol.escapedName.toString();
         // TODO: use router Type
-        if (["Router", "Queue"].indexOf(className) !== -1) {
+        if (["Router", "Queue", "Schedule"].indexOf(className) !== -1) {
           let objName = symbol.escapedName;
           const op = node.expression.expression.name.getText();
 

@@ -16,3 +16,4 @@ export {
   HttpRequest,
   HttpResponse,
 } from "./router";
+export { Schedule, ScheduleInfra, ScheduleInfraOptions } from "./schedule";
