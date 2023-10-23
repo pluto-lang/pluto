@@ -3,7 +3,7 @@ import { engine, project } from "@pluto/base";
 import { genPulumiConfigForAWS } from "./utils";
 
 // TODO: Enable testing in CI and other environments.
-describe("test get aws config", () => {
+describe.skip("test get aws config", () => {
   test.concurrent("get non-default profile", async () => {
     const awsRt = new project.AwsRuntime();
     const sta = new project.Stack("stackName", awsRt, engine.Type.pulumi);
