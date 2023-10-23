@@ -1,5 +1,5 @@
 {
-  "name": "@pluto/pluto-infra",
+  "name": "@plutolang/pluto-infra",
   "version": "0.0.1",
   "description": "",
   "scripts": {
@@ -13,8 +13,8 @@
     "dist/"
   ],
   "dependencies": {
-    "@pluto/base": "workspace:^",
-    "@pluto/pluto": "workspace:^",
+    "@plutolang/base": "workspace:^",
+    "@plutolang/pluto": "workspace:^",
     "@pulumi/archive": "^0.0.2",
     "@pulumi/aws": "^6.4.1",
     "@pulumi/docker": "^4.4.3",

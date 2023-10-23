@@ -1,5 +1,5 @@
-import { Registry, engine, runtime } from "@pluto/base";
-import { KVStore, Queue, Router } from "@pluto/pluto";
+import { Registry, engine, runtime } from "@plutolang/base";
+import { KVStore, Queue, Router } from "@plutolang/pluto";
 import * as aws from "./aws";
 import * as k8s from "./k8s";
 

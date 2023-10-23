@@ -3,7 +3,7 @@ import path from "path";
 import * as aws from "@pulumi/aws";
 import * as archive from "@pulumi/archive";
 import * as pulumi from "@pulumi/pulumi";
-import { ResourceInfra } from "@pluto/base";
+import { ResourceInfra } from "@plutolang/base";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
 

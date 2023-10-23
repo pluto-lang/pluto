@@ -1,4 +1,4 @@
-import { engine, runtime } from "@pluto/base";
+import { engine, runtime } from "@plutolang/base";
 import { createStack } from "../builder";
 import { loadConfig, saveConfig } from "../utils";
 import logger from "../log";

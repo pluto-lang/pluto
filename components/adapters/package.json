@@ -1,5 +1,5 @@
 {
-  "name": "@pluto/adapters",
+  "name": "@plutolang/adapters",
   "version": "0.0.1",
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@pluto/base": "workspace:^",
+    "@plutolang/base": "workspace:^",
     "@pulumi/pulumi": "^3.88.0",
     "@smithy/shared-ini-file-loader": "^2.2.2",
     "js-yaml": "^4.1.0"

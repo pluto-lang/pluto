@@ -1,5 +1,5 @@
 {
-  "name": "@pluto/graphviz-generator",
+  "name": "@plutolang/graphviz-generator",
   "version": "0.0.1",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
     "watch": "npm run build -- --watch"
   },
   "dependencies": {
-    "@pluto/base": "workspace:^",
+    "@plutolang/base": "workspace:^",
     "js-yaml": "^4.1.0",
     "ts-graphviz": "^1.8.1"
   },

@@ -1,8 +1,8 @@
 import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@pluto/base";
-import { QueueInfra, QueueInfraOptions } from "@pluto/pluto/dist/queue";
+import { Resource, ResourceInfra } from "@plutolang/base";
+import { QueueInfra, QueueInfraOptions } from "@plutolang/pluto/dist/queue";
 import { Lambda } from "./lambda";
 
 export enum SNSOps {

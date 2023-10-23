@@ -1,4 +1,4 @@
-import { engine, project } from "@pluto/base";
+import { engine, project } from "@plutolang/base";
 import { PulumiAdapter } from "./pulumi";
 
 export interface ApplyArgs {

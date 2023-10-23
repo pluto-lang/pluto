@@ -1,6 +1,6 @@
 import { ConfigMap } from "@pulumi/pulumi/automation";
 import { loadSharedConfigFiles } from "@smithy/shared-ini-file-loader";
-import { project, runtime } from "@pluto/base";
+import { project, runtime } from "@plutolang/base";
 
 type configGenFn = (sta: project.Stack) => Promise<ConfigMap>;
 

@@ -1,5 +1,5 @@
 {
-  "name": "plutolang",
+  "name": "@plutolang/cli",
   "version": "0.0.2",
   "description": "The command line of Pluto-lang",
   "repository": {
@@ -29,11 +29,11 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^3.2.0",
-    "@pluto/adapters": "workspace:^",
-    "@pluto/base": "workspace:^",
-    "@pluto/graphviz-generator": "workspace:^",
-    "@pluto/static-deducer": "workspace:^",
-    "@pluto/static-generator": "workspace:^",
+    "@plutolang/adapters": "workspace:^",
+    "@plutolang/base": "workspace:^",
+    "@plutolang/graphviz-generator": "workspace:^",
+    "@plutolang/static-deducer": "workspace:^",
+    "@plutolang/static-generator": "workspace:^",
     "@smithy/shared-ini-file-loader": "^2.2.2",
     "chalk": "^4.1.2",
     "commander": "^11.0.0",
@@ -41,8 +41,8 @@
     "table": "^6.8.1"
   },
   "devDependencies": {
-    "@pluto/pluto": "workspace:^",
-    "@pluto/pluto-infra": "workspace:^",
+    "@plutolang/pluto": "workspace:^",
+    "@plutolang/pluto-infra": "workspace:^",
     "@types/js-yaml": "^4.0.7",
     "@types/node": "^20.8.4",
     "typescript": "^5.2.2"

@@ -1,4 +1,4 @@
-import { Router, Queue, KVStore, CloudEvent, HttpRequest, HttpResponse } from "@pluto/pluto";
+import { Router, Queue, KVStore, CloudEvent, HttpRequest, HttpResponse } from "@plutolang/pluto";
 
 const kvstore = new KVStore("kvstore");
 const queue = new Queue("queue");

@@ -1,8 +1,8 @@
 import path from "path";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
-import { arch, project } from "@pluto/base";
-import { BuildAdapterByEngine } from "@pluto/adapters";
+import { arch, project } from "@plutolang/base";
+import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
 import { loadConfig } from "../utils";
 import { loadAndDeduce, loadAndGenerate } from "./compile";

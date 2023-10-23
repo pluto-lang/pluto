@@ -26,19 +26,19 @@ importers:
       '@inquirer/prompts':
         specifier: ^3.2.0
         version: 3.2.0
-      '@pluto/adapters':
+      '@plutolang/adapters':
         specifier: workspace:^
         version: link:../../components/adapters
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../../packages/base
-      '@pluto/graphviz-generator':
+      '@plutolang/graphviz-generator':
         specifier: workspace:^
         version: link:../../components/generators/graphviz
-      '@pluto/static-deducer':
+      '@plutolang/static-deducer':
         specifier: workspace:^
         version: link:../../components/deducers/static
-      '@pluto/static-generator':
+      '@plutolang/static-generator':
         specifier: workspace:^
         version: link:../../components/generators/static
       '@smithy/shared-ini-file-loader':
@@ -57,10 +57,10 @@ importers:
         specifier: ^6.8.1
         version: 6.8.1
     devDependencies:
-      '@pluto/pluto':
+      '@plutolang/pluto':
         specifier: workspace:^
         version: link:../../packages/pluto
-      '@pluto/pluto-infra':
+      '@plutolang/pluto-infra':
         specifier: workspace:^
         version: link:../../packages/pluto-infra
       '@types/js-yaml':
@@ -75,7 +75,7 @@ importers:
 
   components/adapters:
     dependencies:
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../../packages/base
       '@pulumi/pulumi':
@@ -103,7 +103,7 @@ importers:
 
   components/deducers/static:
     dependencies:
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../../../packages/base
       js-yaml:
@@ -125,7 +125,7 @@ importers:
 
   components/generators/graphviz:
     dependencies:
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../../../packages/base
       js-yaml:
@@ -144,7 +144,7 @@ importers:
 
   components/generators/static:
     dependencies:
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../../../packages/base
       esbuild:
@@ -185,7 +185,7 @@ importers:
       '@aws-sdk/lib-dynamodb':
         specifier: ^3.431.0
         version: 3.431.0(@aws-sdk/client-dynamodb@3.427.0)
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../base
       redis:
@@ -201,10 +201,10 @@ importers:
 
   packages/pluto-infra:
     dependencies:
-      '@pluto/base':
+      '@plutolang/base':
         specifier: workspace:^
         version: link:../base
-      '@pluto/pluto':
+      '@plutolang/pluto':
         specifier: workspace:^
         version: link:../pluto
       '@pulumi/archive':

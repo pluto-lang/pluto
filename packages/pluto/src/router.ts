@@ -1,4 +1,4 @@
-import { FnResource, Resource } from "@pluto/base";
+import { FnResource, Resource } from "@plutolang/base";
 
 export interface HttpRequest {
   path: string;

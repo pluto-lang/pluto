@@ -1,7 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { RouterInfra, RouterOptions } from "@pluto/pluto";
-import { FnResource, ResourceInfra } from "@pluto/base";
+import { RouterInfra, RouterOptions } from "@plutolang/pluto";
+import { FnResource, ResourceInfra } from "@plutolang/base";
 import { ServiceLambda } from "./serviceLambda";
 
 export class IngressRouter extends pulumi.ComponentResource implements RouterInfra, ResourceInfra {

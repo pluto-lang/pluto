@@ -1,4 +1,4 @@
-import { CloudEvent, HttpRequest } from "@pluto/pluto";
+import { CloudEvent, HttpRequest } from "@plutolang/pluto";
 
 const COMPUTE_MODULE = process.env["COMPUTE_MODULE"];
 if (!COMPUTE_MODULE) {

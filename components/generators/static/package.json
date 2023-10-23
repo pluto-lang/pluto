@@ -1,5 +1,5 @@
 {
-  "name": "@pluto/static-generator",
+  "name": "@plutolang/static-generator",
   "version": "0.0.1",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
     "watch": "npm run build -- --watch"
   },
   "dependencies": {
-    "@pluto/base": "workspace:^",
+    "@plutolang/base": "workspace:^",
     "js-yaml": "^4.1.0",
     "esbuild": "0.19.5"
   },

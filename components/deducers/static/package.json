@@ -1,5 +1,5 @@
 {
-  "name": "@pluto/static-deducer",
+  "name": "@plutolang/static-deducer",
   "version": "0.0.1",
   "repository": {
     "type": "git",
@@ -18,7 +18,7 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
-    "@pluto/base": "workspace:^",
+    "@plutolang/base": "workspace:^",
     "js-yaml": "^4.1.0",
     "typescript": "^5.2.2"
   },

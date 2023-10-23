@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import * as yaml from "js-yaml";
-import { project } from "@pluto/base";
+import { project } from "@plutolang/base";
 import logger from "./log";
 
 export const PLUTO_DIR = ".pluto";

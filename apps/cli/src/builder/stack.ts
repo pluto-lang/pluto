@@ -1,6 +1,6 @@
 import os from "os";
 import { input, select } from "@inquirer/prompts";
-import { engine, runtime, project } from "@pluto/base";
+import { engine, runtime, project } from "@plutolang/base";
 
 export interface CreateStackArgs {
   name?: string;

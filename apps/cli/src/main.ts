@@ -42,12 +42,12 @@ async function main() {
         "-d, --deducer <deducer>",
         "Specify a deducer by setting the package name. Make sure that the package is already installed."
       )
-        .default("@pluto/static-deducer")
+        .default("@plutolang/static-deducer")
         .hideHelp()
     )
     .addOption(
       new Option("-g, --generator <generator>", "Specify a generator by setting the package name.")
-        .default("@pluto/static-generator")
+        .default("@plutolang/static-generator")
         .hideHelp()
     )
     .action(cmd.compile);
@@ -62,12 +62,12 @@ async function main() {
         "-d, --deducer <deducer>",
         "Specify a deducer by setting the package name. Make sure that the package is already installed."
       )
-        .default("@pluto/static-deducer")
+        .default("@plutolang/static-deducer")
         .hideHelp()
     )
     .addOption(
       new Option("-g, --generator <generator>", "Specify a generator by setting the package name.")
-        .default("@pluto/static-generator")
+        .default("@plutolang/static-generator")
         .hideHelp()
     )
     .option("--apply", "No deduction or generation, only application.", false)
@@ -91,7 +91,7 @@ async function main() {
           "-d, --deducer <deducer>",
           "Specify a deducer by setting the package name. Make sure that the package is already installed."
         )
-          .default("@pluto/static-deducer")
+          .default("@plutolang/static-deducer")
           .hideHelp()
       )
       .addOption(
@@ -99,7 +99,7 @@ async function main() {
           "-g, --generator <generator>",
           "Specify a generator by setting the package name."
         )
-          .default("@pluto/static-generator")
+          .default("@plutolang/static-generator")
           .hideHelp()
       )
       .action(cmd.compile);

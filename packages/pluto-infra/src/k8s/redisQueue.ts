@@ -1,8 +1,8 @@
-import { QueueInfra, QueueInfraOptions } from "@pluto/pluto";
+import { QueueInfra, QueueInfraOptions } from "@plutolang/pluto";
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import { ServiceLambda } from "./serviceLambda";
-import { FnResource, ResourceInfra } from "@pluto/base";
+import { FnResource, ResourceInfra } from "@plutolang/base";
 
 export class RedisQueue extends pulumi.ComponentResource implements ResourceInfra, QueueInfra {
   readonly name: string;

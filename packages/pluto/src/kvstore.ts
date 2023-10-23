@@ -1,4 +1,4 @@
-import { Resource, runtime } from "@pluto/base";
+import { Resource, runtime } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
 /**

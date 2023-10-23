@@ -3,7 +3,7 @@ import path from "path";
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import * as docker from "@pulumi/docker";
-import { ResourceInfra } from "@pluto/base";
+import { ResourceInfra } from "@plutolang/base";
 
 if (!process.env["WORK_DIR"]) {
   throw new Error("Missing environment variable WORK_DIR");

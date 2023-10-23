@@ -1,6 +1,6 @@
 import fs from "fs";
 import express, { Request, Response } from "express";
-import { CloudEvent, HttpRequest } from "@pluto/pluto";
+import { CloudEvent, HttpRequest } from "@plutolang/pluto";
 import { HTTP } from "cloudevents";
 
 const COMPUTE_MODULE = process.env.COMPUTE_MODULE || "";

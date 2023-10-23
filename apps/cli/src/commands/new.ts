@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { engine, runtime } from "@pluto/base";
+import { engine, runtime } from "@plutolang/base";
 import { createProject } from "../builder";
 import { saveConfig } from "../utils";
 import logger from "../log";
