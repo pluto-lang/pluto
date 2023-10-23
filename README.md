@@ -33,7 +33,7 @@ By using Pluto to write this example, you only need one TypeScript code file, wh
 2. Write the corresponding path handling process for the router and the subscription process for the queue. Use the methods provided by the resource types to implement the business logic in the processing code. With these steps, you have completed the entire code writing process.
 
 ```typescript
-import { Event, Request, Router, Queue, State } from "@pluto";
+import { Event, Request, Router, Queue, State } from "@plutolang/base";
 
 // Define the resources
 const state = new State("statestore", {
@@ -121,15 +121,23 @@ The key difference between Pluto and other products is that it uses program anal
 
 You can learn more about the differences with other project [here](./docs/en/whats-different.md).
 
-## 🚀 Quick Start (WIP)
+## 🚀 Quick Start
 
-### Install Pluto
+### 0. Prerequisites
+
+#### 0.1 Install Pulumi
+
+You can install it according to the [installation guide](https://www.pulumi.com/docs/install/). Once installed, you will need to log in using the CLI.
 
 ```shell
-npm install pluto
+pulumi login
 ```
 
-### Prepare AWS access credentials
+#### 0.2 Prepare the access credentials for AWS or Kubernetes.
+
+Choose either AWS or Kubernetes based on your specific requirements.
+
+**Prepare AWS access credentials**
 
 If you have already installed and configured the AWS CLI, Pluto will utilize the credentials that you have previously set up. In case you have multiple profiles, you can employ environment variables to choose the desired profile to be activated.
 
@@ -145,10 +153,25 @@ export AWS_SECRET_ACCESS_KEY="oE/xxxx" # replace it with your SecretKey
 export AWS_REGION="xx-xxxx-x"          # replace it with your AWS Region
 ```
 
-### Deploy your application using Pluto
+**Prepare Kubernetes access credentials**
+
+No additional configuration is necessary; you just need to know the location where the kubeconfig file is stored, typically at `~/.kube/config`.
+
+> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality.
+
+### 1. Install Pluto
 
 ```shell
-cd apps/cli/examples && pluto deploy
+npm install pluto
+```
+
+### 2. Deploy your application using Pluto
+
+```shell
+pluto new        # create a new project interactively
+cd <project_dir> # change to the directory of the new project
+npm install      # install the depnedencies
+pluto deploy     # shoot!
 ```
 
 ## 👏 Contributing

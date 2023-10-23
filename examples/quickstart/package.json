@@ -1,0 +1,21 @@
+{
+  "name": "quickstart",
+  "version": "0.0.0",
+  "scripts": {
+    "test:dev": "pluto test --sim",
+    "test:prod": "pluto test",
+    "deploy": "pluto deploy",
+    "destroy": "pluto destroy"
+  },
+  "dependencies": {
+    "@plutolang/pluto": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.2.2",
+    "@plutolang/base": "latest",
+    "@plutolang/pluto-infra": "latest",
+    "@pulumi/pulumi": "^3.88.0"
+  },
+  "main": "dist/index.js"
+}
