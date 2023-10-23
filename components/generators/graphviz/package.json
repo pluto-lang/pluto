@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/graphviz-generator",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",
