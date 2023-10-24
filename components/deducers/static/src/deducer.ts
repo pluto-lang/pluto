@@ -9,6 +9,7 @@ import {
   extractImportElements,
   genImportStats,
 } from "./imports";
+import { resolveImportDeps } from "./dep-resolve";
 
 const CloudResourceType = ["Router", "Queue", "KVStore", "Schedule"];
 
@@ -174,7 +175,7 @@ async function compilePluto(
               resources.push(newRes);
 
               // Constructs the import statments of this function
-              const deps: ImportElement[] = resolveBodyDeps(sourceFile, importStore, arg);
+              const deps: ImportElement[] = resolveImportDeps(sourceFile, importStore, arg);
               const importStats = genImportStats(deps);
               if (process.env.DEBUG) {
                 console.log(`Generate ${importStats.length} import statments: `);
@@ -208,51 +209,6 @@ async function compilePluto(
   const elems = importStore.listAllElementsByType(ImportType.Direct);
   root.addImports(...genImportStats(elems));
   return archRef;
-}
-
-function resolveBodyDeps(
-  sourceFile: ts.SourceFile,
-  importStore: ImportStore,
-  fnNode: ts.ArrowFunction | ts.FunctionExpression
-): ImportElement[] {
-  // Iterate through all nodes in this function.
-  const resolveNodeDeps = (node: ts.Node): ImportElement[] => {
-    if (ts.isTypeNode(node)) {
-      // Check if this node is a TypeNode. If it is true and it is not a Promise, return the discovery.
-      const typeName = node.getText(sourceFile);
-      if (!typeName.startsWith("Promise")) {
-        if (process.env.DEBUG) {
-          console.log("Found a dependent type:", typeName);
-        }
-        // If the type format is 'ns.type', search for the first part.
-        const elemName = typeName.split(".")[0];
-        const elem = importStore.searchElement(elemName);
-        if (typeName == "void") {
-          return [];
-        }
-        if (elem == undefined) {
-          throw new Error(`Cannot find the type from import elements: ${typeName}.`);
-        }
-        return [elem];
-      }
-    }
-
-    const deps: ImportElement[] = [];
-    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-      // Handle formats that package property access, such as 'pkg.access', but ignore object property access.
-      const callerName = node.expression.expression.getText(sourceFile);
-      const elem = importStore.searchElement(callerName);
-      if (elem) {
-        deps.push(elem);
-      }
-    }
-
-    node.forEachChild((node) => {
-      deps.push(...resolveNodeDeps(node));
-    });
-    return deps;
-  };
-  return resolveNodeDeps(fnNode);
 }
 
 function detectPermission(
