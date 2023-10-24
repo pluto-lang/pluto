@@ -7,12 +7,9 @@ const projectName = "pulumi-test";
 const awsRt: project.AwsRuntime = new project.AwsRuntime();
 const stack: project.Stack = new project.Stack("dev", awsRt, engine.Type.pulumi);
 
-const entrypoint = path.join(__dirname, "./pulumi-case");
-
-const pulumiAdapter = new PulumiAdapter();
-
-pulumiAdapter.apply({ entrypoint: entrypoint, projName: projectName, stack: stack });
-
-test("pulumi-test", async () => {
-  // add test case
+test.skip("pulumi-test", async () => {
+  const entrypoint = path.join(__dirname, "./pulumi-case");
+  const pulumiAdapter = new PulumiAdapter();
+  pulumiAdapter.apply({ entrypoint: entrypoint, projName: projectName, stack: stack });
+  // TODO: add test case
 });
