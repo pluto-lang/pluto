@@ -1,5 +1,11 @@
 # @pluto/static-deducer
 
+## 0.0.4
+
+### Patch Changes
+
+- 77ec0ba: Support dependency analysis for package-related cases.
+
 ## 0.0.3
 
 ### Patch Changes
