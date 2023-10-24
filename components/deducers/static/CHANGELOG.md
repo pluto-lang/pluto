@@ -1,5 +1,11 @@
 # @pluto/static-deducer
 
+## 0.0.3
+
+### Patch Changes
+
+- c504f5b: Support schedule resource on AWS and K8s.
+
 ## 0.0.2
 
 ### Patch Changes

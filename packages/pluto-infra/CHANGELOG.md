@@ -1,5 +1,13 @@
 # @pluto/pluto-infra
 
+## 0.0.3
+
+### Patch Changes
+
+- c504f5b: Support schedule resource on AWS and K8s.
+- Updated dependencies [c504f5b]
+  - @plutolang/pluto@0.0.3
+
 ## 0.0.2
 
 ### Patch Changes
