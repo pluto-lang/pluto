@@ -1,0 +1,22 @@
+{
+  "name": "daily-joke-slack",
+  "version": "0.0.0",
+  "scripts": {
+    "test:dev": "pluto test --sim",
+    "test:prod": "pluto test",
+    "deploy": "pluto deploy",
+    "destroy": "pluto destroy"
+  },
+  "dependencies": {
+    "@plutolang/pluto": "latest",
+    "@slack/web-api": "^6.9.0"
+  },
+  "devDependencies": {
+    "@plutolang/base": "latest",
+    "@plutolang/pluto-infra": "latest",
+    "@pulumi/pulumi": "^3.88.0",
+    "@types/node": "^20",
+    "typescript": "^5.2.2"
+  },
+  "main": "dist/index.js"
+}

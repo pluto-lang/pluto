@@ -8,7 +8,7 @@
     "lint": "turbo run lint",
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "release": "turbo run build lint test && changesets version && changesets publish --no-git-tag"
+    "release": "turbo run build lint test && changeset version && changeset publish --no-git-tag"
   },
   "devDependencies": {
     "@changesets/cli": "^2.26.2",
