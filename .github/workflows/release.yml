@@ -7,8 +7,14 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+permissions: {} #reset
 jobs:
   release:
+    # prevent this action from running on forks
+    if: github.repository == 'pluto-lang/pluto'
+    permissions:
+      contents: write # to create release (changesets/action)
+      pull-requests: write # to create pull request (changesets/action)
     name: Release
     runs-on: ubuntu-latest
     steps:
