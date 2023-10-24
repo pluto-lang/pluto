@@ -1,5 +1,14 @@
 # @plutolang/cli
 
+## 0.0.4
+
+### Patch Changes
+
+- c504f5b: Support schedule resource on AWS and K8s.
+- Updated dependencies [c504f5b]
+  - @plutolang/static-generator@0.0.3
+  - @plutolang/static-deducer@0.0.3
+
 ## 0.0.3
 
 ### Patch Changes
