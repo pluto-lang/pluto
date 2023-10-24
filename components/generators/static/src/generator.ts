@@ -112,13 +112,19 @@ const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${de
   }
 
   iacSource += "\n";
+  let outputed = false;
   for (let resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type == "Root") continue;
     iacSource += `${resName}.postProcess();\n`;
+
+    // TODO: update the output mechanism
+    if (res.type == "Router" && !outputed) {
+      outputed = true;
+      iacSource += `export const { url } = ${res.name};\n`;
+    }
   }
 
-  iacSource += `export const { url } = router;\n`;
   return iacSource;
 }
 

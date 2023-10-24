@@ -109,7 +109,7 @@ export class ApiGatewayRouter
     );
   }
 
-  public getPermission(op: string, resource?: ResourceInfra | undefined) {
+  public getPermission(op: string, resource?: ResourceInfra) {
     op;
     resource;
     throw new Error("Method not implemented.");

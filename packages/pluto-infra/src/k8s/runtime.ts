@@ -16,16 +16,23 @@ app.all("*", async (req: Request, res: Response) => {
   const handle = (await handleImporter).default;
 
   if (HTTP.isEvent({ headers: req.headers, body: req.body })) {
-    // Handle event
-    if (req.body.length < 2) {
-      throw new Error("Event is invalid: ", req.body);
-    }
+    if (req.headers["ce-type"] == "dev.knative.sources.ping") {
+      // Handle schedule event
+      await handle().catch((e: any) => {
+        console.log("Schedule event processing failed:", e);
+      });
+    } else {
+      // Handle pubsub event
+      if (req.body.length < 2) {
+        throw new Error("Event is invalid: ", req.body);
+      }
 
-    const evt: CloudEvent = JSON.parse(req.body[1]);
-    try {
-      await handle(evt);
-    } catch (e) {
-      console.log("Event processing failed:", e);
+      const evt: CloudEvent = JSON.parse(req.body[1]);
+      try {
+        await handle(evt);
+      } catch (e) {
+        console.log("Event processing failed:", e);
+      }
     }
   } else {
     // Handle HTTP requests
@@ -39,7 +46,7 @@ app.all("*", async (req: Request, res: Response) => {
     for (let key in req.query) {
       reqPluto.query[key] = req.query[key] as string;
     }
-    console.log(reqPluto);
+    console.log("Request:", reqPluto);
 
     try {
       const respBody = await handle(reqPluto);
