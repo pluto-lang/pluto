@@ -25,7 +25,6 @@ router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
 
 queue.subscribe(async (evt: CloudEvent): Promise<void> => {
   const data = JSON.parse(evt.data);
-  console.log(data);
   await kvstore.set(data["name"], data["message"]);
   return;
 });

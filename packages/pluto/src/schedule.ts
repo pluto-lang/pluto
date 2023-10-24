@@ -7,8 +7,8 @@ export interface Handler extends FnResource {
 export interface ScheduleInfra {
   /**
    * @param cron Cron expressions have six required fields, which are separated by white space.
-   * Format: Minutes Hours Day-of-month Month Day-of-week Year
-   * https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-cron-expressions.html
+   *
+   * Format: Minutes(0-59) Hours(0-23) Day-of-month(1-31) Month(1-12) Day-of-week(0-6)
    */
   cron(cron: string, fn: Handler): Promise<void>;
 }

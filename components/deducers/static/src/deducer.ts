@@ -82,6 +82,9 @@ async function compilePluto(
           let ty = checker.getTypeOfSymbol(symbol);
           let resType = ty.symbol.escapedName.toString();
           const param1 = newExpr.arguments![0].getText();
+          if (process.env.DEBUG) {
+            console.log(`Found a ${resType}: ${varName}`);
+          }
 
           // Get the dependency of this class
           const initFn = newExpr.expression.getText(sourceFile);
@@ -148,6 +151,9 @@ async function compilePluto(
             if (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg)) {
               const fnName = `lambda${handlerIndex}`;
               const resType = "FnResource";
+              if (process.env.DEBUG) {
+                console.log("Found a FnResource: " + fnName);
+              }
 
               const startPos = sourceFile.getLineAndCharacterOfPosition(arg.getStart(sourceFile));
               const endPos = sourceFile.getLineAndCharacterOfPosition(arg.getEnd());

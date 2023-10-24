@@ -13,5 +13,6 @@ export function register(reg: Registry) {
   reg.register(runtime.Type.K8s, engine.Type.pulumi, Router, k8s.IngressRouter);
   reg.register(runtime.Type.K8s, engine.Type.pulumi, KVStore, k8s.RedisKVStore);
   reg.register(runtime.Type.K8s, engine.Type.pulumi, Queue, k8s.RedisQueue);
+  reg.register(runtime.Type.K8s, engine.Type.pulumi, Schedule, k8s.PingSchedule);
   reg.register(runtime.Type.K8s, engine.Type.pulumi, "FnResource", k8s.ServiceLambda);
 }

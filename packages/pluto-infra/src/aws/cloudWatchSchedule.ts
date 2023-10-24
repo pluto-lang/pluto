@@ -25,7 +25,7 @@ export class CloudWatchSchedule
       `${this.name}-rule`,
       {
         name: `${this.name}-rule`,
-        scheduleExpression: `cron(${cron})`,
+        scheduleExpression: `cron(${convertCronToAwsFmt(cron)})`,
       },
       { parent: this }
     );
@@ -57,4 +57,28 @@ export class CloudWatchSchedule
   }
 
   public postProcess(): void {}
+}
+
+function convertCronToAwsFmt(cron: string): string {
+  let parts = cron.split(" ");
+
+  const week = parts[4];
+  let fmtWeek: string;
+  if (week == "*") {
+    fmtWeek = "?";
+  } else if (week.indexOf("#") != -1) {
+    const nums = week.split("#").map(parseInt);
+    if (nums.length > 2) {
+      throw new Error("The format is invalid. AWS only supports one '#'");
+    }
+    fmtWeek = `${nums[0] + 1}#${nums[1] + 1}`;
+  } else {
+    fmtWeek = `${parseInt(week) + 1}`;
+  }
+
+  const fmtCron = `${parts[0]} ${parts[1]} ${parts[2]} ${parts[3]} ${fmtWeek} *`;
+  if (process.env.DEBUG) {
+    console.log("Converted cron: ", fmtCron);
+  }
+  return fmtCron;
 }
