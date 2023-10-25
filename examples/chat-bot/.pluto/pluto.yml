@@ -1,0 +1,7 @@
+name: chat-bot
+stacks:
+  - name: aws
+    runtime:
+      type: AWS
+    engine: pulumi
+current: aws

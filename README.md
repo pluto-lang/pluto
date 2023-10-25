@@ -79,8 +79,8 @@ Click [here](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/) to watch t
 
 **Want to see more examples?**
 
-- Build your own chatbot based on the OpenAI API.
-- A morning greeting message for everyone.
+- [Build your own chatbot based on the OpenAI API.](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
+- [A morning greeting message for everyone.](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
 
 ## 🤯 Pain Points
 
