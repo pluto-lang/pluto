@@ -8,7 +8,7 @@ By default, this example assumes the AWS cloud platform for the specified stack.
 
 ### Creating an OpenAI API Key
 
-To begin, please register for an OpenAI account and open [this]([https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys) webpage. Click on "Create new secret key" and set a name. This will generate an API key. Make sure to save the key immediately, as you won't be able to view it again after clicking "Done".
+To begin, please register for an OpenAI account and open [this](https://platform.openai.com/account/api-keys) webpage. Click on "Create new secret key" and set a name. This will generate an API key. Make sure to save the key immediately, as you won't be able to view it again after clicking "Done".
 
 <p align="center">
   <img src="./assets/gen-key.png" alt="Create API key" width="350">
