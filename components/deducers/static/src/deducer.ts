@@ -243,7 +243,11 @@ function detectPermission(
     // fetch permission
     if (propAccessExp) {
       let objSymbol = tyChecker.getSymbolAtLocation(propAccessExp.expression);
-      let typ = tyChecker.getTypeOfSymbol(objSymbol!);
+      if (!objSymbol) {
+        return;
+      }
+
+      let typ = tyChecker.getTypeOfSymbol(objSymbol);
       if (CloudResourceType.indexOf(typ.symbol.escapedName.toString()) == -1) {
         return;
       }
