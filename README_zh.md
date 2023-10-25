@@ -79,8 +79,8 @@ router.get("/store", async (req: Request): Promise<string> => {
 
 **想要了解更多案例？**
 
-- 基于 OpenAI API 快速构建属于你自己的聊天机器人
-- 每个清晨的一封问候信息
+- [基于 OpenAI API 快速构建属于你自己的聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
+- [每个清晨的一封问候信息](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
 
 ## 🤯 痛点
 
