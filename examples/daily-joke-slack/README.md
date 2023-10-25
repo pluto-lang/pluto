@@ -61,7 +61,6 @@ Modify the `src/index.ts` file and replace the `slackAppToken` and `channelId` w
 
 In the root directory of this example program, execute `pluto deploy` to deploy it.
 
-
 ## Show Time
 
 <p align="center">

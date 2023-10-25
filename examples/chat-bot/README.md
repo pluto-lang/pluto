@@ -7,7 +7,8 @@ By default, this example assumes the AWS cloud platform for the specified stack.
 ## Preparation
 
 ### Creating an OpenAI API Key
-To begin, please register for an OpenAI account and open [this](https://platform.openai.com/account/api-keys webpage. Click on "Create new secret key" and set a name. This will generate an API key. Make sure to save the key immediately, as you won't be able to view it again after clicking "Done".
+
+To begin, please register for an OpenAI account and open [this]([https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys) webpage. Click on "Create new secret key" and set a name. This will generate an API key. Make sure to save the key immediately, as you won't be able to view it again after clicking "Done".
 
 <p align="center">
   <img src="./assets/gen-key.png" alt="Create API key" width="350">
@@ -20,7 +21,7 @@ If you haven't installed Pluto yet, you can refer to the installation steps [her
 
 ## Modifying the Code
 
-Modify the `src/index.ts` file and replace the `OPENAI_API_KEY` with the API key obtained earlier. 
+Modify the `src/index.ts` file and replace the `OPENAI_API_KEY` with the API key obtained earlier.
 
 Additionally, you can modify the `MODEL` to select the desired model. OpenAI provides various models, and the Chat Bot example only supports text-based chat. You can find the available models [here](https://platform.openai.com/docs/models).
 
