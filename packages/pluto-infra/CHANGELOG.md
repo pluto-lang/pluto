@@ -1,5 +1,12 @@
 # @pluto/pluto-infra
 
+## 0.0.4
+
+### Patch Changes
+
+- a8c9dec: Fix: unify the response from AWS and K8s.
+  Fix: set the empty map as the default value of Request.query.
+
 ## 0.0.3
 
 ### Patch Changes
