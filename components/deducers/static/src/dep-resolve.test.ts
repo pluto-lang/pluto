@@ -1,6 +1,6 @@
 import ts from "typescript";
 import { expect, describe, test } from "vitest";
-import { genInlineSourceFile } from "./utils";
+import { genInlineSourceFile } from "./utils-test";
 import { ImportStore, extractImportElements } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 
