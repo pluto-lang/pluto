@@ -40,7 +40,7 @@ export default async (event: any, context: any) => {
       path: event.resource,
       method: event.httpMethod,
       headers: event.headers,
-      query: event.queryStringParameters,
+      query: event.queryStringParameters ?? {},
       body: event.body,
     };
     console.log("Pluto: Handling HTTP request: ", request);

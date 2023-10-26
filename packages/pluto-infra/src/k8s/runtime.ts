@@ -50,7 +50,8 @@ app.all("*", async (req: Request, res: Response) => {
 
     try {
       const respBody = await handle(reqPluto);
-      res.send(respBody);
+      res.statusCode = respBody.statusCode;
+      res.send(respBody.body);
     } catch (e) {
       console.log("Http processing failed:", e);
     }
