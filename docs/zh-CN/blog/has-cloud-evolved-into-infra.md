@@ -2,8 +2,6 @@
 
 ## 云是基础设施吗 🤔️
 
-> Infrastructure is the set of facilities and systems that serve a country, city, or other area, and encompasses the services and facilities necessary for its economy, households and firms to function.  —— Wikipedia
->
 > 基础设施是为一个国家、城市或其他地区服务的一套设施和系统，包括其经济、家庭和企业运作所必需的服务和设施。 ——维基百科
 
 从概念意义上讲，的确，云已经成为了基础设施。但是，你想一下，你在使用电饭煲的时候，你会去考虑你使用的电是水电，还是火电吗？那你在开发应用程序的时候，你是否需要考虑要部署到 AWS 上？还是 Kubernetes 上？云远没有像电一样方便使用。从实用意义上讲，云还没有成为真正的基础设施，有效的接入方式或许是其中一个缺失项。
@@ -58,9 +56,9 @@ router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
 
 ## Pluto ♇
 
-Pluto 根据这个思路首先在 TypeScript 这门语言上进行尝试，让 TypeScript 成为不那么像 TypeScript 的一门新语言，就像 Pluto 从行星被重新分类为矮行星。虽然目前仍处于 PoC 阶段，但是可以给大家看看我们在 Demo 中实现的效果。
+Pluto 根据这个思路首先在 TypeScript 上进行尝试，让 TypeScript 成为面向云应用开发的一门新语言，就像 Pluto 从行星被重新分类为矮行星。虽然目前仍处于 PoC 阶段，但是可以给大家看看我们在 Demo 中实现的效果。
 
-==Demo==
+[https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f](https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f)
 
 Demo 中，我在一份代码文件中，定义 3 个变量，KVStore、Queue、Router 各一个。同时定义了两个路由处理函数和一个消息订阅处理函数。在执行 `pluto deploy` 后，所有的基础设施资源和计算模块都被有序地部署到 AWS 云上。
 
