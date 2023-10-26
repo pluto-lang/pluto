@@ -1,5 +1,11 @@
 # @pluto/static-deducer
 
+## 0.0.5
+
+### Patch Changes
+
+- fac0e1e: Fix: static deducer of the published version depends on vitest.
+
 ## 0.0.4
 
 ### Patch Changes
