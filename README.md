@@ -1,5 +1,5 @@
 <p align="center"> 
-    <img src="assets/pluto-logo.png" width="400">
+    <img src="assets/pluto-logo.png" width="250">
     <br/>
     <br/>
    <a href="./README.md"> English </a> 
@@ -15,67 +15,21 @@ Developers can directly use the **required resources, such as KV databases and m
 
 ## 🌟 Examples
 
-<p align="center">
-  <img src="./assets/demo-biz-logic.png" alt="business logic" width="450">
-</p>
+Let's look at a simple example:
 
-Let's look at a simple example where the business logic consists of three processes:
-
-1. Function-1: This function is executed when a user accesses `/hello`. It records the user's access time and publishes it to a message queue.
-2. Function-2: This function acts as a subscriber to the message queue and is executed when a new message is published. It stores the message in a KV database.
-3. Function-3: This function is executed when a user accesses `/store`. It retrieves the last access time of the specified user.
-
-If you were to deploy this application on AWS, you would need to configure Lambda, IAM, ApiGateway, Route, Deployment, SNS, Trigger, and other resources. Manual configuration can be tedious and prone to errors.
-
-By using Pluto to write this example, you only need one TypeScript code file, which can be considered as writing a monolithic application:
-
-1. Define the required resource variables, including 1 database state, 1 message queue queue, and 1 router router. You can fine-tune the resource capabilities through additional configuration options.
-2. Write the corresponding path handling process for the router and the subscription process for the queue. Use the methods provided by the resource types to implement the business logic in the processing code. With these steps, you have completed the entire code writing process.
-
-```typescript
-import { Event, Request, Router, Queue, State } from "@plutolang/base";
-
-// Define the resources
-const state = new State("statestore", {
-  /* additional configuration */
-}); // Key-Value Store
-const queue = new Queue("access"); // Message Queue
-const router = new Router("hello"); // ApiGateway
-
-// Function-1
-router.get("/hello", async (req: Request): Promise<string> => {
-  const name = req.query["name"] ?? "Anonym";
-  const message = `${name} access at ${Date.now()}`;
-  await queue.push({ name, message });
-  return `Publish a message: ${message}`;
-});
-
-// Function-2
-queue.subscribe(async (event: Event): Promise<string> => {
-  const data = event.data;
-  await state.set(data["name"], data["message"]);
-  return "receive an event";
-});
-
-// Function-3
-router.get("/store", async (req: Request): Promise<string> => {
-  const name = req.query["name"] ?? "Anonym";
-  const message = await state.get(name);
-  return `Fetch ${name} access message: ${message}.`;
-});
-```
+https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f
 
 <p align="center">
-  <img src="./assets/aws-deploy.png" alt="AWS architecture" width="350">
+  <img src="./assets/demo-biz-logic.png" alt="business logic" width="400">
 </p>
 
-Next, simply execute the command `pluto deploy`, and all the infrastructure resources and business modules will be deployed in an orderly manner to the AWS cloud.
+The business logic of this example is illustrated in the above diagram, which primarily involves three types of resources and three processes. When deploying this application on AWS, it requires configuring multiple resources such as Lambda, IAM, ApiGateway, Route, Deployment, SNS, and Trigger. Manual configuration can be time-consuming and prone to errors.
 
-During this process, the router will be published as an ApiGateway component, the message queue will be published as an SNS component, and the database will be published as a DynamoDB component. The functions that handle the HTTP API and the message queue will be published as three Lambda functions. Pluto will also automatically configure triggers, IAM roles, permissions, and other resource configurations. All these steps are completed automatically by Pluto.
+In contrast, this example simplifies the process by defining three variables - KVStore, Queue, and Router - in a single code file. Additionally, two route handling functions and one message subscription handling function are defined. This approach can be seen as developing a monolithic application.
 
-Additionally, if developers want to redeploy the service to other public clouds or Kubernetes environments such as Azure without modifying any code, they only need to execute `pluto stack new` to create a new environment configuration and directly deploy it.
+With just one command, `pluto deploy``, all the infrastructure resources and business modules will be deployed onto the AWS cloud seamlessly. This includes resources like ApiGateway, DynamoDB, SNS, Lambda, and configurations for triggers, IAM roles, and permissions.
 
-Click [here](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/) to watch the complete video demonstration.
+Furthermore, by executing `pluto stack new`, developers can effortlessly publish the service to Kubernetes without making any modifications to the existing code. It will be deployed under a newly created environment configuration.
 
 **Want to see more examples?**
 
@@ -104,7 +58,7 @@ You can learn why we created Pluto from here. In short, we want to solve several
   <img src="./assets/pluto-arch.jpg" alt="Pluto Architecture" width="800">
 </p>
 
-Overall, Pluto first deduces the required cloud resources and the dependencies between resources from the user code, and builds the architecture reference for the cloud. Then, based on the architecture reference, it generates IaC code independent of the user code, and splits the user code into multiple business modules. Finally, the IaC engine adapter calls the corresponding IaC engine to execute the deployment based on the type of IaC code, and publishes the application to the specified cloud platform.
+Overall, Pluto first deduces the required cloud resources and the dependencies between resources from the user code, and builds the architecture reference for the cloud. Then, based on the architecture reference, it generates IaC code independent of the user code, and splits the user code into multiple business modules. Finally, the IaC engine adapter calls the corresponding IaC engine to execute the deployment based on the type of IaC code, and publishes the application to the specified cloud platform. Throughout the entire process, the deducer, generator, and adapter can be easily replaced. You have the flexibility to implement them using different deducing and generating techniques, and also support additional IaC engines.
 
 You can learn more about the workflow of Pluto [here](./docs/en/how-pluto-works.md).
 
@@ -195,8 +149,4 @@ See [Issues](https://github.com/pluto-lang/pluto/issues) for more details.
 
 ## 💬 Community
 
-Join our community!
-
-<!--+ [Slack](https://pluto-lang.slack.com)-->
-
-- Dingtalk: 40015003990
+Welcome to join our [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) community, or our DingTalk group at 40015003990 for communication.

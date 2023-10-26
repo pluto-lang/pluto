@@ -1,5 +1,5 @@
 <p align="center"> 
-    <img src="assets/pluto-logo.png" width="400">
+    <img src="assets/pluto-logo.png" width="250">
     <br/>
     <br/>
    <a href="./README.md"> English </a> 
@@ -13,69 +13,21 @@ Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用�
 
 ## 🌟 示例
 
-<p align="center">
-  <img src="./assets/demo-biz-logic.png" alt="business logic" width="450">
-</p>
+来看一个简单的示例：
 
-看一个简单的例子，在这个例子中业务逻辑由 3 个过程构成：
-
-1. Function-1：当用户访问 /hello 时执行该函数，记录该用户的访问时间，并发布到一个消息队列中。
-2. Function-2：作为消息队列的订阅者，当有新消息发布时被执行，并将消息存储到 KV 数据库中。
-3. Function-3：当用户访问 /store 时执行该函数，获取指定用户上次访问的时间。
-
-如果在 AWS 上部署这个应用，需要配置 Lambda、IAM、ApiGateway、Route、Deployment、SNS、Trigger 等多种资源，手动配置非常繁琐，并且很容易出错。
-
-如果采用 Pluto 编写这个例子，只需一份 TypeScript 代码文件即可，可以视作在编写一个单体应用程序：
-
-1. 首先，定义所需的资源变量，包括 1 个数据库 state、1 个消息队列 queue、1 个路由 router。你可以通过额外的配置项来进行细粒度的资源能力配置。
-2. 然后，编写 router 的相应路径处理过程以及 queue 的订阅处理过程，并在处理过程中使用资源类型提供的方法来实现业务逻辑。
-
-通过以上步骤，就完成了全部的代码编写过程。
-
-```typescript
-import { Event, Request, Router, Queue, State } from "@plutolang/pluto";
-
-// Define the resources
-const state = new State("statestore", {
-  /* additional configuration */
-}); // Key-Value Store
-const queue = new Queue("access"); // Message Queue
-const router = new Router("hello"); // ApiGateway
-
-// Function-1
-router.get("/hello", async (req: Request): Promise<string> => {
-  const name = req.query["name"] ?? "Anonym";
-  const message = `${name} access at ${Date.now()}`;
-  await queue.push({ name, message });
-  return `Publish a message: ${message}`;
-});
-
-// Function-2
-queue.subscribe(async (event: Event): Promise<string> => {
-  const data = event.data;
-  await state.set(data["name"], data["message"]);
-  return "receive an event";
-});
-
-// Function-3
-router.get("/store", async (req: Request): Promise<string> => {
-  const name = req.query["name"] ?? "Anonym";
-  const message = await state.get(name);
-  return `Fetch ${name} access message: ${message}.`;
-});
-```
+https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f
 
 <p align="center">
-  <img src="./assets/aws-deploy.png" alt="AWS architecture" width="350">
+  <img src="./assets/demo-biz-logic.png" alt="business logic" width="400">
 </p>
 
-接下来，只需执行一条命令 `pluto deploy`，所有的基础设施资源和业务模块就会有序地部署到 AWS 云上。
+这个例子的业务逻辑就是上面这张图所展示的，主要是 3 种资源和 3 个过程。如果在 AWS 上部署这个应用，需要配置 Lambda、IAM、ApiGateway、Route、Deployment、SNS、Trigger 等多种资源，手动配置非常繁琐，并且很容易出错。
 
-这个过程中，路由将被发布为 ApiGateway 组件，消息队列将被发布为 SNS 组件，数据库将被发布为 DynamoDB 组件。而处理 HTTP API 和消息队列的函数将被发布为三个 Lambda 函数。同时，Pluto 还会自动构建触发器、IAM 角色、权限等资源配置。这些步骤都由 Pluto 自动完成。
+而我在这个例子中，我只是在一个代码文件中定义 3 个变量，KVStore、Queue、Router 各一个，同时定义了两个路由处理函数和一个消息订阅处理函数。整个过程可以视作在编写一个单体应用程序。
 
-此外，如果开发者想要将服务重新发布到 Azure 等其他公有云或 Kubernetes 环境上，不需要修改任何代码，只需执行 `pluto stack new` 新建一份环境配置，就能直接部署。
+然后，只是执行了一条命令 `pluto deploy`，所有的基础设施资源和业务模块就会有序地部署到 AWS 云上，包括 ApiGateway、DynamoDB、SNS、Lambda 等资源，以及触发器、IAM 角色、权限等资源配置。
 
-[点击](https://seafile.zhengsj.cn:7443/f/8b837938964d4ebea760/)观看完整的视频演示。
+此外，只需执行 `pluto stack new` 新建一份环境配置，开发者就能在不修改代码的情况下，将服务重新发布到 Kubernetes 上。
 
 **想要了解更多案例？**
 
@@ -104,7 +56,7 @@ router.get("/store", async (req: Request): Promise<string> => {
   <img src="./assets/pluto-arch.jpg" alt="Pluto Architecture" width="800">
 </p>
 
-整体上，Pluto 首先从用户代码中推导出所需云资源及资源间依赖关系，构建云参考架构（architecture reference）。然后，依据 arch ref 生成一份独立于用户代码的 IaC 代码，并将用户代码拆分成多个业务模块。最终，由 IaC 引擎适配器根据 IaC 代码的类型调用相应 IaC 引擎执行部署，将应用程序发布到指定的云平台上。
+整体上，Pluto 首先从用户代码中推导出所需云资源及资源间依赖关系，构建云参考架构（architecture reference）。然后，依据 arch ref 生成一份独立于用户代码的 IaC 代码，并将用户代码拆分成多个业务模块。最终，由 IaC 引擎适配器根据 IaC 代码的类型调用相应 IaC 引擎执行部署，将应用程序发布到指定的云平台上。整个流程中，推导器、生成器、适配器都是可替换的，以此来支持更多不同的推导、生成方式和 IaC 引擎。
 
 可以在[这篇文章](./docs/zh-CN/how-pluto-works.md)中详细了解 Pluto 的工作流程。
 
@@ -198,8 +150,4 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
 
 ## 💬 社区
 
-欢迎加入我们的社区
-
-<!--+ [Slack](https://pluto-lang.slack.com)-->
-
-- Dingtalk: 40015003990
+欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw)  社区，或者 钉钉交流群: 40015003990。
