@@ -1,0 +1,50 @@
+{
+  "name": "@plutolang/cli",
+  "version": "0.0.6",
+  "description": "The command line of Pluto-lang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pluto-lang/pluto.git",
+    "directory": "apps/cli"
+  },
+  "author": "plutolang",
+  "keywords": [
+    "cli",
+    "npmtool"
+  ],
+  "bin": {
+    "pluto": "bin/pluto",
+    "pluto-stack": "bin/pluto-stack"
+  },
+  "main": "./dist/main.js",
+  "files": [
+    "bin/",
+    "dist/",
+    "template/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "./bin/pluto"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^3.2.0",
+    "@plutolang/adapters": "workspace:^",
+    "@plutolang/base": "workspace:^",
+    "@plutolang/graphviz-generator": "workspace:^",
+    "@plutolang/static-deducer": "workspace:^",
+    "@plutolang/static-generator": "workspace:^",
+    "@smithy/shared-ini-file-loader": "^2.2.2",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "js-yaml": "^4.1.0",
+    "table": "^6.8.1"
+  },
+  "devDependencies": {
+    "@plutolang/pluto": "workspace:^",
+    "@plutolang/pluto-infra": "workspace:^",
+    "@types/js-yaml": "^4.0.7",
+    "@types/node": "^20.8.4",
+    "typescript": "^5.2.2"
+  }
+}

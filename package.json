@@ -1,0 +1,20 @@
+{
+  "name": "pluto-lang",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "watch": "turbo run watch --parallel",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo test",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "release": "turbo run build lint test && changeset version && changeset publish --no-git-tag"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.26.2",
+    "eslint": "^8.48.0",
+    "prettier": "^3.0.3",
+    "turbo": "latest"
+  },
+  "packageManager": "pnpm@8.6.10"
+}

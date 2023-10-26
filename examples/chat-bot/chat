@@ -1,0 +1,49 @@
+#!/bin/bash
+# set -o xtrace
+
+read -p "Input the URL that Pluto has outputted: " URL
+if [ -z $URL ]; then
+    echo "Please set the BOT_URL env var first";
+    exit 1;
+fi
+
+echo "Choose mode:"
+echo '  1) create a new bot;'
+echo '  2) select a existed bot;'
+read -p "> " mode
+if [[ -z $mode || ( $mode -ne 1 && $mode -ne 2 ) ]]; then
+    echo "Invalid mode";
+    exit 1;
+fi
+
+read -p "Give a name for your bot: " bot_name
+if [ -z $bot_name ]; then
+    echo "Invalid name";
+    exit 1;
+fi
+
+if [[ $mode -eq 1 ]]; then
+    echo -e "\nHello, I'm $bot_name. "
+    echo "What role would you like me to fulfill? Please provide a detailed description of the skills you expect me to possess."
+    echo "For example, a TypeScript expert who familiar with the principle of compilation."
+    read -p "> " system_message
+    echo -e "Got it. Creating..."
+
+    if [[ -n $system_message ]]; then
+        curl -s -X POST $URL/new?bot="$bot_name" -d "$system_message" -H 'Content-type: text/plain' > /dev/null
+    fi
+fi
+
+echo -e "\nNow you can enjoy your chatbot."
+user_message=""
+while :
+do
+    echo "Press 'q' to quit."
+    read -p "> " user_message
+    if [[ $user_message == "q" ]]; then
+        echo "Bye. 👋"
+        break;
+    fi
+    curl -X POST $URL/chat?bot="$bot_name" -d "$user_message" -H 'Content-type: text/plain'
+    echo -e "\n"
+done

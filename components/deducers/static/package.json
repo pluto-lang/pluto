@@ -1,0 +1,30 @@
+{
+  "name": "@plutolang/static-deducer",
+  "version": "0.0.5",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pluto-lang/pluto.git",
+    "directory": "components/deducers/static"
+  },
+  "author": "plutolang",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "npm run build -- --watch",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@plutolang/base": "workspace:^",
+    "js-yaml": "^4.1.0",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.4",
+    "@vitest/coverage-v8": "^0.34.6",
+    "vitest": "^0.34.6"
+  }
+}

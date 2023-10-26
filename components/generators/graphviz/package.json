@@ -1,0 +1,28 @@
+{
+  "name": "@plutolang/graphviz-generator",
+  "version": "0.0.2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pluto-lang/pluto.git",
+    "directory": "components/generators/graphviz"
+  },
+  "author": "plutolang",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "npm run build -- --watch"
+  },
+  "dependencies": {
+    "@plutolang/base": "workspace:^",
+    "js-yaml": "^4.1.0",
+    "ts-graphviz": "^1.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.4",
+    "typescript": "^5.2.2"
+  }
+}

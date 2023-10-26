@@ -1,0 +1,5 @@
+packages:
+  - "apps/*"
+  - "components/**/*"
+  - "packages/*"
+  # - "examples/*"
