@@ -162,7 +162,7 @@ No additional configuration is necessary; you just need to know the location whe
 ### 1. Install Pluto
 
 ```shell
-npm install pluto
+npm install -g @plutolang/cli
 ```
 
 ### 2. Deploy your application using Pluto
