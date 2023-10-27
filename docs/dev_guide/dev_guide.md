@@ -22,9 +22,7 @@ This documentation is _NOT_ intended to be comprehensive; it is meant to be a qu
 Before asking a question, make sure you have:
 
 - Searched open and closed:
-
   - [Pluto GitHub Issues](https://github.com/pluto-lang/pluto/issues)
-
 - Read the documentations:
   - [Pluto Readme](https://github.com/pluto-lang/pluto)
 
@@ -45,6 +43,14 @@ The following hardware is recommended.
 #### pnpm
 
 See [here](https://pnpm.io/installation) to install pnpm
+
+#### Pulumi
+
+See [here](https://www.pulumi.com/docs/install/) to install Pulumi
+
+#### Optional: Kind
+
+If you are interested in developing an Infrastructure Software Development Kit (SDK) for Kubernetes, a useful tool to consider is [kind](https://kind.sigs.k8s.io/). You can follow the [installation guide](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) for instructions on how to install it. Additionally, you can refer to the documentation on configuring the environment for Pluto by following [this link](./create-k8s-dev-env.md). This will create a local cluster using Docker named pluto. On the Docker dashboard, you will be able to see a container named pluto-control-plane.
 
 ### Cloning
 
@@ -102,6 +108,8 @@ When you open a PR on the `pluto-lang/pluto` repo, and reviewers are the persons
 Please note that all code changes in the Pluto project require corresponding comments and tests. For more code and test writing details, please see the chapters on code of conduct and testing.
 
 Besides, all PRs need to have corresponding issues tracking, and need to add appropriate labels and milestone information.
+
+Furthermore, this repository utilizes [changesets](https://github.com/changesets/changesets) to facilitate easier release updates. As a contributor, this means that when your changes are ready, you should run `npx changeset`. For more details, refer to this concise document on [adding a changeset](https://github.com/changesets/changesets/blob/main/docs/adding-a-changeset.md#i-am-in-a-single-package-repository).
 
 #### Bug Fixes or "Normal" Code Changes
 

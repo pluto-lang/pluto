@@ -111,7 +111,7 @@ export AWS_REGION="xx-xxxx-x"          # 替换成你期望部署的 Region
 
 不需要额外的配置，只需知道 kubeconfig 存放的位置即可，通常在 `~/.kube/config`。
 
-> 如果选择 Kubernetes 作为运行时环境，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。
+> 如果选择 Kubernetes 作为运行时环境，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](./docs/dev_guide/setup-k8s-dev-env.md)配置所需的 Kubernetes 环境。
 
 ### 1. 安装 Pluto
 
@@ -127,6 +127,8 @@ cd <project_dir> # 进入项目目录
 npm install      # 下载依赖
 pluto deploy     # 一键部署！
 ```
+
+> 目前，Pluto只支持单文件。并且，在每个处理程序函数中，还不支持访问处理程序函数作用域之外的变量(资源变量除外)、类、接口等。
 
 ## 👏 参与贡献
 
@@ -150,4 +152,4 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
 
 ## 💬 社区
 
-欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw)  社区，或者 钉钉交流群: 40015003990。
+欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) 社区，或者 钉钉交流群: 40015003990。

@@ -2,7 +2,7 @@
 
 ## Is cloud considered as infrastructure 🤔️
 
-> Infrastructure is the set of facilities and systems that serve a country, city, or other area, and encompasses the services and facilities necessary for its economy, households and firms to function.  —— Wikipedia
+> Infrastructure is the set of facilities and systems that serve a country, city, or other area, and encompasses the services and facilities necessary for its economy, households and firms to function. —— Wikipedia
 
 In a conceptual sense, the cloud can be considered as infrastructure. However, let's take a moment to think about it: when using an electric rice cooker, do you really care whether the electricity powering it comes from hydroelectric or thermal power sources? Similarly, when developing applications, do you find yourself needing to consider deploying them on AWS or Kubernetes? The truth is, the cloud is not as seamless and convenient as electricity. From a practical standpoint, it has not yet fully transformed into a comprehensive infrastructure. One possible missing piece could be an efficient method of accessing it.
 
@@ -48,7 +48,7 @@ Developers can continue defining variables required for their applications and w
 
 ![](https://github.com/pluto-lang/pluto/assets/20160766/07e20ddc-4765-4d3b-acbe-8b7d5b8732b5)
 
-The main idea behind this is to deduce the cloud resources that an application depends on from the user code, as well as the dependencies between resources. This builds a cloud resource topology, which serves as an architecture reference for the cloud environment. By further splitting and rewriting the user code, multiple computing modules can be exported that depend on this architecture reference. With this architecture reference as a basis, we are able to generate infrastructure code that is **not directly related to the user code**, but includes definitions of resources and deployment of computing modules. Finally, executing this infrastructure code creates and deploys a runtime environment for running applications in the cloud. You can learn more about this workflow in [this article](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/how-pluto-works.md).
+The main idea behind this is to deduce the cloud resources that an application depends on from the user code, as well as the dependencies between resources. This builds a cloud resource topology, which serves as an architecture reference for the cloud environment. By further splitting and rewriting the user code, multiple computing modules can be exported that depend on this architecture reference. With this architecture reference as a basis, we are able to generate infrastructure code that is **not directly related to the user code**, but includes definitions of resources and deployment of computing modules. Finally, executing this infrastructure code creates and deploys a runtime environment for running applications in the cloud. You can learn more about this workflow in [this article](https://github.com/pluto-lang/pluto/blob/main/docs/en/how-pluto-works.md).
 
 The key to ensuring an exceptional development experience for users lies in the separation between compile-time executed code and user code. Developers should not need to specify during development which parts of their code are meant for compile-time execution versus runtime execution.
 

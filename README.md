@@ -111,7 +111,7 @@ export AWS_REGION="xx-xxxx-x"          # replace it with your AWS Region
 
 No additional configuration is necessary; you just need to know the location where the kubeconfig file is stored, typically at `~/.kube/config`.
 
-> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality.
+> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality. You can configure the required Kubernetes environment according to [this document](./docs/dev_guide/setup-k8s-dev-env.md).
 
 ### 1. Install Pluto
 
@@ -127,6 +127,8 @@ cd <project_dir> # change to the directory of the new project
 npm install      # install the depnedencies
 pluto deploy     # shoot!
 ```
+
+> Currently, Pluto only supports deploying with a single file. Moreover, within each handler function, we do not provide support for accessing variables (except the resource variables), classes, or interfaces outside of the scope of the handler function.
 
 ## 👏 Contributing
 
