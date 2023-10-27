@@ -50,7 +50,10 @@ async function main() {
         .default("@plutolang/static-generator")
         .hideHelp()
     )
-    .action(cmd.compile);
+    .action(() => {
+      logger.info("The testing function is currently not supported. It will be available soon~");
+      process.exit(0);
+    });
 
   program
     .command("deploy")
