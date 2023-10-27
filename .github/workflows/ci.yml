@@ -22,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      # Check for any dead links.
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+
       - uses: actions/setup-node@v3
         with:
           node-version: 20
