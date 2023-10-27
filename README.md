@@ -7,6 +7,10 @@
    <a href="./README_zh.md"> 简体中文 </a>
 </p>
 
+[![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw)
+![GitHub](https://img.shields.io/github/license/pluto-lang/pluto)
+[![npm version](https://badge.fury.io/js/@plutolang%2Fcli.svg)](https://badge.fury.io/js/@plutolang%2Fcli)
+
 Pluto is a new open-source programming language designed to help developers write cloud applications and **make it easier to use cloud services**.
 
 Developers can directly use the **required resources, such as KV databases and message queues**, in their code based on their business needs. Pluto performs **static analysis** on the code to determine the **infrastructure resources** required by the application and deploys corresponding resource instances and applications on the specified cloud platform.

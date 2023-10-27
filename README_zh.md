@@ -7,6 +7,10 @@
    <a href="./README_zh.md"> 简体中文 </a>
 </p>
 
+[![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw)
+![GitHub](https://img.shields.io/github/license/pluto-lang/pluto)
+[![npm version](https://badge.fury.io/js/@plutolang%2Fcli.svg)](https://badge.fury.io/js/@plutolang%2Fcli)
+
 Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用程序，降低云服务的使用难度。开发者可以根据业务需求，在代码中**直接使用所需资源，例如 KV 数据库、消息队列**等。Pluto 通过**静态分析**代码获取应用依赖的**基础设施资源拓扑**，并在指定的云平台上部署相应的资源实例和应用程序。
 
 **⚠️ 注意：Pluto 仍处于 PoC 阶段，尚未准备好用于生产环境。**
