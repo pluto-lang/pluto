@@ -25,7 +25,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "dev": "./bin/pluto"
+    "dev": "./bin/pluto",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@inquirer/prompts": "^3.2.0",

@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "build": "tsc",
-    "watch": "npm run build -- --watch"
+    "watch": "npm run build -- --watch",
+    "lint": "eslint ."
   },
   "author": "plutolang",
   "main": "./dist/index.js",

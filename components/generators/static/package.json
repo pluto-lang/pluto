@@ -14,7 +14,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "watch": "npm run build -- --watch"
+    "watch": "npm run build -- --watch",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@plutolang/base": "workspace:^",
