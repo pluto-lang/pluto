@@ -1,5 +1,11 @@
 # @plutolang/cli
 
+## 0.0.7
+
+### Patch Changes
+
+- 807854a: Add some tips on current functionality.
+
 ## 0.0.6
 
 ### Patch Changes
