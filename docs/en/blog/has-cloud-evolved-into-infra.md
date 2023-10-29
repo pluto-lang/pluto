@@ -46,7 +46,7 @@ router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
 
 Developers can continue defining variables required for their applications and write multiple route handling functions in a single file as they normally would. Upon compilation, variables like kvstore and router will transform into cloud components (such as DynamoDB and ApiGateway), while the defined route handling functions will become Lambda functions in the cloud. This seamless transition allows developers to naturally leverage features such as pay-as-you-go billing and rapid scaling.
 
-![](https://github.com/pluto-lang/pluto/assets/20160766/07e20ddc-4765-4d3b-acbe-8b7d5b8732b5)
+![](http://cdn.zhengsj.cn/ob-1698301951197.png)
 
 The main idea behind this is to deduce the cloud resources that an application depends on from the user code, as well as the dependencies between resources. This builds a cloud resource topology, which serves as an architecture reference for the cloud environment. By further splitting and rewriting the user code, multiple computing modules can be exported that depend on this architecture reference. With this architecture reference as a basis, we are able to generate infrastructure code that is **not directly related to the user code**, but includes definitions of resources and deployment of computing modules. Finally, executing this infrastructure code creates and deploys a runtime environment for running applications in the cloud. You can learn more about this workflow in [this article](https://github.com/pluto-lang/pluto/blob/main/docs/en/how-pluto-works.md).
 
@@ -74,3 +74,9 @@ Here are a few more example applications:
 ---
 
 **Please note that Pluto is currently in the PoC stage and is not yet ready for production use. If you have any ideas regarding the concept of "language renovation" or thoughts on the Pluto product, or if you would like to contribute to its development, we warmly invite you to join our Slack community and GitHub repository. Feel free to join us at [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) and [GitHub](https://github.com/pluto-lang/pluto).**
+
+## References
+
+- [How Pluto Works](https://github.com/pluto-lang/pluto/blob/main/docs/en/how-pluto-works.md)
+- [What Problem does Pluto Solve?](https://github.com/pluto-lang/pluto/blob/main/docs/en/what-problems-pluto-aims-to-address.md)
+- [Differences between Pluto and other Products](https://github.com/pluto-lang/pluto/blob/main/docs/en/whats-different.md)

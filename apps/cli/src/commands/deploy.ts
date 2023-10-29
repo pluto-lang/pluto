@@ -79,7 +79,7 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 
   logger.info("Successfully applied!");
-  for (let key in applyResult.outputs) {
+  for (const key in applyResult.outputs) {
     logger.info(`${key}: ${applyResult.outputs[key]}`);
   }
 }

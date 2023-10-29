@@ -71,4 +71,9 @@ Demo 中，我在一份代码文件中，定义 3 个变量，KVStore、Queue、
 
 ---
 
-**Pluto 目前仍处于 PoC 阶段，尚未准备好投入生产使用。如果你对“语言翻新”这个想法或者“Pluto”这款产品有任何想法，或者想参与开发，我们都十分欢迎，欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) 和 [GitHub](https://github.com/pluto-lang/pluto)。**
+**Pluto 目前仍处于 PoC 阶段，尚未准备好投入生产使用。如果你对“语言翻新”这个想法或者“Pluto”这款产品有任何想法，或者想参与开发，我们都十分欢迎，欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) 和 [GitHub](https://github.com/pluto-lang/pluto)，或者 钉钉交流群: 40015003990。**
+
+## 参考
+- [Pluto 工作原理](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/how-pluto-works.md)
+- [Pluto 解决什么问题](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/what-problems-pluto-aims-to-address.md)
+- [Pluto 和其他技术有什么不同](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/whats-different.md)
