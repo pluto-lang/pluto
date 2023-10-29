@@ -9,9 +9,21 @@ export async function destroy(args: DestroyArgs): Promise<DestroyResult> {
     program: async () => {},
   };
 
-  const pulumiStack = await LocalWorkspace.createOrSelectStack(pulumiArgs);
+  const pulumiStack = await LocalWorkspace.createOrSelectStack(pulumiArgs, {
+    envVars: {
+      PULUMI_CONFIG_PASSPHRASE: "pluto",
+    },
+    projectSettings: {
+      runtime: "nodejs",
+      name: args.projName,
+      backend: { url: `file://~` },
+    },
+  });
   const pulumiConfig = await genPulumiConfigByRuntime(args.stack);
   await pulumiStack.setAllConfig(pulumiConfig);
+
+  // TODO: Retrieve the randomly generated string from pluto.yml during deployment.
+  process.env["PULUMI_CONFIG_PASSPHRASE"] = "pluto";
 
   try {
     const progressOut = process.env.DEBUG ? console.log : undefined;

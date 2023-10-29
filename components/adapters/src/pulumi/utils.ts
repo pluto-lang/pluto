@@ -12,7 +12,7 @@ export async function genPulumiConfigByRuntime(sta: project.Stack): Promise<Conf
   if (!(sta.runtime.type in genFnMapping)) {
     throw new Error("Not support this runtime.");
   }
-  return genFnMapping[sta.runtime.type]!(sta);
+  return await genFnMapping[sta.runtime.type]!(sta);
 }
 
 export async function genPulumiConfigForAWS(sta: project.Stack): Promise<ConfigMap> {

@@ -17,11 +17,13 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
       envVars: {
         RUNTIME_TYPE: args.stack.runtime.type,
         ENGINE_TYPE: args.stack.engine,
+        PULUMI_CONFIG_PASSPHRASE: "pluto",
       },
       projectSettings: {
         runtime: "nodejs",
         name: args.projName,
         main: pulumiFile,
+        backend: { url: `file://~` },
       },
     }
   );
@@ -32,6 +34,8 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
   process.env["RUNTIME_TYPE"] = args.stack.runtime.type;
   process.env["ENGINE_TYPE"] = args.stack.engine;
   process.env["WORK_DIR"] = pulumiWorkDir;
+  // TODO: Generate a random string and save it to pluto.yml.
+  process.env["PULUMI_CONFIG_PASSPHRASE"] = "pluto";
 
   try {
     const progressOut = process.env.DEBUG ? console.log : undefined;
