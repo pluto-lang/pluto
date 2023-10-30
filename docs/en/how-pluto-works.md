@@ -32,7 +32,7 @@ The main purpose of the deduction stage is to deduce the dependencies of the app
 
 <details><summary>Deducer based on static program analysis</summary>
 
-The Pluto repository provides an implementation of a deducer based on static program analysis. This deducer mainly combines the API SDK to deduce the resource dependencies and build the reference architecture.
+The Pluto repository provides an implementation of [a deducer based on static program analysis](https://github.com/pluto-lang/pluto/tree/main/components/deducers/static). This deducer mainly combines the API SDK to deduce the resource dependencies and build the reference architecture.
 
 This deducer determines the dependencies of infrastructure resources by examining the resource variables defined in the user-written code, such as `const queue = new Queue();`, with the type of the resource variable being defined by the SDK that is being used. The type of the resource variable implements the `Resource` interface. The static analyzer determines whether a variable is a type of infrastructure resource by checking if it is an instance object of the `Resource` type.
 
@@ -48,7 +48,7 @@ The main purpose of the generation stage is to generate IaC code based on the re
 
 <details><summary>Generator based on IaC SDK</summary>
 
-The Pluto repository provides an implementation of a generator based on the IaC SDK. This generator uses the IaC SDK to define infrastructure resources and splits the user code into multiple Lambda function modules. The API SDK has a corresponding IaC SDK that provides IaC implementations for each resource type defined by the API SDK on different platforms. The generator generates an instance object of the IaC type for each resource variable based on the reference architecture and configures the dependencies between the IaC objects, such as access permissions. In addition, the generator also splits the user code into multiple code files based on the division of compute modules in the reference architecture, with each file being an importable compute module. Finally, all the code is compiled.
+The Pluto repository provides an implementation of [a generator based on the IaC SDK](https://github.com/pluto-lang/pluto/tree/main/components/generators/static). This generator uses the IaC SDK to define infrastructure resources and splits the user code into multiple Lambda function modules. The API SDK has a corresponding IaC SDK that provides IaC implementations for each resource type defined by the API SDK on different platforms. The generator generates an instance object of the IaC type for each resource variable based on the reference architecture and configures the dependencies between the IaC objects, such as access permissions. In addition, the generator also splits the user code into multiple code files based on the division of compute modules in the reference architecture, with each file being an importable compute module. Finally, all the code is compiled.
 
 </details>
 

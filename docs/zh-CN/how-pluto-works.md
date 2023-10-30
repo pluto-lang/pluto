@@ -34,7 +34,7 @@ Pluto 的整体工作流程包括推导、生成、部署三个阶段，每个�
 
 <details><summary>基于静态程序分析的推导器</summary>
 
-Pluto 仓库中提供了[基于静态程序分析的推导器](https://github.com/pluto-lang/pluto/components/deducers/static)实现。该推导器主要是结合 API SDK 来推导资源依赖，以及构建参考架构。
+Pluto 仓库中提供了[基于静态程序分析的推导器](https://github.com/pluto-lang/pluto/tree/main/components/deducers/static)实现。该推导器主要是结合 API SDK 来推导资源依赖，以及构建参考架构。
 
 该推导器判断基础设施资源依赖的方式是：用户编写的代码中会定义资源变量，如 `const queue = new Queue();`，而资源变量的类型定义则来自依赖的 SDK，该类型在实现上实现了 `Resource` 接口。静态分析器会通过变量类型是否是 `Resource` 的实例对象，进而判断是否是基础设施资源类型。
 
@@ -50,7 +50,7 @@ Pluto 仓库中提供了[基于静态程序分析的推导器](https://github.co
 
 <details><summary>基于 IaC SDK 的生成器</summary>
 
-Pluto 仓库中提供了一个[基于 IaC SDK 的生成器](https://github.com/pluto-lang/pluto/components/deducers/static)实现。该生成器利用 IaC SDK 定义基础设施资源，并将用户代码拆分为多个 Lambda 函数模块。
+Pluto 仓库中提供了一个[基于 IaC SDK 的生成器](https://github.com/pluto-lang/pluto/tree/main/components/generators/static)实现。该生成器利用 IaC SDK 定义基础设施资源，并将用户代码拆分为多个 Lambda 函数模块。
 
 API SDK 有一个与之配套的 IaC SDK，用于为 API SDK 定义的每个资源类型提供在不同平台上的 IaC 实现。生成器会根据参考架构生成每个资源变量对应的 IaC 类型实例对象，并配置 IaC 对象之间的访问权限等依赖关系。
 
