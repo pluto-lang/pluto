@@ -1,5 +1,11 @@
 # @plutolang/cli
 
+## 0.0.9
+
+### Patch Changes
+
+- 4c28ce8: Add 'yes' option to the deploy command.
+
 ## 0.0.8
 
 ### Patch Changes
