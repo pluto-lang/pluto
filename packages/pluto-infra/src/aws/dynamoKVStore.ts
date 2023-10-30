@@ -2,6 +2,7 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { ResourceInfra } from "@plutolang/base";
 import { KVStoreInfra, KVStoreInfraOptions } from "@plutolang/pluto";
+import { Permission } from "./permission";
 
 export enum DynamoDbOps {
   GET = "get",
@@ -36,7 +37,7 @@ export class DynamoKVStore extends pulumi.ComponentResource implements ResourceI
     this.arn = db.arn;
   }
 
-  public getPermission(op: string): any {
+  public getPermission(op: string): Permission {
     const actions: string[] = [];
     switch (op) {
       case DynamoDbOps.GET:

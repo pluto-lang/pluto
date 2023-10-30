@@ -2,15 +2,17 @@ import * as engine from "./engine";
 import * as runtime from "./runtime";
 import { Resource, ResourceInfra } from "./resource";
 
-type InfraCls = { new (name: string, opts?: any): ResourceInfra };
-type ResourceCls = { new (name: string, opts?: any): Resource } | "FnResource";
+type InfraCls = { new (name: string, opts?: object): ResourceInfra };
+type ResourceCls = { new (name: string, opts?: object): Resource } | "FnResource";
 
+// eslint-disable-next-line
 export interface Registry {
   register(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls, cls: InfraCls): void;
 
   getResourceDef(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls): InfraCls;
 }
 
+// eslint-disable-next-line
 export class Registry implements Registry {
   readonly store: { [key: string]: InfraCls } = {};
 

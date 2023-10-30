@@ -51,10 +51,3 @@ export async function update(args: ApplyArgs): Promise<ApplyResult> {
     return { error: "Pulumi update error" };
   }
 }
-
-const pulumiProgram = (pulumiFile: string) => {
-  return async () => {
-    const outputs = await import(pulumiFile);
-    return outputs;
-  };
-};

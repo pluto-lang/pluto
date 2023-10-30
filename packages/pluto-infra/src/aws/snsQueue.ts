@@ -4,6 +4,7 @@ import * as pulumi from "@pulumi/pulumi";
 import { Resource, ResourceInfra } from "@plutolang/base";
 import { QueueInfra, QueueInfraOptions } from "@plutolang/pluto/dist/queue";
 import { Lambda } from "./lambda";
+import { Permission } from "./permission";
 
 export enum SNSOps {
   PUSH = "push",
@@ -59,7 +60,7 @@ export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra,
     );
   }
 
-  public getPermission(op: string): any {
+  public getPermission(op: string): Permission {
     const actions = [];
     switch (op) {
       case SNSOps.PUSH:

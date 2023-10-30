@@ -17,7 +17,7 @@ export class ServiceLambda extends pulumi.ComponentResource implements ResourceI
   kservice: k8s.apiextensions.CustomResource;
   url: pulumi.Output<string>;
 
-  constructor(name: string, args?: {}, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: object, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:k8s:Service", name, args, opts);
     this.name = name;
 

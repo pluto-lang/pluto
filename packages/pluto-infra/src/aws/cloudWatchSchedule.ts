@@ -60,7 +60,7 @@ export class CloudWatchSchedule
 }
 
 function convertCronToAwsFmt(cron: string): string {
-  let parts = cron.split(" ");
+  const parts = cron.split(" ");
 
   const week = parts[4];
   let fmtWeek: string;

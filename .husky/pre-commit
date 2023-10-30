@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run format &> /dev/null
+git add -A
+
+echo "'npm run format' was executed, and it automatically added the changes to your git staging area."

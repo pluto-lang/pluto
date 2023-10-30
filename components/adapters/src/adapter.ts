@@ -8,7 +8,7 @@ export interface ApplyArgs {
 }
 
 export interface ApplyResult {
-  outputs?: { [key: string]: any };
+  outputs?: { [key: string]: string };
   error?: string;
 }
 

@@ -17,7 +17,7 @@ export class Project {
   }
 
   public getStack(sname: string): Stack | undefined {
-    for (let sta of this.stacks) {
+    for (const sta of this.stacks) {
       if (sta.name == sname) {
         return sta;
       }
