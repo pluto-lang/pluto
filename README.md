@@ -21,7 +21,7 @@ Developers can directly use the **required resources, such as KV databases and m
 
 Let's look at a simple example:
 
-[https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9](https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9)
+[https://github.com/pluto-lang/pluto/assets/20160766/add7f29c-a8f4-406a-a1b5-75495882c809](https://github.com/pluto-lang/pluto/assets/20160766/add7f29c-a8f4-406a-a1b5-75495882c809)
 
 <p align="center">
   <img src="./assets/demo-biz-logic.png" alt="business logic" width="400">
