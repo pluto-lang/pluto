@@ -60,6 +60,7 @@ async function main() {
     .description("Deploy this project to the platform specified in the stack")
     .argument("[files...]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
+    .option("-y, --yes", "Automatically approve and perform the deployment", false)
     .addOption(
       new Option(
         "-d, --deducer <deducer>",
