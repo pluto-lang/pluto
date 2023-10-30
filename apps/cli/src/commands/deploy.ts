@@ -12,6 +12,7 @@ export interface DeployOptions {
   deducer: string;
   generator: string;
   apply: boolean;
+  yes: boolean;
 }
 
 export async function deploy(files: string[], opts: DeployOptions) {
@@ -44,7 +45,7 @@ export async function deploy(files: string[], opts: DeployOptions) {
     logger.info("Generating reference architecture...");
     const archRef = await loadAndDeduce(opts.deducer, files);
 
-    const confirmed = await confirmArch(archRef);
+    const confirmed = await confirmArch(archRef, opts.yes);
     if (!confirmed) {
       logger.info("You can modify your code and try again.");
       process.exit(1);
@@ -84,7 +85,7 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 }
 
-async function confirmArch(archRef: arch.Architecture): Promise<boolean> {
+async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Promise<boolean> {
   // Create the resource table for printing.
   const resData = [["Name", "Type", "Location"]];
   for (const resName in archRef.resources) {
@@ -130,9 +131,11 @@ async function confirmArch(archRef: arch.Architecture): Promise<boolean> {
   };
   console.log(table(relatData, relatConfig));
 
-  const result = await confirm({
-    message: "Does this reference architecture satisfy the design of your application?",
-    default: true,
-  });
+  const result =
+    confirmed ||
+    (await confirm({
+      message: "Does this reference architecture satisfy the design of your application?",
+      default: true,
+    }));
   return result;
 }
