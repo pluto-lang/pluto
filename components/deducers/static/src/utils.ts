@@ -1,4 +1,4 @@
-export function isPrimitive(val: any): boolean {
+export function isPrimitive(val: string): boolean {
   const primitiveTypes = [
     "string",
     "number",

@@ -19,11 +19,12 @@ const WORK_DIR = process.env["WORK_DIR"]!;
 export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
   readonly name: string;
 
+  // eslint-disable-next-line
   lambda: Function;
   iam: Role;
   statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
-  constructor(name: string, args?: {}, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: object, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:lambda:aws/Lambda", name, args, opts);
     this.name = name;
     this.statements = [];

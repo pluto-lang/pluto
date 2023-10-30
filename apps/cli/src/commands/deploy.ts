@@ -79,7 +79,7 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 
   logger.info("Successfully applied!");
-  for (let key in applyResult.outputs) {
+  for (const key in applyResult.outputs) {
     logger.info(`${key}: ${applyResult.outputs[key]}`);
   }
 }
@@ -87,7 +87,7 @@ export async function deploy(files: string[], opts: DeployOptions) {
 async function confirmArch(archRef: arch.Architecture): Promise<boolean> {
   // Create the resource table for printing.
   const resData = [["Name", "Type", "Location"]];
-  for (let resName in archRef.resources) {
+  for (const resName in archRef.resources) {
     const resource = archRef.resources[resName];
     if (resource.type == "Root") continue;
 
@@ -112,7 +112,7 @@ async function confirmArch(archRef: arch.Architecture): Promise<boolean> {
 
   // Create the relationship table for printing.
   const relatData = [["From", "To", "Type", "Operation"]];
-  for (let relat of archRef.relationships) {
+  for (const relat of archRef.relationships) {
     if (relat.from.type == "Root") continue;
 
     const typ = relat.type == "access" ? "Access" : "Create";

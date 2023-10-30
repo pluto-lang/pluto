@@ -7,6 +7,7 @@ import logger from "./log";
 export const PLUTO_DIR = ".pluto";
 export const PLUTO_CONFIG_FILE = `${PLUTO_DIR}/pluto.yml`;
 
+// eslint-disable-next-line
 export const version = require("../package.json").version;
 
 export function loadConfig(): project.Project {

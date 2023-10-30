@@ -18,7 +18,7 @@ app.all("*", async (req: Request, res: Response) => {
   if (HTTP.isEvent({ headers: req.headers, body: req.body })) {
     if (req.headers["ce-type"] == "dev.knative.sources.ping") {
       // Handle schedule event
-      await handle().catch((e: any) => {
+      await handle().catch((e: Error) => {
         console.log("Schedule event processing failed:", e);
       });
     } else {
@@ -43,7 +43,7 @@ app.all("*", async (req: Request, res: Response) => {
       query: {},
       body: req.body,
     };
-    for (let key in req.query) {
+    for (const key in req.query) {
       reqPluto.query[key] = req.query[key] as string;
     }
     console.log("Request:", reqPluto);

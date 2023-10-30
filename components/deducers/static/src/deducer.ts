@@ -35,28 +35,25 @@ async function compilePluto(
   const root = new arch.Resource("App", "Root"); // Resource Root
   archRef.addResource(root);
 
-  let program = ts.createProgram(fileNames, options);
-  let allDiagnostics = ts.getPreEmitDiagnostics(program);
+  const program = ts.createProgram(fileNames, options);
+  const allDiagnostics = ts.getPreEmitDiagnostics(program);
   // Emit errors
   allDiagnostics.forEach((diagnostic) => {
     if (diagnostic.file) {
-      let { line, character } = ts.getLineAndCharacterOfPosition(
+      const { line, character } = ts.getLineAndCharacterOfPosition(
         diagnostic.file,
         diagnostic.start!
       );
-      let message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+      const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
       console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
     } else {
       console.log(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
     }
   });
   const sourceFile = program.getSourceFile(fileNames[0])!;
-  let checker = program.getTypeChecker();
+  const checker = program.getTypeChecker();
   // To print the AST, we'll use TypeScript's printer
-  let hasIaC = false;
   let handlerIndex = 1;
-  let stateStoreIndex = 1;
-  let queueIndex = 1;
 
   const importStore: ImportStore = new ImportStore();
   // Loop through the root AST nodes of the file
@@ -73,15 +70,15 @@ async function compilePluto(
         ts.isNewExpression(node.declarationList.declarations[0].initializer)
       ) {
         // TODO: declarations.forEach()
-        let newExpr = node.declarationList.declarations[0].initializer;
-        let variable = node.declarationList.declarations[0].name;
+        const newExpr = node.declarationList.declarations[0].initializer;
+        const variable = node.declarationList.declarations[0].name;
         const varName = variable.getText(sourceFile);
-        let symbol = checker.getSymbolAtLocation(newExpr.expression);
+        const symbol = checker.getSymbolAtLocation(newExpr.expression);
         // TODO: use `ts.factory.createIdentifier("factorial")` to replace.
         if (symbol) {
           // TODO: use decorator mapping on SDK? The SDK auto workflow
-          let ty = checker.getTypeOfSymbol(symbol);
-          let resType = ty.symbol.escapedName.toString();
+          const ty = checker.getTypeOfSymbol(symbol);
+          const resType = ty.symbol.escapedName.toString();
           const param1 = newExpr.arguments![0].getText();
           if (process.env.DEBUG) {
             console.log(`Found a ${resType}: ${varName}`);
@@ -111,20 +108,6 @@ async function compilePluto(
           const relat = new arch.Relationship(root, newRes, arch.RelatType.CREATE, "new");
           archRef.addResource(newRes);
           archRef.addRelationship(relat);
-
-          if (ty.symbol.escapedName == "KVStore") {
-            // iacSource = iacSource + node.getText(sourceFile).replace("State", "iac.aws.DynamoDBDef") + "\n"
-            hasIaC = true;
-            let stateName = newExpr.arguments?.[0].getText() || `statestore${stateStoreIndex}`;
-            stateStoreIndex += 1;
-          } else if (ty.symbol.escapedName == "Router") {
-            hasIaC = true;
-          } else if (ty.symbol.escapedName == "Queue") {
-            hasIaC = true;
-
-            let queueName = newExpr.arguments?.[0].getText() || `queue${queueIndex}`;
-            queueIndex += 1;
-          }
         }
       }
     }
@@ -135,13 +118,13 @@ async function compilePluto(
       ts.isCallExpression(node.expression) &&
       ts.isPropertyAccessExpression(node.expression.expression)
     ) {
-      let symbol = checker.getSymbolAtLocation(node.expression.expression.expression);
+      const symbol = checker.getSymbolAtLocation(node.expression.expression.expression);
       if (symbol) {
-        let ty = checker.getTypeOfSymbol(symbol);
+        const ty = checker.getTypeOfSymbol(symbol);
         const className = ty.symbol.escapedName.toString();
         // TODO: use router Type
         if (["Router", "Queue", "Schedule"].indexOf(className) !== -1) {
-          let objName = symbol.escapedName;
+          const objName = symbol.escapedName;
           const op = node.expression.expression.name.getText();
 
           // Check each argument and create a Lambda resource if the argument is a function.
@@ -242,16 +225,16 @@ function detectPermission(
 
     // fetch permission
     if (propAccessExp) {
-      let objSymbol = tyChecker.getSymbolAtLocation(propAccessExp.expression);
+      const objSymbol = tyChecker.getSymbolAtLocation(propAccessExp.expression);
       if (!objSymbol) {
         return;
       }
 
-      let typ = tyChecker.getTypeOfSymbol(objSymbol);
+      const typ = tyChecker.getTypeOfSymbol(objSymbol);
       if (CloudResourceType.indexOf(typ.symbol.escapedName.toString()) == -1) {
         return;
       }
-      let opSymbol = tyChecker.getSymbolAtLocation(propAccessExp);
+      const opSymbol = tyChecker.getSymbolAtLocation(propAccessExp);
       assert(opSymbol, "Op Symbol is undefined");
 
       const resName = objSymbol!.escapedName.toString();

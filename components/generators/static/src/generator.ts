@@ -73,7 +73,7 @@ let resDefCls;
 `;
 
   // Resource definition, first for BaaS, second for FaaS
-  for (let resName in archRef.resources) {
+  for (const resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type == "Root" || res.type == "FnResource") continue;
 
@@ -84,12 +84,12 @@ const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
   }
 
   // Specify the dependency of FaaS on this particular BaaS, because the building image process needs to be performed after exporting Dapr YAML.
-  for (let resName in archRef.resources) {
+  for (const resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type != "FnResource") continue;
 
     const deps = [];
-    for (let relat of archRef.relationships) {
+    for (const relat of archRef.relationships) {
       if (relat.from != res || relat.type != arch.RelatType.ACCESS) continue;
       deps.push(relat.to.name);
     }
@@ -101,7 +101,7 @@ const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${de
   }
 
   // Establish resource dependencies, including triggering and accessing.
-  for (let relat of archRef.relationships) {
+  for (const relat of archRef.relationships) {
     if (relat.from.type == "Root") continue;
 
     if (relat.type == arch.RelatType.CREATE) {
@@ -113,7 +113,7 @@ const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${de
 
   iacSource += "\n";
   let outputed = false;
-  for (let resName in archRef.resources) {
+  for (const resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type == "Root") continue;
     iacSource += `${resName}.postProcess();\n`;
@@ -134,7 +134,7 @@ interface ComputeIR {
 }
 
 function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
-  let rootRes: arch.Resource = archRef.getResource("App");
+  const rootRes: arch.Resource = archRef.getResource("App");
 
   const genCirCode = (res: arch.Resource): string => {
     let cirCode = res.getImports().join("\n") + "\n";
@@ -142,7 +142,7 @@ function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
     cirCode += rootRes.getImports().join("\n") + "\n";
 
     // Find the dependencies of this CIR and build corresponding instances.
-    for (let relat of archRef.relationships) {
+    for (const relat of archRef.relationships) {
       if (relat.from != res) continue;
       // TODO: verify if the buildClient function exists. If it does not, use the original statement.
       cirCode += relat.to.getImports() + "\n";
@@ -176,7 +176,7 @@ function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
   };
 
   const cirs: ComputeIR[] = [];
-  for (let resName in archRef.resources) {
+  for (const resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type != "FnResource") continue;
     cirs.push({ resource: res, code: genCirCode(res) });

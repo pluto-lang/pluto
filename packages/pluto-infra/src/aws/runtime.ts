@@ -7,6 +7,7 @@ if (!COMPUTE_MODULE) {
 
 const mod = import(COMPUTE_MODULE);
 
+// eslint-disable-next-line
 export default async (event: any, context: any) => {
   const handler = (await mod).default;
 
@@ -25,13 +26,13 @@ export default async (event: any, context: any) => {
       const payload = record["Sns"]["Message"];
       const event: CloudEvent = JSON.parse(payload);
       console.log("Pluto: Handling event: ", event);
-      await handler(event).catch((e: any) => {
+      await handler(event).catch((e: Error) => {
         console.log("Faild to handle event: ", e);
       });
     }
   } else if ("detail-type" in event && event["detail-type"] === "Scheduled Event") {
     // Schedule Event Handler
-    await handler().catch((e: any) => {
+    await handler().catch((e: Error) => {
       console.log("Faild to handle event: ", e);
     });
   } else {
@@ -44,7 +45,7 @@ export default async (event: any, context: any) => {
       body: event.body,
     };
     console.log("Pluto: Handling HTTP request: ", request);
-    return await handler(request).catch((e: any) => {
+    return await handler(request).catch((e: Error) => {
       console.log("Faild to handle http request: ", e);
     });
   }

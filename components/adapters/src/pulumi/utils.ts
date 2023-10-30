@@ -15,7 +15,7 @@ export async function genPulumiConfigByRuntime(sta: project.Stack): Promise<Conf
   return await genFnMapping[sta.runtime.type]!(sta);
 }
 
-export async function genPulumiConfigForAWS(sta: project.Stack): Promise<ConfigMap> {
+export async function genPulumiConfigForAWS(): Promise<ConfigMap> {
   const creds = await getAwsCredentials();
   return {
     "aws:region": { value: creds.region },

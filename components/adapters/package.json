@@ -16,7 +16,8 @@
     "build": "tsc",
     "watch": "npm run build -- --watch",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@plutolang/base": "workspace:^",

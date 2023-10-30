@@ -42,12 +42,6 @@ export class Router implements Resource {
       "Cannot instantiate this class, instead of its subclass depending on the target runtime."
     );
   }
-
-  public static buildClient(name: string, opts?: any): void {
-    name;
-    opts;
-    throw new Error("This method should not be called. The router should not have a client.");
-  }
 }
 
 export interface Router extends RouterInfra {}

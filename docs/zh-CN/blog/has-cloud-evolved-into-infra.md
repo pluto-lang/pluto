@@ -58,7 +58,7 @@ router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
 
 Pluto 根据这个思路首先在 TypeScript 上进行尝试，让 TypeScript 成为面向云应用开发的一门新语言，就像 Pluto 从行星被重新分类为矮行星。虽然目前仍处于 PoC 阶段，但是可以给大家看看我们在 Demo 中实现的效果。
 
-[https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f](https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f)
+[https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9](https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9)
 
 Demo 中，我在一份代码文件中，定义 3 个变量，KVStore、Queue、Router 各一个，同时定义了两个路由处理函数和一个消息订阅处理函数。在执行 `pluto deploy` 后，所有的基础设施资源和计算模块都被有序地部署到 AWS 云上。
 
@@ -71,4 +71,10 @@ Demo 中，我在一份代码文件中，定义 3 个变量，KVStore、Queue、
 
 ---
 
-**Pluto 目前仍处于 PoC 阶段，尚未准备好投入生产使用。如果你对“语言翻新”这个想法或者“Pluto”这款产品有任何想法，或者想参与开发，我们都十分欢迎，欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) 和 [GitHub](https://github.com/pluto-lang/pluto)。**
+**Pluto 目前仍处于 PoC 阶段，尚未准备好投入生产使用。如果你对“语言翻新”这个想法或者“Pluto”这款产品有任何想法，或者想参与开发，我们都十分欢迎，欢迎加入我们的 [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) 和 [GitHub](https://github.com/pluto-lang/pluto)，或者 钉钉交流群: 40015003990。**
+
+## 参考
+
+- [Pluto 工作原理](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/how-pluto-works.md)
+- [Pluto 解决什么问题](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/what-problems-pluto-aims-to-address.md)
+- [Pluto 和其他技术有什么不同](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/whats-different.md)

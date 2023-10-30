@@ -30,8 +30,8 @@ export class Architecture {
   }
 
   public toYaml(): string {
-    const resourceMap: { [name: string]: { [key: string]: any } } = {};
-    for (let resName in this.resources) {
+    const resourceMap: { [name: string]: { [key: string]: unknown } } = {};
+    for (const resName in this.resources) {
       const res = this.resources[resName];
       resourceMap[resName] = {
         type: res.type,
@@ -40,8 +40,8 @@ export class Architecture {
       };
     }
 
-    const relatList: {}[] = [];
-    for (let relat of this.relationships) {
+    const relatList: object[] = [];
+    for (const relat of this.relationships) {
       const r = {
         from: relat.from.name,
         to: relat.to.name,

@@ -7,6 +7,10 @@
    <a href="./README_zh.md"> 简体中文 </a>
 </p>
 
+[![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw)
+![GitHub](https://img.shields.io/github/license/pluto-lang/pluto)
+[![npm version](https://badge.fury.io/js/@plutolang%2Fcli.svg)](https://badge.fury.io/js/@plutolang%2Fcli)
+
 Pluto is a new open-source programming language designed to help developers write cloud applications and **make it easier to use cloud services**.
 
 Developers can directly use the **required resources, such as KV databases and message queues**, in their code based on their business needs. Pluto performs **static analysis** on the code to determine the **infrastructure resources** required by the application and deploys corresponding resource instances and applications on the specified cloud platform.
@@ -17,7 +21,7 @@ Developers can directly use the **required resources, such as KV databases and m
 
 Let's look at a simple example:
 
-[https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f](https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f)
+[https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9](https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9)
 
 <p align="center">
   <img src="./assets/demo-biz-logic.png" alt="business logic" width="400">
@@ -27,7 +31,7 @@ The business logic of this example is illustrated in the above diagram, which pr
 
 In contrast, this example simplifies the process by defining three variables - KVStore, Queue, and Router - in a single code file. Additionally, two route handling functions and one message subscription handling function are defined. This approach can be seen as developing a monolithic application.
 
-With just one command, `pluto deploy``, all the infrastructure resources and business modules will be deployed onto the AWS cloud seamlessly. This includes resources like ApiGateway, DynamoDB, SNS, Lambda, and configurations for triggers, IAM roles, and permissions.
+With just one command, `pluto deploy`, all the infrastructure resources and business modules will be deployed onto the AWS cloud seamlessly. This includes resources like ApiGateway, DynamoDB, SNS, Lambda, and configurations for triggers, IAM roles, and permissions.
 
 Furthermore, by executing `pluto stack new`, developers can effortlessly publish the service to Kubernetes without making any modifications to the existing code. It will be deployed under a newly created environment configuration.
 
