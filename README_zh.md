@@ -19,7 +19,7 @@ Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用�
 
 来看一个简单的示例：
 
-[https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f](https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f)
+[https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9](https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9)
 
 <p align="center">
   <img src="./assets/demo-biz-logic.png" alt="business logic" width="400">

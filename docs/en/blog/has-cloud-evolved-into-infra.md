@@ -60,7 +60,7 @@ Pluto initially experimented with TypeScript, aiming to transform it into a new 
 
 Pluto initially embarked on its journey by experimenting with TypeScript, much like how Pluto the dwarf planet was reclassified from a planet. The idea was to transform TypeScript into a new language for cloud application development. While still in the proof-of-concept stage, we can demonstrate the effects we have achieved through our demo.
 
-[https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f](https://github.com/pluto-lang/pluto/assets/20160766/fcf83f66-5610-4bcc-b764-d0f84e60e07f)
+[https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9](https://github.com/jianzs/pluto/assets/20160766/fafb8bd4-2067-4430-a9f8-4729e9cb90a9)
 
 In the demo, I defined three variables - KVStore, Queue, and Router - in a single code file. I also defined two route handling functions and one topic subscription handling function. By executing `pluto deploy`, all infrastructure resources and computing modules are efficiently deployed on the AWS cloud.
 
