@@ -1,5 +1,12 @@
 # @plutolang/cli
 
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [4247f22]
+  - @plutolang/adapters@0.0.3
+
 ## 0.0.7
 
 ### Patch Changes
