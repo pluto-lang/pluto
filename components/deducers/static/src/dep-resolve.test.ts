@@ -1,11 +1,11 @@
 import ts from "typescript";
 import { expect, describe, test } from "vitest";
-import { genInlineSourceFile } from "./utils-test";
+import { genAnalyzerForInline } from "./utils-test";
 import { ImportStore, extractImportElements } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 
 function testOnce(code: string, importStatNum: number, expectDepNum: number) {
-  const sourceFile = genInlineSourceFile(code);
+  const { sourceFile } = genAnalyzerForInline(code);
 
   // Parse the import statements, and build the import store
   const importStore = new ImportStore();

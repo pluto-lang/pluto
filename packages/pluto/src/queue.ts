@@ -53,4 +53,4 @@ export class Queue implements Resource {
   }
 }
 
-export interface Queue extends QueueInfra, QueueClient {}
+export interface Queue extends QueueInfra, QueueClient, Resource {}

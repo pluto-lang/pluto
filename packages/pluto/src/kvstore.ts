@@ -44,4 +44,4 @@ export class KVStore implements Resource {
   }
 }
 
-export interface KVStore extends KVStoreInfra, KVStoreClient {}
+export interface KVStore extends KVStoreInfra, KVStoreClient, Resource {}

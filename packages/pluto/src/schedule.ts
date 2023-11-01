@@ -27,4 +27,4 @@ export class Schedule implements Resource {
   }
 }
 
-export interface Schedule extends ScheduleInfra {}
+export interface Schedule extends ScheduleInfra, Resource {}

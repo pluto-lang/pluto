@@ -13,6 +13,9 @@ import { resolveImportDeps } from "./dep-resolve";
 
 const CloudResourceType = ["Router", "Queue", "KVStore", "Schedule"];
 
+const RESOUCE_TYPE_NAME = "Resource";
+const PLUTO_BASE_PKG = "@plutolang/base";
+
 export class StaticDeducer implements Deducer {
   public async deduce(opts: DeduceOptions): Promise<arch.Architecture> {
     const { filepaths } = opts;
@@ -23,8 +26,323 @@ export class StaticDeducer implements Deducer {
     const tsconfigPath = path.resolve("./", "tsconfig.json");
     const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     const configJson = ts.parseJsonConfigFileContent(configFile.config, ts.sys, "./");
-    return await compilePluto(filepaths, configJson.options);
+    // return await compilePluto(filepaths, configJson.options);
+    return compile(filepaths, configJson.options);
   }
+}
+
+async function compile(
+  fileNames: string[],
+  tsOpts: ts.CompilerOptions
+): Promise<arch.Architecture> {
+  const program = ts.createProgram(fileNames, tsOpts);
+  const allDiagnostics = ts.getPreEmitDiagnostics(program);
+  // Emit errors
+  allDiagnostics.forEach((diagnostic) => {
+    if (diagnostic.file) {
+      const { line, character } = ts.getLineAndCharacterOfPosition(
+        diagnostic.file,
+        diagnostic.start!
+      );
+      const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+      console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
+    } else {
+      console.log(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
+    }
+  });
+  const sourceFile = program.getSourceFile(fileNames[0])!;
+  const checker = program.getTypeChecker();
+
+  ts.forEachChild(sourceFile, (node) => {
+    const text = node.getText(sourceFile);
+    const kindName = ts.SyntaxKind[node.kind];
+    switch (node.kind) {
+      case ts.SyntaxKind.ImportDeclaration:
+        break;
+      case ts.SyntaxKind.VariableStatement:
+        const resVarInfos = visitVariableStatement(node as ts.VariableStatement, checker);
+        break;
+      case ts.SyntaxKind.ExpressionStatement:
+        visitExpression(node as ts.ExpressionStatement, checker);
+        break;
+      default:
+        const { line, character } = ts.getLineAndCharacterOfPosition(sourceFile, node.getStart());
+        throw new Error(
+          `${sourceFile.fileName} (${line + 1},${
+            character + 1
+          }): Sorry. Pluto doesn't currently support '${kindName}' in the global area. If you need this feature, please feel free to open an issue and let us know.`
+        );
+    }
+    // console.log("@@ ", ts.SyntaxKind[node.kind], text);
+  });
+
+  return await compilePluto(fileNames, tsOpts);
+}
+
+interface ResourceVariableInfo {
+  varName: string;
+  resourceConstructInfo: ResourceConstructInfo;
+}
+
+/**
+ * Check if this variable declaration is defining a resource. If it is,
+ * retrieve the name of the variable and its construction details.
+ */
+export function visitVariableStatement(
+  parNode: ts.VariableStatement,
+  checker: ts.TypeChecker
+): ResourceVariableInfo[] {
+  if (process.env.DEBUG) {
+    console.log(`Visit a VariableStatement: `, parNode.getText());
+  }
+
+  const resVarInfos = parNode.declarationList.declarations.map(
+    (declaration): ResourceVariableInfo | undefined => {
+      if (declaration.initializer == undefined) {
+        // This is a variable declaration without initial value.
+        // e.g. let x;
+        return;
+      }
+
+      if (ts.isNewExpression(declaration.initializer)) {
+        // This is a constructor call. May resource initialization.
+        // e.g. new MyClass()
+        const resConstInfo = visitNewExpression(declaration.initializer, checker);
+        if (resConstInfo == undefined) {
+          return;
+        }
+
+        const varName = declaration.name;
+        if (!ts.isIdentifier(varName)) {
+          console.warn("Found a variable name that is not an identifier: ", varName.getText());
+          return;
+        }
+        return {
+          varName: varName.text,
+          resourceConstructInfo: resConstInfo,
+        };
+      }
+      return;
+    }
+  );
+  return resVarInfos.filter((v) => v !== undefined) as ResourceVariableInfo[];
+}
+
+/**
+ * Check if this expression is doing something about resource, including:
+ *   1. Create a new resource and assign it to a variable.
+ *   2. Invoke a resource method.
+ */
+export function visitExpression(
+  parNode: ts.ExpressionStatement,
+  checker: ts.TypeChecker
+): ResourceVariableInfo[] {
+  if (process.env.DEBUG) {
+    console.log(`Visit an ExpressionStatement: `, parNode.getText());
+  }
+
+  const childNode = parNode.expression;
+  if (ts.isBinaryExpression(childNode)) {
+    visitBinaryExpression(childNode, checker);
+  }
+
+  if (ts.isCallExpression(childNode)) {
+    console.log("It call expression");
+  }
+
+  // TODO: for case 2
+
+  return [];
+}
+
+/**
+ * Recursively visit the binary expression.
+ */
+export function visitBinaryExpression(
+  parNode: ts.BinaryExpression,
+  checker: ts.TypeChecker
+): ResourceVariableInfo[] {
+  if (process.env.DEBUG) {
+    console.log(`Visit a BinaryExpression: `, parNode.getText());
+  }
+
+  const resVarInfos: ResourceVariableInfo[] = [];
+  // Check if this is an assignment expression.
+  // e.g. x = new MyClass();
+  if (parNode.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+    const resVarInfo = visitAssignmentExpression(parNode, checker);
+    if (resVarInfo != undefined) {
+      resVarInfos.push(resVarInfo);
+    }
+    return resVarInfos;
+  }
+
+  if (parNode.operatorToken.kind !== ts.SyntaxKind.CommaToken) {
+    console.warn("The operator token is not '=' or ',', please check if the result is valid.");
+  }
+
+  const leftNode = parNode.left;
+  const rightNode = parNode.right;
+  if (ts.isBinaryExpression(leftNode)) {
+    resVarInfos.push(...visitBinaryExpression(leftNode, checker));
+  }
+  if (ts.isBinaryExpression(rightNode)) {
+    resVarInfos.push(...visitBinaryExpression(rightNode, checker));
+  }
+  return resVarInfos;
+}
+
+/**
+ * This is a binary expression with a '=' token. It may be assigning a resource to a variable.
+ */
+export function visitAssignmentExpression(
+  parNode: ts.BinaryExpression,
+  checker: ts.TypeChecker
+): ResourceVariableInfo | undefined {
+  if (process.env.DEBUG) {
+    console.log(`Visit a visitAssignmentExpression: `, parNode.getText());
+  }
+  if (!ts.isNewExpression(parNode.right)) {
+    return;
+  }
+
+  const resConstInfo = visitNewExpression(parNode.right, checker);
+  if (resConstInfo == undefined) {
+    return;
+  }
+  const varName = parNode.left.getText();
+  return {
+    varName: varName,
+    resourceConstructInfo: resConstInfo,
+  };
+}
+
+interface ResourceConstructInfo {
+  // The expression that constructs the resource.
+  constructExpression: string;
+  // The information of the package from which the resource type is imported.
+  importElement: ImportElement;
+  // The constructor parameters.
+  parameters?: ts.Expression[];
+}
+
+/**
+ * Check this NewExpression is trying to construct a resource.
+ * If it is, retrieve the resoruce construction information.
+ */
+function visitNewExpression(
+  parNode: ts.NewExpression,
+  checker: ts.TypeChecker
+): ResourceConstructInfo | undefined {
+  if (process.env.DEBUG) {
+    console.log(`Visit a NewExpression: `, parNode.getText());
+  }
+
+  const type = checker.getTypeAtLocation(parNode);
+  // const type = checker.getTypeAtLocation(parNode);
+  if (type.symbol == undefined) {
+    console.warn(
+      "The constructor type in this NewExpression does not have a symbol: ",
+      parNode.getText()
+    );
+    return;
+  }
+  const clsDecl = type.symbol.valueDeclaration;
+  if (clsDecl == undefined) {
+    console.warn(
+      "The symbol of constructor type in this NewExpression does not have a declaration: ",
+      parNode.getText()
+    );
+    return;
+  }
+  if (!ts.isClassDeclaration(clsDecl)) {
+    console.warn("The constructor does not belong to a class declaration: ", clsDecl.getText());
+    return;
+  }
+
+  if (!isResourceType(clsDecl, checker)) {
+    return;
+  }
+
+  // Analyze the import dependencies of the source file for the current node.
+  // We will use this analysis result to get the import information of current resource.
+  const importStore = new ImportStore();
+  const sourceFile = parNode.getSourceFile();
+  const importStats = sourceFile.statements
+    .filter(ts.isImportDeclaration)
+    .flatMap((stmt) => extractImportElements(sourceFile, stmt));
+  importStore.update(importStats);
+
+  const constructExpression = parNode.expression.getText();
+  const elemName = constructExpression.split(".")[0];
+  const importElement = importStore.searchElement(elemName);
+  if (importElement == undefined) {
+    throw new Error(
+      `Cannot find the import element: ${elemName}, NewExpression: ${parNode.getText()}`
+    );
+  }
+  return {
+    constructExpression: constructExpression,
+    importElement: importElement,
+    parameters: parNode.arguments?.map((v) => v),
+  };
+}
+
+/**
+ * Check if the declaration implements or extends the Resource interaface.
+ * First, analyze the import dependencies of the source file for the current type node.
+ * Then, check if the base types of this declaration are from the Resource interface in the plutolang base package.
+ * If not, recursively check each base type.
+ */
+export function isResourceType(
+  declNode: ts.ClassDeclaration | ts.InterfaceDeclaration,
+  checker: ts.TypeChecker
+): boolean {
+  // Analyze the import dependencies of the source file for the current type node.
+  // If the type node implements the Resource interface, we can use this analysis result to
+  // verify if the Resource interface belongs to plutolang.
+  const importStore = new ImportStore();
+  const sourceFile = declNode.getSourceFile();
+  const importStats = sourceFile.statements
+    .filter(ts.isImportDeclaration)
+    .flatMap((stmt) => extractImportElements(sourceFile, stmt));
+  importStore.update(importStats);
+
+  let found = false;
+  declNode.heritageClauses?.forEach((clause) => {
+    if (found) {
+      return;
+    }
+
+    // Check every type in the implementation and extension clauses.
+    for (const typeNode of clause.types) {
+      const identifier = typeNode.expression;
+      if (identifier.getText() == RESOUCE_TYPE_NAME) {
+        const elem = importStore.searchElement(RESOUCE_TYPE_NAME);
+        if (elem?.package == PLUTO_BASE_PKG) {
+          found = true;
+          return;
+        }
+      }
+
+      // Obtain the declaration of the base type. Then, proceed to recursively verify
+      // if it implements or extends the Resource interface.
+      const symbol = checker.getSymbolAtLocation(identifier);
+      if (symbol == undefined || symbol.declarations == undefined) {
+        continue;
+      }
+      for (const decl of symbol.declarations) {
+        if (!ts.isClassDeclaration(decl) && !ts.isInterfaceDeclaration(decl)) {
+          continue;
+        }
+        if (isResourceType(decl, checker)) {
+          found = true;
+          return;
+        }
+      }
+    }
+  });
+  return found;
 }
 
 async function compilePluto(
@@ -60,6 +378,36 @@ async function compilePluto(
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isImportDeclaration(node)) {
       importStore.update(extractImportElements(sourceFile, node));
+
+      if (!node.importClause || !node.importClause.namedBindings) {
+        return;
+      }
+      if (!ts.isNamedImports(node.importClause.namedBindings)) {
+        return;
+      }
+
+      node.importClause.namedBindings.elements.forEach((elem) => {
+        const elemName = elem.name.getText();
+
+        const symbol = checker.getSymbolAtLocation(elem.getChildAt(0));
+        if (!symbol) return;
+        const ty = checker.getTypeOfSymbol(symbol);
+
+        console.log("--------- ONE IMPORT ELEMENT ----------");
+        console.log("# Element Name: ", elemName);
+        console.log("# Symbol Name: ", symbol.getName());
+        console.log("# Type Name: ", checker.typeToString(ty));
+
+        // const signatures = ty.getConstructSignatures();
+        // console.log(ty.getBaseTypes()?.map((ty) => ty.symbol.getName()));
+        // console.log(signatures.length, ty.isClassOrInterface());
+        // signatures.forEach((signature) => {
+        //   signature.parameters.forEach((param) => {
+        //     console.log(param.getName());
+        //   });
+        // });
+      });
+
       return;
     }
 
@@ -121,6 +469,23 @@ async function compilePluto(
       const symbol = checker.getSymbolAtLocation(node.expression.expression.expression);
       if (symbol) {
         const ty = checker.getTypeOfSymbol(symbol);
+
+        console.log("--------- ONE OBJECT ----------");
+        console.log("# Symbol Name: ", symbol.getName());
+        console.log("# Type Name: ", checker.typeToString(ty));
+
+        const ty2 = checker.getTypeOfSymbol(ty.symbol);
+
+        // Error: Got the interface, instead of Class
+        console.log(ty.getBaseTypes()?.map((ty) => ty.symbol.getName()));
+        const signatures = ty.getConstructSignatures();
+        console.log(signatures.length);
+        signatures.forEach((signature) => {
+          signature.parameters.forEach((param) => {
+            console.log(param.getName());
+          });
+        });
+
         const className = ty.symbol.escapedName.toString();
         // TODO: use router Type
         if (["Router", "Queue", "Schedule"].indexOf(className) !== -1) {
