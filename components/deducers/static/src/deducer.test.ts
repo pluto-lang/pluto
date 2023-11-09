@@ -1,7 +1,12 @@
 import ts from "typescript";
 import { test, describe, expect } from "vitest";
 import { genAnalyzerForInline, genAnalyzerForFile, rmSourceFile } from "./utils-test";
-import { isResourceType, visitBinaryExpression, visitVariableStatement } from "./deducer";
+import {
+  isResourceType,
+  visitBinaryExpression,
+  visitCallExpression,
+  visitVariableStatement,
+} from "./deducer";
 import { ImportElement, ImportType } from "./imports";
 
 describe("All types implement Resource", async () => {
@@ -113,6 +118,41 @@ obj1 = 1;
 
 let obj2, obj3, obj4;
 obj2 = new Router("obj2"), obj3 = new Router("obj3"), obj4 = new Router("obj4");
+
+obj3.get("/", async (req: HttpRequest) => Promise<HttpResponse> {
+  return {
+    statusCode: 200,
+    body: "hello"
+  };
+});
+
+const getFn = obj2.get;
+getFn("/", async (req: HttpRequest) => Promise<HttpResponse> {
+  return {
+    statusCode: 200,
+    body: "hello"
+  };
+});
+
+const getFn2 = getFn;
+getFn2("/", async function hello (req: HttpRequest) => Promise<HttpResponse> {
+  return {
+    statusCode: 200,
+    body: "hello"
+  };
+});
+
+class Cls {
+  public add(a: number, b: number): number;
+  public add(a: number): number;
+
+  public add(a: number, b: number = 1): number {
+    return a + b;
+  }
+}
+
+const cls = new Cls();
+cls.add(1);
 `;
 
   const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
@@ -125,6 +165,10 @@ obj2 = new Router("obj2"), obj3 = new Router("obj3"), obj4 = new Router("obj4");
           const resNum = node.getText().match(/new/g)?.length ?? 0;
           const resVarInfos = visitBinaryExpression(childNode, checker);
           expect(resVarInfos).toHaveLength(resNum);
+        });
+      } else if (ts.isCallExpression(childNode)) {
+        test("check call expression: " + childNode.getText().split("\n")[0], async () => {
+          visitCallExpression(childNode, checker);
         });
       }
     }

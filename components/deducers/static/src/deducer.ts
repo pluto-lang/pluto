@@ -14,6 +14,7 @@ import { resolveImportDeps } from "./dep-resolve";
 const CloudResourceType = ["Router", "Queue", "KVStore", "Schedule"];
 
 const RESOUCE_TYPE_NAME = "Resource";
+const FN_RESOURCE_TYPE_NAME = "FnResource";
 const PLUTO_BASE_PKG = "@plutolang/base";
 
 export class StaticDeducer implements Deducer {
@@ -147,12 +148,85 @@ export function visitExpression(
   }
 
   if (ts.isCallExpression(childNode)) {
-    console.log("It call expression");
+    visitCallExpression(childNode, checker);
   }
 
   // TODO: for case 2
 
   return [];
+}
+
+export function visitCallExpression(parNode: ts.CallExpression, checker: ts.TypeChecker): void {
+  if (process.env.DEBUG) {
+    console.log(`Visit a CallExpression: `, parNode.getText());
+  }
+
+  const type = checker.getTypeAtLocation(parNode.expression);
+  if (!isFunctionType(type)) {
+    return;
+  }
+
+  const fnResources = [];
+  const createParams = []; // parameters in relationship of arch ref
+
+  const signature = checker.getResolvedSignature(parNode);
+  if (signature == undefined) {
+    console.log("Cannot get resolved signature: " + parNode.getText());
+    return;
+  }
+
+  const args = parNode.arguments;
+  signature.parameters.forEach((param, idx) => {
+    const paramName = param.name;
+
+    const paramText = args[idx].getText();
+    const relatParams = { name: paramName, order: idx, text: paramText, resource: "" };
+
+    const paramType = checker.getTypeOfSymbol(param);
+    const decls = paramType.symbol?.declarations;
+    if (
+      decls != undefined &&
+      decls.length >= 1 &&
+      (ts.isInterfaceDeclaration(decls[0]) || ts.isClassDeclaration(decls[0])) &&
+      isResourceType(decls[0], checker, true)
+    ) {
+      // This is a FnResource.
+      if (decls.length != 1) {
+        console.warn("Found a parameter with more than one declarations: " + parNode.getText());
+      }
+
+      console.log("is fn resource");
+      // TODO: create a lambda resource.
+
+      // const resConstInfo = visitFnResourceParameter(args[idx], checker);
+      console.log(ts.SyntaxKind[args[idx].kind]);
+
+      relatParams.text = "";
+      relatParams.resource = "/todo";
+      createParams.push(relatParams);
+      return;
+    }
+
+    createParams.push(relatParams);
+    return;
+  });
+}
+
+/**
+ * Check if a type is function.
+ */
+function isFunctionType(type: ts.Type): boolean {
+  const flags =
+    ts.TypeFlags.Any |
+    ts.TypeFlags.Unknown |
+    ts.TypeFlags.Void |
+    ts.TypeFlags.Undefined |
+    ts.TypeFlags.Null |
+    ts.TypeFlags.Never |
+    ts.TypeFlags.Intersection |
+    ts.TypeFlags.Union |
+    ts.TypeFlags.Index;
+  return type.getCallSignatures().length > 0 && (type.getFlags() & flags) === 0;
 }
 
 /**
@@ -288,6 +362,16 @@ function visitNewExpression(
   };
 }
 
+// export function visitFnResourceParameter(
+//   parNode: ts.Expression,
+//   checker: ts.TypeChecker
+// ): ResourceConstructInfo {
+//   if (process.env.DEBUG) {
+//     console.log(`Visit a ParameterDeclaration: `, parNode.getText());
+//   }
+
+// }
+
 /**
  * Check if the declaration implements or extends the Resource interaface.
  * First, analyze the import dependencies of the source file for the current type node.
@@ -296,8 +380,11 @@ function visitNewExpression(
  */
 export function isResourceType(
   declNode: ts.ClassDeclaration | ts.InterfaceDeclaration,
-  checker: ts.TypeChecker
+  checker: ts.TypeChecker,
+  fnResource: boolean = false
 ): boolean {
+  const targetTypeName = fnResource ? FN_RESOURCE_TYPE_NAME : RESOUCE_TYPE_NAME;
+
   // Analyze the import dependencies of the source file for the current type node.
   // If the type node implements the Resource interface, we can use this analysis result to
   // verify if the Resource interface belongs to plutolang.
@@ -317,8 +404,8 @@ export function isResourceType(
     // Check every type in the implementation and extension clauses.
     for (const typeNode of clause.types) {
       const identifier = typeNode.expression;
-      if (identifier.getText() == RESOUCE_TYPE_NAME) {
-        const elem = importStore.searchElement(RESOUCE_TYPE_NAME);
+      if (identifier.getText() == targetTypeName) {
+        const elem = importStore.searchElement(targetTypeName);
         if (elem?.package == PLUTO_BASE_PKG) {
           found = true;
           return;
@@ -335,7 +422,7 @@ export function isResourceType(
         if (!ts.isClassDeclaration(decl) && !ts.isInterfaceDeclaration(decl)) {
           continue;
         }
-        if (isResourceType(decl, checker)) {
+        if (isResourceType(decl, checker, fnResource)) {
           found = true;
           return;
         }
