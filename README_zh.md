@@ -101,18 +101,12 @@ pulumi login
 
 **准备 AWS 访问凭证**
 
-如果你之前已经安装并配置了 AWS CLI， Pluto 将使用你已经配置的凭证信息。如果你有多份配置信息，你可以使用环境变量选用要启用的配置。
+Pluto 不强制要求你在本地配置 AWS 访问凭证，也不要求安装 AWS CLI。如果你在本地已经通过 AWS CLI 或者环境变量配置好 AWS 的凭证信息，Pluto 将默认使用你的配置。如果你从本地获取不到凭证信息，Pluto 将引导你创建一个管理员角色，以供后续使用。
+
+⚠️ 注意：Pluto 依赖 `AWS_REGION` 来决定部署到哪个区域。
 
 ```shell
-export AWS_PROFILE="dev" # 替换成你指定的配置
-```
-
-如果你没有使用 AWS CLI，你需要使用以下环境变量配置你的凭证信息。
-
-```shell
-export AWS_ACCESS_KEY_ID="AKIAQZDxxxx" # 替换成你的 AccessKey
-export AWS_SECRET_ACCESS_KEY="oE/xxxx" # 替换成你的 SecretKey
-export AWS_REGION="xx-xxxx-x"          # 替换成你期望部署的 Region
+export AWS_REGION="xx-xxxx-x" # 替换成你期望部署的 Region
 ```
 
 **准备 Kubernetes 访问凭证**
