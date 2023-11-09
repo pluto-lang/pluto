@@ -34,7 +34,7 @@ export class DynamoKVStore implements KVStoreClient {
 
   public async set(key: string, val: string): Promise<void> {
     const command = new PutCommand({
-      TableName: "kvstore",
+      TableName: this.tableName,
       Item: {
         Id: key,
         Value: val,
