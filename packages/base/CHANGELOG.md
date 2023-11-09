@@ -1,5 +1,11 @@
 # @pluto/base
 
+## 0.1.0
+
+### Minor Changes
+
+- 055b3c7: Release 0.1.0
+
 ## 0.0.2
 
 ### Patch Changes

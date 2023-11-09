@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/cli",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "The command line of Pluto-lang",
   "repository": {
     "type": "git",
