@@ -1,5 +1,11 @@
 # @pluto/pluto
 
+## 0.0.4
+
+### Patch Changes
+
+- 45786dd: fix(sdk): table name error in DynameDBKVStore set method
+
 ## 0.0.3
 
 ### Patch Changes
