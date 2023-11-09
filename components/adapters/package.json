@@ -15,17 +15,23 @@
   "scripts": {
     "build": "tsc",
     "watch": "npm run build -- --watch",
-    "test": "vitest run --coverage",
+    "test": "NODE_ENV=test vitest run --coverage --reporter=verbose",
     "test:watch": "vitest",
     "lint": "eslint ."
   },
   "dependencies": {
+    "@aws-sdk/credential-providers": "^3.445.0",
+    "@aws-sdk/shared-ini-file-loader": "^3.374.0",
     "@plutolang/base": "workspace:^",
     "@pulumi/pulumi": "^3.88.0",
-    "@smithy/shared-ini-file-loader": "^2.2.2",
-    "js-yaml": "^4.1.0"
+    "dotenv": "^16.3.1",
+    "fs-extra": "^11.1.1",
+    "js-yaml": "^4.1.0",
+    "open": "^8.4.2"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/js-yaml": "^4.0.7",
     "@types/node": "^20.8.4",
     "@vitest/coverage-v8": "^0.34.6",
     "typescript": "^5.2.2",
