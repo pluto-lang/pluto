@@ -1,5 +1,17 @@
 # @pluto/pluto-infra
 
+## 0.1.0
+
+### Minor Changes
+
+- 055b3c7: Release 0.1.0
+
+### Patch Changes
+
+- Updated dependencies [055b3c7]
+  - @plutolang/base@0.1.0
+  - @plutolang/pluto@0.1.0
+
 ## 0.0.5
 
 ### Patch Changes

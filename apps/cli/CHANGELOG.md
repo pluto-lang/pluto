@@ -1,5 +1,21 @@
 # @plutolang/cli
 
+## 0.1.0
+
+### Minor Changes
+
+- 055b3c7: Release 0.1.0
+
+### Patch Changes
+
+- Updated dependencies [055b3c7]
+- Updated dependencies [1356132]
+  - @plutolang/adapters@0.1.0
+  - @plutolang/static-deducer@0.1.0
+  - @plutolang/graphviz-generator@0.1.0
+  - @plutolang/static-generator@0.1.0
+  - @plutolang/base@0.1.0
+
 ## 0.0.9
 
 ### Patch Changes
