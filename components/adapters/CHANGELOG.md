@@ -1,5 +1,17 @@
 # @pluto/adapters
 
+## 0.1.0
+
+### Minor Changes
+
+- 055b3c7: Release 0.1.0
+
+### Patch Changes
+
+- 1356132: Enable users to deploy without AWS CLI
+- Updated dependencies [055b3c7]
+  - @plutolang/base@0.1.0
+
 ## 0.0.3
 
 ### Patch Changes

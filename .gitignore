@@ -36,4 +36,4 @@ yarn-error.log*
 # pluto
 **/compiled/
 
-**/hello-pluto/
+devapps/

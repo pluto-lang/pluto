@@ -1,5 +1,22 @@
 # @pluto/pluto
 
+## 0.1.0
+
+### Minor Changes
+
+- 055b3c7: Release 0.1.0
+
+### Patch Changes
+
+- Updated dependencies [055b3c7]
+  - @plutolang/base@0.1.0
+
+## 0.0.4
+
+### Patch Changes
+
+- 45786dd: fix(sdk): table name error in DynameDBKVStore set method
+
 ## 0.0.3
 
 ### Patch Changes
