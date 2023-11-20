@@ -1,5 +1,12 @@
 # @plutolang/cli
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [e587e81]
+  - @plutolang/static-deducer@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
