@@ -143,6 +143,9 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
     devDependencies:
+      '@plutolang/pluto':
+        specifier: workspace:^
+        version: link:../../../packages/pluto
       '@types/node':
         specifier: ^20.8.4
         version: 20.8.4

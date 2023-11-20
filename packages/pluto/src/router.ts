@@ -44,4 +44,4 @@ export class Router implements Resource {
   }
 }
 
-export interface Router extends RouterInfra {}
+export interface Router extends RouterInfra, Resource {}

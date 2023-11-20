@@ -1,12 +1,12 @@
 import ts from "typescript";
 import { test, expect } from "vitest";
 import { ImportType, extractImportElements } from "./imports";
-import { genInlineSourceFile } from "./utils-test";
+import { genAnalyzerForInline } from "./utils-test";
 
 test("case: direct import", () => {
   const importStat = `import "fs";`;
 
-  const sourceFile = genInlineSourceFile(importStat);
+  const { sourceFile } = genAnalyzerForInline(importStat);
   ts.forEachChild(sourceFile, (node) => {
     if (!ts.isImportDeclaration(node)) {
       return;
@@ -25,7 +25,7 @@ test("case: direct import", () => {
 test("case: named import + default import", () => {
   const importStat = `import element, { another } from "library"`;
 
-  const sourceFile = genInlineSourceFile(importStat);
+  const { sourceFile } = genAnalyzerForInline(importStat);
   ts.forEachChild(sourceFile, (node) => {
     if (!ts.isImportDeclaration(node)) {
       return;
@@ -44,7 +44,7 @@ test("case: named import + default import", () => {
 test("case: namespace import", () => {
   const importStat = `import * as element from "library"`;
 
-  const sourceFile = genInlineSourceFile(importStat);
+  const { sourceFile } = genAnalyzerForInline(importStat);
   ts.forEachChild(sourceFile, (node) => {
     if (!ts.isImportDeclaration(node)) {
       return;
