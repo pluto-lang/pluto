@@ -1,13 +1,10 @@
 import ts from "typescript";
 import { test, describe, expect } from "vitest";
 import { genAnalyzerForInline, genAnalyzerForFile, rmSourceFile } from "./utils-test";
-import {
-  isResourceType,
-  visitBinaryExpression,
-  visitCallExpression,
-  visitVariableStatement,
-} from "./deducer";
 import { ImportElement, ImportType } from "./imports";
+import { isResourceType } from "./utils";
+import { visitVariableStatement } from "./visit-var-def";
+import { visitBinaryExpression, visitCallExpression } from "./visit-expression";
 
 describe("All types implement Resource", async () => {
   const sourceCode = `
@@ -89,15 +86,15 @@ const obj2 = new Router("obj2"), obj3 = new pluto.Router("obj3"), obj4;
           switch (resVarInfo.varName) {
             case "obj1":
               expect(resVarInfo.resourceConstructInfo.constructExpression).toEqual("Router");
-              expect(resVarInfo.resourceConstructInfo.importElement).toEqual(nameImportElem);
+              expect(resVarInfo.resourceConstructInfo.importElements[0]).toEqual(nameImportElem);
               break;
             case "obj2":
               expect(resVarInfo.resourceConstructInfo.constructExpression).toEqual("Router");
-              expect(resVarInfo.resourceConstructInfo.importElement).toEqual(nameImportElem);
+              expect(resVarInfo.resourceConstructInfo.importElements[0]).toEqual(nameImportElem);
               break;
             case "obj3":
               expect(resVarInfo.resourceConstructInfo.constructExpression).toEqual("pluto.Router");
-              expect(resVarInfo.resourceConstructInfo.importElement).toEqual(nsImportElem);
+              expect(resVarInfo.resourceConstructInfo.importElements[0]).toEqual(nsImportElem);
               break;
           }
         }
@@ -109,7 +106,7 @@ const obj2 = new Router("obj2"), obj3 = new pluto.Router("obj3"), obj4;
 
 describe("Valid expression", async () => {
   const sourceCode = `
-import { Router } from "@plutolang/pluto";
+import { Router, HttpRequest, HttpResponse } from "@plutolang/pluto";
 import * as pluto from "@plutolang/pluto";
 
 let obj1;
@@ -125,6 +122,37 @@ obj3.get("/", async (req: HttpRequest) => Promise<HttpResponse> {
     body: "hello"
   };
 });
+`;
+
+  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isExpressionStatement(node)) {
+      const childNode = node.expression;
+      if (ts.isBinaryExpression(childNode)) {
+        test("check binary expression: " + childNode.getText(), async () => {
+          const resNum = node.getText().match(/new/g)?.length ?? 0;
+          const resVarInfos = visitBinaryExpression(childNode, checker);
+          expect(resVarInfos).toHaveLength(resNum);
+        });
+      } else if (ts.isCallExpression(childNode)) {
+        test("check call expression: " + childNode.getText().split("\n")[0], async () => {
+          const union = visitCallExpression(childNode, checker);
+          expect(union?.resourceVarInfos).toHaveLength(1);
+          expect(union?.resourceRelatInfos).toHaveLength(1);
+        });
+      }
+    }
+  });
+  rmSourceFile(sourceFile);
+});
+
+describe("Invalid call expression", async () => {
+  const sourceCode = `
+import { Router, HttpRequest, HttpResponse } from "@plutolang/pluto";
+import * as pluto from "@plutolang/pluto";
+
+let obj2 = new Router("obj2");
 
 const getFn = obj2.get;
 getFn("/", async (req: HttpRequest) => Promise<HttpResponse> {
@@ -160,15 +188,9 @@ cls.add(1);
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isExpressionStatement(node)) {
       const childNode = node.expression;
-      if (ts.isBinaryExpression(childNode)) {
-        test("check binary expression: " + childNode.getText(), async () => {
-          const resNum = node.getText().match(/new/g)?.length ?? 0;
-          const resVarInfos = visitBinaryExpression(childNode, checker);
-          expect(resVarInfos).toHaveLength(resNum);
-        });
-      } else if (ts.isCallExpression(childNode)) {
+      if (ts.isCallExpression(childNode)) {
         test("check call expression: " + childNode.getText().split("\n")[0], async () => {
-          visitCallExpression(childNode, checker);
+          expect(() => visitCallExpression(childNode, checker)).toThrow();
         });
       }
     }

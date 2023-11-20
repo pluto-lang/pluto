@@ -117,3 +117,19 @@ export function genImportStats(depElems: ImportElement[]): string[] {
   }
   return stats;
 }
+
+const importStoreCache = new Map<string, ImportStore>();
+export function buildImportStore(sourceFile: ts.SourceFile): ImportStore {
+  const filename = sourceFile.fileName;
+  if (importStoreCache.has(filename)) {
+    return importStoreCache.get(filename)!;
+  }
+
+  const store = new ImportStore();
+  const importStats = sourceFile.statements
+    .filter(ts.isImportDeclaration)
+    .flatMap((stmt) => extractImportElements(sourceFile, stmt));
+  store.update(importStats);
+  importStoreCache.set(filename, store);
+  return store;
+}
