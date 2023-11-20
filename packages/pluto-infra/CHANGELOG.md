@@ -1,5 +1,12 @@
 # @pluto/pluto-infra
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [e587e81]
+  - @plutolang/pluto@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes

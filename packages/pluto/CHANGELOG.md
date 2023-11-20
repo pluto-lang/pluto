@@ -1,5 +1,11 @@
 # @pluto/pluto
 
+## 0.1.1
+
+### Patch Changes
+
+- e587e81: feat(deducer): support dynamically detecting resource type
+
 ## 0.1.0
 
 ### Minor Changes
