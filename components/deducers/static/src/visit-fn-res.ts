@@ -11,6 +11,8 @@ import { resolveImportDeps } from "./dep-resolve";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { getLocationOfNode, isConstVar, isResourceVar } from "./utils";
 
+type Scope = [number, number];
+
 /**
  * Construct the FnResource and detect the access relationship within the body of FnResource.
  * @param fnNode The function expression
@@ -21,36 +23,40 @@ export function visitFnResourceBody(
   checker: ts.TypeChecker,
   fnResName: string
 ): ResourceRelatVarUnion {
-  // Get the import dependencies for this function.
-  const importStore = buildImportStore(fnNode.getSourceFile());
-  const importElements: ImportElement[] = resolveImportDeps(
-    fnNode.getSourceFile(),
-    importStore,
-    fnNode
-  );
-
-  const fnLoc = getLocationOfNode(fnNode, 0);
+  const fnScope: Scope = [fnNode.getStart(), fnNode.getEnd()];
   // Visit this function body, and detect the variable accessing, function calling and resource using in the access chain.
-  const detectResult = detectAccessChain(fnNode, checker, fnResName, 0);
+  const detectResult = detectAccessChain(fnNode, fnScope, checker, fnResName, 0);
   if (!detectResult) {
     throw new Error("This detection should not be undefined.");
   }
+
+  const fnLoc = getLocationOfNode(fnNode, 0);
   if (new Set(detectResult?.depLocs.concat(fnLoc).map((loc) => loc.file)).size != 1) {
     throw new Error(`Currently, Pluto only supports a single file.`);
   }
+  const depLocs = removeDuplicateLocs(detectResult.depLocs.concat(fnLoc));
 
-  const depLocs = removeDuplicateLocs(detectResult.depLocs);
+  // Get the import dependencies for the function.
+  const bodyImportElements: ImportElement[] = resolveImportDeps(
+    fnNode.getSourceFile(),
+    buildImportStore(fnNode.getSourceFile()),
+    fnNode
+  );
+  let importElements = bodyImportElements.concat(detectResult.importElements);
+  importElements = importElements.filter(
+    (obj1, obj2, arr) => arr.findIndex((val) => val.name === obj1.name) === obj2
+  );
+
   // Consturct the Fn Resource.
   const resourceVarInfo: ResourceVariableInfo = {
     varName: fnResName,
     resourceConstructInfo: {
       constructExpression: FN_RESOURCE_TYPE_NAME,
       importElements: importElements,
-      locations: [fnLoc].concat(depLocs),
+      locations: depLocs,
     },
   };
   const relatInfos = removeDuplicateRelatInfos(detectResult.resRelatInfos);
-
   return {
     resourceVarInfos: [resourceVarInfo],
     resourceRelatInfos: relatInfos,
@@ -59,6 +65,7 @@ export function visitFnResourceBody(
 
 interface DetectFnAccessChainResult {
   resRelatInfos: ResourceRelationshipInfo[];
+  importElements: ImportElement[];
   depLocs: Location[];
 }
 
@@ -66,14 +73,17 @@ function combineDetectFnAccessChainResults(
   ...results: (DetectFnAccessChainResult | undefined)[]
 ): DetectFnAccessChainResult {
   const resRelatInfos: ResourceRelationshipInfo[] = [];
+  const importElements: ImportElement[] = [];
   const depLocs: Location[] = [];
   results.forEach((result) => {
     if (!result) return;
     resRelatInfos.push(...result.resRelatInfos);
+    importElements.push(...result.importElements);
     depLocs.push(...result.depLocs);
   });
   return {
     resRelatInfos,
+    importElements,
     depLocs,
   };
 }
@@ -86,9 +96,12 @@ function combineDetectFnAccessChainResults(
  *      If yes, add its declaration location into the dependency list.
  *   3. If this node is a variable statement or expression statement, check if it is a resource variable.
  *      If yes, establish a relationship between the root FnResource in the chain and the target resource.
+ * @param curNode The node need to be checked.
+ * @param curScope The scope in which the node locates.
  */
 function detectAccessChain(
   curNode: ts.Node,
+  curScope: Scope,
   checker: ts.TypeChecker,
   rootFnName: string,
   depth: number
@@ -99,17 +112,17 @@ function detectAccessChain(
   let combinedRes: DetectFnAccessChainResult | undefined;
   if (ts.isIdentifier(curNode)) {
     // Might be accessing a constant variable located outside of scope.
-    combinedRes = detectFnAccessConst(curNode, checker, rootFnName, depth);
+    combinedRes = detectFnAccessConst(curNode, curScope, checker, rootFnName, depth);
   } else if (ts.isCallExpression(curNode)) {
     // Might be calling function located outside of scope.
-    combinedRes = detectFnAccessFn(curNode, checker, rootFnName, depth);
+    combinedRes = detectFnAccessFn(curNode, curScope, checker, rootFnName, depth);
   } else if (ts.isExpressionStatement(curNode) || ts.isVariableStatement(curNode)) {
     // Might be calling a resource method.
     combinedRes = detectFnAccessResource(curNode, checker, rootFnName);
   }
 
   curNode.forEachChild((childNode) => {
-    const result = detectAccessChain(childNode, checker, rootFnName, depth);
+    const result = detectAccessChain(childNode, curScope, checker, rootFnName, depth);
     combinedRes = combineDetectFnAccessChainResults(combinedRes, result);
   });
 
@@ -166,6 +179,7 @@ function detectFnAccessResource(
   };
   return {
     resRelatInfos: [resRelatInfo],
+    importElements: [],
     depLocs: [],
   };
 }
@@ -176,13 +190,11 @@ function detectFnAccessResource(
  */
 function detectFnAccessConst(
   curNode: ts.Node,
+  curScope: Scope,
   checker: ts.TypeChecker,
   rootFnName: string,
   depth: number
 ): DetectFnAccessChainResult | undefined {
-  const curFile = curNode.getSourceFile().fileName;
-  const curScope = [curNode.getStart(), curNode.getEnd()];
-
   const symbol = checker.getSymbolAtLocation(curNode);
   // Check if this identifier is a constant variable.
   if (!symbol || !isConstVar(symbol) || isResourceVar(curNode, checker)) {
@@ -196,20 +208,31 @@ function detectFnAccessConst(
     );
   }
 
-  let combinedRes: DetectFnAccessChainResult = { resRelatInfos: [], depLocs: [] };
   // If this is a constant variable that is defined inside the scope of this function, we can ignore it.
   const declStat = getSymbolDeclStatement(symbol);
   if (
-    (declStat.getSourceFile().fileName.indexOf("node_modules") === -1 &&
-      declStat.getSourceFile().fileName != curFile) ||
-    declStat.getStart() > curScope[1] ||
-    declStat.getEnd() < curScope[0]
+    declStat.getSourceFile().fileName.indexOf("node_modules") !== -1 ||
+    (declStat.getSourceFile().fileName === curNode.getSourceFile().fileName &&
+      declStat.getStart() >= curScope[0] &&
+      declStat.getEnd() <= curScope[1])
   ) {
-    const declLoc = getLocationOfNode(declStat, depth + 1);
-    combinedRes.depLocs.push(declLoc);
-    const childResult = detectAccessChain(declStat, checker, rootFnName, depth + 1);
-    combinedRes = combineDetectFnAccessChainResults(combinedRes, childResult);
+    return;
   }
+
+  // Since the constant variable is declared outside of the current scope,
+  // we need to identify the import dependencies required for the declaration of the constant variable.
+  const importElements: ImportElement[] = resolveImportDeps(
+    declStat.getSourceFile(),
+    buildImportStore(declStat.getSourceFile()),
+    declStat
+  );
+
+  let combinedRes: DetectFnAccessChainResult = { resRelatInfos: [], importElements, depLocs: [] };
+  const declLoc = getLocationOfNode(declStat, depth + 1);
+  const declScope: Scope = [declStat.getStart(), declStat.getEnd()];
+  combinedRes.depLocs.push(declLoc);
+  const childResult = detectAccessChain(declStat, declScope, checker, rootFnName, depth + 1);
+  combinedRes = combineDetectFnAccessChainResults(combinedRes, childResult);
   return combinedRes;
 }
 
@@ -219,13 +242,11 @@ function detectFnAccessConst(
  */
 function detectFnAccessFn(
   curNode: ts.Node,
+  curScope: Scope,
   checker: ts.TypeChecker,
   rootFnName: string,
   depth: number
 ): DetectFnAccessChainResult | undefined {
-  const curFile = curNode.getSourceFile().fileName;
-  const curScope = [curNode.getStart(), curNode.getEnd()];
-
   if (!ts.isCallExpression(curNode)) {
     return;
   }
@@ -239,7 +260,7 @@ function detectFnAccessFn(
   const declStat = getSymbolDeclStatement(symbol);
   if (
     declStat.getSourceFile().fileName.indexOf("node_modules") !== -1 ||
-    (declStat.getSourceFile().fileName == curFile &&
+    (declStat.getSourceFile().fileName == curNode.getSourceFile().fileName &&
       declStat.getStart() > curScope[0] &&
       declStat.getEnd() < curScope[1])
   ) {
@@ -258,10 +279,23 @@ function detectFnAccessFn(
     throw new Error("Currently, Pluto doesn't support property calling.");
   }
 
-  let combinedRes: DetectFnAccessChainResult = { resRelatInfos: [], depLocs: [] };
+  // Since the function is declared outside of the current scope,
+  // we need to identify the import dependencies required for the declaration of the function.
+  const importElements: ImportElement[] = resolveImportDeps(
+    declStat.getSourceFile(),
+    buildImportStore(declStat.getSourceFile()),
+    declStat
+  );
+
+  let combinedRes: DetectFnAccessChainResult = {
+    resRelatInfos: [],
+    importElements: importElements,
+    depLocs: [],
+  };
   const declLoc = getLocationOfNode(declStat, depth + 1);
+  const declScope: Scope = [declStat.getStart(), declStat.getEnd()];
   combinedRes.depLocs.push(declLoc);
-  const childResult = detectAccessChain(declStat, checker, rootFnName, depth + 1);
+  const childResult = detectAccessChain(declStat, declScope, checker, rootFnName, depth + 1);
   combinedRes = combineDetectFnAccessChainResults(combinedRes, childResult);
   return combinedRes;
 }
