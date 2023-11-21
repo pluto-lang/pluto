@@ -1,5 +1,11 @@
 # @pluto/static-deducer
 
+## 0.1.3
+
+### Patch Changes
+
+- 6f2d1d5: feat(deducer): support calling function that is located outside of the function scope
+
 ## 0.1.2
 
 ### Patch Changes
