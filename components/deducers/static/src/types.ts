@@ -28,7 +28,7 @@ export interface ResourceConstructInfo {
   importElements: ImportElement[];
   // The constructor parameters.
   parameters?: ts.Expression[];
-  location: Location;
+  locations: Location[];
 }
 
 export interface ParameterInfo {
@@ -40,6 +40,7 @@ export interface ParameterInfo {
 
 export interface Location {
   file: string;
+  depth: number; // Position in the call chain, start from zero.
   start: string; // Format: (row,col), start from zero.
   end: string; // Format: (row,col), start from zero.
 }
