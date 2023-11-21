@@ -29,7 +29,7 @@ export function visitFnResourceBody(
     resourceConstructInfo: {
       constructExpression: FN_RESOURCE_TYPE_NAME,
       importElements: importElements,
-      location: getLocationOfNode(fnNode),
+      locations: [getLocationOfNode(fnNode, 0)],
     },
   };
 

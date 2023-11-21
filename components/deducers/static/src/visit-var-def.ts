@@ -125,6 +125,6 @@ export function visitNewExpression(
     constructExpression: constructExpression,
     importElements: [importElement],
     parameters: parNode.arguments?.map((v) => v),
-    location: getLocationOfNode(parNode),
+    locations: [getLocationOfNode(parNode, 0)],
   };
 }

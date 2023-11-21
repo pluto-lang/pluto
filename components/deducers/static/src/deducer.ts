@@ -86,10 +86,12 @@ function buildArchRef(
     const resName = varInfo.varName;
     const resType = varInfo.resourceConstructInfo.constructExpression;
     const resLoc: arch.Location = {
-      file: varInfo.resourceConstructInfo.location.file,
+      file: varInfo.resourceConstructInfo.locations[0].file,
       linenum: {
-        start: varInfo.resourceConstructInfo.location.start.replace(",", "-").replace(/[()]/g, ""),
-        end: varInfo.resourceConstructInfo.location.end.replace(",", "-").replace(/[()]/g, ""),
+        start: varInfo.resourceConstructInfo.locations[0].start
+          .replace(",", "-")
+          .replace(/[()]/g, ""),
+        end: varInfo.resourceConstructInfo.locations[0].end.replace(",", "-").replace(/[()]/g, ""),
       },
     };
     const resParams =

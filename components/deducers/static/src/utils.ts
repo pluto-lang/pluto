@@ -18,7 +18,7 @@ export function isPrimitive(val: string): boolean {
   return primitiveTypes.indexOf(val) !== -1;
 }
 
-export function getLocationOfNode(node: ts.Node): Location {
+export function getLocationOfNode(node: ts.Node, depth = -1): Location {
   const sourceFile = node.getSourceFile();
   const startPos = ts.getLineAndCharacterOfPosition(sourceFile, node.getStart());
   const startPosStr = `(${startPos.line},${startPos.character})`;
@@ -26,6 +26,7 @@ export function getLocationOfNode(node: ts.Node): Location {
   const endPosStr = `(${endPos.line},${endPos.character})`;
   const loc: Location = {
     file: sourceFile.fileName,
+    depth: depth,
     start: startPosStr,
     end: endPosStr,
   };
