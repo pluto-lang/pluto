@@ -279,3 +279,47 @@ router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
 
   rmSourceFile(sourceFile);
 });
+
+describe("Valid function calling", async () => {
+  const sourceCode = `
+import { Router, HttpRequest, HttpResponse, Queue } from "@plutolang/pluto";
+const router = new Router("router");
+
+const queue = new Queue("queue");
+
+const constInFn = 10;
+async function test(): Promise<string> {
+  await queue.push("foo");
+  console.log(constInFn);
+  return "hello";
+}
+
+router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
+  const str = await test();
+  return {
+    statusCode: 200,
+    body: \`Fetch access message. \${test2()}\`,
+  };
+});
+`;
+  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isExpressionStatement(node)) {
+      const childNode = node.expression;
+      if (!ts.isCallExpression(childNode)) {
+        return;
+      }
+
+      test("check call expression: " + childNode.getText().split("\n")[0], async () => {
+        const union = visitCallExpression(childNode, checker);
+        expect(union?.resourceVarInfos).toHaveLength(1); // lambda
+        expect(union?.resourceRelatInfos).toHaveLength(2); // router->lambda; lambda->queue
+
+        expect(union?.resourceVarInfos[0].resourceConstructInfo.locations).toHaveLength(3);
+      });
+    }
+  });
+
+  rmSourceFile(sourceFile);
+});

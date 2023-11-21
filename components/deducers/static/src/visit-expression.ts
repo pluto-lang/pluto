@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { createHash } from "crypto";
 import { arch } from "@plutolang/base";
 import {
   ParameterInfo,
@@ -92,7 +91,6 @@ export function visitCallExpression(
   signature.parameters.forEach((paramSig, idx) => {
     const paramName = paramSig.name;
     const arg = args[idx];
-    const argText = arg.getText();
     const relatParam: ParameterInfo = { name: paramName, order: idx, expression: arg };
 
     const paramType = checker.getTypeOfSymbol(paramSig);
@@ -114,9 +112,11 @@ export function visitCallExpression(
         fnResName = arg.name?.getText() ?? "";
       }
       if (fnResName == "") {
-        const hash = createHash("md5");
-        hash.update(argText);
-        fnResName = "lambda" + hash.digest("hex").substring(0, 6);
+        const { line, character } = ts.getLineAndCharacterOfPosition(
+          arg.getSourceFile(),
+          arg.getStart()
+        );
+        fnResName = `fn_${line + 1}_${character + 1}`;
       }
 
       const fnUnion = visitFnResourceBody(arg, checker, fnResName);
