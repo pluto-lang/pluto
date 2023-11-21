@@ -63,6 +63,7 @@ async function compile(
       }
       case ts.SyntaxKind.ImportDeclaration:
       case ts.SyntaxKind.EndOfFileToken:
+      case ts.SyntaxKind.FunctionDeclaration:
         break;
       default: {
         const { line, character } = ts.getLineAndCharacterOfPosition(sourceFile, node.getStart());
