@@ -1,5 +1,12 @@
 # @pluto/adapters
 
+## 0.1.1
+
+### Patch Changes
+
+- Updated dependencies [de25ad5]
+  - @plutolang/base@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes

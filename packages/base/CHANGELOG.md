@@ -1,5 +1,11 @@
 # @pluto/base
 
+## 0.1.1
+
+### Patch Changes
+
+- de25ad5: feat(deducer,generator): support accessing the constants that located outside of the function scope"
+
 ## 0.1.0
 
 ### Minor Changes

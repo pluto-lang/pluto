@@ -1,5 +1,13 @@
 # @pluto/static-deducer
 
+## 0.1.2
+
+### Patch Changes
+
+- de25ad5: feat(deducer,generator): support accessing the constants that located outside of the function scope"
+- Updated dependencies [de25ad5]
+  - @plutolang/base@0.1.1
+
 ## 0.1.1
 
 ### Patch Changes
