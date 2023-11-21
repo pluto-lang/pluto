@@ -2,7 +2,7 @@ import { Parameter } from "./parameter";
 
 export interface Location {
   file: string;
-  depth?: number;
+  depth: number;
   linenum: { start: string; end: string };
 }
 

@@ -31,6 +31,9 @@ export function visitFnResourceBody(
 
   const fnLoc = getLocationOfNode(fnNode, 0);
   const constDepLocs = removeDuplicateLocs(detectFnAccessConst(fnNode, checker, 0));
+  if (new Set(constDepLocs.concat(fnLoc).map((loc) => loc.file)).size != 1) {
+    throw new Error(`Currently, Pluto only supports a single file.`);
+  }
   const resourceVarInfo: ResourceVariableInfo = {
     varName: fnResName,
     resourceConstructInfo: {

@@ -133,6 +133,14 @@ interface ComputeIR {
   code: string;
 }
 
+interface Segment {
+  depth: number;
+  start: [number, number];
+  end: [number, number];
+}
+
+type FileSelection = Map<string, Segment[]>;
+
 function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
   const rootRes: arch.Resource = archRef.getResource("App");
 
@@ -151,28 +159,30 @@ function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
       }.buildClient(${relat.to.getParamString()});\n`;
     }
 
-    // TODO: Assuming there is only one loction now.
+    const fileSelections: FileSelection = new Map();
     res.locations.forEach((loc) => {
-      const usercode = fs.readFileSync(loc.file, "utf-8");
-
-      const lines = usercode.split("\n");
-      const [startLine, startPos] = loc.linenum["start"].split("-").map((n) => Number(n));
-      const [endLine, endPos] = loc.linenum["end"].split("-").map((n) => Number(n));
-
-      for (let lineIdx = startLine; lineIdx <= endLine; lineIdx++) {
-        const linecode = lines[lineIdx];
-        let partcode = "";
-        if (lineIdx == startLine) {
-          partcode = `export default ` + linecode.slice(startPos);
-        } else if (lineIdx == endLine) {
-          partcode = linecode.substring(0, endPos);
-        } else {
-          partcode = linecode;
-        }
-        cirCode += partcode + "\n";
+      if (!fileSelections.has(loc.file)) {
+        fileSelections.set(loc.file, []);
       }
+
+      const startPos = loc.linenum["start"].split("-").map((n) => Number(n));
+      const endPos = loc.linenum["end"].split("-").map((n) => Number(n));
+      fileSelections.get(loc.file)!.push({
+        depth: loc.depth,
+        start: startPos as [number, number],
+        end: endPos as [number, number],
+      });
     });
-    return cirCode;
+    if (fileSelections.size != 1) {
+      throw new Error(`Currently, Pluto only supports a single file.`);
+    }
+
+    const fileCodes: [string, string][] = []; // file, code
+    fileSelections.forEach((segments, file) => {
+      const curFileCode = genFileCode(file, segments);
+      fileCodes.push([file, curFileCode]);
+    });
+    return cirCode + fileCodes[0][1];
   };
 
   const cirs: ComputeIR[] = [];
@@ -182,4 +192,38 @@ function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
     cirs.push({ resource: res, code: genCirCode(res) });
   }
   return cirs;
+}
+
+function genFileCode(file: string, segments: Segment[]): string {
+  segments.sort((a, b) => {
+    if (a.start[0] != b.start[0]) return a.start[0] - b.start[0];
+    return a.start[1] - b.start[1];
+  });
+
+  const usercode = fs.readFileSync(file, "utf-8");
+  const lines = usercode.split("\n");
+
+  let curFileCode = "";
+  for (const segment of segments) {
+    const [startLine, startPos] = segment.start;
+    const [endLine, endPos] = segment.end;
+
+    let curSegCode = "";
+    // Iterate through the range of this segment and construct the code.
+    for (let lineIdx = startLine; lineIdx <= endLine; lineIdx++) {
+      const linecode = lines[lineIdx];
+      let curLineCode = "";
+      if (lineIdx == startLine) {
+        if (segment.depth == 0) curLineCode = `export default `;
+        curLineCode += linecode.slice(startPos);
+      } else if (lineIdx == endLine) {
+        curLineCode = linecode.slice(0, endPos);
+      } else {
+        curLineCode = linecode;
+      }
+      curSegCode += curLineCode + "\n";
+    }
+    curFileCode += curSegCode + "\n";
+  }
+  return curFileCode;
 }
