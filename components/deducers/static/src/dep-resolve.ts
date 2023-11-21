@@ -1,6 +1,5 @@
 import ts from "typescript";
 import { ImportElement, ImportStore } from "./imports";
-import { isPrimitive } from "./utils";
 
 export function resolveImportDeps(
   sourceFile: ts.SourceFile,
@@ -9,18 +8,15 @@ export function resolveImportDeps(
 ): ImportElement[] {
   // Iterate through all nodes in this function.
   const resolveNodeDeps = (node: ts.Node): ImportElement[] => {
-    let dep: ImportElement | undefined;
+    let deps: ImportElement[] = [];
     if (ts.isTypeNode(node)) {
-      dep = resolveTypeNode(sourceFile, node, importStore);
+      deps = resolveTypeNode(sourceFile, node, importStore) ?? [];
     } else if (ts.isNewExpression(node)) {
-      dep = resolveNewExpression(sourceFile, node, importStore);
+      const dep = resolveNewExpression(sourceFile, node, importStore);
+      if (dep != undefined) deps.push(dep);
     } else if (ts.isPropertyAccessExpression(node)) {
-      dep = resolvePropertyAccessExpression(sourceFile, node, importStore);
-    }
-
-    const deps: ImportElement[] = [];
-    if (dep) {
-      deps.push(dep);
+      const dep = resolvePropertyAccessExpression(sourceFile, node, importStore);
+      if (dep != undefined) deps.push(dep);
     }
 
     node.forEachChild((node) => {
@@ -40,23 +36,36 @@ function resolveTypeNode(
   sourceFile: ts.SourceFile,
   node: ts.TypeNode,
   importStore: ImportStore
-): ImportElement | undefined {
+): ImportElement[] | undefined {
   const typeName = node.getText(sourceFile);
   if (typeName.startsWith("Promise")) {
     return;
   }
 
-  // If the type format is 'ns.type', search for the first part.
-  const elemName = typeName.split(".")[0];
-  if (isPrimitive(elemName)) {
+  const atomicTypeNames: string[] = [];
+  const que: ts.Node[] = [node];
+  while (que.length > 0) {
+    const cur = que.shift()!;
+    if (ts.isTypeNode(cur) && cur.getChildCount() == 1) {
+      // If the type format is 'ns.type', search for the first part.
+      const elemName = typeName.split(".")[0];
+      atomicTypeNames.push(elemName);
+    } else {
+      que.push(...cur.getChildren());
+    }
+  }
+  if (atomicTypeNames.length == 0) {
     return;
   }
 
-  const elem = importStore.searchElement(elemName);
-  if (elem == undefined) {
-    throw new Error(`Cannot find the type from import elements: ${typeName}.`);
-  }
-  return elem;
+  const elements = atomicTypeNames.map((elemName) => {
+    const elem = importStore.searchElement(atomicTypeNames[0]);
+    if (elem == undefined) {
+      throw new Error(`Cannot find the type from import elements: ${elemName}.`);
+    }
+    return elem;
+  });
+  return elements;
 }
 
 // Process for new expression, such as `new Cls()`.
