@@ -37,12 +37,12 @@ export function getLocationOfNode(node: ts.Node, depth = -1): Location {
  * Check if a variable is a resource.
  */
 export function isResourceVar(node: ts.Node, checker: ts.TypeChecker): boolean {
-  const headType = checker.getTypeAtLocation(node);
-  if (headType == undefined) {
+  const type = checker.getTypeAtLocation(node);
+  if (type == undefined) {
     return false;
   }
 
-  const decls = headType.symbol?.declarations;
+  const decls = type.symbol?.declarations;
   return (
     decls != undefined &&
     (ts.isClassDeclaration(decls[0]) || ts.isInterfaceDeclaration(decls[0])) &&
@@ -125,4 +125,17 @@ export function isResourceType(
     }
   });
   return found;
+}
+
+/**
+ * Check if a symbol is a constant variable.
+ */
+export function isConstVar(symbol: ts.Symbol): boolean {
+  const symbolDeclaration = symbol.valueDeclaration || symbol.declarations?.[0];
+  return (
+    !!symbolDeclaration &&
+    ts.isVariableDeclaration(symbolDeclaration) &&
+    ts.isVariableDeclarationList(symbolDeclaration.parent) &&
+    symbolDeclaration.parent.flags === ts.NodeFlags.Const
+  );
 }

@@ -1,10 +1,15 @@
 import ts from "typescript";
 import { arch } from "@plutolang/base";
-import { ResourceRelatVarUnion, ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
+import {
+  ResourceRelatVarUnion,
+  ResourceRelationshipInfo,
+  ResourceVariableInfo,
+  Location,
+} from "./types";
 import { ImportElement, buildImportStore } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
-import { getLocationOfNode, isResourceVar } from "./utils";
+import { getLocationOfNode, isConstVar, isResourceVar } from "./utils";
 
 /**
  * Construct the FnResource and detect the access relationship within the body of FnResource.
@@ -24,12 +29,14 @@ export function visitFnResourceBody(
     fnNode
   );
 
+  const fnLoc = getLocationOfNode(fnNode, 0);
+  const constDepLocs = removeDuplicateLocs(detectFnAccessConst(fnNode, checker, 0));
   const resourceVarInfo: ResourceVariableInfo = {
     varName: fnResName,
     resourceConstructInfo: {
       constructExpression: FN_RESOURCE_TYPE_NAME,
       importElements: importElements,
-      locations: [getLocationOfNode(fnNode, 0)],
+      locations: [fnLoc].concat(constDepLocs),
     },
   };
 
@@ -108,4 +115,79 @@ function detectFnAccessResource(
     });
   }
   return resRelatInfos;
+}
+
+function detectFnAccessConst(curNode: ts.Node, checker: ts.TypeChecker, depth: number): Location[] {
+  const curFile = curNode.getSourceFile().fileName;
+  const curScope = [curNode.getStart(), curNode.getEnd()];
+
+  const locs: Location[] = [];
+  const fetchConstVar = (node: ts.Node) => {
+    if (ts.isIdentifier(node)) {
+      const symbol = checker.getSymbolAtLocation(node);
+      // Check if this identifier is a constant variable.
+      if (!symbol || !isConstVar(symbol) || isResourceVar(node, checker)) {
+        return;
+      }
+
+      const type = checker.getTypeOfSymbol(symbol);
+      if (!type.isLiteral()) {
+        throw new Error(
+          "Currently, Pluto only supports accessing constant variables with literal values that are outside the scope of a function."
+        );
+      }
+
+      // If this is a constant variable that is defined inside the scope of this function, we can ignore it.
+      const declStat = getSymbolDeclStatement(symbol);
+      if (
+        (declStat.getSourceFile().fileName.indexOf("node_modules") === -1 &&
+          declStat.getSourceFile().fileName != curFile) ||
+        declStat.getStart() > curScope[1] ||
+        declStat.getEnd() < curScope[0]
+      ) {
+        const declLoc = getLocationOfNode(declStat, depth + 1);
+        locs.push(declLoc);
+        locs.push(...detectFnAccessConst(declStat, checker, depth + 1));
+      }
+    }
+  };
+
+  const que = [curNode];
+  while (que.length > 0) {
+    const cur = que.shift()!;
+    cur.forEachChild((child) => {
+      fetchConstVar(child);
+      que.push(child);
+    });
+  }
+  return locs;
+}
+
+function getSymbolDeclStatement(symbol: ts.Symbol): ts.Statement {
+  const symbolDeclaration = symbol.valueDeclaration || symbol.declarations?.[0];
+  if (symbolDeclaration == undefined) {
+    throw new Error("Cannot found the declaration of symbol: " + symbol.name);
+  }
+
+  let parNode: ts.Node = symbolDeclaration;
+  while (!ts.isStatement(parNode)) {
+    parNode = parNode.parent;
+  }
+  return parNode;
+}
+
+function removeDuplicateLocs(oldLocs: Location[]): Location[] {
+  const newLocs: Location[] = [];
+  for (const oldLoc of oldLocs) {
+    let existed = false;
+    for (const newLoc of newLocs) {
+      if (oldLoc.file != newLoc.file || oldLoc.start != newLoc.start || oldLoc.end != newLoc.end) {
+        continue;
+      }
+      existed = true;
+      newLoc.depth = Math.min(newLoc.depth, oldLoc.depth);
+    }
+    if (!existed) newLocs.push(oldLoc);
+  }
+  return newLocs;
 }

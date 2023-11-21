@@ -197,3 +197,85 @@ cls.add(1);
   });
   rmSourceFile(sourceFile);
 });
+
+describe("Valid constants accessing", async () => {
+  const sourceCode = `
+import { Router, HttpRequest, HttpResponse, Queue } from "@plutolang/pluto";
+const router = new Router("router");
+
+const constNum = 10;
+const constStr = "Hello World!";
+
+const aliasNum = constNum;
+
+const queue = new Queue("queue");
+const aliasQueue = queue;
+
+router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
+  console.log(constNum);
+  const anotherNum = constNum + 1;
+  const anotherStr = constStr;
+  
+  const accessAliasNum = aliasNum;
+
+  await queue.push("foo");
+  await aliasQueue.push("bar");
+  
+  return {
+    statusCode: 200,
+    body: \`Fetch access message.\`,
+  };
+});
+`;
+  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isExpressionStatement(node)) {
+      const childNode = node.expression;
+      if (!ts.isCallExpression(childNode)) {
+        return;
+      }
+
+      test("check call expression: " + childNode.getText().split("\n")[0], async () => {
+        const union = visitCallExpression(childNode, checker);
+        expect(union?.resourceVarInfos).toHaveLength(1);
+        expect(union?.resourceVarInfos[0].resourceConstructInfo.locations).toHaveLength(4);
+      });
+    }
+  });
+
+  rmSourceFile(sourceFile);
+});
+
+describe("Invalid constants accessing", async () => {
+  const sourceCode = `
+import { Router, HttpRequest, HttpResponse, Queue } from "@plutolang/pluto";
+const router = new Router("router");
+
+const constArr = [1, 2, 3];
+
+router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
+  constArr.push(3); // not ensure the value can be updated.
+  return {
+    statusCode: 200,
+    body: \`Fetch access message.\`,
+  };
+});
+`;
+  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isExpressionStatement(node)) {
+      const childNode = node.expression;
+      if (!ts.isCallExpression(childNode)) {
+        return;
+      }
+
+      test("check call expression: " + childNode.getText().split("\n")[0], async () => {
+        expect(() => visitCallExpression(childNode, checker)).toThrowError();
+      });
+    }
+  });
+
+  rmSourceFile(sourceFile);
+});

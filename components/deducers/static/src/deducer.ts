@@ -85,15 +85,16 @@ function buildArchRef(
   const archResources: arch.Resource[] = resVarInfos.map((varInfo): arch.Resource => {
     const resName = varInfo.varName;
     const resType = varInfo.resourceConstructInfo.constructExpression;
-    const resLoc: arch.Location = {
-      file: varInfo.resourceConstructInfo.locations[0].file,
-      linenum: {
-        start: varInfo.resourceConstructInfo.locations[0].start
-          .replace(",", "-")
-          .replace(/[()]/g, ""),
-        end: varInfo.resourceConstructInfo.locations[0].end.replace(",", "-").replace(/[()]/g, ""),
-      },
-    };
+    const resLocs = varInfo.resourceConstructInfo.locations.map((loc): arch.Location => {
+      return {
+        file: loc.file,
+        depth: loc.depth,
+        linenum: {
+          start: loc.start.replace(",", "-").replace(/[()]/g, ""),
+          end: loc.end.replace(",", "-").replace(/[()]/g, ""),
+        },
+      };
+    });
     const resParams =
       varInfo.resourceConstructInfo.parameters?.map((param, idx): arch.Parameter => {
         return {
@@ -106,7 +107,7 @@ function buildArchRef(
       resParams?.push({ name: "name", index: 0, value: `"${resName}"` });
     }
 
-    const res = new arch.Resource(resName, resType, [resLoc], resParams);
+    const res = new arch.Resource(resName, resType, resLocs, resParams);
     const imports = genImportStats(varInfo.resourceConstructInfo.importElements);
     res.addImports(...imports);
     return res;
