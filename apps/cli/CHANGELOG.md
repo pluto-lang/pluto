@@ -1,5 +1,16 @@
 # @plutolang/cli
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [de25ad5]
+  - @plutolang/static-generator@0.1.1
+  - @plutolang/static-deducer@0.1.2
+  - @plutolang/base@0.1.1
+  - @plutolang/adapters@0.1.1
+  - @plutolang/graphviz-generator@0.1.1
+
 ## 0.1.1
 
 ### Patch Changes
