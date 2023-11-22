@@ -1,5 +1,16 @@
 # @pluto/pluto
 
+## 0.2.0
+
+### Minor Changes
+
+- 505de47: https://github.com/pluto-lang/pluto/releases/tag/v0.2.0
+
+### Patch Changes
+
+- Updated dependencies [505de47]
+  - @plutolang/base@0.2.0
+
 ## 0.1.2
 
 ### Patch Changes
