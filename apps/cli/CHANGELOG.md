@@ -1,5 +1,20 @@
 # @plutolang/cli
 
+## 0.2.0
+
+### Minor Changes
+
+- 505de47: https://github.com/pluto-lang/pluto/releases/tag/v0.2.0
+
+### Patch Changes
+
+- Updated dependencies [505de47]
+  - @plutolang/adapters@0.2.0
+  - @plutolang/static-deducer@0.2.0
+  - @plutolang/graphviz-generator@0.2.0
+  - @plutolang/static-generator@0.2.0
+  - @plutolang/base@0.2.0
+
 ## 0.1.3
 
 ### Patch Changes
