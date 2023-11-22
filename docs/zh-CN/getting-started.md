@@ -136,4 +136,4 @@ pluto deploy --stack <new_stack>
 - 示例：[基于 OpenAI 的命令行终端聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
 - 示例：[每日一则计算机笑话](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
 - 实现：[Pluto | GitHub](https://github.com/pluto-lang/pluto)
-- 在线 IDE： [Pluto | CodeSandbox](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox)
+<!-- - 在线 IDE： [Pluto | CodeSandbox](https://codesandbox.io/s/github/pluto-lang/codesandbox/tree/main/) -->

@@ -81,9 +81,9 @@ You can learn more about the differences with other project [here](./docs/en/wha
 
 ## 🚀 Quick Start
 
-Pluto makes it easy to get started with a hands-on experience on CodeSandbox. Just open the [Pluto project template](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md) and click the Fork button in the top right corner to create your own development environment. The environment already has AWS CLI, Pulumi, and Pluto dependencies installed. Just follow the README to get started.
+<!-- Pluto makes it easy to get started with a hands-on experience on CodeSandbox. Just open the [Pluto project template](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md) and click the Fork button in the top right corner to create your own development environment. The environment already has AWS CLI, Pulumi, and Pluto dependencies installed. Just follow the README to get started. -->
 
-If you'd rather use it locally, follow these steps for configuration:
+<!-- If you'd rather use it locally, follow these steps for configuration: -->
 
 ### 0. Prerequisites
 

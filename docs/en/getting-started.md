@@ -136,4 +136,4 @@ pluto deploy --stack <new_stack>
 - Example: [Command-line chatbot based on OpenAI](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
 - Example: [Share a daily computer joke on Slack](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
 - Repository: [Pluto | GitHub](https://github.com/pluto-lang/pluto)
-- Playground: [Pluto | CodeSandbox](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox)
+<!-- - Playground: [Pluto | CodeSandbox](https://codesandbox.io/s/github/pluto-lang/codesandbox/tree/main/) -->
