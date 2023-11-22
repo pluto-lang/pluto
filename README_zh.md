@@ -79,9 +79,9 @@ Pluto 与其他产品的关键区别在于：它利用程序分析技术直接�
 
 ## 🚀 快速开始
 
-Pluto 支持在 CodeSandbox 上快速上手体验，打开 [Pluto 项目模板](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md)，点击右上角的 Fork 按钮就能创建属于你自己的工程环境，环境中已经安装 AWS CLI、Pulumi 和 Pluto 基础依赖，按照 README 即可操作使用。
+<!-- Pluto 支持在 CodeSandbox 上快速上手体验，打开 [Pluto 项目模板](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md)，点击右上角的 Fork 按钮就能创建属于你自己的工程环境，环境中已经安装 AWS CLI、Pulumi 和 Pluto 基础依赖，按照 README 即可操作使用。 -->
 
-如果你想在本地使用的话，请按照以下步骤配置：
+<!-- 如果你想在本地使用的话，请按照以下步骤配置： -->
 
 ### 0. 前提条件
 
@@ -89,11 +89,7 @@ Pluto 使用 Pulumi 与云平台（AWS 或 K8s）进行交互，部署云资源�
 
 #### 0.1 安装 Pulumi
 
-可以参考 [Pulumi 安装指南](https://www.pulumi.com/docs/install/)，安装完后需要在命令行中进行登录。
-
-```shell
-pulumi login
-```
+可以参考 [Pulumi 安装指南](https://www.pulumi.com/docs/install/)。
 
 #### 0.2 准备目标环境（AWS 或 K8s）访问凭证
 
@@ -130,7 +126,9 @@ npm install      # 下载依赖
 pluto deploy     # 一键部署！
 ```
 
-> 目前，Pluto 只支持单文件。并且，在每个处理程序函数中，还不支持访问处理程序函数作用域之外的变量(资源变量除外)、类、接口等。
+详细步骤可以参考[上手指南](./docs/zh-CN/getting-started.md)。
+
+> 目前，Pluto 只支持单文件。在每个处理程序函数中，支持访问处理程序函数作用域之外的字面量常量与普通函数，尚不支持访问变量(资源变量除外)、类、接口等。
 
 ## 👏 参与贡献
 
@@ -139,7 +137,7 @@ Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是
 ## 🐎 路线规划
 
 - [ ] 资源静态推导过程完整实现
-  - [ ] 资源类型检查
+  - [x] 资源类型检查
   - [ ] local 变量转换 cloud 资源
 - [ ] SDK 研发
   - [ ] API SDK 研发

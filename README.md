@@ -81,19 +81,15 @@ You can learn more about the differences with other project [here](./docs/en/wha
 
 ## 🚀 Quick Start
 
-Pluto makes it easy to get started with a hands-on experience on CodeSandbox. Just open the [Pluto project template](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md) and click the Fork button in the top right corner to create your own development environment. The environment already has AWS CLI, Pulumi, and Pluto dependencies installed. Just follow the README to get started.
+<!-- Pluto makes it easy to get started with a hands-on experience on CodeSandbox. Just open the [Pluto project template](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md) and click the Fork button in the top right corner to create your own development environment. The environment already has AWS CLI, Pulumi, and Pluto dependencies installed. Just follow the README to get started. -->
 
-If you'd rather use it locally, follow these steps for configuration:
+<!-- If you'd rather use it locally, follow these steps for configuration: -->
 
 ### 0. Prerequisites
 
 #### 0.1 Install Pulumi
 
-You can install it according to the [installation guide](https://www.pulumi.com/docs/install/). Once installed, you will need to log in using the CLI.
-
-```shell
-pulumi login
-```
+You can install it according to the [installation guide](https://www.pulumi.com/docs/install/).
 
 #### 0.2 Prepare the access credentials for AWS or Kubernetes.
 
@@ -130,7 +126,9 @@ npm install      # install the depnedencies
 pluto deploy     # shoot!
 ```
 
-> Currently, Pluto only supports deploying with a single file. Moreover, within each handler function, we do not provide support for accessing variables (except the resource variables), classes, or interfaces outside of the scope of the handler function.
+For detailed steps, please refer to the [Getting Started Guide](./docs/en/getting-started.md).
+
+> Currently, Pluto is limited to supporting single-file applications. Within each handler function, it is possible to access literal constants and regular functions that exist outside the scope of the handler function. However, accessing variables (except for resource variables), classes, interfaces is not currently supported.
 
 ## 👏 Contributing
 
@@ -139,7 +137,7 @@ Pluto is currently in the PoC stage, and we welcome interested people to contrib
 ## 🐎 Roadmap
 
 - [ ] Complete implementation of resource static deduction process
-  - [ ] Resource type checking
+  - [x] Resource type checking
   - [ ] Conversion of local variables to cloud resources
 - [ ] SDK development
   - [ ] API SDK development
