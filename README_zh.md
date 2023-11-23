@@ -79,9 +79,9 @@ Pluto 与其他产品的关键区别在于：它利用程序分析技术直接�
 
 ## 🚀 快速开始
 
-<!-- Pluto 支持在 CodeSandbox 上快速上手体验，打开 [Pluto 项目模板](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md)，点击右上角的 Fork 按钮就能创建属于你自己的工程环境，环境中已经安装 AWS CLI、Pulumi 和 Pluto 基础依赖，按照 README 即可操作使用。 -->
+Pluto 支持在 CodeSandbox 上快速上手体验，打开 [Pluto 项目模板](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md)，点击右上角的 Fork 按钮就能创建属于你自己的工程环境，环境中已经安装 AWS CLI、Pulumi 和 Pluto 基础依赖，按照 README 即可操作使用。
 
-<!-- 如果你想在本地使用的话，请按照以下步骤配置： -->
+如果你想在本地使用的话，请按照以下步骤配置：
 
 ### 0. 前提条件
 
