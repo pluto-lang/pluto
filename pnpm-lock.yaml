@@ -240,6 +240,9 @@ importers:
       '@plutolang/pluto':
         specifier: workspace:^
         version: link:../pluto
+      '@pulumi/alicloud':
+        specifier: ^3.44.2
+        version: 3.44.2
       '@pulumi/archive':
         specifier: ^0.0.2
         version: 0.0.2
@@ -2353,6 +2356,14 @@ packages:
 
   /@protobufjs/utf8@1.1.0:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
+    dev: false
+
+  /@pulumi/alicloud@3.44.2:
+    resolution: {integrity: sha512-PEG22oxaHJVAmb7OZHYsPITokMrbkaBHHccLZpisljjTdTAOFNg8zajiCH0w1UyeNePXfi741tEu9864ONhKsw==}
+    dependencies:
+      '@pulumi/pulumi': 3.88.0
+    transitivePeerDependencies:
+      - supports-color
     dev: false
 
   /@pulumi/archive@0.0.2:
