@@ -7,9 +7,12 @@
    <a href="./README_zh.md"> 简体中文 </a>
 </p>
 
-[![Slack](https://img.shields.io/badge/Join%20Our%20Community-Slack-blue)](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw)
-![GitHub](https://img.shields.io/github/license/pluto-lang/pluto)
-[![npm version](https://badge.fury.io/js/@plutolang%2Fcli.svg)](https://badge.fury.io/js/@plutolang%2Fcli)
+<p align="center">
+  <a href="https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw"><img alt="slack" src="https://img.shields.io/badge/Join%20Our%20Community-Slack-blue?style=flat-square"></a>
+  <a href="https://github.com/pluto-lang/pluto/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pluto-lang/pluto?style=flat-square"></a>
+  <a href="https://www.npmjs.com/package/@plutolang/cli"><img alt="npm version" src="https://img.shields.io/npm/v/%40plutolang%2Fcli?style=flat-square&logo=npm"></a>
+  <a href="https://www.npmjs.com/package/@plutolang/cli"><img alt="npm download" src="https://img.shields.io/npm/dm/%40plutolang/cli?style=flat-square"></a>
+</p>
 
 Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用程序，降低云服务的使用难度。开发者可以根据业务需求，在代码中**直接使用所需资源，例如 KV 数据库、消息队列**等。Pluto 通过**静态分析**代码获取应用依赖的**基础设施资源拓扑**，并在指定的云平台上部署相应的资源实例和应用程序。
 
