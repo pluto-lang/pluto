@@ -3,6 +3,7 @@ import { Resource, ResourceInfra } from "@plutolang/base";
 import { RequestHandler, RouterInfra, RouterInfraOptions } from "@plutolang/pluto";
 import * as alicloud from "@pulumi/alicloud";
 import { FCFnResource } from "./fcFnResource";
+import { formatName } from "./utils";
 
 const REGION = process.env.ALICLOUD_REGION;
 
@@ -11,6 +12,9 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
 
   private readonly group: alicloud.apigateway.Group;
   private readonly app: alicloud.apigateway.App;
+  private readonly role: alicloud.ram.Role;
+
+  url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
 
   constructor(name: string, args?: RouterInfraOptions, opts?: pulumi.ComponentResourceOptions) {
     if (REGION == undefined) {
@@ -20,21 +24,80 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
     super("pluto:router:alicloud/Api", name, args, opts);
     this.name = name;
 
+    const groupName = formatName(`${name}_group`);
     this.group = new alicloud.apigateway.Group(
-      `${name}-group`,
+      groupName,
       {
-        description: `${name}-group`,
+        name: groupName,
+        description: `${name}_group_pluto`,
       },
       { parent: this }
     );
+    const appName = formatName(`${name}_app`);
     this.app = new alicloud.apigateway.App(
-      `${name}-app`,
+      appName,
       {
-        description: `${name}-app`,
-        name: `${name}-app`,
+        name: appName,
+        description: `${name}_app_pluto`,
       },
       { parent: this }
     );
+
+    // Create an API Gateway role to invoke functions.
+    const roleName = formatName(`${name}_role`);
+    this.role = new alicloud.ram.Role(
+      roleName,
+      {
+        name: roleName,
+        document: `{
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "apigateway.aliyuncs.com"
+                ]
+              }
+            }
+          ],
+          "Version": "1"
+        }`,
+        description: `Pluto ${name} Api Role`,
+      },
+      { parent: this }
+    );
+    const policyName = formatName(`${name}_policy`);
+    const policy = new alicloud.ram.Policy(
+      policyName,
+      {
+        policyName: policyName,
+        // TODO: build the resource ARN
+        policyDocument: pulumi.interpolate`{
+          "Version": "1",
+          "Statement": [
+            {
+              "Action": ["fc:InvokeFunction"],
+              "Resource": "*",
+              "Effect": "Allow"
+            }
+          ]
+        }`,
+        description: `${name}_policy_by_pluto`,
+      },
+      { parent: this }
+    );
+    new alicloud.ram.RolePolicyAttachment(
+      `${name}_policy_attachment`,
+      {
+        policyName: policy.policyName,
+        policyType: policy.type,
+        roleName: this.role.name,
+      },
+      { parent: this }
+    );
+
+    this.url = pulumi.interpolate`http://${this.group.subDomain}`;
   }
 
   public get(path: string, fn: Resource): void {
@@ -66,12 +129,15 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
   }
 
   private addHandler(method: string, path: string, fnResource: FCFnResource) {
-    const resourceNamePrefix = `${fnResource.name}-${path.replace("/", "_")}-${method}`;
+    const resourceNamePrefix = `${fnResource.name}_${path.replace("/", "_")}_${method}`;
+
+    const apiName = formatName(`${resourceNamePrefix}_api`);
     const api = new alicloud.apigateway.Api(
-      `${resourceNamePrefix}-api`,
+      apiName,
       {
+        name: apiName,
         authType: "ANONYMOUS",
-        description: `${resourceNamePrefix}-api`,
+        description: `${resourceNamePrefix}_api_by_pluto`,
         groupId: this.group.id,
         requestConfig: {
           method: method,
@@ -82,20 +148,22 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
         serviceType: "FunctionCompute",
         fcServiceConfig: {
           functionName: fnResource.fcInstance.name,
-          region: "", // TODO
+          region: REGION!,
           serviceName: fnResource.fcService.name,
-          timeout: 30,
+          arnRole: this.role.arn,
+          timeout: 30 * 1000, // ms
         },
+        stageNames: ["RELEASE", "TEST", "PRE"],
       },
       { parent: this }
     );
     new alicloud.apigateway.AppAttachment(
-      `${resourceNamePrefix}-app-attachment`,
+      `${resourceNamePrefix}_app_attachment`,
       {
         apiId: api.apiId,
         groupId: this.group.id,
         appId: this.app.id,
-        stageName: "dev", // TODO: modifiable
+        stageName: "PRE", // PRE, RELEASE, TEST
       },
       { parent: this }
     );

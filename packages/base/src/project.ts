@@ -60,3 +60,9 @@ export class K8sRuntime extends Runtime {
     this.kubeConfigPath = kubeConfigPath;
   }
 }
+
+export class AlicloudRuntime extends Runtime {
+  constructor() {
+    super(runtime.Type.ALICLOUD);
+  }
+}

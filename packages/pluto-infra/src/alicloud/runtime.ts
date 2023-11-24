@@ -7,12 +7,16 @@ if (!COMPUTE_MODULE) {
 
 const mod = import(COMPUTE_MODULE);
 
+type CallbackFn = (error: Error | null, data?: object) => Promise<void>;
+
 // eslint-disable-next-line
-export default async (event: any, context: any) => {
+export default async (inData: Buffer, context: any, callback: CallbackFn) => {
   const handler = (await mod).default;
 
-  console.log(event, context);
+  const accountId = context.accountId;
+  process.env["ALICLOUD_ACCOUNT_ID"] = accountId;
 
+  const event = JSON.parse(inData.toString());
   if ("Records" in event) {
     // Event Handler
     for (const record of event["Records"]) {
@@ -35,15 +39,22 @@ export default async (event: any, context: any) => {
   } else {
     // HTTP Handler
     const request: HttpRequest = {
-      path: event.resource,
+      path: event.path,
       method: event.httpMethod,
       headers: event.headers,
-      query: event.queryStringParameters ?? {},
+      query: event.queryParameters ?? {},
       body: event.body,
     };
     console.log("Pluto: Handling HTTP request: ", request);
-    return await handler(request).catch((e: Error) => {
+    const respData = await handler(request).catch((e: Error) => {
       console.log("Faild to handle http request: ", e);
     });
+
+    console.log("Pluto: HTTP response: ", respData);
+    if (respData.statusCode !== 200) {
+      callback(new Error(respData.body));
+    } else {
+      callback(null, respData.body);
+    }
   }
 };

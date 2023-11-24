@@ -22,6 +22,7 @@ export async function genPulumiConfigByRuntime(sta: project.Stack): Promise<Conf
   const genFnMapping: { [key in runtime.Type]?: configGenFn } = {
     [runtime.Type.AWS]: genPulumiConfigForAWS,
     [runtime.Type.K8s]: genPulumiConfigForK8s,
+    [runtime.Type.ALICLOUD]: genPulumiConfigForAliCloud,
   };
   if (!(sta.runtime.type in genFnMapping)) {
     throw new Error("Not support this runtime.");
@@ -68,6 +69,20 @@ async function genPulumiConfigForK8s(sta: project.Stack): Promise<ConfigMap> {
   return {
     "kubernetes:kubeconfig": { value: k8sRt.kubeConfigPath },
   };
+}
+
+async function genPulumiConfigForAliCloud(sta: project.Stack): Promise<ConfigMap> {
+  sta;
+  if (
+    !process.env.ALICLOUD_REGION ||
+    !process.env.ALICLOUD_ACCESS_KEY_ID ||
+    !process.env.ALICLOUD_SECRET_ACCESS_KEY
+  ) {
+    throw new Error(
+      "You need to set the ALICLOUD_REGION, ALICLOUD_ACCESS_KEY_ID, and ALICLOUD_SECRET_ACCESS_KEY environment variables."
+    );
+  }
+  return {};
 }
 
 interface AwsCredential {

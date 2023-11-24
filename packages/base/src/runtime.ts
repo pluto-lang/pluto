@@ -3,7 +3,7 @@ export enum Type {
   K8s = "K8S",
   Azure = "AZURE",
   GCP = "GCP",
-  ALICLOUD = "ALCLOUD",
+  ALICLOUD = "ALICLOUD",
   Custom = "CUSTOM",
 }
 
