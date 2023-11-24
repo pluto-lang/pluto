@@ -75,11 +75,11 @@ async function genPulumiConfigForAliCloud(sta: project.Stack): Promise<ConfigMap
   sta;
   if (
     !process.env.ALICLOUD_REGION ||
-    !process.env.ALICLOUD_ACCESS_KEY_ID ||
-    !process.env.ALICLOUD_SECRET_ACCESS_KEY
+    !process.env.ALICLOUD_ACCESS_KEY ||
+    !process.env.ALICLOUD_SECRET_KEY
   ) {
     throw new Error(
-      "You need to set the ALICLOUD_REGION, ALICLOUD_ACCESS_KEY_ID, and ALICLOUD_SECRET_ACCESS_KEY environment variables."
+      "You need to set the ALICLOUD_REGION, ALICLOUD_ACCESS_KEY, and ALICLOUD_SECRET_KEY environment variables."
     );
   }
   return {};
