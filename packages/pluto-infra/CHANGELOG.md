@@ -1,5 +1,14 @@
 # @pluto/pluto-infra
 
+## 0.2.1
+
+### Patch Changes
+
+- a5539e6: feat: support for AliCloud's ApiGateway and FC
+- Updated dependencies [a5539e6]
+  - @plutolang/pluto@0.2.1
+  - @plutolang/base@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes

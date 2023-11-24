@@ -1,5 +1,11 @@
 # @pluto/base
 
+## 0.2.1
+
+### Patch Changes
+
+- a5539e6: feat: support for AliCloud's ApiGateway and FC
+
 ## 0.2.0
 
 ### Minor Changes
