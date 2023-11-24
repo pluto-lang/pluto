@@ -1,5 +1,11 @@
 # @pluto/adapters
 
+## 0.2.2
+
+### Patch Changes
+
+- cf2a147: fix(adapter): check for incorrect AliCloud environment variables
+
 ## 0.2.1
 
 ### Patch Changes
