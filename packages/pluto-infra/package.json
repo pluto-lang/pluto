@@ -16,6 +16,7 @@
   "dependencies": {
     "@plutolang/base": "workspace:^",
     "@plutolang/pluto": "workspace:^",
+    "@pulumi/alicloud": "^3.44.2",
     "@pulumi/archive": "^0.0.2",
     "@pulumi/aws": "^6.4.1",
     "@pulumi/docker": "^4.4.3",

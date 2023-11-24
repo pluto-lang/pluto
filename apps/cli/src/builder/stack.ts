@@ -30,6 +30,10 @@ export async function createStack(args: CreateStackArgs): Promise<project.Stack>
           value: runtime.Type.K8s,
         },
         {
+          name: "AliCloud",
+          value: runtime.Type.ALICLOUD,
+        },
+        {
           name: "GCP",
           value: runtime.Type.GCP,
           disabled: "(Coming soon)",
@@ -68,6 +72,7 @@ async function createRuntimeByType(rtType: runtime.Type): Promise<project.Runtim
   const rtBuilderMapping: { [key in runtime.Type]?: () => Promise<project.Runtime> } = {
     [runtime.Type.AWS]: createAwsRuntime,
     [runtime.Type.K8s]: createK8sRuntime,
+    [runtime.Type.ALICLOUD]: createAlicloudRuntime,
   };
 
   if (!(rtType in rtBuilderMapping)) {
@@ -86,4 +91,8 @@ async function createK8sRuntime(): Promise<project.K8sRuntime> {
     default: `${os.homedir}/.kube/config`,
   });
   return new project.K8sRuntime(kubeConfigPath);
+}
+
+async function createAlicloudRuntime(): Promise<project.AlicloudRuntime> {
+  return new project.AlicloudRuntime();
 }

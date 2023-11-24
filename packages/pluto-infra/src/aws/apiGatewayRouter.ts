@@ -129,7 +129,7 @@ export class ApiGatewayRouter
       {
         apiId: this.apiGateway.id,
         deploymentId: deployment.id,
-        name: "dev",
+        name: "dev", // TODO: modifiable
       },
       { parent: this }
     );
