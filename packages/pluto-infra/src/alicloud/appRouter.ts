@@ -97,7 +97,7 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
       { parent: this }
     );
 
-    this.url = pulumi.interpolate`http://${this.group.subDomain}`;
+    this.url = pulumi.interpolate`https://${this.group.subDomain}`;
   }
 
   public get(path: string, fn: Resource): void {
@@ -143,7 +143,7 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
           method: method,
           mode: "PASSTHROUGH",
           path: path,
-          protocol: "HTTP",
+          protocol: "HTTPS",
         },
         serviceType: "FunctionCompute",
         fcServiceConfig: {
