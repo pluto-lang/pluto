@@ -1,5 +1,11 @@
 # @pluto/pluto-infra
 
+## 0.2.2
+
+### Patch Changes
+
+- 8617830: fix(sdk): incorrect http response format
+
 ## 0.2.1
 
 ### Patch Changes
