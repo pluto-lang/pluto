@@ -80,8 +80,9 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 
   logger.info("Successfully applied!");
+  logger.info("Here are the resource outputs:");
   for (const key in applyResult.outputs) {
-    logger.info(`${key}: ${applyResult.outputs[key]}`);
+    logger.info(`${key}:`, applyResult.outputs[key]);
   }
 }
 

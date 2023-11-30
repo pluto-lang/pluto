@@ -123,6 +123,10 @@ const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${de
       outputed = true;
       iacSource += `export const { url } = ${res.name};\n`;
     }
+    if (res.type == "Tester") {
+      iacSource += `const ${res.name}Out = ${res.name}.outputs;
+export { ${res.name}Out };\n`;
+    }
   }
 
   return iacSource;
