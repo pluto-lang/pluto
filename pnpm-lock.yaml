@@ -241,8 +241,8 @@ importers:
         specifier: workspace:^
         version: link:../pluto
       '@pulumi/alicloud':
-        specifier: ^3.44.2
-        version: 3.44.2
+        specifier: ^3.45.0
+        version: 3.45.0
       '@pulumi/archive':
         specifier: ^0.0.2
         version: 0.0.2
@@ -2358,8 +2358,8 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@pulumi/alicloud@3.44.2:
-    resolution: {integrity: sha512-PEG22oxaHJVAmb7OZHYsPITokMrbkaBHHccLZpisljjTdTAOFNg8zajiCH0w1UyeNePXfi741tEu9864ONhKsw==}
+  /@pulumi/alicloud@3.45.0:
+    resolution: {integrity: sha512-/KCACq5SqL5YqrqlF89CC49ii+suIYhGOwWYvIxK8Kv6BGhhBk2SwaiISL8AhdQh+pNIyBaV8qhG+t2v3JzXmw==}
     dependencies:
       '@pulumi/pulumi': 3.88.0
     transitivePeerDependencies:

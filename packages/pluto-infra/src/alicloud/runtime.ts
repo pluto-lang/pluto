@@ -54,7 +54,12 @@ export default async (inData: Buffer, context: any, callback: CallbackFn) => {
     if (respData.statusCode !== 200) {
       callback(new Error(respData.body));
     } else {
-      callback(null, respData.body);
+      callback(null, {
+        isBase64Encoded: false,
+        statusCode: respData.statusCode,
+        headers: {},
+        body: JSON.stringify(respData.body),
+      });
     }
   }
 };
