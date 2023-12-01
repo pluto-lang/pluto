@@ -34,9 +34,9 @@ async function main() {
     .description(
       "Execute tests in the simulator environment or on the platform specified in the stack"
     )
-    .argument("[files...]", "The files need to be compiled.", ".")
+    .argument("[files...]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
-    .option("--sim", "Run tests in the simulator environment.")
+    .option("--sim", "Run tests in the simulator environment.", false)
     .addOption(
       new Option(
         "-d, --deducer <deducer>",
@@ -50,10 +50,7 @@ async function main() {
         .default("@plutolang/static-generator")
         .hideHelp()
     )
-    .action(() => {
-      logger.info("The testing function is currently not supported. It will be available soon~");
-      process.exit(0);
-    });
+    .action(cmd.test);
 
   program
     .command("deploy")

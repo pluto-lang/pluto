@@ -18,6 +18,6 @@ export function register(reg: Registry) {
   reg.register(runtime.Type.K8s, engine.Type.pulumi, Schedule, k8s.PingSchedule);
   reg.register(runtime.Type.K8s, engine.Type.pulumi, "FnResource", k8s.ServiceLambda);
 
-  reg.register(runtime.Type.ALICLOUD, engine.Type.pulumi, Router, ali.AppRouter);
-  reg.register(runtime.Type.ALICLOUD, engine.Type.pulumi, "FnResource", ali.FCFnResource);
+  reg.register(runtime.Type.AliCloud, engine.Type.pulumi, Router, ali.AppRouter);
+  reg.register(runtime.Type.AliCloud, engine.Type.pulumi, "FnResource", ali.FCFnResource);
 }

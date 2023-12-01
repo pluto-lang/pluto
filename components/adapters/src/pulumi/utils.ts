@@ -22,7 +22,7 @@ export async function genPulumiConfigByRuntime(sta: project.Stack): Promise<Conf
   const genFnMapping: { [key in runtime.Type]?: configGenFn } = {
     [runtime.Type.AWS]: genPulumiConfigForAWS,
     [runtime.Type.K8s]: genPulumiConfigForK8s,
-    [runtime.Type.ALICLOUD]: genPulumiConfigForAliCloud,
+    [runtime.Type.AliCloud]: genPulumiConfigForAliCloud,
   };
   if (!(sta.runtime.type in genFnMapping)) {
     throw new Error("Not support this runtime.");
@@ -155,6 +155,7 @@ export async function getAwsCredentialsFromLocal(): Promise<AwsCredential | unde
     return {
       accessKeyId: identity.accessKeyId,
       secretAccessKey: identity.secretAccessKey,
+      sessionToken: identity.sessionToken,
     };
   }
 
@@ -174,6 +175,7 @@ export async function getAwsCredentialsFromLocal(): Promise<AwsCredential | unde
     return {
       accessKeyId: identity.accessKeyId,
       secretAccessKey: identity.secretAccessKey,
+      sessionToken: identity.sessionToken,
     };
   }
   return undefined;

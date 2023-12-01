@@ -31,7 +31,7 @@ export async function createStack(args: CreateStackArgs): Promise<project.Stack>
         },
         {
           name: "AliCloud",
-          value: runtime.Type.ALICLOUD,
+          value: runtime.Type.AliCloud,
         },
         {
           name: "GCP",

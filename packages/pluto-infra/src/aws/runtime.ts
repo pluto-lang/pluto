@@ -35,7 +35,7 @@ export default async (event: any, context: any) => {
     await handler().catch((e: Error) => {
       console.log("Faild to handle event: ", e);
     });
-  } else {
+  } else if ("httpMethod" in event) {
     // HTTP Handler
     const request: HttpRequest = {
       path: event.resource,
@@ -47,6 +47,12 @@ export default async (event: any, context: any) => {
     console.log("Pluto: Handling HTTP request: ", request);
     return await handler(request).catch((e: Error) => {
       console.log("Faild to handle http request: ", e);
+    });
+  } else {
+    // Directly invoke
+    console.log("Pluto: Handling direct invocation: ", event);
+    return await handler(event).catch((e: Error) => {
+      console.log("Faild to handle direct invocation: ", e);
     });
   }
 };

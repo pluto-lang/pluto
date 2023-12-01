@@ -8,6 +8,7 @@ export class Tester extends pulumi.ComponentResource implements TesterInfra, Res
   private readonly description: string;
   private readonly testCases: TestCase[];
 
+  // eslint-disable-next-line
   public outputs: pulumi.Output<any>;
 
   constructor(description: string, props?: TesterInfraOptions) {
