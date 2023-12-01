@@ -1,5 +1,13 @@
 # @pluto/adapters
 
+## 0.2.3
+
+### Patch Changes
+
+- c2bcfb6: feat(cli): impl test command, support testing on AWS
+- Updated dependencies [c2bcfb6]
+  - @plutolang/base@0.2.2
+
 ## 0.2.2
 
 ### Patch Changes
