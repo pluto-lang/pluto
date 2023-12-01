@@ -70,7 +70,7 @@ async function testOneGroup(
 
   // generate the IR code based on the arch ref
   logger.info("Generating the IaC Code and computing modules...");
-  const outdir = path.join(".pluto", sta.name, `test-${testGroupIdx}`, testId);
+  const outdir = path.join(".pluto", sta.name, testId);
   const entrypointFile = await loadAndGenerate(opts.generator, testGroupArch, outdir);
   if (process.env.DEBUG) {
     logger.debug("Entrypoint file: ", entrypointFile);
@@ -172,14 +172,18 @@ class AwsTesterClient implements TesterClient {
   }
 
   public async runTests(): Promise<void> {
-    logger.info(`+ Test Group: ${this.description}...`);
+    logger.info(`+ Test Group: ${this.description}`);
     for (const testCase of this.testCases) {
-      logger.info(`  + Test Case: ${testCase.description}...`);
+      logger.info(`  + Test Case: ${testCase.description}`);
       try {
         await this.runOne(testCase);
         logger.info(`  ✔️ Passed`);
       } catch (e) {
-        logger.error("Failed to test, ", e);
+        if (e instanceof Error) {
+          logger.error("  ✖️ Failed, ", e.message);
+        } else {
+          logger.error("  ✖️ Failed, ", e);
+        }
       }
     }
   }
@@ -192,10 +196,9 @@ class AwsTesterClient implements TesterClient {
 
     const response = await this.lambdaClient.send(command);
     if (response.FunctionError) {
-      logger.error(response.FunctionError);
       const logs = Buffer.from(response.LogResult ?? "", "base64").toString();
       logger.error(logs);
-      return;
+      throw new Error(response.FunctionError);
     }
   }
 }

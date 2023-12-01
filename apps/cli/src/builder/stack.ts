@@ -72,7 +72,7 @@ async function createRuntimeByType(rtType: runtime.Type): Promise<project.Runtim
   const rtBuilderMapping: { [key in runtime.Type]?: () => Promise<project.Runtime> } = {
     [runtime.Type.AWS]: createAwsRuntime,
     [runtime.Type.K8s]: createK8sRuntime,
-    [runtime.Type.ALICLOUD]: createAlicloudRuntime,
+    [runtime.Type.AliCloud]: createAlicloudRuntime,
   };
 
   if (!(rtType in rtBuilderMapping)) {

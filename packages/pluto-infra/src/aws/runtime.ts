@@ -51,8 +51,6 @@ export default async (event: any, context: any) => {
   } else {
     // Directly invoke
     console.log("Pluto: Handling direct invocation: ", event);
-    return await handler(event).catch((e: Error) => {
-      console.log("Faild to handle direct invocation: ", e);
-    });
+    return await handler(event);
   }
 };
