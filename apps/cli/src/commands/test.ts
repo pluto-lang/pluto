@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 import { arch, project, runtime } from "@plutolang/base";
@@ -13,19 +14,13 @@ interface TestOptions {
   generator: string;
 }
 
-export async function test(files: string[], opts: TestOptions) {
-  // If the user only privides one file, change the variable to an array.
-  if (typeof files === "string") {
-    files = [files];
-  }
-
-  // If the user only privides one file, change the variable to an array.
-  if (typeof files === "string") {
-    files = [files];
+export async function test(entrypoint: string, opts: TestOptions) {
+  // Ensure the entrypoint exist.
+  if (!fs.existsSync(entrypoint)) {
+    throw new Error(`No such file, ${entrypoint}`);
   }
 
   const proj = loadConfig();
-
   let sta: project.Stack | undefined;
   if (opts.stack) {
     sta = proj.getStack(opts.stack);
@@ -43,7 +38,7 @@ export async function test(files: string[], opts: TestOptions) {
 
   // construct the arch ref from user code
   logger.info("Generating reference architecture...");
-  const archRef = await loadAndDeduce(opts.deducer, files);
+  const archRef = await loadAndDeduce(opts.deducer, [entrypoint]);
 
   const testGroupArchs = splitTestGroup(archRef);
   for (let testGroupIdx = 0; testGroupIdx < testGroupArchs.length; testGroupIdx++) {

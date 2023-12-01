@@ -34,7 +34,7 @@ async function main() {
     .description(
       "Execute tests in the simulator environment or on the platform specified in the stack"
     )
-    .argument("[files...]", "The files need to be compiled.", "src/index.ts")
+    .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
     .option("--sim", "Run tests in the simulator environment.", false)
     .addOption(
@@ -55,7 +55,7 @@ async function main() {
   program
     .command("deploy")
     .description("Deploy this project to the platform specified in the stack")
-    .argument("[files...]", "The files need to be compiled.", "src/index.ts")
+    .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
     .option("-y, --yes", "Automatically approve and perform the deployment", false)
     .addOption(
@@ -86,7 +86,7 @@ async function main() {
     program
       .command("compile")
       .description("Compile the source code to IR")
-      .argument("[files...]", "The files need to be compiled.", "src/index.ts")
+      .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
       .addOption(
         new Option(
           "-d, --deducer <deducer>",

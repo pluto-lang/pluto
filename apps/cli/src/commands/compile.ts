@@ -13,18 +13,11 @@ export interface CompileOptions {
   generator: string;
 }
 
-export async function compile(files: string[], opts: CompileOptions) {
-  // If the user only privides one file, change the variable to an array.
-  if (typeof files === "string") {
-    files = [files];
+export async function compile(entrypoint: string, opts: CompileOptions) {
+  // Ensure the entrypoint exist.
+  if (!fs.existsSync(entrypoint)) {
+    throw new Error(`No such file, ${entrypoint}`);
   }
-
-  // Ensure all the provided files exist.
-  files.forEach((file) => {
-    if (!fs.existsSync(file)) {
-      throw new Error("Not all files exist.");
-    }
-  });
 
   // get current stack, and set the output directory
   const proj = loadConfig();
@@ -36,7 +29,7 @@ export async function compile(files: string[], opts: CompileOptions) {
   const outdir = path.join(".pluto", sta.name);
 
   // construct the arch ref from user code
-  const archRef = await loadAndDeduce(opts.deducer, files);
+  const archRef = await loadAndDeduce(opts.deducer, [entrypoint]);
   const yamlText = yaml.dump(archRef, { noRefs: true });
   fs.writeFileSync(path.join(outdir, "arch.yml"), yamlText);
 
