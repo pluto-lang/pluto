@@ -1,5 +1,11 @@
 # @pluto/base
 
+## 0.2.2
+
+### Patch Changes
+
+- c2bcfb6: feat(cli): impl test command, support testing on AWS
+
 ## 0.2.1
 
 ### Patch Changes

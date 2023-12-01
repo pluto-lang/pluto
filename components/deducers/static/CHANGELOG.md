@@ -1,5 +1,12 @@
 # @pluto/static-deducer
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [c2bcfb6]
+  - @plutolang/base@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

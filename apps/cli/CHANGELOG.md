@@ -1,5 +1,17 @@
 # @plutolang/cli
 
+## 0.2.3
+
+### Patch Changes
+
+- c2bcfb6: feat(cli): impl test command, support testing on AWS
+- Updated dependencies [c2bcfb6]
+  - @plutolang/static-generator@0.2.2
+  - @plutolang/adapters@0.2.3
+  - @plutolang/base@0.2.2
+  - @plutolang/static-deducer@0.2.2
+  - @plutolang/graphviz-generator@0.2.2
+
 ## 0.2.2
 
 ### Patch Changes
