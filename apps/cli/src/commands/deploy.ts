@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
 import { arch, project } from "@plutolang/base";
@@ -15,14 +16,13 @@ export interface DeployOptions {
   yes: boolean;
 }
 
-export async function deploy(files: string[], opts: DeployOptions) {
-  // If the user only privides one file, change the variable to an array.
-  if (typeof files === "string") {
-    files = [files];
+export async function deploy(entrypoint: string, opts: DeployOptions) {
+  // Ensure the entrypoint exist.
+  if (!fs.existsSync(entrypoint)) {
+    throw new Error(`No such file, ${entrypoint}`);
   }
 
   const proj = loadConfig();
-
   let sta: project.Stack | undefined;
   if (opts.stack) {
     sta = proj.getStack(opts.stack);
@@ -38,12 +38,12 @@ export async function deploy(files: string[], opts: DeployOptions) {
     }
   }
 
-  let entrypointFile: string | undefined;
+  let infraEntrypoint: string | undefined;
   // No deduction or generation, only application.
   if (!opts.apply) {
     // construct the arch ref from user code
     logger.info("Generating reference architecture...");
-    const archRef = await loadAndDeduce(opts.deducer, files);
+    const archRef = await loadAndDeduce(opts.deducer, [entrypoint]);
 
     const confirmed = await confirmArch(archRef, opts.yes);
     if (!confirmed) {
@@ -54,9 +54,9 @@ export async function deploy(files: string[], opts: DeployOptions) {
     // generate the IR code based on the arch ref
     logger.info("Generating the IaC Code and computing modules...");
     const outdir = path.join(".pluto", sta.name);
-    entrypointFile = await loadAndGenerate(opts.generator, archRef, outdir);
+    infraEntrypoint = await loadAndGenerate(opts.generator, archRef, outdir);
     if (process.env.DEBUG) {
-      logger.debug("Entrypoint file: ", entrypointFile);
+      logger.debug("Entrypoint file: ", infraEntrypoint);
     }
   }
 
@@ -72,7 +72,7 @@ export async function deploy(files: string[], opts: DeployOptions) {
     projName: proj.name,
     stack: sta,
     // TODO: Store the last entrypoint for use in 'apply only' mode.
-    entrypoint: entrypointFile ?? `.pluto/${sta.name}/compiled/${sta.engine}.js`,
+    entrypoint: infraEntrypoint ?? `.pluto/${sta.name}/compiled/${sta.engine}.js`,
   });
   if (applyResult.error) {
     logger.error(applyResult.error);
@@ -80,8 +80,9 @@ export async function deploy(files: string[], opts: DeployOptions) {
   }
 
   logger.info("Successfully applied!");
+  logger.info("Here are the resource outputs:");
   for (const key in applyResult.outputs) {
-    logger.info(`${key}: ${applyResult.outputs[key]}`);
+    logger.info(`${key}:`, applyResult.outputs[key]);
   }
 }
 

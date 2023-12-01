@@ -63,6 +63,6 @@ export class K8sRuntime extends Runtime {
 
 export class AlicloudRuntime extends Runtime {
   constructor() {
-    super(runtime.Type.ALICLOUD);
+    super(runtime.Type.AliCloud);
   }
 }

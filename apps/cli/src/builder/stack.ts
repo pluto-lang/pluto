@@ -31,7 +31,7 @@ export async function createStack(args: CreateStackArgs): Promise<project.Stack>
         },
         {
           name: "AliCloud",
-          value: runtime.Type.ALICLOUD,
+          value: runtime.Type.AliCloud,
         },
         {
           name: "GCP",
@@ -72,7 +72,7 @@ async function createRuntimeByType(rtType: runtime.Type): Promise<project.Runtim
   const rtBuilderMapping: { [key in runtime.Type]?: () => Promise<project.Runtime> } = {
     [runtime.Type.AWS]: createAwsRuntime,
     [runtime.Type.K8s]: createK8sRuntime,
-    [runtime.Type.ALICLOUD]: createAlicloudRuntime,
+    [runtime.Type.AliCloud]: createAlicloudRuntime,
   };
 
   if (!(rtType in rtBuilderMapping)) {
