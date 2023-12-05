@@ -10,18 +10,12 @@ queue.subscribe(async (evt: CloudEvent): Promise<void> => {
   return;
 });
 
-const succTester = new Tester("succ-tester");
+const tester = new Tester("tester");
 
-succTester.it("push a message to the queue", async (): Promise<void> => {
+tester.it("push a message to the queue", async (): Promise<void> => {
   await queue.push(JSON.stringify({ name: "pluto", message: "test" }));
   const val = await kvstore.get("pluto");
   if (val !== "test") {
     throw new Error("failed.");
   }
-});
-
-const failedTester = new Tester("failed-tester");
-
-failedTester.it("failed case", async (): Promise<void> => {
-  throw new Error("This is a failed case. It should throw an error.");
 });

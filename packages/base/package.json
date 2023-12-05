@@ -11,13 +11,17 @@
   "scripts": {
     "build": "tsc",
     "watch": "npm run build -- --watch",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "NODE_ENV=test vitest run --coverage --reporter=verbose"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.7",
-    "typescript": "^5.2.2"
+    "@vitest/coverage-v8": "^0.34.6",
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   },
   "dependencies": {
+    "@types/node": "^20.10.3",
     "js-yaml": "^4.1.0"
   }
 }

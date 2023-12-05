@@ -3,6 +3,7 @@ import { KVStore, Queue, Router, Schedule, Tester } from "@plutolang/pluto";
 import * as aws from "./aws";
 import * as k8s from "./k8s";
 import * as ali from "./alicloud";
+import * as sim from "./simulator";
 
 export function register(reg: Registry) {
   reg.register(runtime.Type.AWS, engine.Type.pulumi, Router, aws.ApiGatewayRouter);
@@ -20,4 +21,10 @@ export function register(reg: Registry) {
 
   reg.register(runtime.Type.AliCloud, engine.Type.pulumi, Router, ali.AppRouter);
   reg.register(runtime.Type.AliCloud, engine.Type.pulumi, "FnResource", ali.FCFnResource);
+
+  reg.register(runtime.Type.Simulator, engine.Type.simulator, Router, sim.SimRouter);
+  reg.register(runtime.Type.Simulator, engine.Type.simulator, KVStore, sim.SimKVStore);
+  reg.register(runtime.Type.Simulator, engine.Type.simulator, Queue, sim.SimQueue);
+  reg.register(runtime.Type.Simulator, engine.Type.simulator, Tester, sim.SimTester);
+  reg.register(runtime.Type.Simulator, engine.Type.simulator, "FnResource", sim.SimFunction);
 }

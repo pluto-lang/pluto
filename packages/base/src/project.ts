@@ -66,3 +66,9 @@ export class AlicloudRuntime extends Runtime {
     super(runtime.Type.AliCloud);
   }
 }
+
+export class SimulatorRuntime extends Runtime {
+  constructor() {
+    super(runtime.Type.Simulator);
+  }
+}
