@@ -1,5 +1,17 @@
 # @plutolang/cli
 
+## 0.2.4
+
+### Patch Changes
+
+- 3401159: feat: support simulation test
+- Updated dependencies [3401159]
+  - @plutolang/adapters@0.2.4
+  - @plutolang/base@0.2.3
+  - @plutolang/static-deducer@0.2.3
+  - @plutolang/graphviz-generator@0.2.3
+  - @plutolang/static-generator@0.2.3
+
 ## 0.2.3
 
 ### Patch Changes
