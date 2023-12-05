@@ -13,7 +13,6 @@ let simulator: Simulator;
 beforeAll(async () => {
   const yamlText = fs.readFileSync(YAML_PATH, "utf-8");
   const archRef = arch.parseArchFromYaml(yamlText);
-  console.log(archRef);
 
   simulator = new Simulator();
   expect(async () => await simulator.loadApp(archRef)).not.toThrow();
@@ -28,7 +27,7 @@ afterAll(async () => {
   await simulator.stop();
 });
 
-test.skip("run tests", async () => {
+test("run tests", async () => {
   const testerClient = sim.makeSimulatorClient(simulator.serverUrl, "tester");
   const testCases = await testerClient.listTests();
   for (const testCase of testCases) {
