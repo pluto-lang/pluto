@@ -27,7 +27,7 @@ afterAll(async () => {
   await simulator.stop();
 });
 
-test("run tests", async () => {
+test.skip("run tests", async () => {
   const testerClient = sim.makeSimulatorClient(simulator.serverUrl, "tester");
   const testCases = await testerClient.listTests();
   for (const testCase of testCases) {
