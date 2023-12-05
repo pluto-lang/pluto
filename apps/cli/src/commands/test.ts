@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
-import { arch, project, runtime } from "@plutolang/base";
+import { arch, engine, project, runtime, simulator } from "@plutolang/base";
 import { BuildAdapterByEngine } from "@plutolang/adapters";
 import { loadConfig } from "../utils";
 import logger from "../log";
@@ -34,6 +34,10 @@ export async function test(entrypoint: string, opts: TestOptions) {
       logger.error("There is not existing stack. Please create a new one first.");
       process.exit(1);
     }
+  }
+  if (opts.sim) {
+    sta.runtime = new project.SimulatorRuntime();
+    sta.engine = engine.Type.simulator;
   }
 
   // construct the arch ref from user code
@@ -85,16 +89,38 @@ async function testOneGroup(
     projName: proj.name,
     stack: tmpSta,
     entrypoint: entrypointFile,
+    archRef: testGroupArch,
+    outdir: path.resolve(outdir),
   });
   if (applyResult.error) {
     logger.error(applyResult.error);
     process.exit(1);
   }
 
-  const testers = listAllTester(applyResult.outputs!);
-  for (const tester of testers) {
-    const testerClient = buildTesterClient(tmpSta, tester);
-    await testerClient.runTests();
+  if (sta.runtime.type == runtime.Type.Simulator) {
+    const simServerUrl = applyResult.outputs!["simulatorServerUrl"];
+    for (const resourceName in testGroupArch.resources) {
+      const resource = testGroupArch.resources[resourceName];
+      if (resource.type !== "Tester") {
+        continue;
+      }
+
+      const description = eval(resource.parameters.find((p) => p.index === 0)!.value);
+      if (description == undefined) {
+        throw new Error(`The description of ${resourceName} is not found.`);
+      }
+
+      const simClient = simulator.makeSimulatorClient(simServerUrl, description);
+      const testerClient = new SimTesterClient(description, simClient);
+
+      await testerClient.runTests();
+    }
+  } else {
+    const testers = listAllTester(applyResult.outputs!);
+    for (const tester of testers) {
+      const testerClient = buildTesterClient(tmpSta, tester);
+      await testerClient.runTests();
+    }
   }
 
   const destroyResult = await adpt.destroy({
@@ -194,6 +220,34 @@ class AwsTesterClient implements TesterClient {
       const logs = Buffer.from(response.LogResult ?? "", "base64").toString();
       logger.error(logs);
       throw new Error(response.FunctionError);
+    }
+  }
+}
+
+class SimTesterClient implements TesterClient {
+  private readonly description: string;
+  private readonly simClient: simulator.SimulatorCleint;
+
+  constructor(description: string, simClient: simulator.SimulatorCleint) {
+    this.description = description;
+    this.simClient = simClient;
+  }
+
+  public async runTests(): Promise<void> {
+    logger.info(`+ Test Group: ${this.description}`);
+    const testCases = await this.simClient.listTests();
+    for (const testCase of testCases) {
+      logger.info(`  + Test Case: ${testCase.description}`);
+      try {
+        await this.simClient.runTest(testCase);
+        logger.info(`  ✔️ Passed`);
+      } catch (e) {
+        if (e instanceof Error) {
+          logger.error("  ✖️ Failed, ", e.message);
+        } else {
+          logger.error("  ✖️ Failed, ", e);
+        }
+      }
     }
   }
 }

@@ -20,6 +20,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@plutolang/pluto": "workspace:^",
+    "@plutolang/pluto-infra": "workspace:^",
     "@aws-sdk/credential-providers": "^3.445.0",
     "@aws-sdk/shared-ini-file-loader": "^3.374.0",
     "@plutolang/base": "workspace:^",

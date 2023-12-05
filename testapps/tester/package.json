@@ -1,0 +1,19 @@
+{
+  "name": "tester",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "DEBUG=1 ../../apps/cli/bin/pluto test --sim",
+    "build": "mkdir -p .pluto/dev && DEBUG=1 ../../apps/cli/bin/pluto compile"
+  },
+  "dependencies": {
+    "@plutolang/pluto": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.2.2",
+    "@plutolang/base": "latest",
+    "@plutolang/pluto-infra": "latest",
+    "@pulumi/pulumi": "^3.88.0"
+  },
+  "main": "dist/index.js"
+}

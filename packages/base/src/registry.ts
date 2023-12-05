@@ -1,8 +1,9 @@
 import * as engine from "./engine";
 import * as runtime from "./runtime";
 import { Resource, ResourceInfra } from "./resource";
+import { IResourceInstance } from "./simulator";
 
-type InfraCls = { new (name: string, opts?: object): ResourceInfra };
+type InfraCls = { new (name: string, opts?: object): ResourceInfra | IResourceInstance };
 type ResourceCls = { new (name: string, opts?: object): Resource } | "FnResource";
 
 // eslint-disable-next-line

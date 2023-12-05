@@ -1,4 +1,4 @@
-import { Resource, runtime } from "@plutolang/base";
+import { Resource, runtime, simulator } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
 /**
@@ -38,6 +38,9 @@ export class KVStore implements Resource {
         return new aws.DynamoKVStore(name, opts);
       case runtime.Type.K8s:
         return new k8s.RedisKVStore(name, opts);
+      case runtime.Type.Simulator:
+        if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
+        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:
         throw new Error(`not support this runtime '${rtType}'`);
     }

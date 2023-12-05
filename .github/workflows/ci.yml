@@ -21,12 +21,15 @@ jobs:
     name: Build and test
     runs-on: ubuntu-latest
     steps:
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+
       - uses: actions/checkout@v3
       # Check for any dead links.
       - uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
-          use-quiet-mode: 'yes'
-          config-file: '.github/mlc_config.json'
+          use-quiet-mode: "yes"
+          config-file: ".github/mlc_config.json"
 
       - uses: actions/setup-node@v3
         with:
