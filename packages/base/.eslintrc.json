@@ -9,7 +9,9 @@
     "ecmaVersion": "latest"
   },
   "plugins": ["@typescript-eslint"],
-  "rules": {},
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off"
+  },
   "ignorePatterns": ["*.js", "*.d.ts", "node_modules/", "coverage"],
   "settings": {
     "import/parsers": {
