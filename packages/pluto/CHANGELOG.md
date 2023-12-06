@@ -1,5 +1,13 @@
 # @pluto/pluto
 
+## 0.2.3
+
+### Patch Changes
+
+- 3401159: feat: support simulation test
+- Updated dependencies [3401159]
+  - @plutolang/base@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes
