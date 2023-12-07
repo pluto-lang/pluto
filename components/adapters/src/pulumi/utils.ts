@@ -105,6 +105,7 @@ export function savePlutoGlobalConfig(plutoConfig: PlutoGlobalConfig) {
   fse.writeFileSync(PLUTO_GLOBAL_CONFIG_PATH, yaml.dump(plutoConfig));
 }
 
+// TODO: move to cli, and add a role name so that users can change thier accounts.
 export async function createPlutoRole(): Promise<string> {
   // Guide users to create PLRole. Open one tab in the browser.
   const userId = randomUUID();

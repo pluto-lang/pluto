@@ -1,23 +1,27 @@
 import * as ts from "typescript";
 import * as path from "path";
-import { DeduceOptions, Deducer, arch } from "@plutolang/base";
+import { arch, core } from "@plutolang/base";
 import { genImportStats } from "./imports";
 import { ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
 
-export class StaticDeducer implements Deducer {
-  public async deduce(opts: DeduceOptions): Promise<arch.Architecture> {
-    const { filepaths } = opts;
-    if (filepaths.length == 0) {
-      throw new Error("The filepaths is empty.");
+export class StaticDeducer extends core.Deducer {
+  constructor(args: core.BasicArgs) {
+    super(args);
+  }
+
+  public async deduce(entrypoints: string[]): Promise<core.DeduceResult> {
+    if (entrypoints.length == 0) {
+      throw new Error("The entrypoints is empty.");
     }
 
     const tsconfigPath = path.resolve("./", "tsconfig.json");
     const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     const configJson = ts.parseJsonConfigFileContent(configFile.config, ts.sys, "./");
-    return compile(filepaths, configJson.options);
+    const archRef = await compile(entrypoints, configJson.options);
+    return { archRef };
   }
 }
 

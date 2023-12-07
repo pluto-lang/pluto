@@ -1,17 +1,21 @@
 import path from "path";
 import { toFile } from "ts-graphviz/adapter";
-import { GenerateOptions, Generator, arch } from "@plutolang/base";
+import { arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
-export class GraphvizGenerator implements Generator {
-  public async generate(opts: GenerateOptions): Promise<string> {
-    const dotText = archToGraphviz(opts.archRef);
-    const dotFile = path.join(opts.outdir, "arch.dot");
+export class GraphvizGenerator extends core.Generator {
+  constructor(args: core.BasicArgs) {
+    super(args);
+  }
+
+  public async generate(archRef: arch.Architecture, outdir: string): Promise<core.GenerateResult> {
+    const dotText = archToGraphviz(archRef);
+    const dotFile = path.join(outdir, "arch.dot");
     writeToFile("", dotFile, dotText);
 
-    const svgFile = path.join(opts.outdir, "arch.svg");
+    const svgFile = path.join(outdir, "arch.svg");
     await toFile(dotText, svgFile, { format: "svg" });
-    return svgFile;
+    return { entrypoint: svgFile };
   }
 }
 
