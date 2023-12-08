@@ -1,5 +1,17 @@
 # @pluto/adapters
 
+## 0.2.5
+
+### Patch Changes
+
+- 5736dc1: enhance: refactor the component apis
+- 38eef8e: enhance: normalize the configuration models, including project and stack.
+- Updated dependencies [5736dc1]
+- Updated dependencies [38eef8e]
+  - @plutolang/base@0.2.4
+  - @plutolang/pluto@0.2.4
+  - @plutolang/pluto-infra@0.2.5
+
 ## 0.2.4
 
 ### Patch Changes

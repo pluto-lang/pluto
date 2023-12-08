@@ -1,5 +1,12 @@
 # @pluto/base
 
+## 0.2.4
+
+### Patch Changes
+
+- 5736dc1: enhance: refactor the component apis
+- 38eef8e: enhance: normalize the configuration models, including project and stack.
+
 ## 0.2.3
 
 ### Patch Changes
