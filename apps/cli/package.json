@@ -38,12 +38,14 @@
     "@plutolang/static-generator": "workspace:^",
     "chalk": "^4.1.2",
     "commander": "^11.0.0",
+    "fs-extra": "^11.1.1",
     "js-yaml": "^4.1.0",
     "table": "^6.8.1"
   },
   "devDependencies": {
     "@plutolang/pluto": "workspace:^",
     "@plutolang/pluto-infra": "workspace:^",
+    "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.7",
     "@types/node": "^20.8.4",
     "typescript": "^5.2.2"

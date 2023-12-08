@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 import { ConfigMap } from "@pulumi/pulumi/automation";
 import { fromEnv, fromIni } from "@aws-sdk/credential-providers";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
-import { project, runtime } from "@plutolang/base";
+import { config, runtime } from "@plutolang/base";
 
 const PLUTO_GLOBAL_CONFIG_PATH = path.join(os.homedir(), ".pluto", "config.yml");
 const AWS_CREDENTIALS_QUERY_URL =
@@ -16,18 +16,18 @@ const AWS_CREDENTIALS_QUERY_URL =
 
 export type PlutoGlobalConfig = { [key: string]: unknown };
 
-type configGenFn = (sta: project.Stack) => Promise<ConfigMap>;
+type configGenFn = (sta: config.Stack) => Promise<ConfigMap>;
 
-export async function genPulumiConfigByRuntime(sta: project.Stack): Promise<ConfigMap> {
+export async function genPulumiConfigByRuntime(sta: config.Stack): Promise<ConfigMap> {
   const genFnMapping: { [key in runtime.Type]?: configGenFn } = {
     [runtime.Type.AWS]: genPulumiConfigForAWS,
     [runtime.Type.K8s]: genPulumiConfigForK8s,
     [runtime.Type.AliCloud]: genPulumiConfigForAliCloud,
   };
-  if (!(sta.runtime.type in genFnMapping)) {
+  if (!(sta.platformType in genFnMapping)) {
     throw new Error("Not support this runtime.");
   }
-  return await genFnMapping[sta.runtime.type]!(sta);
+  return await genFnMapping[sta.platformType]!(sta);
 }
 
 export async function genPulumiConfigForAWS(): Promise<ConfigMap> {
@@ -64,14 +64,15 @@ export async function genPulumiConfigForAWS(): Promise<ConfigMap> {
   };
 }
 
-async function genPulumiConfigForK8s(sta: project.Stack): Promise<ConfigMap> {
-  const k8sRt = sta.runtime as project.K8sRuntime;
-  return {
-    "kubernetes:kubeconfig": { value: k8sRt.kubeConfigPath },
-  };
+async function genPulumiConfigForK8s(sta: config.Stack): Promise<ConfigMap> {
+  const configMap: ConfigMap = {};
+  if (sta.configs["kubernetes:kubeconfig"]) {
+    configMap["kubernetes:kubeconfig"] = { value: sta.configs["kubernetes:kubeconfig"] };
+  }
+  return configMap;
 }
 
-async function genPulumiConfigForAliCloud(sta: project.Stack): Promise<ConfigMap> {
+async function genPulumiConfigForAliCloud(sta: config.Stack): Promise<ConfigMap> {
   sta;
   if (
     !process.env.ALICLOUD_REGION ||

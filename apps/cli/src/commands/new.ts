@@ -2,8 +2,8 @@ import path from "path";
 import fs from "fs";
 import { engine, runtime } from "@plutolang/base";
 import { createProject } from "../builder";
-import { saveConfig } from "../utils";
 import logger from "../log";
+import { dumpProject } from "../utils";
 
 const TEMPLATE_DIR = path.join(__dirname, "../../template");
 
@@ -22,16 +22,12 @@ export async function create(opts: NewOptions) {
     engType: opts.engine,
   });
 
-  if (process.env.DEBUG) {
-    logger.debug("New project: ", proj);
-  }
-  saveConfig(proj, proj.name);
-
   genInitFiles(proj.name);
   const pkgJsonPath = path.join(proj.name, "package.json");
   const pkgJson = fs.readFileSync(pkgJsonPath).toString();
   fs.writeFileSync(pkgJsonPath, pkgJson.replaceAll("${project_name}", proj.name));
 
+  dumpProject(proj);
   logger.info("Created a project,", proj.name);
 }
 

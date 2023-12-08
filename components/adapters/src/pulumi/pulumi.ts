@@ -9,6 +9,11 @@ export class PulumiAdapter extends core.Adapter {
   private readonly backendPath: string;
   private passphrase: string;
 
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly name = require(join(__dirname, "../../package.json")).name;
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly version = require(join(__dirname, "../../package.json")).version;
+
   constructor(args: core.NewAdapterArgs) {
     if (!isAbsolute(args.entrypoint)) {
       throw new Error("The entrypoint provided to the adapter must be an absolute path.");
@@ -121,8 +126,8 @@ export class PulumiAdapter extends core.Adapter {
 
   private async createPulumiStack(): Promise<Stack> {
     const envs: Record<string, string> = {
-      RUNTIME_TYPE: this.stack.runtime.type,
-      ENGINE_TYPE: this.stack.engine,
+      RUNTIME_TYPE: this.stack.platformType,
+      ENGINE_TYPE: this.stack.engineType,
       PULUMI_CONFIG_PASSPHRASE: this.passphrase,
       WORK_DIR: this.workdir,
     };

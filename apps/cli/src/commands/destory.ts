@@ -1,53 +1,71 @@
 import path from "path";
-import { project } from "@plutolang/base";
 import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
-import { loadConfig } from "../utils";
 import { loadArchRef } from "./utils";
+import { PLUTO_PROJECT_OUTPUT_DIR, dumpProject, isPlutoProject, loadProject } from "../utils";
 
 export interface DestoryOptions {
   stack?: string;
 }
 
 export async function destroy(opts: DestoryOptions) {
-  const proj = loadConfig();
+  const projectRoot = path.resolve("./");
+  if (!isPlutoProject(projectRoot)) {
+    logger.error("The current location is not located at the root of a Pluto project.");
+    process.exit(1);
+  }
+  const proj = loadProject(projectRoot);
 
-  let sta: project.Stack | undefined;
-  if (opts.stack) {
-    sta = proj.getStack(opts.stack);
-    if (!sta) {
-      logger.error("No such stack.");
-      process.exit(1);
-    }
-  } else {
-    sta = proj.getStack(proj.current);
-    if (!sta) {
-      logger.error("There is not existing stack. Please create a new one first.");
-      process.exit(1);
-    }
+  const stackName = opts.stack ?? proj.current;
+  if (!stackName) {
+    logger.error(
+      "There isn't a default stack. Please use the --stack option to specify which stack you want."
+    );
+    process.exit(1);
   }
-  if (!sta.adapter) {
-    throw new Error("Please deploy first.");
+
+  const stack = proj.getStack(stackName);
+  if (!stack) {
+    logger.error(`There is no stack named ${stackName}.`);
+    process.exit(1);
   }
-  const archRef = loadArchRef(`.pluto/${sta.name}/arch.yml`);
+
+  if (stack.isDeployed()) {
+    logger.error("This stack hasn't been deployed yet. Please deploy it first.");
+    process.exit(1);
+  }
+
+  if (!stack.archRefFile || !stack.provisionFile || !stack.adapterState) {
+    logger.error(
+      "There are some configurations missing in this stack. You can try redeploying the stack and give it another go."
+    );
+    process.exit(1);
+  }
+
+  const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const generatedDir = path.join(stackBaseDir, "generated");
+  // TODO: make the workdir same with generated dir.
+  const workdir = path.join(generatedDir, `compiled`);
 
   // build the adapter based on the engine type
-  const adpt = BuildAdapterByEngine(sta.engine, {
+  const adapter = BuildAdapterByEngine(stack.engineType, {
     project: proj.name,
-    stack: sta,
-    rootpath: path.resolve("."),
-    entrypoint: sta.adapter.entrypoint,
-    workdir: sta.adapter.workdir,
-    archRef: archRef,
+    rootpath: projectRoot,
+    stack: stack,
+    archRef: loadArchRef(stack.archRefFile),
+    entrypoint: stack.provisionFile,
+    workdir: workdir,
   });
-  if (!adpt) {
-    logger.error("No such engine.");
+  if (!adapter) {
+    logger.error(`There is no engine of type ${stack.engineType}.`);
     process.exit(1);
   }
 
   try {
     logger.info("Destroying...");
-    await adpt.destroy();
+    await adapter.destroy();
+    stack.setUndeployed();
+    dumpProject(proj);
     logger.info("Successfully destroyed!");
   } catch (e) {
     if (e instanceof Error) {

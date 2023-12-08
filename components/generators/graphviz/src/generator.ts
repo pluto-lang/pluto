@@ -4,6 +4,11 @@ import { arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 export class GraphvizGenerator extends core.Generator {
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly name = require(path.join(__dirname, "../package.json")).name;
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly version = require(path.join(__dirname, "../package.json")).version;
+
   constructor(args: core.BasicArgs) {
     super(args);
   }
