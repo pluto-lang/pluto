@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
-import { arch, engine, project, runtime, simulator } from "@plutolang/base";
+import { arch, core, engine, project, runtime, simulator } from "@plutolang/base";
 import { BuildAdapterByEngine } from "@plutolang/adapters";
 import { loadConfig } from "../utils";
 import logger from "../log";
@@ -40,9 +40,15 @@ export async function test(entrypoint: string, opts: TestOptions) {
     sta.engine = engine.Type.simulator;
   }
 
+  const basicArgs: core.BasicArgs = {
+    project: proj.name,
+    stack: sta,
+    rootpath: path.resolve("."),
+  };
+
   // construct the arch ref from user code
   logger.info("Generating reference architecture...");
-  const archRef = await loadAndDeduce(opts.deducer, [entrypoint]);
+  const { archRef } = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
 
   const testGroupArchs = splitTestGroup(archRef);
   for (let testGroupIdx = 0; testGroupIdx < testGroupArchs.length; testGroupIdx++) {
@@ -67,16 +73,25 @@ async function testOneGroup(
 ) {
   const testId = `test-${testGroupIdx}`;
 
+  const basicArgs: core.BasicArgs = {
+    project: proj.name,
+    stack: sta,
+    rootpath: path.resolve("."),
+  };
+
   // generate the IR code based on the arch ref
   logger.info("Generating the IaC Code and computing modules...");
   const outdir = path.join(".pluto", sta.name, testId);
-  const entrypointFile = await loadAndGenerate(opts.generator, testGroupArch, outdir);
-  if (process.env.DEBUG) {
-    logger.debug("Entrypoint file: ", entrypointFile);
-  }
+  const generateResult = await loadAndGenerate(opts.generator, basicArgs, testGroupArch, outdir);
 
+  const workdir = path.resolve("./", outdir, `compiled`);
   // build the adapter based on the engine type
-  const adpt = BuildAdapterByEngine(sta.engine);
+  const adpt = BuildAdapterByEngine(sta.engine, {
+    ...basicArgs,
+    entrypoint: generateResult.entrypoint!,
+    workdir: workdir,
+    archRef: testGroupArch,
+  });
   if (!adpt) {
     logger.error("No such engine.");
     process.exit(1);
@@ -84,51 +99,46 @@ async function testOneGroup(
 
   const tmpSta = new project.Stack(`${sta.name}-${testId}`, sta.runtime, sta.engine);
 
-  logger.info("Applying...");
-  const applyResult = await adpt.apply({
-    projName: proj.name,
-    stack: tmpSta,
-    entrypoint: entrypointFile,
-    archRef: testGroupArch,
-    outdir: path.resolve(outdir),
-  });
-  if (applyResult.error) {
-    logger.error(applyResult.error);
-    process.exit(1);
-  }
+  try {
+    logger.info("Applying...");
+    const applyResult = await adpt.deploy();
+    logger.info("Successfully applied!");
 
-  if (sta.runtime.type == runtime.Type.Simulator) {
-    const simServerUrl = applyResult.outputs!["simulatorServerUrl"];
-    for (const resourceName in testGroupArch.resources) {
-      const resource = testGroupArch.resources[resourceName];
-      if (resource.type !== "Tester") {
-        continue;
+    if (sta.runtime.type == runtime.Type.Simulator) {
+      const simServerUrl = applyResult.outputs!["simulatorServerUrl"];
+      for (const resourceName in testGroupArch.resources) {
+        const resource = testGroupArch.resources[resourceName];
+        if (resource.type !== "Tester") {
+          continue;
+        }
+
+        const description = eval(resource.parameters.find((p) => p.index === 0)!.value);
+        if (description == undefined) {
+          throw new Error(`The description of ${resourceName} is not found.`);
+        }
+
+        const simClient = simulator.makeSimulatorClient(simServerUrl, description);
+        const testerClient = new SimTesterClient(description, simClient);
+
+        await testerClient.runTests();
       }
-
-      const description = eval(resource.parameters.find((p) => p.index === 0)!.value);
-      if (description == undefined) {
-        throw new Error(`The description of ${resourceName} is not found.`);
+    } else {
+      const testers = listAllTester(applyResult.outputs!);
+      for (const tester of testers) {
+        const testerClient = buildTesterClient(tmpSta, tester);
+        await testerClient.runTests();
       }
-
-      const simClient = simulator.makeSimulatorClient(simServerUrl, description);
-      const testerClient = new SimTesterClient(description, simClient);
-
-      await testerClient.runTests();
     }
-  } else {
-    const testers = listAllTester(applyResult.outputs!);
-    for (const tester of testers) {
-      const testerClient = buildTesterClient(tmpSta, tester);
-      await testerClient.runTests();
-    }
-  }
 
-  const destroyResult = await adpt.destroy({
-    projName: proj.name,
-    stack: tmpSta,
-  });
-  if (destroyResult.error) {
-    logger.error(destroyResult.error);
+    logger.info("Destroying...");
+    await adpt.destroy();
+    logger.info("Successfully destroyed!");
+  } catch (e) {
+    if (e instanceof Error) {
+      logger.error(e.message);
+    } else {
+      logger.error(e);
+    }
     process.exit(1);
   }
 }

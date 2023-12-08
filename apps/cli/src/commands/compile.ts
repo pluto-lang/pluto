@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
 import * as yaml from "js-yaml";
-import { arch } from "@plutolang/base";
+import { arch, core } from "@plutolang/base";
 import logger from "../log";
 import { loadConfig } from "../utils";
+import { loadPackage } from "./utils";
 
 const GRAPHVIZ_GENERATOR_PKG = "@plutolang/graphviz-generator";
 
@@ -28,58 +29,59 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
   }
   const outdir = path.join(".pluto", sta.name);
 
+  const basicArgs: core.BasicArgs = {
+    project: proj.name,
+    stack: sta,
+    rootpath: path.resolve("."),
+  };
+
   // construct the arch ref from user code
-  const archRef = await loadAndDeduce(opts.deducer, [entrypoint]);
+  const { archRef } = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
   const yamlText = yaml.dump(archRef, { noRefs: true });
   fs.writeFileSync(path.join(outdir, "arch.yml"), yamlText);
 
   // generate the graphviz file
-  await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, archRef, outdir);
+  await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, basicArgs, archRef, outdir);
 
   // generate the IR code based on the arch ref
-  await loadAndGenerate(opts.generator, archRef, outdir);
+  await loadAndGenerate(opts.generator, basicArgs, archRef, outdir);
 }
 
 export async function loadAndDeduce(
   deducerName: string,
+  basicArgs: core.BasicArgs,
   files: string[]
-): Promise<arch.Architecture> {
+): Promise<core.DeduceResult> {
   // try to construct the deducer, exit with error if failed to import
   try {
-    const deducer = new (await import(deducerName)).default();
-    return await deducer.deduce({
-      filepaths: files,
-    });
+    const deducer: core.Deducer = new (await loadPackage(deducerName))(basicArgs);
+    return await deducer.deduce(files);
   } catch (err) {
-    if (process.env.DEBUG) {
+    if (err instanceof Error) {
+      logger.error(err.message);
+    } else {
       logger.error(err);
     }
-    logger.error(
-      `Failed to deduce. Have you provided a correct package name '${deducerName}' and installed it?`
-    );
     process.exit(1);
   }
 }
 
 export async function loadAndGenerate(
   generatorName: string,
+  basicArgs: core.BasicArgs,
   archRef: arch.Architecture,
   outdir: string
-): Promise<string> {
+): Promise<core.GenerateResult> {
   // try to construct the generator, exit with error if failed to import
   try {
-    const generator = new (await import(generatorName)).default();
-    return await generator.generate({
-      archRef: archRef,
-      outdir: outdir,
-    });
+    const generator: core.Generator = new (await loadPackage(generatorName))(basicArgs);
+    return await generator.generate(archRef, outdir);
   } catch (err) {
-    if (process.env.DEBUG) {
+    if (err instanceof Error) {
+      logger.error(err.message);
+    } else {
       logger.error(err);
     }
-    logger.error(
-      `Failed to generate. Have you provided a correct package name '${generatorName}' and installed it?`
-    );
     process.exit(1);
   }
 }

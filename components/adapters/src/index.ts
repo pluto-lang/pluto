@@ -1,1 +1,1 @@
-export { Adapter, BuildAdapterByEngine } from "./adapter";
+export { BuildAdapterByEngine } from "./adapter";

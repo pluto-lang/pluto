@@ -2,11 +2,12 @@ import path from "path";
 import fs from "fs";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
-import { arch, project } from "@plutolang/base";
+import { arch, core, project } from "@plutolang/base";
 import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
-import { loadConfig } from "../utils";
+import { loadConfig, saveConfig } from "../utils";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
+import { loadArchRef } from "./utils";
 
 export interface DeployOptions {
   stack?: string;
@@ -38,12 +39,20 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     }
   }
 
+  const basicArgs: core.BasicArgs = {
+    project: proj.name,
+    stack: sta,
+    rootpath: path.resolve("."),
+  };
+
+  let archRef: arch.Architecture | undefined;
   let infraEntrypoint: string | undefined;
   // No deduction or generation, only application.
   if (!opts.apply) {
     // construct the arch ref from user code
     logger.info("Generating reference architecture...");
-    const archRef = await loadAndDeduce(opts.deducer, [entrypoint]);
+    const deduceResult = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
+    archRef = deduceResult.archRef;
 
     const confirmed = await confirmArch(archRef, opts.yes);
     if (!confirmed) {
@@ -54,35 +63,59 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     // generate the IR code based on the arch ref
     logger.info("Generating the IaC Code and computing modules...");
     const outdir = path.join(".pluto", sta.name);
-    infraEntrypoint = await loadAndGenerate(opts.generator, archRef, outdir);
-    if (process.env.DEBUG) {
-      logger.debug("Entrypoint file: ", infraEntrypoint);
-    }
+    const generateResult = await loadAndGenerate(opts.generator, basicArgs, archRef, outdir);
+    infraEntrypoint = path.resolve(outdir, generateResult.entrypoint!);
   }
+  archRef = archRef ?? loadArchRef(`.pluto/${sta.name}/arch.yml`);
+  infraEntrypoint =
+    infraEntrypoint ?? path.resolve("./", `.pluto/${sta.name}/compiled/${sta.engine}.js`);
 
+  const workdir = path.resolve("./", `.pluto/${sta.name}/compiled`);
   // build the adapter based on the engine type
-  const adpt = BuildAdapterByEngine(sta.engine);
+  const adpt = BuildAdapterByEngine(sta.engine, {
+    ...basicArgs,
+    entrypoint: infraEntrypoint,
+    workdir: workdir,
+    archRef: archRef,
+  });
   if (!adpt) {
     logger.error("No such engine.");
     process.exit(1);
   }
-
-  logger.info("Applying...");
-  const applyResult = await adpt.apply({
-    projName: proj.name,
-    stack: sta,
-    // TODO: Store the last entrypoint for use in 'apply only' mode.
-    entrypoint: infraEntrypoint ?? `.pluto/${sta.name}/compiled/${sta.engine}.js`,
-  });
-  if (applyResult.error) {
-    logger.error(applyResult.error);
-    process.exit(1);
+  if (sta.adapter) {
+    adpt.load(sta.adapter?.state);
   }
 
-  logger.info("Successfully applied!");
-  logger.info("Here are the resource outputs:");
-  for (const key in applyResult.outputs) {
-    logger.info(`${key}:`, applyResult.outputs[key]);
+  try {
+    sta.adapter = {
+      entrypoint: infraEntrypoint,
+      workdir: workdir,
+      state: adpt.dump(),
+    };
+    saveConfig(proj);
+
+    logger.info("Applying...");
+    const applyResult = await adpt.deploy();
+
+    logger.info("Successfully applied!");
+    logger.info("Here are the resource outputs:");
+    for (const key in applyResult.outputs) {
+      logger.info(`${key}:`, applyResult.outputs[key]);
+    }
+
+    sta.adapter = {
+      entrypoint: infraEntrypoint,
+      workdir: workdir,
+      state: adpt.dump(),
+    };
+    saveConfig(proj);
+  } catch (e) {
+    if (e instanceof Error) {
+      logger.error(e.message);
+    } else {
+      logger.error(e);
+    }
+    process.exit(1);
   }
 }
 

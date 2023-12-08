@@ -30,6 +30,11 @@ export class Stack {
   name: string;
   runtime: Runtime;
   engine: engine.Type;
+  adapter?: {
+    entrypoint: string;
+    workdir: string;
+    state: string;
+  };
 
   constructor(name: string, rt: Runtime, eng: engine.Type) {
     this.name = name;

@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import * as ts from "typescript";
 import * as esbuild from "esbuild";
-import { GenerateOptions, Generator, arch } from "@plutolang/base";
+import { arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 // The name of the compiled entrypoint
@@ -10,23 +10,27 @@ const ENTRYPOINT_FILENAME = "pulumi";
 // The name of the compiled compute module for each resource
 const COMP_MOD_FILENAME = (resName: string) => `${resName}`;
 
-export class StaticGenerator implements Generator {
-  public async generate(opts: GenerateOptions): Promise<string> {
-    const compiledDir = path.join(opts.outdir, "compiled");
+export class StaticGenerator extends core.Generator {
+  constructor(args: core.BasicArgs) {
+    super(args);
+  }
 
-    const pirTsCode = genPirCode(opts.archRef);
-    writeToFile(opts.outdir, ENTRYPOINT_FILENAME + ".ts", pirTsCode);
+  public async generate(archRef: arch.Architecture, outdir: string): Promise<core.GenerateResult> {
+    const compiledDir = path.join(outdir, "compiled");
+
+    const pirTsCode = genPirCode(archRef);
+    writeToFile(outdir, ENTRYPOINT_FILENAME + ".ts", pirTsCode);
     const pirJsCode = compileTs(pirTsCode);
     writeToFile(compiledDir, ENTRYPOINT_FILENAME + ".js", pirJsCode);
 
-    const cirCodes = genAllCirCode(opts.archRef);
+    const cirCodes = genAllCirCode(archRef);
     cirCodes.forEach((cir) => {
       const cirTsPath = COMP_MOD_FILENAME(cir.resource.name) + ".ts";
-      writeToFile(opts.outdir, cirTsPath, cir.code);
-      bundle(path.join(opts.outdir, cirTsPath), compiledDir);
+      writeToFile(outdir, cirTsPath, cir.code);
+      bundle(path.join(outdir, cirTsPath), compiledDir);
     });
 
-    return path.join(compiledDir, ENTRYPOINT_FILENAME + ".js");
+    return { entrypoint: path.join(compiledDir, ENTRYPOINT_FILENAME + ".js") };
   }
 }
 
