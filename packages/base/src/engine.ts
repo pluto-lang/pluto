@@ -3,3 +3,7 @@ export enum Type {
   terraform = "terraform",
   simulator = "simulator",
 }
+
+export function isEngineType(value: any): value is Type {
+  return Object.values(Type).includes(value);
+}

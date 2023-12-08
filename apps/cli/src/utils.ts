@@ -1,38 +1,68 @@
-import fs from "fs";
-import path from "path";
-import * as yaml from "js-yaml";
-import { project } from "@plutolang/base";
-import logger from "./log";
-
-export const PLUTO_DIR = ".pluto";
-export const PLUTO_CONFIG_FILE = `${PLUTO_DIR}/pluto.yml`;
+import { homedir } from "os";
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import { join, resolve } from "path";
+import { ensureFileSync } from "fs-extra";
+import { dump, load } from "js-yaml";
+import { config } from "@plutolang/base";
 
 // eslint-disable-next-line
 export const version = require("../package.json").version;
 
-export function loadConfig(): project.Project {
-  if (!fs.existsSync(PLUTO_CONFIG_FILE)) {
-    logger.error("This is not a Pluto project.");
-    process.exit(1);
-  }
+/** The default directory where the Pluto compilation output is stored. */
+export const PLUTO_PROJECT_OUTPUT_DIR = ".pluto";
 
-  try {
-    const content = fs.readFileSync(PLUTO_CONFIG_FILE);
-    const obj = yaml.load(content.toString());
-    return Object.assign(new project.Project("temp"), obj) as project.Project;
-  } catch (e) {
-    logger.error("Failed to parse the configuration file.");
-    process.exit(1);
-  }
+/** The relative path from the project's root directory to the pluto configuration file. */
+export const PLUTO_PROJECT_CONFIG_PATH = ".pluto/pluto.yml";
+
+/** The pluto system configuration file's absolute path. */
+export const PLUTO_SYSTEM_CONFIG_DIR = resolve(homedir(), ".pluto");
+
+/**
+ * Reads the project name from the package.json file located at the root of the given path, and returns it.
+ * @param projectRoot The root directory of the project.
+ * @returns The project name from the package.json file.
+ */
+export function getProjectName(projectRoot: string): string {
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require(join(projectRoot, "package.json")).name;
 }
 
-export function saveConfig(proj: project.Project, basedir: string = "") {
-  const dirpath = path.join(basedir, PLUTO_DIR);
-  const configPath = path.join(basedir, PLUTO_CONFIG_FILE);
-  if (!fs.existsSync(dirpath)) {
-    fs.mkdirSync(dirpath, { recursive: true });
-  }
+/**
+ * Load the project configuration from the default configuration path.
+ * @param projectRoot The root directory of the project.
+ */
+export function loadProject(projectRoot: string): config.Project {
+  const content = readFileSync(join(projectRoot, PLUTO_PROJECT_CONFIG_PATH));
+  const obj = load(content.toString());
+  const project = new config.Project(getProjectName(projectRoot), projectRoot);
+  return Object.assign(project, obj);
+}
 
-  const content = yaml.dump(proj, { noRefs: true });
-  fs.writeFileSync(configPath, content);
+/**
+ * Dump the project to the default configuration path.
+ */
+export function dumpProject(project: config.Project) {
+  const rootpath = project.rootpath;
+
+  const obj = project as any;
+  delete obj.name;
+  delete obj.rootpath;
+  const content = dump(project, { sortKeys: true });
+
+  const configFile = join(rootpath, PLUTO_PROJECT_CONFIG_PATH);
+  ensureFileSync(configFile);
+  writeFileSync(configFile, content);
+}
+
+/**
+ * Check if the given path is a Pluto project.
+ * @param rootpath The root directory of the project.
+ */
+export function isPlutoProject(rootpath: string): boolean {
+  return (
+    existsSync(join(rootpath, PLUTO_PROJECT_CONFIG_PATH)) &&
+    existsSync(join(rootpath, "package.json")) &&
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require(join(rootpath, "package.json")).name
+  );
 }

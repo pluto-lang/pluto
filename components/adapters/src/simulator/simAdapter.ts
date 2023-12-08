@@ -1,4 +1,4 @@
-import path from "path";
+import { join } from "path";
 import { core, errors } from "@plutolang/base";
 import { Simulator } from "./simulator";
 
@@ -9,6 +9,11 @@ import { Simulator } from "./simulator";
  */
 export class SimulatorAdapter extends core.Adapter {
   private simulator?: Simulator;
+
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly name = require(join(__dirname, "../../package.json")).name;
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly version = require(join(__dirname, "../../package.json")).version;
 
   constructor(args: core.NewAdapterArgs) {
     super(args);
@@ -22,7 +27,7 @@ export class SimulatorAdapter extends core.Adapter {
     this.simulator = new Simulator();
     this.simulator.loadApp(this.archRef);
 
-    process.env.WORK_DIR = path.join(this.workdir);
+    process.env.WORK_DIR = join(this.workdir);
     await this.simulator.start();
 
     return {

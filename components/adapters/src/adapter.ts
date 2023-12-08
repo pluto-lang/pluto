@@ -12,6 +12,6 @@ export function BuildAdapterByEngine(
     case engine.Type.simulator:
       return new SimulatorAdapter(args);
     default:
-      throw new Error(`There is no adapter for '${engType}'`);
+      return;
   }
 }

@@ -1,13 +1,14 @@
-import path from "path";
+import path, { resolve } from "path";
 import fs from "fs";
+import * as yaml from "js-yaml";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
-import { arch, core, project } from "@plutolang/base";
+import { arch, core } from "@plutolang/base";
 import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
-import { loadConfig, saveConfig } from "../utils";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import { loadArchRef } from "./utils";
+import { loadProject, dumpProject, PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject } from "../utils";
 
 export interface DeployOptions {
   stack?: string;
@@ -23,27 +24,34 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     throw new Error(`No such file, ${entrypoint}`);
   }
 
-  const proj = loadConfig();
-  let sta: project.Stack | undefined;
-  if (opts.stack) {
-    sta = proj.getStack(opts.stack);
-    if (!sta) {
-      logger.error("No such stack.");
-      process.exit(1);
-    }
-  } else {
-    sta = proj.getStack(proj.current);
-    if (!sta) {
-      logger.error("There is not existing stack. Please create a new one first.");
-      process.exit(1);
-    }
+  const projectRoot = resolve("./");
+  if (!isPlutoProject(projectRoot)) {
+    logger.error("The current location is not located at the root of a Pluto project.");
+    process.exit(1);
+  }
+  const project = loadProject(projectRoot);
+
+  const stackName = opts.stack ?? project.current;
+  if (!stackName) {
+    logger.error(
+      "There isn't a default stack. Please use the --stack option to specify which stack you want."
+    );
+    process.exit(1);
+  }
+
+  const stack = project.getStack(stackName);
+  if (!stack) {
+    logger.error(`There is no stack named ${stackName}.`);
+    process.exit(1);
   }
 
   const basicArgs: core.BasicArgs = {
-    project: proj.name,
-    stack: sta,
-    rootpath: path.resolve("."),
+    project: project.name,
+    rootpath: projectRoot,
+    stack: stack,
   };
+  const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const generatedDir = path.join(stackBaseDir, "generated");
 
   let archRef: arch.Architecture | undefined;
   let infraEntrypoint: string | undefined;
@@ -54,6 +62,11 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     const deduceResult = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
     archRef = deduceResult.archRef;
 
+    const yamlText = yaml.dump(archRef, { noRefs: true });
+    const archRefFile = path.join(stackBaseDir, "arch.yml");
+    fs.writeFileSync(archRefFile, yamlText);
+    stack.archRefFile = archRefFile;
+
     const confirmed = await confirmArch(archRef, opts.yes);
     if (!confirmed) {
       logger.info("You can modify your code and try again.");
@@ -62,53 +75,47 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
 
     // generate the IR code based on the arch ref
     logger.info("Generating the IaC Code and computing modules...");
-    const outdir = path.join(".pluto", sta.name);
-    const generateResult = await loadAndGenerate(opts.generator, basicArgs, archRef, outdir);
-    infraEntrypoint = path.resolve(outdir, generateResult.entrypoint!);
+    const generateResult = await loadAndGenerate(opts.generator, basicArgs, archRef, generatedDir);
+    infraEntrypoint = path.resolve(generatedDir, generateResult.entrypoint!);
+    stack.provisionFile = infraEntrypoint;
+  } else {
+    if (!stack.archRefFile || !stack.provisionFile) {
+      logger.error("Please avoid using the --apply option during the initial deployment.");
+      process.exit(1);
+    }
+    archRef = loadArchRef(stack.archRefFile);
+    infraEntrypoint = stack.provisionFile;
   }
-  archRef = archRef ?? loadArchRef(`.pluto/${sta.name}/arch.yml`);
-  infraEntrypoint =
-    infraEntrypoint ?? path.resolve("./", `.pluto/${sta.name}/compiled/${sta.engine}.js`);
 
-  const workdir = path.resolve("./", `.pluto/${sta.name}/compiled`);
+  // TODO: make the workdir same with generated dir.
+  const workdir = path.join(generatedDir, `compiled`);
   // build the adapter based on the engine type
-  const adpt = BuildAdapterByEngine(sta.engine, {
+  const adapter = BuildAdapterByEngine(stack.engineType, {
     ...basicArgs,
-    entrypoint: infraEntrypoint,
-    workdir: workdir,
     archRef: archRef,
+    entrypoint: infraEntrypoint!,
+    workdir: workdir,
   });
-  if (!adpt) {
-    logger.error("No such engine.");
+  if (!adapter) {
+    logger.error(`There is no engine of type ${stack.engineType}.`);
     process.exit(1);
   }
-  if (sta.adapter) {
-    adpt.load(sta.adapter?.state);
+  if (stack.adapterState) {
+    adapter.load(stack.adapterState);
   }
 
   try {
-    sta.adapter = {
-      entrypoint: infraEntrypoint,
-      workdir: workdir,
-      state: adpt.dump(),
-    };
-    saveConfig(proj);
-
     logger.info("Applying...");
-    const applyResult = await adpt.deploy();
-
+    const applyResult = await adapter.deploy();
+    stack.setDeployed();
+    stack.adapterState = adapter.dump();
+    dumpProject(project);
     logger.info("Successfully applied!");
+
     logger.info("Here are the resource outputs:");
     for (const key in applyResult.outputs) {
       logger.info(`${key}:`, applyResult.outputs[key]);
     }
-
-    sta.adapter = {
-      entrypoint: infraEntrypoint,
-      workdir: workdir,
-      state: adpt.dump(),
-    };
-    saveConfig(proj);
   } catch (e) {
     if (e instanceof Error) {
       logger.error(e.message);

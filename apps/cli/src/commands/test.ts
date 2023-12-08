@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
-import { arch, core, engine, project, runtime, simulator } from "@plutolang/base";
+import { arch, config, core, engine, runtime, simulator } from "@plutolang/base";
 import { BuildAdapterByEngine } from "@plutolang/adapters";
-import { loadConfig } from "../utils";
+import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 
@@ -20,29 +20,35 @@ export async function test(entrypoint: string, opts: TestOptions) {
     throw new Error(`No such file, ${entrypoint}`);
   }
 
-  const proj = loadConfig();
-  let sta: project.Stack | undefined;
-  if (opts.stack) {
-    sta = proj.getStack(opts.stack);
-    if (!sta) {
-      logger.error("No such stack.");
-      process.exit(1);
-    }
-  } else {
-    sta = proj.getStack(proj.current);
-    if (!sta) {
-      logger.error("There is not existing stack. Please create a new one first.");
-      process.exit(1);
-    }
+  const projectRoot = path.resolve("./");
+  if (!isPlutoProject(projectRoot)) {
+    logger.error("The current location is not located at the root of a Pluto project.");
+    process.exit(1);
   }
+  const proj = loadProject(projectRoot);
+
+  const stackName = opts.stack ?? proj.current;
+  if (!stackName) {
+    logger.error(
+      "There isn't a default stack. Please use the --stack option to specify which stack you want."
+    );
+    process.exit(1);
+  }
+
+  let stack = proj.getStack(stackName);
+  if (!stack) {
+    logger.error(`There is no stack named ${stackName}.`);
+    process.exit(1);
+  }
+
+  // If in simulation mode, switch the platform and engine of the stack to simulator.
   if (opts.sim) {
-    sta.runtime = new project.SimulatorRuntime();
-    sta.engine = engine.Type.simulator;
+    stack = new config.Stack(stack.name, runtime.Type.Simulator, engine.Type.simulator);
   }
 
   const basicArgs: core.BasicArgs = {
     project: proj.name,
-    stack: sta,
+    stack: stack,
     rootpath: path.resolve("."),
   };
 
@@ -52,7 +58,7 @@ export async function test(entrypoint: string, opts: TestOptions) {
 
   const testGroupArchs = splitTestGroup(archRef);
   for (let testGroupIdx = 0; testGroupIdx < testGroupArchs.length; testGroupIdx++) {
-    await testOneGroup(testGroupIdx, testGroupArchs[testGroupIdx], proj, sta, opts);
+    await testOneGroup(testGroupIdx, testGroupArchs[testGroupIdx], proj, stack, opts);
   }
 }
 
@@ -67,44 +73,56 @@ function splitTestGroup(archRef: arch.Architecture): arch.Architecture[] {
 async function testOneGroup(
   testGroupIdx: number,
   testGroupArch: arch.Architecture,
-  proj: project.Project,
-  sta: project.Stack,
+  project: config.Project,
+  stack: config.Stack,
   opts: TestOptions
 ) {
   const testId = `test-${testGroupIdx}`;
 
   const basicArgs: core.BasicArgs = {
-    project: proj.name,
-    stack: sta,
-    rootpath: path.resolve("."),
+    project: project.name,
+    rootpath: project.rootpath,
+    stack: stack,
   };
+  const generatedDir = path.join(
+    project.rootpath,
+    PLUTO_PROJECT_OUTPUT_DIR,
+    stack.name,
+    testId,
+    "generated"
+  );
 
   // generate the IR code based on the arch ref
   logger.info("Generating the IaC Code and computing modules...");
-  const outdir = path.join(".pluto", sta.name, testId);
-  const generateResult = await loadAndGenerate(opts.generator, basicArgs, testGroupArch, outdir);
+  const generateResult = await loadAndGenerate(
+    opts.generator,
+    basicArgs,
+    testGroupArch,
+    generatedDir
+  );
 
-  const workdir = path.resolve("./", outdir, `compiled`);
+  // TODO: make the work dir same with generated dir.
+  const workdir = path.join(generatedDir, `compiled`);
   // build the adapter based on the engine type
-  const adpt = BuildAdapterByEngine(sta.engine, {
+  const adapter = BuildAdapterByEngine(stack.engineType, {
     ...basicArgs,
+    archRef: testGroupArch,
     entrypoint: generateResult.entrypoint!,
     workdir: workdir,
-    archRef: testGroupArch,
   });
-  if (!adpt) {
-    logger.error("No such engine.");
+  if (!adapter) {
+    logger.error(`There is no engine of type ${stack.engineType}.`);
     process.exit(1);
   }
 
-  const tmpSta = new project.Stack(`${sta.name}-${testId}`, sta.runtime, sta.engine);
-
+  const tmpSta = new config.Stack(`${stack.name}-${testId}`, stack.platformType, stack.engineType);
   try {
     logger.info("Applying...");
-    const applyResult = await adpt.deploy();
+    const applyResult = await adapter.deploy();
+    tmpSta.setDeployed();
     logger.info("Successfully applied!");
 
-    if (sta.runtime.type == runtime.Type.Simulator) {
+    if (stack.platformType == runtime.Type.Simulator) {
       const simServerUrl = applyResult.outputs!["simulatorServerUrl"];
       for (const resourceName in testGroupArch.resources) {
         const resource = testGroupArch.resources[resourceName];
@@ -131,7 +149,8 @@ async function testOneGroup(
     }
 
     logger.info("Destroying...");
-    await adpt.destroy();
+    await adapter.destroy();
+    tmpSta.setUndeployed();
     logger.info("Successfully destroyed!");
   } catch (e) {
     if (e instanceof Error) {
@@ -175,8 +194,8 @@ interface TesterClient {
   runTests(): Promise<void>;
 }
 
-function buildTesterClient(sta: project.Stack, tester: Tester): TesterClient {
-  switch (sta.runtime.type) {
+function buildTesterClient(sta: config.Stack, tester: Tester): TesterClient {
+  switch (sta.platformType) {
     case runtime.Type.AWS:
       return new AwsTesterClient(tester);
     case runtime.Type.K8s:
@@ -187,7 +206,7 @@ function buildTesterClient(sta: project.Stack, tester: Tester): TesterClient {
     case runtime.Type.Custom:
       throw new Error("Not implemented yet.");
     default:
-      throw new Error(`Unknown runtime type, ${sta.runtime.type}`);
+      throw new Error(`Unknown runtime type, ${sta.platformType}`);
   }
 }
 

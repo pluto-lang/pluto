@@ -1,6 +1,5 @@
-import os from "os";
 import { input, select } from "@inquirer/prompts";
-import { engine, runtime, project } from "@plutolang/base";
+import { engine, runtime, config } from "@plutolang/base";
 
 export interface CreateStackArgs {
   name?: string;
@@ -8,7 +7,7 @@ export interface CreateStackArgs {
   engType?: engine.Type;
 }
 
-export async function createStack(args: CreateStackArgs): Promise<project.Stack> {
+export async function createStack(args: CreateStackArgs): Promise<config.Stack> {
   args.name =
     args.name ??
     (await input({
@@ -46,8 +45,6 @@ export async function createStack(args: CreateStackArgs): Promise<project.Stack>
       ],
     }));
 
-  const rt = await createRuntimeByType(args.rtType);
-
   args.engType =
     args.engType ??
     (await select({
@@ -65,34 +62,5 @@ export async function createStack(args: CreateStackArgs): Promise<project.Stack>
       ],
     }));
 
-  return new project.Stack(args.name, rt, args.engType);
-}
-
-async function createRuntimeByType(rtType: runtime.Type): Promise<project.Runtime> {
-  const rtBuilderMapping: { [key in runtime.Type]?: () => Promise<project.Runtime> } = {
-    [runtime.Type.AWS]: createAwsRuntime,
-    [runtime.Type.K8s]: createK8sRuntime,
-    [runtime.Type.AliCloud]: createAlicloudRuntime,
-  };
-
-  if (!(rtType in rtBuilderMapping)) {
-    throw new Error(`No such runtime type: ${rtType}`);
-  }
-  return await rtBuilderMapping[rtType]!();
-}
-
-async function createAwsRuntime(): Promise<project.AwsRuntime> {
-  return new project.AwsRuntime();
-}
-
-async function createK8sRuntime(): Promise<project.K8sRuntime> {
-  const kubeConfigPath = await input({
-    message: "Kubeconfig path",
-    default: `${os.homedir}/.kube/config`,
-  });
-  return new project.K8sRuntime(kubeConfigPath);
-}
-
-async function createAlicloudRuntime(): Promise<project.AlicloudRuntime> {
-  return new project.AlicloudRuntime();
+  return new config.Stack(args.name, args.rtType, args.engType);
 }

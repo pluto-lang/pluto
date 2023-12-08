@@ -1,7 +1,8 @@
 import { engine, runtime } from "@plutolang/base";
 import { createStack } from "../builder";
-import { loadConfig, saveConfig } from "../utils";
 import logger from "../log";
+import { dumpProject, isPlutoProject, loadProject } from "../utils";
+import { resolve } from "path";
 
 interface NewOptions {
   name?: string;
@@ -10,9 +11,14 @@ interface NewOptions {
 }
 
 export async function newStack(opts: NewOptions) {
+  if (!isPlutoProject(resolve("./"))) {
+    logger.error("The current location is not located at the root of a Pluto project.");
+    process.exit(1);
+  }
+  const proj = loadProject(resolve("./"));
+
   const sta = await createStack({ name: opts.name, rtType: opts.platform, engType: opts.engine });
-  const proj = loadConfig();
   proj.addStack(sta);
-  saveConfig(proj);
+  dumpProject(proj);
   logger.info("Created a stack.");
 }

@@ -8,6 +8,11 @@ import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
 
 export class StaticDeducer extends core.Deducer {
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly name = require(path.join(__dirname, "../package.json")).name;
+  //eslint-disable-next-line @typescript-eslint/no-var-requires
+  public readonly version = require(path.join(__dirname, "../package.json")).version;
+
   constructor(args: core.BasicArgs) {
     super(args);
   }

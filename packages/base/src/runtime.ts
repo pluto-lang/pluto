@@ -8,6 +8,10 @@ export enum Type {
   Custom = "CUSTOM",
 }
 
+export function isRuntimeType(value: any): value is Type {
+  return Object.values(Type).includes(value);
+}
+
 export function same(b: string, a: Type): boolean {
   return a == b.toUpperCase();
 }

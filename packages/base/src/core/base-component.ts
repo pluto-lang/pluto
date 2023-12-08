@@ -1,4 +1,4 @@
-import { Stack } from "../project";
+import { Stack } from "../config";
 
 export interface BasicArgs {
   /** The project name. */
@@ -22,4 +22,7 @@ export abstract class BaseComponent {
     this.rootpath = args.rootpath;
     this.log = args.log;
   }
+
+  public abstract get name(): string;
+  public abstract get version(): string;
 }
