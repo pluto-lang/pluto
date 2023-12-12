@@ -18,6 +18,9 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     steps:
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+        
       - name: Checkout Repo
         uses: actions/checkout@v3
 
