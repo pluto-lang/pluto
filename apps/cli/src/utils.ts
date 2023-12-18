@@ -2,7 +2,7 @@ import { homedir } from "os";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { ensureFileSync } from "fs-extra";
-import { dump, load } from "js-yaml";
+import { dump } from "js-yaml";
 import { config } from "@plutolang/base";
 
 // eslint-disable-next-line
@@ -33,9 +33,8 @@ export function getProjectName(projectRoot: string): string {
  */
 export function loadProject(projectRoot: string): config.Project {
   const content = readFileSync(join(projectRoot, PLUTO_PROJECT_CONFIG_PATH));
-  const obj = load(content.toString());
-  const project = new config.Project(getProjectName(projectRoot), projectRoot);
-  return Object.assign(project, obj);
+  const projectName = getProjectName(projectRoot);
+  return config.Project.loadFromYaml(projectName, projectRoot, content.toString());
 }
 
 /**
@@ -44,10 +43,10 @@ export function loadProject(projectRoot: string): config.Project {
 export function dumpProject(project: config.Project) {
   const rootpath = project.rootpath;
 
-  const obj = project as any;
+  const obj = project.deepCopy() as any;
   delete obj.name;
   delete obj.rootpath;
-  const content = dump(project, { sortKeys: true });
+  const content = dump(obj, { sortKeys: true });
 
   const configFile = join(rootpath, PLUTO_PROJECT_CONFIG_PATH);
   ensureFileSync(configFile);

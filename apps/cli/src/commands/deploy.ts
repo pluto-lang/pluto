@@ -9,6 +9,7 @@ import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import { loadArchRef } from "./utils";
 import { loadProject, dumpProject, PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject } from "../utils";
+import { ensureDirSync } from "fs-extra";
 
 export interface DeployOptions {
   stack?: string;
@@ -52,6 +53,7 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
   };
   const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
   const generatedDir = path.join(stackBaseDir, "generated");
+  ensureDirSync(generatedDir);
 
   let archRef: arch.Architecture | undefined;
   let infraEntrypoint: string | undefined;
@@ -78,6 +80,8 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     const generateResult = await loadAndGenerate(opts.generator, basicArgs, archRef, generatedDir);
     infraEntrypoint = path.resolve(generatedDir, generateResult.entrypoint!);
     stack.provisionFile = infraEntrypoint;
+
+    dumpProject(project);
   } else {
     if (!stack.archRefFile || !stack.provisionFile) {
       logger.error("Please avoid using the --apply option during the initial deployment.");
@@ -104,12 +108,11 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     adapter.load(stack.adapterState);
   }
 
+  let exitCode = 0;
   try {
     logger.info("Applying...");
     const applyResult = await adapter.deploy();
     stack.setDeployed();
-    stack.adapterState = adapter.dump();
-    dumpProject(project);
     logger.info("Successfully applied!");
 
     logger.info("Here are the resource outputs:");
@@ -122,8 +125,12 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     } else {
       logger.error(e);
     }
-    process.exit(1);
+    exitCode = 1;
+  } finally {
+    stack.adapterState = adapter.dump();
+    dumpProject(project);
   }
+  process.exit(exitCode);
 }
 
 async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Promise<boolean> {

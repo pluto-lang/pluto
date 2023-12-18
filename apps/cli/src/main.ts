@@ -78,6 +78,11 @@ async function main() {
     .command("destroy")
     .description("Take the application offline and revoke all deployed resources")
     .option("-s, --stack <stack>", "Specified stack")
+    .option(
+      "--clean",
+      "Used to clean up resources when there has been no successful deployment.",
+      false
+    )
     .action(cmd.destroy);
 
   program.command("stack", "Manage stacks");
