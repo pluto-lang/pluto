@@ -1,5 +1,19 @@
 # @plutolang/cli
 
+## 0.2.6
+
+### Patch Changes
+
+- 0d8fc6f: fix: the directory does not exist when generating initial files
+  fix: cannot destroy before successfully deploying
+  fix: the configuration file format does not adapt the latest version
+- Updated dependencies [0d8fc6f]
+  - @plutolang/base@0.2.5
+  - @plutolang/adapters@0.2.6
+  - @plutolang/static-deducer@0.2.5
+  - @plutolang/graphviz-generator@0.2.5
+  - @plutolang/static-generator@0.2.5
+
 ## 0.2.5
 
 ### Patch Changes

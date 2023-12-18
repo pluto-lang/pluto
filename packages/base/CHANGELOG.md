@@ -1,5 +1,13 @@
 # @pluto/base
 
+## 0.2.5
+
+### Patch Changes
+
+- 0d8fc6f: fix: the directory does not exist when generating initial files
+  fix: cannot destroy before successfully deploying
+  fix: the configuration file format does not adapt the latest version
+
 ## 0.2.4
 
 ### Patch Changes
