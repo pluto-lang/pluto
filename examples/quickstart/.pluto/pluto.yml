@@ -1,12 +1,12 @@
-name: quickstart
-stacks:
-  - name: aws
-    runtime:
-      type: AWS
-    engine: pulumi
-  - name: k8s
-    runtime:
-      type: K8S
-      kubeConfigPath: /Users/zhengsj/.kube/config
-    engine: pulumi
 current: aws
+stacks:
+  - configs: {}
+    deployed: false
+    engineType: pulumi
+    name: aws
+    platformType: AWS
+  - configs: {}
+    deployed: false
+    engineType: pulumi
+    name: k8s
+    platformType: K8S

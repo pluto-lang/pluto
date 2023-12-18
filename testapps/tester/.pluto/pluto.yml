@@ -1,7 +1,7 @@
-name: tester
-stacks:
-  - name: dev
-    runtime:
-      type: AWS
-    engine: pulumi
 current: dev
+stacks:
+  - configs: {}
+    deployed: false
+    engineType: pulumi
+    name: dev
+    platformType: AWS
