@@ -1,3 +1,4 @@
+import { load } from "js-yaml";
 import { Stack } from "./stack";
 
 export class Project {
@@ -49,5 +50,20 @@ export class Project {
 
   public countStack(): number {
     return this.stacks.length;
+  }
+
+  public deepCopy(): Project {
+    const clonedProject = new Project(this.name, this.rootpath);
+    this.stacks.forEach((stack) => clonedProject.addStack(stack.deepCopy()));
+    clonedProject.current = this.current;
+    return clonedProject;
+  }
+
+  public static loadFromYaml(name: string, rootpath: string, yaml: string): Project {
+    const obj = load(yaml) as Project;
+    const project = new Project(name, rootpath);
+    Object.assign(project, obj);
+    project.stacks.forEach((stack) => Object.setPrototypeOf(stack, Stack.prototype));
+    return project;
   }
 }

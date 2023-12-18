@@ -1,7 +1,7 @@
-name: morning-message-slack
-stacks:
-  - name: aws
-    runtime:
-      type: AWS
-    engine: pulumi
 current: aws
+stacks:
+  - configs: {}
+    deployed: false
+    engineType: pulumi
+    name: aws
+    platformType: AWS

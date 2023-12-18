@@ -6,6 +6,7 @@ import { PLUTO_PROJECT_OUTPUT_DIR, dumpProject, isPlutoProject, loadProject } fr
 
 export interface DestoryOptions {
   stack?: string;
+  clean?: boolean;
 }
 
 export async function destroy(opts: DestoryOptions) {
@@ -30,12 +31,14 @@ export async function destroy(opts: DestoryOptions) {
     process.exit(1);
   }
 
-  if (stack.isDeployed()) {
+  // If the user sets the --clean option, there is no need for us to check if the stack has been deployed.
+  // We will clean up all the resources that have been created, even if the stack has not been deployed.
+  if (!opts.clean && !stack.isDeployed()) {
     logger.error("This stack hasn't been deployed yet. Please deploy it first.");
     process.exit(1);
   }
 
-  if (!stack.archRefFile || !stack.provisionFile || !stack.adapterState) {
+  if (!stack.archRefFile || !stack.provisionFile) {
     logger.error(
       "There are some configurations missing in this stack. You can try redeploying the stack and give it another go."
     );
@@ -59,6 +62,9 @@ export async function destroy(opts: DestoryOptions) {
   if (!adapter) {
     logger.error(`There is no engine of type ${stack.engineType}.`);
     process.exit(1);
+  }
+  if (stack.adapterState) {
+    adapter.load(stack.adapterState);
   }
 
   try {

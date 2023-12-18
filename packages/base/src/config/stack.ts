@@ -2,14 +2,14 @@ import * as engine from "../engine";
 import * as runtime from "../runtime";
 
 export class Stack {
-  /** The state data of adapter. */
-  private adapterData?: string;
+  /** The configuration items are used for components, such as the kubeconfig path. */
+  public configs: Record<string, any> = {};
   /** The file path to the last deduction result. */
   private lastArchRefFile?: string;
   /** The argument used in the last adapter construction. */
   private lastProvisionFile?: string;
-  /** The configuration items are used for components, such as the kubeconfig path. */
-  public configs: Record<string, any> = {};
+  /** The state data of adapter. */
+  private adapterData?: string;
 
   private deployed: boolean = false;
 
@@ -56,5 +56,15 @@ export class Stack {
 
   public isDeployed(): boolean {
     return this.deployed;
+  }
+
+  public deepCopy(): Stack {
+    const clonedStack = new Stack(this.name, this.platformType, this.engineType);
+    clonedStack.configs = { ...this.configs };
+    clonedStack.lastArchRefFile = this.lastArchRefFile;
+    clonedStack.lastProvisionFile = this.lastProvisionFile;
+    clonedStack.adapterData = this.adapterData;
+    clonedStack.deployed = this.deployed;
+    return clonedStack;
   }
 }

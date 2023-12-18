@@ -4,6 +4,7 @@ import { engine, runtime } from "@plutolang/base";
 import { createProject } from "../builder";
 import logger from "../log";
 import { dumpProject } from "../utils";
+import { ensureDirSync } from "fs-extra";
 
 const TEMPLATE_DIR = path.join(__dirname, "../../template");
 
@@ -32,8 +33,9 @@ export async function create(opts: NewOptions) {
 }
 
 function genInitFiles(destdir: string) {
-  const queue: string[] = [""];
+  ensureDirSync(destdir);
 
+  const queue: string[] = [""];
   while (queue.length) {
     const partProjDir = queue.shift()!;
     const tmplCurDir = path.join(TEMPLATE_DIR, partProjDir);
