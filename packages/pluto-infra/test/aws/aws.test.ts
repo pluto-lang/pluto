@@ -8,8 +8,5 @@ function pulumiProgram(filepath: string) {
   };
 }
 
-console.warn(process.env.AWS_ACCESS_KEY_ID);
-console.warn(process.env.AWS_SECRET_ACCESS_KEY);
-
 testPulumiProgram("kvstore on aws: dynamodb", pulumiProgram("./dynamodb"));
 testPulumiProgram("queue on aws: sns", pulumiProgram("./sns"));

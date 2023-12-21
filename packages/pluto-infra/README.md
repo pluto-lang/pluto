@@ -1,0 +1,3 @@
+To testing the provision, we need to prepare the credentials from the cloud platform. However, pull requests submitted from forked repositories cannot access the credentials stored in the secret of the Pluto repository. Therefore, in a pull request's continuous integration (CI) process, the tests related to provisioning will be excluded.
+
+if a pull request is submitted directly from the original repository itself, it can access and use the credentials stored in Pluto's secret repository. Consequently, when a release PR is created by changeset bot, all tests related to provisioning will be included and executed.

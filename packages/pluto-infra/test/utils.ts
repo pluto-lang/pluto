@@ -6,7 +6,10 @@ import { describe, test, expect, beforeAll, afterAll } from "vitest";
 import { LocalWorkspace, Stack } from "@pulumi/pulumi/automation";
 
 export function testPulumiProgram(caseName: string, program: () => Promise<any>) {
-  describe(`test ${caseName}`, async () => {
+  const inCI = process.env.CI ? true : false;
+  const inRelease = process.env.RELEASE ? true : false;
+
+  describe.skipIf(inCI && !inRelease)(`test ${caseName}`, async () => {
     // Prepare the test envirionment, and create the Pulumi stack.
     let stack: Stack | undefined = undefined;
     beforeAll(
