@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Install Graphviz
         run: sudo apt-get install -y graphviz
-        
+
       - name: Checkout Repo
         uses: actions/checkout@v3
 
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20.x
-      
+
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
         with:
@@ -54,6 +54,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Send a Slack notification if a publish happens
         if: steps.changesets.outputs.published == 'true'
@@ -63,7 +65,7 @@ jobs:
           # Slack channel id, channel name, or user id to post message.
           # See also: https://api.slack.com/methods/chat.postMessage#channels
           # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
-          channel-id: 'C061XR86079'
+          channel-id: "C061XR86079"
           # For posting a simple plain text message
           slack-message: "A new version of ${GITHUB_REPOSITORY} was published: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
         env:
