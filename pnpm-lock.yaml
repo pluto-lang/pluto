@@ -285,6 +285,9 @@ importers:
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
+      fs-extra:
+        specifier: ^11.1.1
+        version: 11.1.1
     devDependencies:
       '@aws-sdk/core':
         specifier: ^3.431.0
@@ -292,9 +295,15 @@ importers:
       '@types/express':
         specifier: ^4.17.20
         version: 4.17.20
+      '@types/fs-extra':
+        specifier: ^11.0.4
+        version: 11.0.4
       '@types/node':
         specifier: ^20.8.4
         version: 20.8.4
+      '@vitest/coverage-v8':
+        specifier: ^0.34.6
+        version: 0.34.6(vitest@0.34.6)
       cloudevents:
         specifier: ^8.0.0
         version: 8.0.0
@@ -304,6 +313,9 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
+      vitest:
+        specifier: ^0.34.6
+        version: 0.34.6
 
   testapps/tester:
     dependencies:
