@@ -48,7 +48,7 @@ Developers can continue defining variables required for their applications and w
 
 ![](http://cdn.zhengsj.cn/ob-1698301951197.png)
 
-The main idea behind this is to deduce the cloud resources that an application depends on from the user code, as well as the dependencies between resources. This builds a cloud resource topology, which serves as an architecture reference for the cloud environment. By further splitting and rewriting the user code, multiple computing modules can be exported that depend on this architecture reference. With this architecture reference as a basis, we are able to generate infrastructure code that is **not directly related to the user code**, but includes definitions of resources and deployment of computing modules. Finally, executing this infrastructure code creates and deploys a runtime environment for running applications in the cloud. You can learn more about this workflow in [this article](https://github.com/pluto-lang/pluto/blob/main/docs/en/how-pluto-works.md).
+The main idea behind this is to deduce the cloud resources that an application depends on from the user code, as well as the dependencies between resources. This builds a cloud resource topology, which serves as an architecture reference for the cloud environment. By further splitting and rewriting the user code, multiple computing modules can be exported that depend on this architecture reference. With this architecture reference as a basis, we are able to generate infrastructure code that is **not directly related to the user code**, but includes definitions of resources and deployment of computing modules. Finally, executing this infrastructure code creates and deploys a runtime environment for running applications in the cloud. You can learn more about this workflow in [this article](../documentation/how-pluto-works.en.md).
 
 The key to ensuring an exceptional development experience for users lies in the separation between compile-time executed code and user code. Developers should not need to specify during development which parts of their code are meant for compile-time execution versus runtime execution.
 
@@ -77,6 +77,6 @@ Here are a few more example applications:
 
 ## References
 
-- [How Pluto Works](https://github.com/pluto-lang/pluto/blob/main/docs/en/how-pluto-works.md)
-- [What Problem does Pluto Solve?](https://github.com/pluto-lang/pluto/blob/main/docs/en/what-problems-pluto-aims-to-address.md)
-- [Differences between Pluto and other Products](https://github.com/pluto-lang/pluto/blob/main/docs/en/whats-different.md)
+- [How Pluto Works](../documentation/how-pluto-works.en.md)
+- [What Problem does Pluto Solve?](../documentation/what-problems-pluto-aims-to-address.en.md)
+- [Differences between Pluto and other Products](../documentation/whats-different.en.md)

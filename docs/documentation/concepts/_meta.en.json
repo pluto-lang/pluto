@@ -1,0 +1,9 @@
+{
+  "deducer": "Deducer",
+  "generator": "Generator",
+  "adapter": "Adapter",
+  "arch-ref": "Architecture Reference",
+  "stack": "Stack",
+  "simulator": "Simulator",
+  "sdk": "SDK"
+}

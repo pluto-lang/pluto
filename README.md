@@ -80,7 +80,7 @@ The key difference between Pluto and other products is that it uses program anal
 - Compared to SDK-based IfC products like Shuttle and Nitric, Pluto obtains resource dependencies of applications through static program analysis rather than executing user code.
 - Both Winglang and Pluto are IfC products based on programming languages, but compared to Winglang, Pluto generates IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code.
 
-You can learn more about the differences with other project [here](./docs/en/whats-different.md).
+You can learn more about the differences with other project [here](./docs/documentation/whats-different.en.md).
 
 ## 🚀 Quick Start
 
@@ -129,13 +129,13 @@ npm install      # install the depnedencies
 pluto deploy     # shoot!
 ```
 
-For detailed steps, please refer to the [Getting Started Guide](./docs/en/getting-started.md).
+For detailed steps, please refer to the [Getting Started Guide](./docs/documentation/getting-started.en.md).
 
 > Currently, Pluto is limited to supporting single-file applications. Within each handler function, it is possible to access literal constants and regular functions that exist outside the scope of the handler function. However, accessing variables (except for resource variables), classes, interfaces is not currently supported.
 
 ## 👏 Contributing
 
-Pluto is currently in the PoC stage, and we welcome interested people to contribute. Whether it is suggestions or ideas about the problems Pluto aims to solve, the features it provides, or code implementation, you can participate in the community to build together. Check out the project [contribution guide](./docs/dev_guide/dev_guide.md).
+Pluto is currently in the PoC stage, and we welcome interested people to contribute. Whether it is suggestions or ideas about the problems Pluto aims to solve, the features it provides, or code implementation, you can participate in the community to build together. Check out the project [contribution guide](./docs/dev_guide/dev_guide.en.md).
 
 ## 🐎 Roadmap
 

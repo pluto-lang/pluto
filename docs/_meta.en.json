@@ -1,0 +1,21 @@
+{
+  "index": {
+    "title": "Home",
+    "type": "page",
+    "theme": {
+      "typesetting": "article"
+    }
+  },
+  "documentation": {
+    "title": "Documentation",
+    "type": "page"
+  },
+  "blogs": {
+    "title": "Blog",
+    "type": "page"
+  },
+  "dev_guide": {
+    "title": "Developer's Guide",
+    "type": "page"
+  }
+}

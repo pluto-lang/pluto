@@ -2,7 +2,7 @@
 
 This document will use the official SDK as an example to introduce the extension methods of the SDK, namely how to extend `@plutolang/pluto` and `@plutolang/pluto-infra`.
 
-If you encounter any unclear concepts or unexplained terms in this document, please refer to the ["How the SDK Works"](../en/concepts/sdk.md) for more information.
+If you encounter any unclear concepts or unexplained terms in this document, please refer to the ["How the SDK Works"](../documentation/concepts/sdk.en.md) for more information.
 
 ## Overall Process
 

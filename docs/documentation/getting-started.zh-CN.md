@@ -81,7 +81,7 @@ queue.subscribe(async (evt: CloudEvent): Promise<void> => {
 ```
 
 <p align="center">
-  <img src="http://cdn.zhengsj.cn/ob-1700630175532.png" alt="case arch" width="450">
+  <img src="../../assets/getting-started-case-arch.png" alt="case arch" width="450">
 </p>
 
 这段代码包含 3 个资源变量和 2 个处理过程：
@@ -105,7 +105,7 @@ export AWS_REGION=us-east-1
 ```
 
 <p align="center">
-  <img src="http://cdn.zhengsj.cn/ob-1700630203893.png" alt="aws arch" width="400">
+  <img src="../../assets/getting-started-aws-arch.png" alt="aws arch" width="400">
 </p>
 
 Pluto 将会在你指定的云平台上创建 3 个资源组件和 2 个函数对象，以 AWS 为例，将会创建：
