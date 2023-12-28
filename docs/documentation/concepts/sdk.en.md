@@ -25,7 +25,7 @@ The `@plutolang/base` library contains three basic interfaces:
    - `getPermission()`: Generates the necessary permissions for calling specific operations on itself.
    - `postProcess()`: Some operations need to be performed only after all configuration processes are completed. These operations are placed in this function. For example, AWS ApiGateway needs to configure Deployment and Stage after setting up all routes.
 
-If you're looking to extend the SDKs, check out [this document](../../dev_guide/extend-sdk.md).
+If you're looking to extend the SDKs, check out [this document](../../dev_guide/extend-sdk.en.md).
 
 ## FAQ
 

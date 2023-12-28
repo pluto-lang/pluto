@@ -67,7 +67,7 @@ You can learn why we created Pluto from here. In short, we want to solve several
 
 Overall, Pluto first deduces the required cloud resources and the dependencies between resources from the user code, and builds the architecture reference for the cloud. Then, based on the architecture reference, it generates IaC code independent of the user code, and splits the user code into multiple business modules. Finally, the IaC engine adapter calls the corresponding IaC engine to execute the deployment based on the type of IaC code, and publishes the application to the specified cloud platform. Throughout the entire process, the deducer, generator, and adapter can be easily replaced. You have the flexibility to implement them using different deducing and generating techniques, and also support additional IaC engines.
 
-You can learn more about the workflow of Pluto [here](./docs/en/how-pluto-works.md).
+You can learn more about the workflow of Pluto [here](./docs/documentation/how-pluto-works.en.md).
 
 ## 🤔️ Differences from Other Projects?
 
@@ -112,7 +112,7 @@ export AWS_REGION="xx-xxxx-x" # replace it with your AWS Region
 
 No additional configuration is necessary; you just need to know the location where the kubeconfig file is stored, typically at `~/.kube/config`.
 
-> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality. You can configure the required Kubernetes environment according to [this document](./docs/dev_guide/setup-k8s-dev-env.md).
+> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality. You can configure the required Kubernetes environment according to [this document](./docs/dev_guide/setup-k8s-dev-env.en.md).
 
 ### 1. Install Pluto
 

@@ -22,7 +22,7 @@
   - `getPermission()`: 用于生成调用自身特定操作时所需的权限。
   - `postProcess()`: 存在某些操作需要待所有配置过程完成后再开始进行，将该类操作放置在函数中。例如，AWS 的 ApiGateway 需要在配置完所有路由后，再配置 Deployment 和 Stage。
 
-如果你想扩展 SDK，请参考[这篇文档](../../dev_guide/extend-sdk_zh.md).
+如果你想扩展 SDK，请参考[这篇文档](../../dev_guide/extend-sdk.zh-CN.md).
 
 ## FAQ
 

@@ -50,7 +50,7 @@ See [here](https://www.pulumi.com/docs/install/) to install Pulumi
 
 #### Optional: Kind
 
-If you are interested in developing an Infrastructure Software Development Kit (SDK) for Kubernetes, a useful tool to consider is [kind](https://kind.sigs.k8s.io/). You can follow the [installation guide](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) for instructions on how to install it. Additionally, you can refer to the documentation on configuring the environment for Pluto by following [this link](./setup-k8s-dev-env.md). This will create a local cluster using Docker named pluto. On the Docker dashboard, you will be able to see a container named pluto-control-plane.
+If you are interested in developing an Infrastructure Software Development Kit (SDK) for Kubernetes, a useful tool to consider is [kind](https://kind.sigs.k8s.io/). You can follow the [installation guide](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) for instructions on how to install it. Additionally, you can refer to the documentation on configuring the environment for Pluto by following [this link](./setup-k8s-dev-env.en.md). This will create a local cluster using Docker named pluto. On the Docker dashboard, you will be able to see a container named pluto-control-plane.
 
 ### Cloning
 

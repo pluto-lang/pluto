@@ -112,7 +112,7 @@ export AWS_REGION="xx-xxxx-x" # 替换成你期望部署的 Region
 
 不需要额外的配置，只需知道 kubeconfig 存放的位置即可，通常在 `~/.kube/config`。
 
-> 如果选择 Kubernetes 作为运行时环境，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](./docs/dev_guide/setup-k8s-dev-env.md)配置所需的 Kubernetes 环境。
+> 如果选择 Kubernetes 作为运行时环境，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](./docs/dev_guide/setup-k8s-dev-env.en.md)配置所需的 Kubernetes 环境。
 
 ### 1. 安装 Pluto
 
@@ -135,7 +135,7 @@ pluto deploy     # 一键部署！
 
 ## 👏 参与贡献
 
-Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是对 Pluto 要解决的问题、提供的特性，还是代码实现有任何建议或者想法，都可以参与到社区进行共建。[项目贡献指南](./docs/dev_guide/dev_guide.md)。
+Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是对 Pluto 要解决的问题、提供的特性，还是代码实现有任何建议或者想法，都可以参与到社区进行共建。[项目贡献指南](./docs/dev_guide/dev_guide.en.md)。
 
 ## 🐎 路线规划
 
