@@ -1,0 +1,20 @@
+name: Trigger Website Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-website:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send an update docs event to website repository
+        run: |
+          curl -X POST \
+               -H "Authorization: Bearer $GITHUB_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               "https://api.github.com/repos/pluto-lang/website/dispatches" \
+               -d '{"event_type": "trigger-update-docs"}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PLUTO_WEBSITE_WORKFLOW_GITHUB_TOKEN }}
