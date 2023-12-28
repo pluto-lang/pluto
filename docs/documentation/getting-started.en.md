@@ -81,7 +81,7 @@ queue.subscribe(async (evt: CloudEvent): Promise<void> => {
 ```
 
 <p align="center">
-  <img src="http://cdn.zhengsj.cn/ob-1700630175532.png" alt="case arch" width="450">
+  <img src="../../assets/getting-started-case-arch.png" alt="case arch" width="450">
 </p>
 
 This code includes 3 resource variables and 2 processes:
@@ -105,7 +105,7 @@ export AWS_REGION=us-east-1
 ```
 
 <p align="center">
-  <img src="http://cdn.zhengsj.cn/ob-1700630203893.png" alt="aws arch" width="400">
+  <img src="../../assets/getting-started-aws-arch.png" alt="aws arch" width="400">
 </p>
 
 Pluto will create 3 resource components and 2 function objects on the specified cloud platform. For example, if you chose AWS, it will create:

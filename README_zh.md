@@ -43,7 +43,7 @@ Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用�
 
 ## 🤯 痛点
 
-[从这里可以了解我们为什么要做 Pluto](./docs/zh-CN/what-problems-pluto-aims-to-address.md)，简单讲，我们想解决几个你或许经常遇到的痛点。
+[从这里可以了解我们为什么要做 Pluto](./docs/documentation/what-problems-pluto-aims-to-address.zh-CN.md)，简单讲，我们想解决几个你或许经常遇到的痛点。
 
 - **上手门槛高**：开发一个云应用程序需要同时掌握业务与基础设施两种技术栈，同时又很难测试和调试，导致开发者在编写业务之外耗费了大量精力。
 - **架构选型难**：目前云服务提供商提供了数百种能力选项，Kubernetes 更是有无穷尽的能力组合，普通开发者难以针对自身的业务确定一个合适的架构选型。
@@ -65,7 +65,7 @@ Pluto 是一种新型开源编程语言，旨在帮助开发者编写云应用�
 
 整体上，Pluto 首先从用户代码中推导出所需云资源及资源间依赖关系，构建云参考架构（architecture reference）。然后，依据 arch ref 生成一份独立于用户代码的 IaC 代码，并将用户代码拆分成多个业务模块。最终，由 IaC 引擎适配器根据 IaC 代码的类型调用相应 IaC 引擎执行部署，将应用程序发布到指定的云平台上。整个流程中，推导器、生成器、适配器都是可替换的，以此来支持更多不同的推导、生成方式和 IaC 引擎。
 
-可以在[这篇文章](./docs/zh-CN/how-pluto-works.md)中详细了解 Pluto 的工作流程。
+可以在[这篇文章](./docs/documentation/how-pluto-works.zh-CN.md)中详细了解 Pluto 的工作流程。
 
 ## 🤔️ 与其他项目的不同?
 
@@ -78,7 +78,7 @@ Pluto 与其他产品的关键区别在于：它利用程序分析技术直接�
 - 与基于 SDK 的 IfC 产品（如 Shuttle、Nitric）相比，Pluto 通过静态程序分析获取应用的资源依赖，而不是通过执行用户代码来获取。
 - Winglang 和 Pluto 都属于基于编程语言的 IfC 产品，但与 Winglang 相比，Pluto 会生成独立于用户代码的 IaC 代码，使得编译时执行的代码与用户代码没有直接关联。
 
-可以在[这篇文档](./docs/zh-CN/whats-different.md)中详细了解与其他产品的不同之处。
+可以在[这篇文档](./docs/documentation/whats-different.zh-CN.md)中详细了解与其他产品的不同之处。
 
 ## 🚀 快速开始
 
@@ -112,7 +112,7 @@ export AWS_REGION="xx-xxxx-x" # 替换成你期望部署的 Region
 
 不需要额外的配置，只需知道 kubeconfig 存放的位置即可，通常在 `~/.kube/config`。
 
-> 如果选择 Kubernetes 作为运行时环境，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](./docs/dev_guide/setup-k8s-dev-env.md)配置所需的 Kubernetes 环境。
+> 如果选择 Kubernetes 作为运行时环境，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](./docs/dev_guide/setup-k8s-dev-env.en.md)配置所需的 Kubernetes 环境。
 
 ### 1. 安装 Pluto
 
@@ -129,13 +129,13 @@ npm install      # 下载依赖
 pluto deploy     # 一键部署！
 ```
 
-详细步骤可以参考[上手指南](./docs/zh-CN/getting-started.md)。
+详细步骤可以参考[上手指南](./docs/documentation/getting-started.zh-CN.md)。
 
 > 目前，Pluto 只支持单文件。在每个处理程序函数中，支持访问处理程序函数作用域之外的字面量常量与普通函数，尚不支持访问变量(资源变量除外)、类、接口等。
 
 ## 👏 参与贡献
 
-Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是对 Pluto 要解决的问题、提供的特性，还是代码实现有任何建议或者想法，都可以参与到社区进行共建。[项目贡献指南](./docs/dev_guide/dev_guide.md)。
+Pluto 目前还处于 PoC 阶段，欢迎感兴趣的人参与贡献，无论是对 Pluto 要解决的问题、提供的特性，还是代码实现有任何建议或者想法，都可以参与到社区进行共建。[项目贡献指南](./docs/dev_guide/dev_guide.en.md)。
 
 ## 🐎 路线规划
 

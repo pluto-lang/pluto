@@ -2,7 +2,7 @@
 
 ## Requirements
 
-First, you should consult the [Developer Guide](./dev_guide.md) for instructions on how to set up your initial development environment. Once you have completed that step, you can proceed with the following.
+First, you should consult the [Developer Guide](./dev_guide.en.md) for instructions on how to set up your initial development environment. Once you have completed that step, you can proceed with the following.
 
 ## Prepare the Kubernetes cluster
 

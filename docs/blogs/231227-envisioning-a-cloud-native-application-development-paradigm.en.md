@@ -1,6 +1,6 @@
 # Envisioning a Cloud-Native Application Development Paradigm
 
-![cover](../../../assets/231227-cover.png)
+![cover](../../assets/231227-cover.png)
 
 ## Background
 
@@ -22,7 +22,7 @@ But does the development approach of microservices and containers still hold up 
 
 In essence, the development model directly based on FaaS is less than ideal, posing significant challenges in managing and coordinating functions effectively. Naturally, we seek a better experience in application development. It is with this in mind that a new concept is introduced: **Monolithic Programming, Compile-Time Splitting, and Distributed Execution**.
 
-![principle](../../../assets/231227-step.png)
+![principle](../../assets/231227-step.png)
 
 ## Conceptual Analogies
 
@@ -101,7 +101,7 @@ async function main() {
 main();
 ```
 
-![show case](../../../assets/231227-case.png)
+![show case](../../assets/231227-case.png)
 
 The execution of this code is expected to manifest as illustrated above:
 

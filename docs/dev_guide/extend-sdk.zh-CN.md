@@ -2,7 +2,7 @@
 
 本篇文档将以官方 SDK 为例，介绍 SDK 的扩展方式，即如何扩展 `@plutolang/pluto` 和 `@plutolang/pluto-infra`。
 
-如果在本篇文档中遇到不清楚且未解释的概念，请从[“SDK 工作原理”](../zh-CN/concepts/sdk.md)中了解。
+如果在本篇文档中遇到不清楚且未解释的概念，请从[“SDK 工作原理”](../documentation/concepts/sdk.zh-CN.md)中了解。
 
 ## 整体过程
 

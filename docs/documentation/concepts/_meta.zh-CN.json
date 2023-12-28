@@ -1,0 +1,9 @@
+{
+  "deducer": "推导器",
+  "generator": "生成器",
+  "adapter": "适配器",
+  "arch-ref": "参考架构",
+  "stack": "工作栈",
+  "simulator": "模拟器",
+  "sdk": "SDK"
+}

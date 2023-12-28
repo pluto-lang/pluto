@@ -48,7 +48,7 @@ router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
 
 ![](http://cdn.zhengsj.cn/ob-1698301951197.png)
 
-这背后的主要思路是：从用户代码中推导出应用程序所依赖的云资源，以及资源间的依赖关系，构建出云资源拓扑图，也就是针对云环境的参考架构（Architecture Reference）。进一步对用户代码进行拆分、改写，导出多个计算模块，同时依赖于参考架构，可以生成一份**与用户代码不直接相关**的基础设施代码，其中包含对资源的定义与计算模块的发布。最终，执行这份基础设施代码就能创建与部署应用程序在云上的运行环境。可以在[这篇文章](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/how-pluto-works.md)中了解详细的工作流程。
+这背后的主要思路是：从用户代码中推导出应用程序所依赖的云资源，以及资源间的依赖关系，构建出云资源拓扑图，也就是针对云环境的参考架构（Architecture Reference）。进一步对用户代码进行拆分、改写，导出多个计算模块，同时依赖于参考架构，可以生成一份**与用户代码不直接相关**的基础设施代码，其中包含对资源的定义与计算模块的发布。最终，执行这份基础设施代码就能创建与部署应用程序在云上的运行环境。可以在[这篇文章](../documentation/how-pluto-works.zh-CN.md)中了解详细的工作流程。
 
 保障用户开发体验的关键在于编译时执行的代码不能与用户代码直接关联，否则就需要开发者在开发时指定哪些代码是编译时执行的，哪些代码是运行时执行的。
 
@@ -75,6 +75,6 @@ Demo 中，我在一份代码文件中，定义 3 个变量，KVStore、Queue、
 
 ## 参考
 
-- [Pluto 工作原理](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/how-pluto-works.md)
-- [Pluto 解决什么问题](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/what-problems-pluto-aims-to-address.md)
-- [Pluto 和其他技术有什么不同](https://github.com/pluto-lang/pluto/blob/main/docs/zh-CN/whats-different.md)
+- [Pluto 工作原理](../documentation/how-pluto-works.zh-CN.md)
+- [Pluto 解决什么问题](../documentation/what-problems-pluto-aims-to-address.zh-CN.md)
+- [Pluto 和其他技术有什么不同](../documentation/whats-different.zh-CN.md)

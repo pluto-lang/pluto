@@ -1,0 +1,9 @@
+{
+  "extend-sdk": "SDK 扩展手册",
+  "dev_guide": {
+    "display": "hidden"
+  },
+  "setup-k8s-dev-env": {
+    "display": "hidden"
+  }
+}

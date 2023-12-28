@@ -67,7 +67,7 @@ You can learn why we created Pluto from here. In short, we want to solve several
 
 Overall, Pluto first deduces the required cloud resources and the dependencies between resources from the user code, and builds the architecture reference for the cloud. Then, based on the architecture reference, it generates IaC code independent of the user code, and splits the user code into multiple business modules. Finally, the IaC engine adapter calls the corresponding IaC engine to execute the deployment based on the type of IaC code, and publishes the application to the specified cloud platform. Throughout the entire process, the deducer, generator, and adapter can be easily replaced. You have the flexibility to implement them using different deducing and generating techniques, and also support additional IaC engines.
 
-You can learn more about the workflow of Pluto [here](./docs/en/how-pluto-works.md).
+You can learn more about the workflow of Pluto [here](./docs/documentation/how-pluto-works.en.md).
 
 ## 🤔️ Differences from Other Projects?
 
@@ -80,7 +80,7 @@ The key difference between Pluto and other products is that it uses program anal
 - Compared to SDK-based IfC products like Shuttle and Nitric, Pluto obtains resource dependencies of applications through static program analysis rather than executing user code.
 - Both Winglang and Pluto are IfC products based on programming languages, but compared to Winglang, Pluto generates IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code.
 
-You can learn more about the differences with other project [here](./docs/en/whats-different.md).
+You can learn more about the differences with other project [here](./docs/documentation/whats-different.en.md).
 
 ## 🚀 Quick Start
 
@@ -112,7 +112,7 @@ export AWS_REGION="xx-xxxx-x" # replace it with your AWS Region
 
 No additional configuration is necessary; you just need to know the location where the kubeconfig file is stored, typically at `~/.kube/config`.
 
-> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality. You can configure the required Kubernetes environment according to [this document](./docs/dev_guide/setup-k8s-dev-env.md).
+> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality. You can configure the required Kubernetes environment according to [this document](./docs/dev_guide/setup-k8s-dev-env.en.md).
 
 ### 1. Install Pluto
 
@@ -129,13 +129,13 @@ npm install      # install the depnedencies
 pluto deploy     # shoot!
 ```
 
-For detailed steps, please refer to the [Getting Started Guide](./docs/en/getting-started.md).
+For detailed steps, please refer to the [Getting Started Guide](./docs/documentation/getting-started.en.md).
 
 > Currently, Pluto is limited to supporting single-file applications. Within each handler function, it is possible to access literal constants and regular functions that exist outside the scope of the handler function. However, accessing variables (except for resource variables), classes, interfaces is not currently supported.
 
 ## 👏 Contributing
 
-Pluto is currently in the PoC stage, and we welcome interested people to contribute. Whether it is suggestions or ideas about the problems Pluto aims to solve, the features it provides, or code implementation, you can participate in the community to build together. Check out the project [contribution guide](./docs/dev_guide/dev_guide.md).
+Pluto is currently in the PoC stage, and we welcome interested people to contribute. Whether it is suggestions or ideas about the problems Pluto aims to solve, the features it provides, or code implementation, you can participate in the community to build together. Check out the project [contribution guide](./docs/dev_guide/dev_guide.en.md).
 
 ## 🐎 Roadmap
 
