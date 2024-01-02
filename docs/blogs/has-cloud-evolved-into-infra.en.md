@@ -1,3 +1,7 @@
+---
+title: Has the Cloud Truly Evolved into Infrastructure?
+---
+
 # Has the Cloud Truly Evolved into Infrastructure?
 
 ## Is cloud considered as infrastructure 🤔️
