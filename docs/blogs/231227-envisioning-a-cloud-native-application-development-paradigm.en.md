@@ -1,48 +1,50 @@
-# Envisioning a Cloud-Native Application Development Paradigm
+---
+title: Rethinking a Cloud-Native Application Development Paradigm
+---
+
+# Rethinking a Cloud-Native Application Development Paradigm
 
 ![cover](../../assets/231227-cover.png)
 
-## Background
+## Introduction
 
-Cloud-native applications are commonly depicted as those conceived and cultivated atop cloud infrastructure. Such applications, built on cloud foundations, adeptly harness the cloud's offerings of autoscaling and high reliability. For individual developers and small to medium-sized enterprises, this means powerful support without the need to grapple with the intricacies of infrastructure—a truly enticing prospect.
+Cloud-native applications are conventionally identified as those designed and nurtured on cloud infrastructure. Such applications, rooted in cloud technologies, skillfully benefit from the cloud's features of autoscaling and high reliability. This offers robust support for individual developers and SMEs, liberating them from wrestling with the complexities of infrastructure management—an undoubtedly attractive proposition.
 
-### Current State
+### Present Scenario
 
-How, then, are cloud applications currently developed? Mention of cloud-native applications typically brings to mind containers and microservices, both integral to CNCF's definition of the term. A standard development workflow might involve crafting application code at a microservices level, packaging it into containers, and deploying it onto a PaaS platform.
+So, how are cloud applications currently being developed? References to cloud-native applications usually conjure images of containers and microservices, both of which are intrinsic to the CNCF's definition of the term. A typical development workflow might encompass writing application code at a microservices level, packaging it into containers, and deploying it onto a PaaS platform.
 
-Yet, as the cloud evolves, Function as a Service (FaaS) has emerged as a critical cloud component. Compared to PaaS, FaaS integrates more closely with cloud capabilities, boasting superior performance in scaling and cold starts. For example, AWS Lambda has achieved cold start latencies on the order of milliseconds.
+However, as cloud technologies evolve, Function as a Service (FaaS) has emerged as a pivotal cloud component. Compared to PaaS, FaaS integrates more intimately with cloud capabilities, offering superior performance in scaling and cold starts. For instance, AWS Lambda has achieved cold start latencies on the order of hundreds of milliseconds
 
-### Challenges
+### Hurdles
 
-But does the development approach of microservices and containers still hold up for FaaS-based cloud-native applications? Consider the following points:
+But does the traditional development methodology of microservices and containers still prove effective for FaaS-based cloud-native applications? Consider the following:
 
-1. Services carried by functions, often termed NanoServices, have a finer granularity than microservices. The process of packaging and publishing each function individually can be **laborious**, despite the command-line tools provided by cloud vendors.
-2. Splitting an application into a multitude of functions, each functionally isolated, necessitates inter-function communication via SDKs. This leads to a development experience that lacks **coherence**, with frequent context-switching among functions.
-3. Orchestrating functions involves a **high learning curve**, requiring familiarity with the cloud's event mechanisms and orchestration tools.
+1. Services encapsulated by functions, often called NanoServices, possess a finer granularity than microservices. The process of packaging and deploying each function individually can be **tedious**, despite the command-line tools provided by cloud vendors.
+2. Dividing an application into numerous functions, each functionally isolated, necessitates inter-function communication via SDKs. This results in a development experience that lacks **consistency**, with frequent context-switching among functions.
+3. Orchestrating functions entails a **steep learning curve**, demanding familiarity with the cloud's event mechanisms and orchestration tools.
 
-In essence, the development model directly based on FaaS is less than ideal, posing significant challenges in managing and coordinating functions effectively. Naturally, we seek a better experience in application development. It is with this in mind that a new concept is introduced: **Monolithic Programming, Compile-Time Splitting, and Distributed Execution**.
+Essentially, the development model directly based on FaaS falls short of ideal, posing substantial challenges in effectively managing and coordinating functions. It's only natural to aspire for an improved application development experience. To this end, a fresh concept is proposed: **Monolithic Programming, Compile-Time Splitting, and Distributed Execution**.
 
 ![principle](../../assets/231227-step.png)
 
 ## Conceptual Analogies
 
-This concept might remind you of the parallel programming framework OpenMP. OpenMP uses the compiler to inject multithreading code for parallel execution within code segments marked for concurrency. Similarly, this new concept employs the compiler to identify and extract code regions capable of independent computation, while the cloud infrastructure takes on the role of managing the distributed execution.
+This concept might strike a chord with the parallel programming framework OpenMP. OpenMP leverages the compiler to inject multithreading code for parallel execution within code segments earmarked for concurrency. Similarly, this novel concept uses the compiler to identify and extract code regions capable of independent computation, while the cloud infrastructure assumes the responsibility of managing the distributed execution.
 
-Frameworks like MapReduce, Spark, and the increasingly popular Ray, all operating in the cloud computing domain, aim at large-scale distributed computing. The striking difference here lies in the underlying runtime implementation. While these frameworks build their runtime environments to support the distributed execution of specific task types, the proposed concept leverages FaaS provided by cloud infrastructure as a uniform underlying environment to enable general computation for a variety of cloud-native applications. This approach offers the potential for tighter integration with cloud capabilities and accommodates diverse workloads.
-
-The development experiences are indeed similar.
+Frameworks like MapReduce, Spark, and the increasingly popular Ray, all operating in the realm of cloud computing, target large-scale distributed computing. The notable difference here lies in the underlying runtime implementation. While these frameworks construct their runtime environments to support the distributed execution of specific task types, the proposed concept harnesses FaaS provided by cloud infrastructure as a uniform underlying environment to enable general computation for a range of cloud-native applications. This approach presents the potential for tighter integration with cloud capabilities and accommodates diverse workloads.
 
 ## The Concept
 
 ### Why "Monolithic Programming"?
 
-Developing a monolithic application is an exceptionally smooth experience. All context resides within a single project, allowing tooling such as linters, formatters, and IDE plugins to verify variable dependencies and function calls before execution.
+Developing a monolithic application is a remarkably seamless experience. With all context residing within a single project, tools like linters, formatters, and IDE plugins can verify variable dependencies and function calls prior to execution.
 
-### How is "Compile-time Splitting" Possible?
+### How is "Compile-time Splitting" Achievable?
 
-Files with code that has no programming constraints are challenging to split. However, by defining keywords, special classes, or functions, the compiler can be guided to partition the code accordingly.
+Files containing code devoid of programming constraints are challenging to split. Nevertheless, by defining keywords, special classes, or functions, the compiler can be directed to partition the code.
 
-Consider the code snippet below. The `Function` class can be seen as a special construct, where the function definition passed to its constructor is analyzed and extracted into a standalone computational module. Naturally, real-world implementations would require addressing many more details.
+Consider the code snippet below. The `Function` class can be viewed as a special construct, where the function definition passed to its constructor is analyzed and extracted into a standalone computational module. Of course, real-world implementations would necessitate addressing many more nuances.
 
 ```typescript
 class Function  {
@@ -58,13 +60,13 @@ async main() {
 main();
 ```
 
-Importantly, after computational modules are delineated, the code file sans these modules should also be treated as a computational module. This module serves as the application's entrypoint, akin to the main function in a monolithic app, orchestrating the entire application logic.
+Crucially, once computational modules are demarcated, the original code file excluding these modules should also be treated as a computational module. This module serves as the application's entrypoint, akin to the main function in a monolithic app, orchestrating the entire application logic.
 
-Thus, we attain the development experience of monolithic programming, coupled with the ability for cloud-based distributed execution through compile-time splitting. The offspring of this development approach is an application that thrives directly on the cloud infrastructure, epitomizing a cloud-native app.
+Thus, we achieve the development experience of monolithic programming, paired with the capability for cloud-based distributed execution through compile-time splitting. The outcome of this development approach is an application that thrives directly on the cloud infrastructure, embodying a true cloud-native app.
 
 ## Example
 
-Consider an example program based on this concept. The program employs the Monte Carlo method to compute Pi. The logic is simple: spawn 10 Workers, each conducting a million samples, then tally the results.
+Take an example program based on this concept. The program applies the Monte Carlo method to compute Pi. The logic is straightforward: spawn 10 Workers, each conducting a million samples, then accumulate the results.
 
 ```typescript
 const calculatePi = new Function((iterations: number): number => {
@@ -103,20 +105,24 @@ main();
 
 ![show case](../../assets/231227-case.png)
 
-The execution of this code is expected to manifest as illustrated above:
+The execution of this code is expected to pan out as depicted above:
 
-1. During the compilation stage, two computational modules are extracted: one for `calculatePi`, and another for the main code, sans `calculatePi`.
-2. These modules are then deployed as separate FaaS resource instances.
+1. During the compilation stage, two computational modules are extracted: one for `calculatePi`, and another for the main code, excluding `calculatePi`.
+2. These modules are subsequently deployed as separate FaaS resource instances.
 3. Upon deployment, invoking the instance corresponding to the main code yields the output results from the logs.
 
-For more intricate examples, explore the following:
+For more elaborate examples, consider the following:
 
 - [Big Data Scenario: Word Count](https://github.com/pluto-lang/pluto/issues/108)
 - [Web Scenario](https://github.com/pluto-lang/pluto/issues/109)
 
-Pluto is set to continue exploring this concept in 2024, with a focus on employing static analysis and Infrastructure as Code (IaC) to facilitate implementation. Those intrigued or with relevant use cases are encouraged to connect.
+[Pluto](https://github.com/pluto-lang/pluto) is committed to further exploring this concept throughout 2024, with a focus on leveraging static analysis and Infrastructure as Code (IaC) to facilitate implementation. If you find this concept intriguing or have relevant use cases, we encourage you to connect with us.
+
+If you support this idea, please star the [project](https://github.com/pluto-lang/pluto).
 
 ## References
 
 - [CNCF Cloud Native Definition v1.0](https://github.com/cncf/toc/blob/main/DEFINITION.md)
 - [Lambda execution environments - AWS Lambda](https://docs.aws.amazon.com/lambda/latest/operatorguide/execution-environments.html)
+- [Pluto | GitHub](https://github.com/pluto-lang/pluto)
+- [Pluto Website](https://pluto-lang.vercel.app)
