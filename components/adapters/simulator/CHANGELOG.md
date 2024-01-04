@@ -1,5 +1,15 @@
 # @plutolang/simulator-adapter
 
+## 0.2.7
+
+### Patch Changes
+
+- bf60683: enhance(adapter): split the adapter package
+- Updated dependencies [bf60683]
+  - @plutolang/pluto-infra@0.2.7
+  - @plutolang/base@0.2.6
+  - @plutolang/pluto@0.2.6
+
 ## 0.2.6 - Last version of @plutolang/adapters
 
 ### Patch Changes

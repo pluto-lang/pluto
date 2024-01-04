@@ -1,5 +1,11 @@
 # @plutolang/base
 
+## 0.2.6
+
+### Patch Changes
+
+- bf60683: enhance(adapter): split the adapter package
+
 ## 0.2.5
 
 ### Patch Changes
