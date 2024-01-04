@@ -1,4 +1,4 @@
-# @pluto/pluto-infra
+# @plutolang/pluto-infra
 
 ## 0.2.6
 

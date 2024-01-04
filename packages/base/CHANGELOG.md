@@ -1,4 +1,4 @@
-# @pluto/base
+# @plutolang/base
 
 ## 0.2.5
 

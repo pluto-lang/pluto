@@ -1,4 +1,4 @@
-# @pluto/static-deducer
+# @plutolang/static-deducer
 
 ## 0.2.5
 
