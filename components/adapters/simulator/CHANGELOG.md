@@ -1,21 +1,25 @@
-# @plutolang/pluto-infra
+# @plutolang/simulator-adapter
 
-## 0.2.6
+## 0.2.6 - Last version of @plutolang/adapters
 
 ### Patch Changes
 
 - Updated dependencies [0d8fc6f]
   - @plutolang/base@0.2.5
   - @plutolang/pluto@0.2.5
+  - @plutolang/pluto-infra@0.2.6
 
 ## 0.2.5
 
 ### Patch Changes
 
+- 5736dc1: enhance: refactor the component apis
+- 38eef8e: enhance: normalize the configuration models, including project and stack.
 - Updated dependencies [5736dc1]
 - Updated dependencies [38eef8e]
   - @plutolang/base@0.2.4
   - @plutolang/pluto@0.2.4
+  - @plutolang/pluto-infra@0.2.5
 
 ## 0.2.4
 
@@ -23,6 +27,7 @@
 
 - 3401159: feat: support simulation test
 - Updated dependencies [3401159]
+  - @plutolang/pluto-infra@0.2.4
   - @plutolang/pluto@0.2.3
   - @plutolang/base@0.2.3
 
@@ -32,14 +37,13 @@
 
 - c2bcfb6: feat(cli): impl test command, support testing on AWS
 - Updated dependencies [c2bcfb6]
-  - @plutolang/pluto@0.2.2
   - @plutolang/base@0.2.2
 
 ## 0.2.2
 
 ### Patch Changes
 
-- 8617830: fix(sdk): incorrect http response format
+- cf2a147: fix(adapter): check for incorrect AliCloud environment variables
 
 ## 0.2.1
 
@@ -47,7 +51,6 @@
 
 - a5539e6: feat: support for AliCloud's ApiGateway and FC
 - Updated dependencies [a5539e6]
-  - @plutolang/pluto@0.2.1
   - @plutolang/base@0.2.1
 
 ## 0.2.0
@@ -60,22 +63,13 @@
 
 - Updated dependencies [505de47]
   - @plutolang/base@0.2.0
-  - @plutolang/pluto@0.2.0
-
-## 0.1.2
-
-### Patch Changes
-
-- Updated dependencies [de25ad5]
-  - @plutolang/base@0.1.1
-  - @plutolang/pluto@0.1.2
 
 ## 0.1.1
 
 ### Patch Changes
 
-- Updated dependencies [e587e81]
-  - @plutolang/pluto@0.1.1
+- Updated dependencies [de25ad5]
+  - @plutolang/base@0.1.1
 
 ## 0.1.0
 
@@ -85,31 +79,15 @@
 
 ### Patch Changes
 
+- 1356132: Enable users to deploy without AWS CLI
 - Updated dependencies [055b3c7]
   - @plutolang/base@0.1.0
-  - @plutolang/pluto@0.1.0
-
-## 0.0.5
-
-### Patch Changes
-
-- Updated dependencies [45786dd]
-  - @plutolang/pluto@0.0.4
-
-## 0.0.4
-
-### Patch Changes
-
-- a8c9dec: Fix: unify the response from AWS and K8s.
-  Fix: set the empty map as the default value of Request.query.
 
 ## 0.0.3
 
 ### Patch Changes
 
-- c504f5b: Support schedule resource on AWS and K8s.
-- Updated dependencies [c504f5b]
-  - @plutolang/pluto@0.0.3
+- 4247f22: Switch to local backend in Pulumi.
 
 ## 0.0.2
 
@@ -117,7 +95,6 @@
 
 - rename @pluto to @plutolang
 - Updated dependencies
-  - @plutolang/pluto@0.0.2
   - @plutolang/base@0.0.2
 
 ## 0.0.1
@@ -126,5 +103,4 @@
 
 - first release
 - Updated dependencies
-  - @pluto/pluto@0.0.1
   - @pluto/base@0.0.1

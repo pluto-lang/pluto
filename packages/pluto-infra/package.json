@@ -6,7 +6,8 @@
     "build": "tsc",
     "watch": "npm run build -- --watch",
     "lint": "eslint .",
-    "test": "npx vitest --coverage --reporter=verbose"
+    "test": "npx vitest run --coverage --reporter=verbose",
+    "test:watch": "npx vitest --coverage --reporter=verbose"
   },
   "author": "plutolang",
   "main": "./dist/index.js",

@@ -1,4 +1,4 @@
-# @pluto/static-generator
+# @plutolang/static-generator
 
 ## 0.2.5
 

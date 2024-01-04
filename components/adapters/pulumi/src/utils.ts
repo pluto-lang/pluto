@@ -7,7 +7,7 @@ import open from "open";
 import { randomUUID } from "crypto";
 import { ConfigMap } from "@pulumi/pulumi/automation";
 import { fromEnv, fromIni } from "@aws-sdk/credential-providers";
-import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
+import { loadSharedConfigFiles } from "@smithy/shared-ini-file-loader";
 import { config, runtime } from "@plutolang/base";
 
 const PLUTO_GLOBAL_CONFIG_PATH = path.join(os.homedir(), ".pluto", "config.yml");
@@ -55,9 +55,12 @@ export async function genPulumiConfigForAWS(): Promise<ConfigMap> {
       console.debug("Got credentials from auth service.");
     }
   }
+
   process.env["AWS_ACCESS_KEY_ID"] = creds.accessKeyId;
   process.env["AWS_SECRET_ACCESS_KEY"] = creds.secretAccessKey;
-  process.env["AWS_SESSION_TOKEN"] = creds.sessionToken;
+  if (creds.sessionToken) {
+    process.env["AWS_SESSION_TOKEN"] = creds.sessionToken;
+  }
 
   return {
     "aws:region": { value: region },

@@ -12,7 +12,8 @@
     "build": "tsc",
     "watch": "npm run build -- --watch",
     "lint": "eslint .",
-    "test": "NODE_ENV=test vitest run --coverage --reporter=verbose"
+    "test": "NODE_ENV=test vitest run --coverage --reporter=verbose",
+    "test:watch": "NODE_ENV=test vitest --coverage --reporter=verbose"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",

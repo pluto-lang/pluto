@@ -1,1 +1,0 @@
-export { BuildAdapterByEngine } from "./adapter";

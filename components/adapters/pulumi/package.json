@@ -1,10 +1,10 @@
 {
-  "name": "@plutolang/adapters",
+  "name": "@plutolang/pulumi-adapter",
   "version": "0.2.6",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",
-    "directory": "components/deducers/static"
+    "directory": "components/adapters/pulumi"
   },
   "author": "plutolang",
   "main": "./dist/index.js",
@@ -16,16 +16,14 @@
     "build": "tsc",
     "watch": "npm run build -- --watch",
     "test": "NODE_ENV=test vitest run --coverage --reporter=verbose",
-    "test:watch": "vitest",
+    "test:watch": "NODE_ENV=test vitest --coverage --reporter=verbose",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@plutolang/pluto": "workspace:^",
-    "@plutolang/pluto-infra": "workspace:^",
     "@aws-sdk/credential-providers": "^3.445.0",
-    "@aws-sdk/shared-ini-file-loader": "^3.374.0",
     "@plutolang/base": "workspace:^",
     "@pulumi/pulumi": "^3.88.0",
+    "@smithy/shared-ini-file-loader": "^2.2.8",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
     "js-yaml": "^4.1.0",

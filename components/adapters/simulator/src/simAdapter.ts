@@ -11,9 +11,9 @@ export class SimulatorAdapter extends core.Adapter {
   private simulator?: Simulator;
 
   //eslint-disable-next-line @typescript-eslint/no-var-requires
-  public readonly name = require(join(__dirname, "../../package.json")).name;
+  public readonly name = require(join(__dirname, "../package.json")).name;
   //eslint-disable-next-line @typescript-eslint/no-var-requires
-  public readonly version = require(join(__dirname, "../../package.json")).version;
+  public readonly version = require(join(__dirname, "../package.json")).version;
 
   constructor(args: core.NewAdapterArgs) {
     super(args);

@@ -15,7 +15,9 @@
       "dependsOn": ["^lint"]
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["build"]
+    },
+    "test:watch": {
       "cache": false
     },
     "dev": {

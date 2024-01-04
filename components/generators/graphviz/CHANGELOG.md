@@ -1,4 +1,4 @@
-# @pluto/graphviz-generator
+# @plutolang/graphviz-generator
 
 ## 0.2.5
 

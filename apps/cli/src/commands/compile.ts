@@ -3,7 +3,7 @@ import path, { resolve } from "path";
 import * as yaml from "js-yaml";
 import { arch, core } from "@plutolang/base";
 import logger from "../log";
-import { loadPackage } from "./utils";
+import { buildDeducer, buildGenerator } from "./utils";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 
 const GRAPHVIZ_GENERATOR_PKG = "@plutolang/graphviz-generator";
@@ -70,7 +70,7 @@ export async function loadAndDeduce(
 ): Promise<core.DeduceResult> {
   // try to construct the deducer, exit with error if failed to import
   try {
-    const deducer: core.Deducer = new (await loadPackage(deducerName))(basicArgs);
+    const deducer = await buildDeducer(deducerName, basicArgs);
     return await deducer.deduce(files);
   } catch (err) {
     if (err instanceof Error) {
@@ -90,7 +90,7 @@ export async function loadAndGenerate(
 ): Promise<core.GenerateResult> {
   // try to construct the generator, exit with error if failed to import
   try {
-    const generator: core.Generator = new (await loadPackage(generatorName))(basicArgs);
+    const generator = await buildGenerator(generatorName, basicArgs);
     return await generator.generate(archRef, outdir);
   } catch (err) {
     if (err instanceof Error) {

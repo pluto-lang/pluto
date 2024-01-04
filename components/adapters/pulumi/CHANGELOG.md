@@ -1,6 +1,6 @@
-# @pluto/adapters
+# @plutolang/pulumi-adapter
 
-## 0.2.6
+## 0.2.6 - Last version of @plutolang/adapters
 
 ### Patch Changes
 
