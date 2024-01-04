@@ -1,6 +1,6 @@
-# @pluto/adapters
+# @plutolang/simulator-adapter
 
-## 0.2.6
+## 0.2.6 - Last version of @pluto/adapters
 
 ### Patch Changes
 

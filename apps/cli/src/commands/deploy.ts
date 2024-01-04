@@ -4,10 +4,9 @@ import * as yaml from "js-yaml";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
 import { arch, core } from "@plutolang/base";
-import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
-import { loadArchRef } from "./utils";
+import { buildAdapter, loadArchRef, selectAdapterByEngine } from "./utils";
 import { loadProject, dumpProject, PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject } from "../utils";
 import { ensureDirSync } from "fs-extra";
 
@@ -94,16 +93,17 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
   // TODO: make the workdir same with generated dir.
   const workdir = path.join(generatedDir, `compiled`);
   // build the adapter based on the engine type
-  const adapter = BuildAdapterByEngine(stack.engineType, {
+  const adapterPkg = selectAdapterByEngine(stack.engineType);
+  if (!adapterPkg) {
+    logger.error(`There is no adapter for type ${stack.engineType}.`);
+    process.exit(1);
+  }
+  const adapter = await buildAdapter(adapterPkg, {
     ...basicArgs,
     archRef: archRef,
     entrypoint: infraEntrypoint!,
     workdir: workdir,
   });
-  if (!adapter) {
-    logger.error(`There is no engine of type ${stack.engineType}.`);
-    process.exit(1);
-  }
   if (stack.adapterState) {
     adapter.load(stack.adapterState);
   }

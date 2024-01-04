@@ -1,7 +1,6 @@
 import path from "path";
-import { BuildAdapterByEngine } from "@plutolang/adapters";
 import logger from "../log";
-import { loadArchRef } from "./utils";
+import { buildAdapter, loadArchRef, selectAdapterByEngine } from "./utils";
 import { PLUTO_PROJECT_OUTPUT_DIR, dumpProject, isPlutoProject, loadProject } from "../utils";
 
 export interface DestoryOptions {
@@ -51,7 +50,12 @@ export async function destroy(opts: DestoryOptions) {
   const workdir = path.join(generatedDir, `compiled`);
 
   // build the adapter based on the engine type
-  const adapter = BuildAdapterByEngine(stack.engineType, {
+  const adapterPkg = selectAdapterByEngine(stack.engineType);
+  if (!adapterPkg) {
+    logger.error(`There is no adapter for type ${stack.engineType}.`);
+    process.exit(1);
+  }
+  const adapter = await buildAdapter(adapterPkg, {
     project: proj.name,
     rootpath: projectRoot,
     stack: stack,

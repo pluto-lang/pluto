@@ -2,10 +2,10 @@ import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 import { arch, config, core, engine, runtime, simulator } from "@plutolang/base";
-import { BuildAdapterByEngine } from "@plutolang/adapters";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
+import { buildAdapter, selectAdapterByEngine } from "./utils";
 
 interface TestOptions {
   sim: boolean;
@@ -104,16 +104,17 @@ async function testOneGroup(
   // TODO: make the work dir same with generated dir.
   const workdir = path.join(generatedDir, `compiled`);
   // build the adapter based on the engine type
-  const adapter = BuildAdapterByEngine(stack.engineType, {
+  const adapterPkg = selectAdapterByEngine(stack.engineType);
+  if (!adapterPkg) {
+    logger.error(`There is no adapter for type ${stack.engineType}.`);
+    process.exit(1);
+  }
+  const adapter = await buildAdapter(adapterPkg, {
     ...basicArgs,
     archRef: testGroupArch,
     entrypoint: generateResult.entrypoint!,
     workdir: workdir,
   });
-  if (!adapter) {
-    logger.error(`There is no engine of type ${stack.engineType}.`);
-    process.exit(1);
-  }
 
   const tmpSta = new config.Stack(`${stack.name}-${testId}`, stack.platformType, stack.engineType);
   try {

@@ -1,1 +1,0 @@
-export { SimulatorAdapter } from "./simAdapter";
