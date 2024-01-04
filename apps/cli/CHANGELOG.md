@@ -1,5 +1,18 @@
 # @plutolang/cli
 
+## 0.2.7
+
+### Patch Changes
+
+- bf60683: enhance(adapter): split the adapter package
+- Updated dependencies [bf60683]
+  - @plutolang/simulator-adapter@0.2.7
+  - @plutolang/pulumi-adapter@0.2.7
+  - @plutolang/static-deducer@0.2.6
+  - @plutolang/base@0.2.6
+  - @plutolang/graphviz-generator@0.2.6
+  - @plutolang/static-generator@0.2.6
+
 ## 0.2.6
 
 ### Patch Changes
