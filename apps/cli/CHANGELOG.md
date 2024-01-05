@@ -1,5 +1,11 @@
 # @plutolang/cli
 
+## 0.2.8
+
+### Patch Changes
+
+- 1352464: feat(cli): add version checker
+
 ## 0.2.7
 
 ### Patch Changes
