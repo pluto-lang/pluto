@@ -1,9 +1,11 @@
 import { Option, Command } from "commander";
 import * as cmd from "./commands";
-import { version } from "./utils";
+import { checkUpdate, version } from "./utils";
 import logger from "./log";
 
 async function main() {
+  checkUpdate();
+
   const program = new Command();
 
   program.name("pluto").version(version);
