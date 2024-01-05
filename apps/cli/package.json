@@ -32,16 +32,17 @@
     "@aws-sdk/client-lambda": "^3.462.0",
     "@inquirer/prompts": "^3.2.0",
     "@plutolang/base": "workspace:^",
-    "@plutolang/static-deducer": "workspace:^",
     "@plutolang/graphviz-generator": "workspace:^",
-    "@plutolang/static-generator": "workspace:^",
     "@plutolang/pulumi-adapter": "workspace:^",
     "@plutolang/simulator-adapter": "workspace:^",
+    "@plutolang/static-deducer": "workspace:^",
+    "@plutolang/static-generator": "workspace:^",
     "chalk": "^4.1.2",
     "commander": "^11.0.0",
     "fs-extra": "^11.1.1",
     "js-yaml": "^4.1.0",
-    "table": "^6.8.1"
+    "table": "^6.8.1",
+    "update-notifier": "^5.1.0"
   },
   "devDependencies": {
     "@plutolang/pluto": "workspace:^",
@@ -49,6 +50,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.7",
     "@types/node": "^20.8.4",
+    "@types/update-notifier": "^6.0.8",
     "typescript": "^5.2.2"
   }
 }

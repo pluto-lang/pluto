@@ -3,10 +3,13 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
 import { ensureFileSync } from "fs-extra";
 import { dump } from "js-yaml";
+import updateNotifier from "update-notifier";
 import { config } from "@plutolang/base";
 
 // eslint-disable-next-line
-export const version = require("../package.json").version;
+const packageJson = require("../package.json");
+const packageName = packageJson.name;
+export const version = packageJson.version;
 
 /** The default directory where the Pluto compilation output is stored. */
 export const PLUTO_PROJECT_OUTPUT_DIR = ".pluto";
@@ -64,4 +67,15 @@ export function isPlutoProject(rootpath: string): boolean {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     require(join(rootpath, "package.json")).name
   );
+}
+
+/**
+ * Check whether the Pluto command-line tool is outdated.
+ */
+export function checkUpdate() {
+  const ONE_HOUR = 60 * 60 * 1000;
+  updateNotifier({
+    pkg: { name: packageName, version: version },
+    updateCheckInterval: ONE_HOUR,
+  }).notify({ isGlobal: true, defer: false });
 }
