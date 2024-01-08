@@ -1,4 +1,4 @@
-import { FnResource, IResource } from "@plutolang/base";
+import { FnResource, IResource, IResourceInfraApi } from "@plutolang/base";
 
 export interface HttpRequest {
   path: string;
@@ -20,7 +20,7 @@ export interface RequestHandler extends FnResource {
 /**
  * Define the methods for Router, which operate during compilation.
  */
-export interface RouterInfra {
+export interface RouterInfra extends IResourceInfraApi {
   get(path: string, fn: RequestHandler): void;
   post(path: string, fn: RequestHandler): void;
   put(path: string, fn: RequestHandler): void;

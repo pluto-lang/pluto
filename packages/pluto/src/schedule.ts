@@ -1,10 +1,10 @@
-import { FnResource, IResource } from "@plutolang/base";
+import { FnResource, IResource, IResourceInfraApi } from "@plutolang/base";
 
 export interface Handler extends FnResource {
   (): Promise<void>;
 }
 
-export interface ScheduleInfra {
+export interface ScheduleInfra extends IResourceInfraApi {
   /**
    * @param cron Cron expressions have six required fields, which are separated by white space.
    *

@@ -1,6 +1,7 @@
 import { IResource, runtime, simulator } from "@plutolang/base";
+import { IResourceClientApi } from "@plutolang/base";
 
-export interface FunctionClient {
+export interface FunctionClient extends IResourceClientApi {
   invoke(payload: string): Promise<string>;
 }
 

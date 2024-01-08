@@ -1,4 +1,11 @@
-import { FnResource, IResource, runtime, simulator } from "@plutolang/base";
+import {
+  FnResource,
+  IResource,
+  IResourceClientApi,
+  IResourceInfraApi,
+  runtime,
+  simulator,
+} from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
 export interface CloudEvent {
@@ -13,13 +20,13 @@ export interface EventHandler extends FnResource {
 /**
  * Define the methods for Queue, which operate during compilation.
  */
-export interface QueueInfra {
+export interface QueueInfra extends IResourceInfraApi {
   subscribe(fn: EventHandler): void;
 }
 /**
  * Define the access methods for Queue that operate during runtime.
  */
-export interface QueueClient {
+export interface QueueClient extends IResourceClientApi {
   push(msg: string): Promise<void>;
 }
 
