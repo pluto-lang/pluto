@@ -1,7 +1,7 @@
 import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@plutolang/base";
+import { IResource, ResourceInfra } from "@plutolang/base";
 import { QueueInfra, QueueInfraOptions } from "@plutolang/pluto/dist/queue";
 import { Lambda } from "./lambda";
 import { Permission } from "./permission";
@@ -30,7 +30,7 @@ export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra,
     );
   }
 
-  public subscribe(fn: Resource): void {
+  public subscribe(fn: IResource): void {
     assert(fn instanceof Lambda, "Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 

@@ -1,7 +1,7 @@
 import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@plutolang/base";
+import { IResource, ResourceInfra } from "@plutolang/base";
 import { RouterInfra, RouterInfraOptions } from "@plutolang/pluto";
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
 import { Lambda } from "./lambda";
@@ -36,28 +36,28 @@ export class ApiGatewayRouter
    * @param path The URL path to handle
    * @param fn
    */
-  public get(path: string, fn: Resource): void {
+  public get(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
     this.addHandler("GET", path, lambda);
   }
 
-  public post(path: string, fn: Resource): void {
+  public post(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
     this.addHandler("POST", path, lambda);
   }
 
-  public put(path: string, fn: Resource): void {
+  public put(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
     this.addHandler("PUT", path, lambda);
   }
 
-  public delete(path: string, fn: Resource): void {
+  public delete(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 

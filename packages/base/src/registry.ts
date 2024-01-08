@@ -1,10 +1,10 @@
 import * as engine from "./engine";
 import * as runtime from "./runtime";
-import { Resource, ResourceInfra } from "./resource";
+import { IResource, ResourceInfra } from "./resource";
 import { IResourceInstance } from "./simulator";
 
 type InfraCls = { new (name: string, opts?: object): ResourceInfra | IResourceInstance };
-type ResourceCls = { new (name: string, opts?: object): Resource } | "FnResource";
+type ResourceCls = { new (name: string, opts?: object): IResource } | "FnResource";
 
 // eslint-disable-next-line
 export interface Registry {

@@ -1,4 +1,4 @@
-import { Resource, runtime, simulator } from "@plutolang/base";
+import { IResource, runtime, simulator } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
 /**
@@ -22,7 +22,7 @@ export interface KVStoreClientOptions {}
 export interface KVStoreOptions extends KVStoreInfraOptions, KVStoreClientOptions {}
 
 // TODO: abstract class
-export class KVStore implements Resource {
+export class KVStore implements IResource {
   constructor(name: string, opts?: KVStoreOptions) {
     name;
     opts;
@@ -47,4 +47,4 @@ export class KVStore implements Resource {
   }
 }
 
-export interface KVStore extends KVStoreInfra, KVStoreClient, Resource {}
+export interface KVStore extends KVStoreInfra, KVStoreClient, IResource {}

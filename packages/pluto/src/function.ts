@@ -1,4 +1,4 @@
-import { Resource, runtime, simulator } from "@plutolang/base";
+import { IResource, runtime, simulator } from "@plutolang/base";
 
 export interface FunctionClient {
   invoke(payload: string): Promise<string>;
@@ -6,7 +6,7 @@ export interface FunctionClient {
 
 export interface FunctionOptions {}
 
-export class Function implements Resource {
+export class Function implements IResource {
   constructor(name: string, opts?: FunctionOptions) {
     name;
     opts;
@@ -28,4 +28,4 @@ export class Function implements Resource {
   }
 }
 
-export interface Function extends FunctionClient, Resource {}
+export interface Function extends FunctionClient, IResource {}

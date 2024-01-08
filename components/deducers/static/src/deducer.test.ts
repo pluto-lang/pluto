@@ -6,13 +6,13 @@ import { isResourceType } from "./utils";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitBinaryExpression, visitCallExpression } from "./visit-expression";
 
-describe("All types implement Resource", async () => {
+describe("All types implement IResource", async () => {
   const sourceCode = `
-import { Resource } from "@plutolang/base";
+import { IResource } from "@plutolang/base";
 
-class DirectCls implements Resource {}
-interface DirectIntf extends Resource {}
-interaface DirectCls extends Resource {} // same name with DirectCls
+class DirectCls implements IResource {}
+interface DirectIntf extends IResource {}
+interaface DirectCls extends IResource {} // same name with DirectCls
 
 class IndirectCls implements DirectIntf {}
 interface IndirectIntf extends DirectIntf {}
@@ -30,13 +30,13 @@ interface IndirectCls extends DirectIntf {} // same name with IndirectCls
   });
 });
 
-describe("All types don't implement Resource", async () => {
+describe("All types don't implement IResource", async () => {
   const sourceCode = `
-import { Resource } from "@plutolang/other";
+import { IResource } from "@plutolang/other";
 
-class DirectCls implements Resource {}
-interface DirectIntf extends Resource {}
-interaface DirectCls extends Resource {} // same name with DirectCls
+class DirectCls implements IResource {}
+interface DirectIntf extends IResource {}
+interaface DirectCls extends IResource {} // same name with DirectCls
 
 class IndirectCls implements DirectIntf {}
 interface IndirectIntf extends DirectIntf {}

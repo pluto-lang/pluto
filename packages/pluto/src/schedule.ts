@@ -1,4 +1,4 @@
-import { FnResource, Resource } from "@plutolang/base";
+import { FnResource, IResource } from "@plutolang/base";
 
 export interface Handler extends FnResource {
   (): Promise<void>;
@@ -17,7 +17,7 @@ export interface ScheduleInfraOptions {}
 
 export interface ScheduleOptions extends ScheduleInfraOptions {}
 
-export class Schedule implements Resource {
+export class Schedule implements IResource {
   constructor(name: string, opts?: ScheduleOptions) {
     name;
     opts;
@@ -27,4 +27,4 @@ export class Schedule implements Resource {
   }
 }
 
-export interface Schedule extends ScheduleInfra, Resource {}
+export interface Schedule extends ScheduleInfra, IResource {}

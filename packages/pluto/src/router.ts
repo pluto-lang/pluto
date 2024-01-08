@@ -1,4 +1,4 @@
-import { FnResource, Resource } from "@plutolang/base";
+import { FnResource, IResource } from "@plutolang/base";
 
 export interface HttpRequest {
   path: string;
@@ -34,7 +34,7 @@ export interface RouterInfraOptions {}
 export interface RouterOptions extends RouterInfraOptions {}
 
 // TODO: abstract class
-export class Router implements Resource {
+export class Router implements IResource {
   constructor(name: string, opts?: RouterOptions) {
     name;
     opts;
@@ -44,4 +44,4 @@ export class Router implements Resource {
   }
 }
 
-export interface Router extends RouterInfra, Resource {}
+export interface Router extends RouterInfra, IResource {}

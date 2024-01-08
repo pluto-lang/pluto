@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { Resource, ResourceInfra } from "@plutolang/base";
+import { IResource, ResourceInfra } from "@plutolang/base";
 import { ScheduleInfra, ScheduleInfraOptions } from "@plutolang/pluto";
 import { ServiceLambda } from "./serviceLambda";
 
@@ -12,7 +12,7 @@ export class PingSchedule extends pulumi.ComponentResource implements ResourceIn
     this.name = name;
   }
 
-  public async cron(cron: string, fn: Resource): Promise<void> {
+  public async cron(cron: string, fn: IResource): Promise<void> {
     if (!(fn instanceof ServiceLambda)) {
       throw new Error("Fn is not a subclass of ServiceLambda.");
     }

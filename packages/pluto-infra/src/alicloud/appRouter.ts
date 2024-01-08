@@ -1,5 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@plutolang/base";
+import { IResource, ResourceInfra } from "@plutolang/base";
 import { RequestHandler, RouterInfra, RouterInfraOptions } from "@plutolang/pluto";
 import * as alicloud from "@pulumi/alicloud";
 import { FCFnResource } from "./fcFnResource";
@@ -100,7 +100,7 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
     this.url = pulumi.interpolate`https://${this.group.subDomain}`;
   }
 
-  public get(path: string, fn: Resource): void {
+  public get(path: string, fn: IResource): void {
     if (!(fn instanceof FCFnResource)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as FCFnResource;
 
