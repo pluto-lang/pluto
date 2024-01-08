@@ -1,20 +1,27 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { RouterInfra, RouterOptions } from "@plutolang/pluto";
+import { IRouterInfraApi, RouterOptions } from "@plutolang/pluto";
 import { FnResource, ResourceInfra } from "@plutolang/base";
 import { ServiceLambda } from "./serviceLambda";
 
-export class IngressRouter extends pulumi.ComponentResource implements RouterInfra, ResourceInfra {
+export class IngressRouter
+  extends pulumi.ComponentResource
+  implements IRouterInfraApi, ResourceInfra
+{
   readonly name: string;
 
-  url: pulumi.Output<string>;
-  routes: { path: string; handler: ServiceLambda }[];
+  private _url: pulumi.Output<string>;
+  private routes: { path: string; handler: ServiceLambda }[];
 
   constructor(name: string, args?: RouterOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:k8s:Ingress", name, args, opts);
     this.name = name;
     this.routes = [];
-    this.url = pulumi.interpolate`unknown`;
+    this._url = pulumi.interpolate`${this.name}.localdev.me`;
+  }
+
+  public get url(): string {
+    return this._url as any;
   }
 
   public get(path: string, fn: FnResource): void {
@@ -57,8 +64,6 @@ export class IngressRouter extends pulumi.ComponentResource implements RouterInf
         },
       });
     });
-
-    this.url = pulumi.interpolate`${this.name}.localdev.me`;
 
     new k8s.networking.v1.Ingress(
       `${this.name}-ingress`,
