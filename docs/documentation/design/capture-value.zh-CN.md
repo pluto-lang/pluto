@@ -114,7 +114,7 @@ closure_2.dependencies = [
     method: "url",
   },
 ];
-tester.test("test echo", closure_1);
+tester.test("test echo", closure_2);
 
 import { default as closure_fn_main } from "./main_closure";
 const main_closure = closure_fn_main as ComputeClosure & typeof closure;
