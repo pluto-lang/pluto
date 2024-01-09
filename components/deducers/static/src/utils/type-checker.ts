@@ -1,7 +1,7 @@
 import ts from "typescript";
-import { Location } from "./types";
-import { ImportStore, extractImportElements } from "./imports";
-import { FN_RESOURCE_TYPE_NAME, PLUTO_BASE_PKG, RESOUCE_TYPE_NAME } from "./constants";
+import { Location } from "../types";
+import { ImportStore, extractImportElements } from "../imports";
+import { FN_RESOURCE_TYPE_NAME, PLUTO_BASE_PKG, RESOUCE_TYPE_NAME } from "../constants";
 
 export function isPrimitive(val: string): boolean {
   const primitiveTypes = [
