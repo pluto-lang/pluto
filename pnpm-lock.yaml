@@ -345,6 +345,25 @@ importers:
         specifier: ^0.34.6
         version: 0.34.6
 
+  testapps/app-with-prop-access:
+    dependencies:
+      '@plutolang/pluto':
+        specifier: 'workspace: *'
+        version: link:../../packages/pluto
+    devDependencies:
+      '@plutolang/base':
+        specifier: 'workspace: *'
+        version: link:../../packages/base
+      '@plutolang/pluto-infra':
+        specifier: 'workspace: *'
+        version: link:../../packages/pluto-infra
+      '@types/node':
+        specifier: ^20
+        version: 20.10.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
   testapps/tester:
     dependencies:
       '@plutolang/pluto':

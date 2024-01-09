@@ -1,0 +1,7 @@
+current: dev
+stacks:
+  - configs: {}
+    deployed: false
+    engineType: pulumi
+    name: dev
+    platformType: AWS
