@@ -7,10 +7,12 @@
     "directory": "components/deducers/static"
   },
   "author": "plutolang",
-  "main": "./dist/src/index.js",
-  "types": "./dist/src/index.d.ts",
+  "main": "./index.js",
+  "types": "./index.d.ts",
   "files": [
-    "dist/src/"
+    "**/*.d.ts",
+    "**/*.js",
+    "**/*.js.map"
   ],
   "scripts": {
     "build": "tsc",

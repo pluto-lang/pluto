@@ -9,7 +9,7 @@ import {
 import { ImportElement, buildImportStore } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
-import { getLocationOfNode, isConstVar, isResourceVar } from "./utils";
+import { getLocationOfNode, isConstVar, isResourceVar, propBelongsToCapturedProps } from "./utils";
 
 type Scope = [number, number];
 
@@ -118,7 +118,10 @@ function detectAccessChain(
     combinedRes = detectFnAccessFn(curNode, curScope, checker, rootFnName, depth);
   } else if (ts.isExpressionStatement(curNode) || ts.isVariableStatement(curNode)) {
     // Might be calling a resource method.
-    combinedRes = detectFnAccessResource(curNode, checker, rootFnName);
+    combinedRes = detectFnCallClientApi(curNode, checker, rootFnName);
+  } else if (ts.isPropertyAccessExpression(curNode)) {
+    // Might be accessing a property of a resource.
+    combinedRes = detectFnAccessCapturedProp(curNode, checker, rootFnName);
   }
 
   curNode.forEachChild((childNode) => {
@@ -130,10 +133,45 @@ function detectAccessChain(
 }
 
 /**
- * Check if this node is using resource.
+ * Check if this node is access a property of a resource, which belongs to captured props.
+ */
+function detectFnAccessCapturedProp(
+  propAccessExpression: ts.PropertyAccessExpression,
+  checker: ts.TypeChecker,
+  fnResName: string
+): DetectFnAccessChainResult | undefined {
+  if (propBelongsToCapturedProps(propAccessExpression, checker)) {
+    const accessorName = propAccessExpression.expression.getText();
+
+    const symbol = checker.getSymbolAtLocation(propAccessExpression);
+    if (symbol == undefined) {
+      throw new Error(
+        "The symbol of this property is undefined: " + propAccessExpression.getText()
+      );
+    }
+    const propertyName = checker.symbolToString(symbol);
+
+    const resRelatInfo: ResourceRelationshipInfo = {
+      fromVarName: fnResName,
+      toVarNames: [accessorName],
+      type: arch.RelatType.PROPERTY,
+      operation: propertyName,
+      parameters: [],
+    };
+    return {
+      resRelatInfos: [resRelatInfo],
+      importElements: [],
+      depLocs: [],
+    };
+  }
+  return;
+}
+
+/**
+ * Check if this node is calling a function of a resource, which belongs to client API.
  * This information will be utilized to generate the permission configuration for this FnResource.
  */
-function detectFnAccessResource(
+function detectFnCallClientApi(
   curNode: ts.Node,
   checker: ts.TypeChecker,
   fnResName: string

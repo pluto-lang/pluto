@@ -82,13 +82,12 @@ function propBelongsToIface(
     return false;
   }
 
-  if (declarations.length > 1) {
-    throw new Error(
-      `The property '${propAccessExpression.getText()}' has multiple declarations. We are unable to handle this situation.`
-    );
+  for (const declaration of declarations) {
+    if (declarationBelongsToIface(declaration, typeChecker, targetPkgName, targetIfaceName)) {
+      return true;
+    }
   }
-
-  return declarationBelongsToIface(declarations[0], typeChecker, targetPkgName, targetIfaceName);
+  return false;
 }
 
 function declarationBelongsToIface(
