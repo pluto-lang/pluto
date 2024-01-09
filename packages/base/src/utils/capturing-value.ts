@@ -25,7 +25,7 @@ export function getEnvValForProperty(
   const value = process.env[envName];
   if (!value) {
     throw new Error(
-      `The value for '${propertyName}' associated with the '<${resourceType}>${resourceId}' cannot be located within the environment variables.`
+      `The environment variable '${envName}', representing the value for '${propertyName}' associated with the '<${resourceType}>${resourceId}', cannot be located within the environment variables.`
     );
   }
   return value;

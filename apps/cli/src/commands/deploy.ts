@@ -164,8 +164,7 @@ async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Prom
   for (const relat of archRef.relationships) {
     if (relat.from.type == "Root") continue;
 
-    const typ = relat.type == "access" ? "Access" : "Create";
-    relatData.push([relat.from.name, relat.to.name, typ, relat.operation]);
+    relatData.push([relat.from.name, relat.to.name, relat.type, relat.operation]);
   }
 
   // To display the relationship table, which includes the relationships among resources in the arch ref.
