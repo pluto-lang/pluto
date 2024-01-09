@@ -4,6 +4,7 @@ import { FunctionClient, FunctionOptions } from "@plutolang/pluto";
 
 export class SimFunction implements simulator.IResourceInstance, FunctionClient {
   private readonly entrypoint: string;
+  private readonly opts?: FunctionOptions;
   private context?: simulator.IContext;
 
   constructor(name: string, opts?: FunctionOptions) {
@@ -12,7 +13,7 @@ export class SimFunction implements simulator.IResourceInstance, FunctionClient 
     }
 
     this.entrypoint = path.join(process.env.WORK_DIR, name + ".js");
-    opts;
+    this.opts = opts;
   }
 
   public async setup(context: simulator.IContext) {
@@ -29,11 +30,14 @@ export class SimFunction implements simulator.IResourceInstance, FunctionClient 
   public async cleanup(): Promise<void> {}
 
   public async invoke(payload: string): Promise<any> {
+    const envs: Record<string, any> = {
+      ...this.opts?.envs,
+      PLUTO_SIMULATOR_URL: this.context!.serverUrl,
+      RUNTIME_TYPE: "SIMULATOR",
+    };
+
     const sb = new sandbox.Sandbox(this.entrypoint, {
-      env: {
-        PLUTO_SIMULATOR_URL: this.context!.serverUrl,
-        RUNTIME_TYPE: "SIMULATOR",
-      },
+      env: envs,
     });
 
     return await sb.call(payload);

@@ -4,6 +4,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as archive from "@pulumi/archive";
 import * as alicloud from "@pulumi/alicloud";
 import { ResourceInfra } from "@plutolang/base";
+import { FunctionOptions } from "@plutolang/pluto";
 import { formatName } from "./utils";
 
 export enum Ops {
@@ -36,7 +37,7 @@ export class FCFnResource extends pulumi.ComponentResource implements ResourceIn
 
   private readonly policies: RamPolicy[];
 
-  constructor(name: string, args?: object, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: FunctionOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:lambda:alicloud/FC", name, args, opts);
     this.name = name;
     this.policies = [];
@@ -91,9 +92,15 @@ export class FCFnResource extends pulumi.ComponentResource implements ResourceIn
       },
       { parent: this }
     );
+    const entrypoint = `${this.name}.js`;
+
+    const envs: Record<string, any> = {
+      ...args?.envs,
+      COMPUTE_MODULE: entrypoint,
+      RUNTIME_TYPE: "ALICLOUD",
+    };
 
     const insName = formatName(`${name}_fc`);
-    const entrypoint = `${this.name}.js`;
     this.fcInstance = new alicloud.fc.Function(
       insName,
       {
@@ -103,10 +110,7 @@ export class FCFnResource extends pulumi.ComponentResource implements ResourceIn
         filename: this.buildZip(entrypoint),
         runtime: "nodejs16",
         handler: "runtime.default",
-        environmentVariables: {
-          COMPUTE_MODULE: entrypoint,
-          RUNTIME_TYPE: "ALICLOUD",
-        },
+        environmentVariables: envs,
       },
       { parent: this }
     );

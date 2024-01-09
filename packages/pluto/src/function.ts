@@ -5,7 +5,9 @@ export interface FunctionClient extends IResourceClientApi {
   invoke(payload: string): Promise<string>;
 }
 
-export interface FunctionOptions {}
+export interface FunctionOptions {
+  envs?: Record<string, any>;
+}
 
 export class Function implements IResource {
   constructor(name: string, opts?: FunctionOptions) {
