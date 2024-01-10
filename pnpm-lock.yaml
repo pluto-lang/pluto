@@ -366,6 +366,9 @@ importers:
       '@plutolang/pluto-infra':
         specifier: 'workspace: *'
         version: link:../../packages/pluto-infra
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
       '@types/node':
         specifier: ^20
         version: 20.10.4

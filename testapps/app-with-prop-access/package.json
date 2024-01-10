@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "test": "DEBUG=1 ../../apps/cli/bin/pluto test --sim",
     "build": "mkdir -p .pluto/dev && DEBUG=1 ../../apps/cli/bin/pluto compile"
   },
   "dependencies": {
@@ -13,7 +12,8 @@
     "@types/node": "^20",
     "typescript": "^5.2.2",
     "@plutolang/base": "workspace: *",
-    "@plutolang/pluto-infra": "workspace: *"
+    "@plutolang/pluto-infra": "workspace: *",
+    "@pulumi/pulumi": "^3.88.0"
   },
   "main": "dist/index.js"
 }

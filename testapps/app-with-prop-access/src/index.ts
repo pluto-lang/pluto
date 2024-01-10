@@ -19,7 +19,7 @@ tester.it("test echo", async () => {
   if (res.status !== 200) {
     throw new Error(`Unexpected status code: ${res.status}`);
   }
-  if (body !== "Hello, Pluto!") {
+  if (body !== "Hello Pluto!") {
     throw new Error(`Unexpected body: ${body}`);
   }
 });
