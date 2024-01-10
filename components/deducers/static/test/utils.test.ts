@@ -1,12 +1,12 @@
-import path from "path";
-import ts from "typescript";
+import * as path from "path";
+import * as ts from "typescript";
 import { test, expect } from "vitest";
 import {
   methodBelongsToClientApi,
   methodBelongsToInfraApi,
   propBelongsToCapturedProps,
 } from "../src/utils";
-import { genAnalyzerForFixture } from "../src/utils-test";
+import { genAnalyzerForFixture } from "./utils";
 
 const baseDir = path.join(__dirname, "fixtures");
 

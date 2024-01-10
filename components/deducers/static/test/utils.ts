@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
-import fs from "fs";
-import path from "path";
-import ts from "typescript";
+import * as os from "os";
+import * as fs from "fs-extra";
+import * as path from "path";
+import * as ts from "typescript";
 import { expect } from "vitest";
 
 interface SourceFileWithChecker {
@@ -9,43 +10,41 @@ interface SourceFileWithChecker {
   checker: ts.TypeChecker;
 }
 
+const tsOpts: ts.CompilerOptions = {
+  target: ts.ScriptTarget.ES2020,
+  module: ts.ModuleKind.CommonJS,
+  moduleResolution: ts.ModuleResolutionKind.Node10,
+};
+
+const moduleResolutionHost: ts.ModuleResolutionHost = {
+  fileExists: ts.sys.fileExists,
+  readFile: ts.sys.readFile,
+  directoryExists: ts.sys.directoryExists,
+  getDirectories: ts.sys.getDirectories,
+};
+
 // For testing purposes, the task is to generate a TypeScript `ts.SourceFile` from an inline code.
 export function genAnalyzerForInline(sourceCode: string): SourceFileWithChecker {
   const fileName = "inline.ts";
   const host: ts.LanguageServiceHost = {
-    getCompilationSettings: () => ({
-      target: ts.ScriptTarget.ES2022,
-      module: ts.ModuleKind.CommonJS,
-      moduleResolution: ts.ModuleResolutionKind.Node10,
-    }),
+    getCompilationSettings: () => tsOpts,
+    ...moduleResolutionHost,
+    useCaseSensitiveFileNames: () => true,
     getCurrentDirectory: () => process.cwd(),
     getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
     getScriptFileNames: () => [fileName],
     getScriptVersion: () => "0",
     getScriptSnapshot: (name) =>
       name === fileName ? ts.ScriptSnapshot.fromString(sourceCode) : undefined,
-    readFile: ts.sys.readFile,
-    fileExists: ts.sys.fileExists,
     resolveModuleNameLiterals: (
       moduleLiterals: readonly ts.StringLiteralLike[],
       containingFile: string,
       redirectedReference: ts.ResolvedProjectReference | undefined,
-      options: ts.CompilerOptions,
-      containingSourceFile: ts.SourceFile,
-      reusedNames: readonly ts.StringLiteralLike[] | undefined
+      options: ts.CompilerOptions
     ) => {
-      return moduleLiterals.map((moduleLiteral) => {
-        const result = ts.resolveModuleName(
-          moduleLiteral.text,
-          containingFile,
-          options,
-          ts.sys,
-          undefined,
-          redirectedReference
-        );
-        console.log(result);
-        return result;
-      });
+      return moduleLiterals.map((moduleLiteral) =>
+        resolveModule(moduleLiteral.text, containingFile, options, redirectedReference)
+      );
     },
   };
 
@@ -77,20 +76,14 @@ export function genAnalyzerForInline(sourceCode: string): SourceFileWithChecker 
   };
 }
 
-export function genAnalyzerForFile(content: string): SourceFileWithChecker {
-  const filename = "testtmp-" + randomUUID() + ".ts";
-  const filepath = path.join(__dirname, filename);
+export function genAnalyzerForFile(filename: string, content: string): SourceFileWithChecker {
+  const basedir = path.join(os.tmpdir(), "pluto-test-" + randomUUID());
+  fs.ensureDirSync(basedir);
+
+  const filepath = path.join(basedir, filename);
   fs.writeFileSync(filepath, content);
 
-  const tsconfigPath = path.resolve("./", "tsconfig.json");
-  const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
-  const configJson = ts.parseJsonConfigFileContent(configFile.config, ts.sys, "./");
-  // return await compilePluto(filepaths, configJson.options);
-  const program = ts.createProgram([filepath], configJson.options);
-
-  const sourceFile = program.getSourceFile(filepath)!;
-  const checker = program.getTypeChecker();
-  return { sourceFile, checker };
+  return genAnalyzerForFixture(filepath);
 }
 
 export function rmSourceFile(sourceFile: ts.SourceFile) {
@@ -98,13 +91,23 @@ export function rmSourceFile(sourceFile: ts.SourceFile) {
 }
 
 export function genAnalyzerForFixture(filepath: string): SourceFileWithChecker {
-  const tsOpts = {
-    target: ts.ScriptTarget.ES2022,
-    module: ts.ModuleKind.CommonJS,
-    moduleResolution: ts.ModuleResolutionKind.Node10,
+  const host: ts.CompilerHost = {
+    ...ts.createCompilerHost(tsOpts),
+    ...moduleResolutionHost,
+    useCaseSensitiveFileNames: () => true,
+    resolveModuleNameLiterals: (
+      moduleLiterals: readonly ts.StringLiteralLike[],
+      containingFile: string,
+      redirectedReference: ts.ResolvedProjectReference | undefined,
+      options: ts.CompilerOptions
+    ): readonly ts.ResolvedModuleWithFailedLookupLocations[] => {
+      return moduleLiterals.map((moduleLiteral) =>
+        resolveModule(moduleLiteral.text, containingFile, options, redirectedReference)
+      );
+    },
   };
 
-  const program = ts.createProgram([filepath], tsOpts);
+  const program = ts.createProgram([filepath], tsOpts, host);
   const allDiagnostics = ts.getPreEmitDiagnostics(program);
   // Emit errors
   allDiagnostics.forEach((diagnostic) => {
@@ -130,4 +133,36 @@ export function genAnalyzerForFixture(filepath: string): SourceFileWithChecker {
     sourceFile,
     checker,
   };
+}
+
+function resolveModule(
+  pkgName: string,
+  containingFile: string,
+  options: ts.CompilerOptions,
+  redirectedReference?: ts.ResolvedProjectReference
+) {
+  // Search for the target package within the current project directory.
+  const nodeModulesPath = path.resolve(__dirname, "../node_modules");
+  const pkgPath = path.resolve(nodeModulesPath, pkgName);
+  const result = ts.resolveModuleName(
+    pkgPath,
+    containingFile,
+    options,
+    ts.sys,
+    undefined,
+    redirectedReference
+  );
+  if (result.resolvedModule != undefined) {
+    return result;
+  }
+
+  // If it's not found there, look for it in the default path.
+  return ts.resolveModuleName(
+    pkgName,
+    containingFile,
+    options,
+    ts.sys,
+    undefined,
+    redirectedReference
+  );
 }

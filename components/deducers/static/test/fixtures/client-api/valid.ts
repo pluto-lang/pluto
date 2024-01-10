@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { IResourceClientApi } from "@plutolang/base";
 
 interface ResourceClientApi extends IResourceClientApi {

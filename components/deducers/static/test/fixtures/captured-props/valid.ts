@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { IResourceCapturedProps } from "@plutolang/base";
 
 interface ResourceCapturedProps extends IResourceCapturedProps {

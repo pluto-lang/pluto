@@ -1,5 +1,5 @@
-import * as ts from "typescript";
-import * as path from "path";
+import ts from "typescript";
+import path from "path";
 import { arch, core } from "@plutolang/base";
 import { genImportStats } from "./imports";
 import { ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
