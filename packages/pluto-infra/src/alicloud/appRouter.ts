@@ -1,20 +1,20 @@
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@plutolang/base";
-import { RequestHandler, RouterInfra, RouterInfraOptions } from "@plutolang/pluto";
+import { IResource, ResourceInfra } from "@plutolang/base";
+import { RequestHandler, IRouterInfraApi, RouterInfraOptions } from "@plutolang/pluto";
 import * as alicloud from "@pulumi/alicloud";
 import { FCFnResource } from "./fcFnResource";
 import { formatName } from "./utils";
 
 const REGION = process.env.ALICLOUD_REGION;
 
-export class AppRouter extends pulumi.ComponentResource implements RouterInfra, ResourceInfra {
+export class AppRouter extends pulumi.ComponentResource implements IRouterInfraApi, ResourceInfra {
   readonly name: string;
 
   private readonly group: alicloud.apigateway.Group;
   private readonly app: alicloud.apigateway.App;
   private readonly role: alicloud.ram.Role;
 
-  url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
+  private _url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
 
   constructor(name: string, args?: RouterInfraOptions, opts?: pulumi.ComponentResourceOptions) {
     if (REGION == undefined) {
@@ -97,10 +97,14 @@ export class AppRouter extends pulumi.ComponentResource implements RouterInfra, 
       { parent: this }
     );
 
-    this.url = pulumi.interpolate`https://${this.group.subDomain}`;
+    this._url = pulumi.interpolate`https://${this.group.subDomain}`;
   }
 
-  public get(path: string, fn: Resource): void {
+  public get url(): string {
+    return this._url as any;
+  }
+
+  public get(path: string, fn: IResource): void {
     if (!(fn instanceof FCFnResource)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as FCFnResource;
 

@@ -1,4 +1,11 @@
-import { FnResource, Resource } from "@plutolang/base";
+import {
+  FnResource,
+  IResource,
+  IResourceCapturedProps,
+  IResourceInfraApi,
+  runtime,
+} from "@plutolang/base";
+import { shared } from "./clients";
 
 export interface HttpRequest {
   path: string;
@@ -17,10 +24,14 @@ export interface RequestHandler extends FnResource {
   (request: HttpRequest): Promise<HttpResponse>;
 }
 
+export interface IRouterCapturedProps extends IResourceCapturedProps {
+  get url(): string;
+}
+
 /**
  * Define the methods for Router, which operate during compilation.
  */
-export interface RouterInfra {
+export interface IRouterInfraApi extends IResourceInfraApi {
   get(path: string, fn: RequestHandler): void;
   post(path: string, fn: RequestHandler): void;
   put(path: string, fn: RequestHandler): void;
@@ -34,7 +45,7 @@ export interface RouterInfraOptions {}
 export interface RouterOptions extends RouterInfraOptions {}
 
 // TODO: abstract class
-export class Router implements Resource {
+export class Router implements IResource {
   constructor(name: string, opts?: RouterOptions) {
     name;
     opts;
@@ -42,6 +53,17 @@ export class Router implements Resource {
       "Cannot instantiate this class, instead of its subclass depending on the target runtime."
     );
   }
+
+  public static buildClient(name: string, opts?: RouterOptions): IRouterCapturedProps {
+    const rtType = process.env["RUNTIME_TYPE"];
+    switch (rtType) {
+      case runtime.Type.AWS:
+      case runtime.Type.K8s:
+        return new shared.RouterClient(name, opts);
+      default:
+        throw new Error(`not support this runtime '${rtType}'`);
+    }
+  }
 }
 
-export interface Router extends RouterInfra, Resource {}
+export interface Router extends IResource, IRouterInfraApi, IRouterCapturedProps {}

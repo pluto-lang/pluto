@@ -4,6 +4,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import * as docker from "@pulumi/docker";
 import { ResourceInfra } from "@plutolang/base";
+import { FunctionOptions } from "@plutolang/pluto";
 
 if (!process.env["WORK_DIR"]) {
   throw new Error("Missing environment variable WORK_DIR");
@@ -17,7 +18,7 @@ export class ServiceLambda extends pulumi.ComponentResource implements ResourceI
   kservice: k8s.apiextensions.CustomResource;
   url: pulumi.Output<string>;
 
-  constructor(name: string, args?: object, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: FunctionOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:k8s:Service", name, args, opts);
     this.name = name;
 
@@ -64,6 +65,16 @@ CMD [ "node", "runtime.js" ]
     const appLabels = { app: name };
     const namespace = "default";
 
+    const envs: { name: string; value: string }[] = [
+      { name: "COMPUTE_MODULE", value: `/app/${name}.js` },
+      { name: "RUNTIME_TYPE", value: "K8S" },
+    ];
+    if (args?.envs) {
+      for (const key of Object.keys(args?.envs)) {
+        envs.push({ name: key, value: args.envs[key] });
+      }
+    }
+
     this.kservice = new k8s.apiextensions.CustomResource(
       `${name}-kservice`,
       {
@@ -90,16 +101,7 @@ CMD [ "node", "runtime.js" ]
               containers: [
                 {
                   image: image.imageName,
-                  env: [
-                    {
-                      name: "COMPUTE_MODULE",
-                      value: `/app/${name}.js`,
-                    },
-                    {
-                      name: "RUNTIME_TYPE",
-                      value: "K8S",
-                    },
-                  ],
+                  env: envs,
                 },
               ],
             },

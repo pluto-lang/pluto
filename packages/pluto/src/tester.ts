@@ -1,4 +1,4 @@
-import { FnResource, Resource, runtime, simulator } from "@plutolang/base";
+import { FnResource, IResource, runtime, simulator } from "@plutolang/base";
 
 export interface TestCase {
   description: string;
@@ -27,7 +27,7 @@ export interface TesterInfraOptions {}
 
 export interface TesterOptions extends TesterInfraOptions {}
 
-export class Tester implements Resource {
+export class Tester implements IResource {
   constructor(name: string, opts?: TesterOptions) {
     name;
     opts;
@@ -49,4 +49,4 @@ export class Tester implements Resource {
   }
 }
 
-export interface Tester extends TesterInfra, Resource {}
+export interface Tester extends TesterInfra, IResource {}

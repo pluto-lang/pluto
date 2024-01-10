@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["tester"]
+  "ignore": ["tester", "app-with-prop-access"]
 }

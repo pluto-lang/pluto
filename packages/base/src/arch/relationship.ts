@@ -4,6 +4,7 @@ import { Resource } from "./resource";
 export enum RelatType {
   CREATE = "create",
   ACCESS = "access",
+  PROPERTY = "property",
 }
 
 export class Relationship {

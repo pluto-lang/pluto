@@ -1,8 +1,8 @@
-import ts from "typescript";
+import * as ts from "typescript";
 import { expect, describe, test } from "vitest";
-import { genAnalyzerForInline } from "./utils-test";
-import { ImportStore, extractImportElements } from "./imports";
-import { resolveImportDeps } from "./dep-resolve";
+import { genAnalyzerForInline } from "./utils";
+import { ImportStore, extractImportElements } from "../src/imports";
+import { resolveImportDeps } from "../src/dep-resolve";
 
 function testOnce(code: string, importStatNum: number, expectDepNum: number) {
   const { sourceFile } = genAnalyzerForInline(code);

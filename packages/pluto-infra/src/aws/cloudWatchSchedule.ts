@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { Resource, ResourceInfra } from "@plutolang/base";
+import { IResource, ResourceInfra } from "@plutolang/base";
 import { ScheduleInfra } from "@plutolang/pluto";
 import { ScheduleInfraOptions } from "@plutolang/pluto/dist/schedule";
 import { Lambda } from "./lambda";
@@ -16,7 +16,7 @@ export class CloudWatchSchedule
     this.name = name;
   }
 
-  public async cron(cron: string, fn: Resource): Promise<void> {
+  public async cron(cron: string, fn: IResource): Promise<void> {
     if (!(fn instanceof Lambda)) {
       throw new Error("Fn is not a subclass of LambdaDef.");
     }

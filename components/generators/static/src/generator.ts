@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import * as ts from "typescript";
 import * as esbuild from "esbuild";
-import { arch, core } from "@plutolang/base";
+import { arch, core, utils } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 // The name of the compiled entrypoint
@@ -23,7 +23,7 @@ export class StaticGenerator extends core.Generator {
   public async generate(archRef: arch.Architecture, outdir: string): Promise<core.GenerateResult> {
     const compiledDir = path.join(outdir, "compiled");
 
-    const pirTsCode = genPirCode(archRef);
+    const pirTsCode = genPirCode(archRef, this.project, this.stack.name);
     writeToFile(outdir, ENTRYPOINT_FILENAME + ".ts", pirTsCode);
     const pirJsCode = compileTs(pirTsCode);
     writeToFile(compiledDir, ENTRYPOINT_FILENAME + ".js", pirJsCode);
@@ -59,7 +59,7 @@ function compileTs(code: string): string {
   }).outputText;
 }
 
-function genPirCode(archRef: arch.Architecture): string {
+function genPirCode(archRef: arch.Architecture, projectName: string, stackName: string): string {
   let iacSource = `// Register all IaC SDK
 import { Registry } from "@plutolang/base";
 
@@ -97,16 +97,28 @@ const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
     const res = archRef.getResource(resName);
     if (res.type != "FnResource") continue;
 
+    const envVars = [`PLUTO_PROJECT_NAME: "${projectName}"`, `PLUTO_STACK_NAME: "${stackName}"`];
     const deps = [];
     for (const relat of archRef.relationships) {
-      if (relat.from != res || relat.type != arch.RelatType.ACCESS) continue;
-      deps.push(relat.to.name);
+      if (relat.from != res) continue;
+      if (relat.type === arch.RelatType.ACCESS) {
+        deps.push(relat.to.name);
+      } else if (relat.type === arch.RelatType.PROPERTY) {
+        const resourceId = utils.genResourceId(projectName, stackName, relat.to.name);
+        const propEnvName = utils.createEnvNameForProperty(
+          /* Resource type */ relat.to.type,
+          /* Reosurce id */ resourceId,
+          /* Property Name */ relat.operation
+        );
+        const propEnvVal = `${relat.to.name}.${relat.operation}`;
+        envVars.push(`${propEnvName}: ${propEnvVal}`);
+      }
     }
 
     iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, ENGINE_TYPE, "${res.type}");
-const ${resName} = new resDefCls(${res.getParamString()}, {}, { dependsOn: [${deps.join(
-      ","
-    )}] });\n\n`;
+const ${resName} = new resDefCls(${res.getParamString()}, {
+  envs: {${envVars.join(",\n")}}
+}, { dependsOn: [${deps.join(",")}] });\n\n`;
   }
 
   // Establish resource dependencies, including triggering and accessing.

@@ -1,7 +1,7 @@
-import ts from "typescript";
+import * as ts from "typescript";
 import { test, expect } from "vitest";
-import { ImportType, extractImportElements } from "./imports";
-import { genAnalyzerForInline } from "./utils-test";
+import { ImportType, extractImportElements } from "../src/imports";
+import { genAnalyzerForInline } from "./utils";
 
 test("case: direct import", () => {
   const importStat = `import "fs";`;

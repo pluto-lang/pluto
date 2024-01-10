@@ -1,25 +1,25 @@
-import ts from "typescript";
+import * as ts from "typescript";
 import { test, describe, expect } from "vitest";
-import { genAnalyzerForInline, genAnalyzerForFile, rmSourceFile } from "./utils-test";
-import { ImportElement, ImportType } from "./imports";
-import { isResourceType } from "./utils";
-import { visitVariableStatement } from "./visit-var-def";
-import { visitBinaryExpression, visitCallExpression } from "./visit-expression";
+import { genAnalyzerForFile, rmSourceFile } from "./utils";
+import { ImportElement, ImportType } from "../src/imports";
+import { isResourceType } from "../src/utils";
+import { visitVariableStatement } from "../src/visit-var-def";
+import { visitBinaryExpression, visitCallExpression } from "../src/visit-expression";
 
-describe("All types implement Resource", async () => {
+describe("All types implement IResource", async () => {
   const sourceCode = `
-import { Resource } from "@plutolang/base";
+import { IResource } from "@plutolang/base";
 
-class DirectCls implements Resource {}
-interface DirectIntf extends Resource {}
-interaface DirectCls extends Resource {} // same name with DirectCls
+class DirectCls implements IResource {}
+interface DirectIntf extends IResource {}
+interface DirectCls extends IResource {} // same name with DirectCls
 
 class IndirectCls implements DirectIntf {}
 interface IndirectIntf extends DirectIntf {}
 interface IndirectCls extends DirectIntf {} // same name with IndirectCls
 `;
 
-  const { sourceFile, checker } = genAnalyzerForInline(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("all-types-impl-resource.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isInterfaceDeclaration(node) || ts.isClassDeclaration(node)) {
@@ -30,20 +30,23 @@ interface IndirectCls extends DirectIntf {} // same name with IndirectCls
   });
 });
 
-describe("All types don't implement Resource", async () => {
+describe("All types don't implement IResource", async () => {
   const sourceCode = `
-import { Resource } from "@plutolang/other";
+interface IResource {}
 
-class DirectCls implements Resource {}
-interface DirectIntf extends Resource {}
-interaface DirectCls extends Resource {} // same name with DirectCls
+class DirectCls implements IResource {}
+interface DirectIntf extends IResource {}
+interface DirectCls extends IResource {} // same name with DirectCls
 
 class IndirectCls implements DirectIntf {}
 interface IndirectIntf extends DirectIntf {}
 interface IndirectCls extends DirectIntf {} // same name with IndirectCls
 `;
 
-  const { sourceFile, checker } = genAnalyzerForInline(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile(
+    "all-types-do-not-impl-resource.ts",
+    sourceCode
+  );
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isInterfaceDeclaration(node) || ts.isClassDeclaration(node)) {
@@ -60,10 +63,10 @@ import { Router } from "@plutolang/pluto";
 import * as pluto from "@plutolang/pluto";
 
 const obj1 = new Router("obj1");
-const obj2 = new Router("obj2"), obj3 = new pluto.Router("obj3"), obj4;
+const obj2 = new Router("obj2"), obj3 = new pluto.Router("obj3");
 `;
 
-  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("valid-resource-var-stats.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isVariableStatement(node)) {
@@ -113,10 +116,10 @@ let obj1;
 obj1 = new Router("obj1");
 obj1 = 1;
 
-let obj2, obj3, obj4;
+let obj2: Router | undefined, obj3: Router | undefined, obj4: Router | undefined;
 obj2 = new Router("obj2"), obj3 = new Router("obj3"), obj4 = new Router("obj4");
 
-obj3.get("/", async (req: HttpRequest) => Promise<HttpResponse> {
+obj3.get("/", async (req: HttpRequest): Promise<HttpResponse> => {
   return {
     statusCode: 200,
     body: "hello"
@@ -124,7 +127,7 @@ obj3.get("/", async (req: HttpRequest) => Promise<HttpResponse> {
 });
 `;
 
-  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("valid-expressions.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isExpressionStatement(node)) {
@@ -138,7 +141,9 @@ obj3.get("/", async (req: HttpRequest) => Promise<HttpResponse> {
       } else if (ts.isCallExpression(childNode)) {
         test("check call expression: " + childNode.getText().split("\n")[0], async () => {
           const union = visitCallExpression(childNode, checker);
+          expect(union?.resourceVarInfos).toBeDefined();
           expect(union?.resourceVarInfos).toHaveLength(1);
+          expect(union?.resourceRelatInfos).toBeDefined();
           expect(union?.resourceRelatInfos).toHaveLength(1);
         });
       }
@@ -155,7 +160,7 @@ import * as pluto from "@plutolang/pluto";
 let obj2 = new Router("obj2");
 
 const getFn = obj2.get;
-getFn("/", async (req: HttpRequest) => Promise<HttpResponse> {
+getFn("/", async (req: HttpRequest): Promise<HttpResponse> => {
   return {
     statusCode: 200,
     body: "hello"
@@ -163,7 +168,7 @@ getFn("/", async (req: HttpRequest) => Promise<HttpResponse> {
 });
 
 const getFn2 = getFn;
-getFn2("/", async function hello (req: HttpRequest) => Promise<HttpResponse> {
+getFn2("/", async function hello (req: HttpRequest): Promise<HttpResponse> {
   return {
     statusCode: 200,
     body: "hello"
@@ -183,7 +188,7 @@ const cls = new Cls();
 cls.add(1);
 `;
 
-  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("invalid-call-expressions.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isExpressionStatement(node)) {
@@ -227,7 +232,7 @@ router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
   };
 });
 `;
-  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("valid-constants-accessing.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isExpressionStatement(node)) {
@@ -262,7 +267,7 @@ router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
   };
 });
 `;
-  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("invalid-constants-accessing.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isExpressionStatement(node)) {
@@ -298,11 +303,11 @@ router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
   const str = await test();
   return {
     statusCode: 200,
-    body: \`Fetch access message. \${test2()}\`,
+    body: \`Fetch access message. \${test()}\`,
   };
 });
 `;
-  const { sourceFile, checker } = genAnalyzerForFile(sourceCode);
+  const { sourceFile, checker } = genAnalyzerForFile("valid-function-calling.ts", sourceCode);
 
   ts.forEachChild(sourceFile, (node) => {
     if (ts.isExpressionStatement(node)) {
@@ -317,6 +322,47 @@ router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
         expect(union?.resourceRelatInfos).toHaveLength(2); // router->lambda; lambda->queue
 
         expect(union?.resourceVarInfos[0].resourceConstructInfo.locations).toHaveLength(3);
+      });
+    }
+  });
+
+  rmSourceFile(sourceFile);
+});
+
+describe("Valid property accessing", async () => {
+  const sourceCode = `
+import { Router, HttpRequest, HttpResponse, Queue } from "@plutolang/pluto";
+const router = new Router("router");
+
+router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
+  console.log(router.url);
+  return {
+    statusCode: 200,
+    body: \`Fetch access message.\`,
+  };
+});
+
+const queue = new Queue("queue");
+
+queue.subscribe(async () => {
+  const url = router.url;
+})
+`;
+  const { sourceFile, checker } = genAnalyzerForFile("valid-constants-accessing.ts", sourceCode);
+
+  ts.forEachChild(sourceFile, (node) => {
+    if (ts.isExpressionStatement(node)) {
+      const childNode = node.expression;
+      if (!ts.isCallExpression(childNode)) {
+        return;
+      }
+
+      test("check call expression: " + childNode.getText().split("\n")[0], async () => {
+        const union = visitCallExpression(childNode, checker);
+        expect(union?.resourceVarInfos).toBeDefined();
+        expect(union?.resourceVarInfos).toHaveLength(1);
+        expect(union?.resourceRelatInfos).toBeDefined();
+        expect(union?.resourceRelatInfos).toHaveLength(2);
       });
     }
   });

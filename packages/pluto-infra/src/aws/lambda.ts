@@ -6,6 +6,7 @@ import * as pulumi from "@pulumi/pulumi";
 import { ResourceInfra } from "@plutolang/base";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
+import { FunctionOptions } from "@plutolang/pluto";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
@@ -24,7 +25,7 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
   iam: Role;
   statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
-  constructor(name: string, args?: object, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: FunctionOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:lambda:aws/Lambda", name, args, opts);
     this.name = name;
     this.statements = [];
@@ -72,6 +73,12 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
       { parent: this }
     );
 
+    const envs: Record<string, any> = {
+      ...args?.envs,
+      COMPUTE_MODULE: moduleFilename,
+      RUNTIME_TYPE: "AWS",
+    };
+
     this.lambda = new aws.lambda.Function(
       `${this.name}-lambda`,
       {
@@ -80,10 +87,7 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
         handler: "runtime.default",
         runtime: "nodejs18.x",
         environment: {
-          variables: {
-            COMPUTE_MODULE: moduleFilename,
-            RUNTIME_TYPE: "AWS",
-          },
+          variables: envs,
         },
         timeout: 30,
       },

@@ -1,5 +1,5 @@
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@plutolang/base";
+import { IResource, ResourceInfra } from "@plutolang/base";
 import { TestCase, TesterInfra, TesterInfraOptions } from "@plutolang/pluto";
 import { Lambda } from "./lambda";
 
@@ -21,7 +21,7 @@ export class Tester extends pulumi.ComponentResource implements TesterInfra, Res
     this.outputs = pulumi.output({});
   }
 
-  public it(description: string, fn: Resource): void {
+  public it(description: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) {
       throw new Error("Tester.it only accepts Fn Resource.");
     }

@@ -1,20 +1,23 @@
 import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { Resource, ResourceInfra } from "@plutolang/base";
-import { RouterInfra, RouterInfraOptions } from "@plutolang/pluto";
+import { IResource, ResourceInfra } from "@plutolang/base";
+import { IRouterCapturedProps, IRouterInfraApi, RouterInfraOptions } from "@plutolang/pluto";
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
 import { Lambda } from "./lambda";
+import { currentAwsRegion } from "./utils";
+
+const DEFAULT_STAGE_NAME = "dev";
 
 export class ApiGatewayRouter
   extends pulumi.ComponentResource
-  implements RouterInfra, ResourceInfra
+  implements IRouterInfraApi, IRouterCapturedProps, ResourceInfra
 {
-  readonly name: string;
+  public readonly name: string;
+  public _url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
 
-  apiGateway: Api;
-  routes: Route[];
-  url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
+  private apiGateway: Api;
+  private routes: Route[];
 
   constructor(name: string, opts?: RouterInfraOptions) {
     super("pluto:router:aws/ApiGateway", name, opts);
@@ -28,7 +31,14 @@ export class ApiGatewayRouter
       { parent: this }
     );
 
+    const region = currentAwsRegion();
+    this._url = pulumi.interpolate`https://${this.apiGateway.id}.execute-api.${region}.amazonaws.com/${DEFAULT_STAGE_NAME}`;
+
     this.routes = [];
+  }
+
+  public get url(): string {
+    return this._url as any;
   }
 
   /**
@@ -36,28 +46,28 @@ export class ApiGatewayRouter
    * @param path The URL path to handle
    * @param fn
    */
-  public get(path: string, fn: Resource): void {
+  public get(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
     this.addHandler("GET", path, lambda);
   }
 
-  public post(path: string, fn: Resource): void {
+  public post(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
     this.addHandler("POST", path, lambda);
   }
 
-  public put(path: string, fn: Resource): void {
+  public put(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
     this.addHandler("PUT", path, lambda);
   }
 
-  public delete(path: string, fn: Resource): void {
+  public delete(path: string, fn: IResource): void {
     if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
     const lambda = fn as Lambda;
 
@@ -124,15 +134,14 @@ export class ApiGatewayRouter
       { dependsOn: this.routes, parent: this }
     );
 
-    const stage = new aws.apigatewayv2.Stage(
+    new aws.apigatewayv2.Stage(
       `${this.name}-stage`,
       {
         apiId: this.apiGateway.id,
         deploymentId: deployment.id,
-        name: "dev", // TODO: modifiable
+        name: DEFAULT_STAGE_NAME, // TODO: modifiable
       },
       { parent: this }
     );
-    this.url = stage.invokeUrl;
   }
 }

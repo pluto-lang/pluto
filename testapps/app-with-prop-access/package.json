@@ -1,0 +1,19 @@
+{
+  "name": "app-with-prop-access",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "mkdir -p .pluto/dev && DEBUG=1 ../../apps/cli/bin/pluto compile"
+  },
+  "dependencies": {
+    "@plutolang/pluto": "workspace: *"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.2.2",
+    "@plutolang/base": "workspace: *",
+    "@plutolang/pluto-infra": "workspace: *",
+    "@pulumi/pulumi": "^3.88.0"
+  },
+  "main": "dist/index.js"
+}
