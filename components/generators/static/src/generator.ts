@@ -145,7 +145,7 @@ const ${resName} = await (
   }
 
   return `
-export const outputs = (async () => {
+export default (async () => {
 ${iacSource}
 
 // The return values are the outputs of the resources.

@@ -31,6 +31,14 @@ export abstract class Queue {
    * with this resource type.
    */
   public static async createInstance(name: string, options?: QueueOptions): Promise<IQueueInfra> {
+    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
+    if (
+      utils.currentPlatformType() === runtime.Type.Simulator &&
+      utils.currentEngineType() === engine.Type.simulator
+    ) {
+      return new (await import("./simulator")).SimQueue(name, options) as any;
+    }
+
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

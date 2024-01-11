@@ -30,6 +30,14 @@ export abstract class Tester {
    * with this resource type.
    */
   public static async createInstance(name: string, options?: TesterOptions): Promise<ITesterInfra> {
+    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
+    if (
+      utils.currentPlatformType() === runtime.Type.Simulator &&
+      utils.currentEngineType() === engine.Type.simulator
+    ) {
+      return new (await import("./simulator")).SimTester(name, options) as any;
+    }
+
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

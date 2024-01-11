@@ -34,6 +34,14 @@ export abstract class Function {
     name: string,
     options?: FunctionOptions
   ): Promise<IFunctionInfra> {
+    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
+    if (
+      utils.currentPlatformType() === runtime.Type.Simulator &&
+      utils.currentEngineType() === engine.Type.simulator
+    ) {
+      return new (await import("./simulator")).SimFunction(name, options);
+    }
+
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

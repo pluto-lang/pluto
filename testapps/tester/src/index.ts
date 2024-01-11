@@ -14,8 +14,14 @@ const tester = new Tester("tester");
 
 tester.it("push a message to the queue", async (): Promise<void> => {
   await queue.push(JSON.stringify({ name: "pluto", message: "test" }));
+  // It's possible that the message is not yet stored, even after it has been returned.
+  await sleep(5000);
   const val = await kvstore.get("pluto");
   if (val !== "test") {
     throw new Error("failed.");
   }
 });
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

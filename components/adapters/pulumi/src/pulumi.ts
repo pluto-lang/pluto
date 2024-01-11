@@ -73,12 +73,7 @@ export class PulumiAdapter extends core.Adapter {
       }
 
       const result = await pulumiStack.up();
-
-      const outputs: Record<string, any> = {};
-      for (const key in result.outputs) {
-        outputs[key] = result.outputs[key].value;
-      }
-      return { outputs };
+      return { outputs: result.outputs["default"].value };
     } catch (e) {
       if (e instanceof Error) {
         throw new Error("Met error during run 'pulumi update', " + e.message);

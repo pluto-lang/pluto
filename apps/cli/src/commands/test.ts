@@ -143,6 +143,12 @@ async function testOneGroup(
       }
     } else {
       const testers = listAllTester(applyResult.outputs!);
+      if (testers.length === 0) {
+        console.warn("Not found any testers.");
+        if (process.env.DEBUG) {
+          console.log("The resource of deployment: ", JSON.stringify(applyResult, undefined, 2));
+        }
+      }
       for (const tester of testers) {
         const testerClient = buildTesterClient(tmpSta, tester);
         await testerClient.runTests();
