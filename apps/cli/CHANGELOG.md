@@ -1,5 +1,18 @@
 # @plutolang/cli
 
+## 0.2.10
+
+### Patch Changes
+
+- 62a0009: feat: instantiate resource infrastructure classes asynchronously within the base class of each resource
+- Updated dependencies [62a0009]
+  - @plutolang/simulator-adapter@0.2.9
+  - @plutolang/static-generator@0.2.8
+  - @plutolang/pulumi-adapter@0.2.9
+  - @plutolang/base@0.2.8
+  - @plutolang/static-deducer@0.2.8
+  - @plutolang/graphviz-generator@0.2.8
+
 ## 0.2.9
 
 ### Patch Changes
