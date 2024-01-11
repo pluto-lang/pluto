@@ -60,36 +60,20 @@ function compileTs(code: string): string {
 }
 
 function genPirCode(archRef: arch.Architecture, projectName: string, stackName: string): string {
-  let iacSource = `// Register all IaC SDK
-import { Registry } from "@plutolang/base";
-
-const RUNTIME_TYPE = process.env['RUNTIME_TYPE'];
-if (!RUNTIME_TYPE) {
-  throw new Error("Missing RUNTIME_TYPE");
-}
-const ENGINE_TYPE = process.env['ENGINE_TYPE'];
-if (!ENGINE_TYPE) {
-  throw new Error("Missing ENGINE_TYPE");
-}
-const reg: Registry = new Registry();
-
-import { register as plutoRegister } from "@plutolang/pluto-infra";
-plutoRegister(reg);
-
-
-let resDefCls;
-
-`;
+  const outputVars = [];
+  let iacSource = "";
 
   // Resource definition, first for BaaS, second for FaaS
   for (const resName in archRef.resources) {
     const res = archRef.getResource(resName);
     if (res.type == "Root" || res.type == "FnResource") continue;
 
-    iacSource += res.getImports().join("\n") + "\n";
-
-    iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, ENGINE_TYPE, ${res.type});
-const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
+    // TODO: choose the correct package that specified by the user.
+    iacSource += `
+const ${resName} = await (
+  await import("@plutolang/pluto-infra")
+).${res.type}.createInstance(${res.getParamString()});\n
+`;
   }
 
   // Specify the dependency of FaaS on this particular BaaS, because the building image process needs to be performed after exporting Dapr YAML.
@@ -115,10 +99,20 @@ const ${resName} = new resDefCls(${res.getParamString()});\n\n`;
       }
     }
 
-    iacSource += `resDefCls = reg.getResourceDef(RUNTIME_TYPE, ENGINE_TYPE, "${res.type}");
-const ${resName} = new resDefCls(${res.getParamString()}, {
-  envs: {${envVars.join(",\n")}}
-}, { dependsOn: [${deps.join(",")}] });\n\n`;
+    // TODO: choose the correct package that specified by the user.
+    iacSource += `
+const ${resName} = await (
+  await import("@plutolang/pluto-infra")
+).Function.createInstance(
+  ${res.getParamString()}, 
+  {
+    envs: {${envVars.join(",\n")}}
+  }, 
+  { 
+    dependsOn: [${deps.join(",")}] 
+  }
+);\n
+`;
   }
 
   // Establish resource dependencies, including triggering and accessing.
@@ -142,15 +136,24 @@ const ${resName} = new resDefCls(${res.getParamString()}, {
     // TODO: update the output mechanism
     if (res.type == "Router" && !outputed) {
       outputed = true;
-      iacSource += `export const { url } = ${res.name};\n`;
+      outputVars.push(`url: ${res.name}.url`);
     }
     if (res.type == "Tester") {
-      iacSource += `const ${res.name}Out = ${res.name}.outputs;
-export { ${res.name}Out };\n`;
+      iacSource += `const ${res.name}Out = ${res.name}.outputs;\n`;
+      outputVars.push(`${res.name}Out`);
     }
   }
 
-  return iacSource;
+  return `
+export const outputs = (async () => {
+${iacSource}
+
+// The return values are the outputs of the resources.
+  return {
+${outputVars.join(",\n")}
+  }
+})()
+`;
 }
 
 interface ComputeIR {
