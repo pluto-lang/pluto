@@ -1,8 +1,8 @@
 import { simulator } from "@plutolang/base";
 import { SimFunction } from "./function";
-import { CloudEvent, QueueClient, QueueClientOptions } from "@plutolang/pluto";
+import { CloudEvent, IQueueClientApi, QueueClientOptions } from "@plutolang/pluto";
 
-export class SimQueue implements QueueClient, simulator.IResourceInstance {
+export class SimQueue implements IQueueClientApi, simulator.IResourceInstance {
   readonly topicName: string;
   private readonly messages: CloudEvent[];
   private subscriber?: string;

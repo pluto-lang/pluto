@@ -1,4 +1,11 @@
-import { FnResource, IResource, runtime, simulator } from "@plutolang/base";
+import {
+  FnResource,
+  IResource,
+  IResourceClientApi,
+  IResourceInfraApi,
+  runtime,
+  simulator,
+} from "@plutolang/base";
 
 export interface TestCase {
   description: string;
@@ -10,7 +17,9 @@ export interface TestHandler extends FnResource {
   (): Promise<void>;
 }
 
-export interface TesterInfra {
+export interface ITesterCapturedProps extends IResourceInfraApi {}
+
+export interface ITesterInfraApi extends IResourceInfraApi {
   it(description: string, fn: TestHandler): void;
 }
 
@@ -18,7 +27,7 @@ export interface TesterInfra {
  * Don't export these methods to developers.
  * These methods are only used internally by the cli.
  */
-export interface TesterClient {
+export interface ITesterClientApi extends IResourceClientApi {
   listTests(): Promise<TestCase[]>;
   runTest(testCase: TestCase): Promise<void>;
 }
@@ -36,7 +45,7 @@ export class Tester implements IResource {
     );
   }
 
-  public static buildClient(name: string, opts?: TesterOptions): TesterClient {
+  public static buildClient(name: string, opts?: TesterOptions): ITesterClientApi {
     const rtType = process.env["RUNTIME_TYPE"];
     switch (rtType) {
       case runtime.Type.Simulator:
@@ -49,4 +58,4 @@ export class Tester implements IResource {
   }
 }
 
-export interface Tester extends TesterInfra, IResource {}
+export interface Tester extends ITesterInfraApi, ITesterCapturedProps, IResource {}

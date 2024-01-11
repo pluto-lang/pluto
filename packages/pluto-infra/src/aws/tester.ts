@@ -1,9 +1,9 @@
 import * as pulumi from "@pulumi/pulumi";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { TestCase, TesterInfra, TesterInfraOptions } from "@plutolang/pluto";
+import { TestCase, ITesterInfraApi, TesterInfraOptions } from "@plutolang/pluto";
 import { Lambda } from "./lambda";
 
-export class Tester extends pulumi.ComponentResource implements TesterInfra, ResourceInfra {
+export class Tester extends pulumi.ComponentResource implements ITesterInfraApi, ResourceInfra {
   public readonly name: string;
   private readonly description: string;
   private readonly testCases: TestCase[];

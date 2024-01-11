@@ -1,9 +1,12 @@
-import { KVStoreInfra, KVStoreInfraOptions } from "@plutolang/pluto";
+import { IKVStoreInfraApi, KVStoreInfraOptions } from "@plutolang/pluto";
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import { ResourceInfra } from "@plutolang/base";
 
-export class RedisKVStore extends pulumi.ComponentResource implements ResourceInfra, KVStoreInfra {
+export class RedisKVStore
+  extends pulumi.ComponentResource
+  implements ResourceInfra, IKVStoreInfraApi
+{
   readonly name: string;
   url: pulumi.Output<string>;
 
