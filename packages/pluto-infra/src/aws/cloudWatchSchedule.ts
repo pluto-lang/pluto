@@ -1,13 +1,13 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { ScheduleInfra } from "@plutolang/pluto";
+import { IScheduleInfraApi } from "@plutolang/pluto";
 import { ScheduleInfraOptions } from "@plutolang/pluto/dist/schedule";
 import { Lambda } from "./lambda";
 
 export class CloudWatchSchedule
   extends pulumi.ComponentResource
-  implements ScheduleInfra, ResourceInfra
+  implements IScheduleInfraApi, ResourceInfra
 {
   readonly name: string;
 

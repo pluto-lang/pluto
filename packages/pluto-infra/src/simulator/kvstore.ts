@@ -1,7 +1,7 @@
 import { simulator } from "@plutolang/base";
-import { KVStoreClient, KVStoreClientOptions } from "@plutolang/pluto";
+import { IKVStoreClientApi, KVStoreClientOptions } from "@plutolang/pluto";
 
-export class SimKVStore implements KVStoreClient, simulator.IResourceInstance {
+export class SimKVStore implements IKVStoreClientApi, simulator.IResourceInstance {
   private readonly table: Map<string, any>;
 
   constructor(name: string, opts?: KVStoreClientOptions) {

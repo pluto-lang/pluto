@@ -1,7 +1,7 @@
 import { createClient, RedisClientType } from "redis";
-import { KVStoreClient, KVStoreClientOptions } from "../../kvstore";
+import { IKVStoreClientApi, KVStoreClientOptions } from "../../kvstore";
 
-export class RedisKVStore implements KVStoreClient {
+export class RedisKVStore implements IKVStoreClientApi {
   readonly tableName: string;
   client: RedisClientType;
 

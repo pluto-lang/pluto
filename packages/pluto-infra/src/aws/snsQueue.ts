@@ -2,7 +2,7 @@ import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { QueueInfra, QueueInfraOptions } from "@plutolang/pluto/dist/queue";
+import { IQueueInfraApi, QueueInfraOptions } from "@plutolang/pluto/dist/queue";
 import { Lambda } from "./lambda";
 import { Permission } from "./permission";
 
@@ -10,7 +10,7 @@ export enum SNSOps {
   PUSH = "push",
 }
 
-export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra, QueueInfra {
+export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra, IQueueInfraApi {
   readonly name: string;
   topic: aws.sns.Topic;
 

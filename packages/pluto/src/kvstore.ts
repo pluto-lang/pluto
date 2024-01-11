@@ -1,5 +1,6 @@
 import {
   IResource,
+  IResourceCapturedProps,
   IResourceClientApi,
   IResourceInfraApi,
   runtime,
@@ -7,14 +8,16 @@ import {
 } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
+export interface IKVStoreCapturedProps extends IResourceCapturedProps {}
+
 /**
  * Define the methods for KVStore, which operate during compilation.
  */
-export interface KVStoreInfra extends IResourceInfraApi {}
+export interface IKVStoreInfraApi extends IResourceInfraApi {}
 /**
  * Define the access methods for KVStore that operate during runtime.
  */
-export interface KVStoreClient extends IResourceClientApi {
+export interface IKVStoreClientApi extends IResourceClientApi {
   get(key: string): Promise<string>;
   set(key: string, val: string): Promise<void>;
 }
@@ -37,7 +40,7 @@ export class KVStore implements IResource {
     );
   }
 
-  public static buildClient(name: string, opts?: KVStoreClientOptions): KVStoreClient {
+  public static buildClient(name: string, opts?: KVStoreClientOptions): IKVStoreClientApi {
     const rtType = process.env["RUNTIME_TYPE"];
     switch (rtType) {
       case runtime.Type.AWS:
@@ -53,4 +56,8 @@ export class KVStore implements IResource {
   }
 }
 
-export interface KVStore extends KVStoreInfra, KVStoreClient, IResource {}
+export interface KVStore
+  extends IKVStoreInfraApi,
+    IKVStoreClientApi,
+    IKVStoreCapturedProps,
+    IResource {}

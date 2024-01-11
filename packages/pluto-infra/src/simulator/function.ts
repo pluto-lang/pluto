@@ -1,8 +1,8 @@
 import path from "path";
 import { FnResource, sandbox, simulator } from "@plutolang/base";
-import { FunctionClient, FunctionOptions } from "@plutolang/pluto";
+import { IFunctionClientApi, FunctionOptions } from "@plutolang/pluto";
 
-export class SimFunction implements simulator.IResourceInstance, FunctionClient {
+export class SimFunction implements simulator.IResourceInstance, IFunctionClientApi {
   private readonly entrypoint: string;
   private readonly opts?: FunctionOptions;
   private context?: simulator.IContext;

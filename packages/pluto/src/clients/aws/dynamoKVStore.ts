@@ -1,11 +1,11 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand, GetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { KVStoreClient, KVStoreClientOptions } from "../../kvstore";
+import { IKVStoreClientApi, KVStoreClientOptions } from "../../kvstore";
 
 /**
  * Implementation of KVStore using AWS DynamoDB.
  */
-export class DynamoKVStore implements KVStoreClient {
+export class DynamoKVStore implements IKVStoreClientApi {
   private tableName: string;
   private client: DynamoDBClient;
   private docClient: DynamoDBDocumentClient;

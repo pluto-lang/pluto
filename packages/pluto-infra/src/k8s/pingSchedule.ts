@@ -1,10 +1,13 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { ScheduleInfra, ScheduleInfraOptions } from "@plutolang/pluto";
+import { IScheduleInfraApi, ScheduleInfraOptions } from "@plutolang/pluto";
 import { ServiceLambda } from "./serviceLambda";
 
-export class PingSchedule extends pulumi.ComponentResource implements ResourceInfra, ScheduleInfra {
+export class PingSchedule
+  extends pulumi.ComponentResource
+  implements ResourceInfra, IScheduleInfraApi
+{
   readonly name: string;
 
   constructor(name: string, args?: ScheduleInfraOptions, opts?: pulumi.CustomResourceOptions) {

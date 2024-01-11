@@ -1,4 +1,4 @@
-import { arch, simulator, Registry, runtime, engine } from "@plutolang/base";
+import { arch, simulator } from "@plutolang/base";
 import http from "http";
 
 const SIM_HANDLE_PATH = "/call";
@@ -12,35 +12,32 @@ export class Simulator implements simulator.IContext {
     this.resources = new Map();
 
     process.env["RUNTIME_TYPE"] = "SIMULATOR";
+    process.env["ENGINE_TYPE"] = "simulator";
   }
 
   public async loadApp(archRef: arch.Architecture): Promise<void> {
     const pkgName = "@plutolang/pluto";
-    const plutoClient = await import(pkgName);
     const plutoInfra = await import(pkgName + "-infra");
-
-    const reg: Registry = new Registry();
-    plutoInfra.register(reg);
 
     for (const resourceName in archRef.resources) {
       const resource = archRef.resources[resourceName];
       const resourceType = resource.type;
       if (resourceType === "Root") continue;
 
-      const targetClass = resourceType === "FnResource" ? resourceType : plutoClient[resourceType];
-      if (!targetClass) {
-        throw new Error("Cannot find resource type " + resourceType);
+      const resourceInfraClass =
+        resourceType === "FnResource" ? plutoInfra["Function"] : plutoInfra[resourceType];
+      if (!resourceInfraClass) {
+        throw new Error(
+          "Cannot find the infrastructure implementation class of the resource type " + resourceType
+        );
       }
-
-      const resourceInfraClass = reg.getResourceDef(
-        runtime.Type.Simulator,
-        engine.Type.simulator,
-        targetClass
-      );
 
       const args = new Array(resource.parameters.length);
       resource.parameters.forEach((param) => (args[param.index] = JSON.parse(param.value)));
-      const instance = new resourceInfraClass(args[0], args[1]) as simulator.IResourceInstance;
+      const instance = (await resourceInfraClass.createInstance(
+        args[0],
+        args[1]
+      )) as simulator.IResourceInstance;
       await instance.setup(this);
       this.registerInstance(args[0], instance);
     }

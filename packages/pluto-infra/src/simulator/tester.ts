@@ -1,8 +1,8 @@
 import { simulator } from "@plutolang/base";
 import { SimFunction } from "./function";
-import { TestCase, TesterClient, TesterOptions } from "@plutolang/pluto";
+import { TestCase, ITesterClientApi, TesterOptions } from "@plutolang/pluto";
 
-export class SimTester implements TesterClient, simulator.IResourceInstance {
+export class SimTester implements ITesterClientApi, simulator.IResourceInstance {
   readonly topicName: string;
   private testCases: TestCase[];
   private context?: simulator.IContext;

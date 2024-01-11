@@ -1,7 +1,7 @@
 import { createClient, RedisClientType } from "redis";
-import { CloudEvent, QueueClient, QueueClientOptions } from "../../queue";
+import { CloudEvent, IQueueClientApi, QueueClientOptions } from "../../queue";
 
-export class RedisQueue implements QueueClient {
+export class RedisQueue implements IQueueClientApi {
   readonly topicName: string;
   client: RedisClientType;
 
