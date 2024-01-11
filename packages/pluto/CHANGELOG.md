@@ -1,5 +1,13 @@
 # @plutolang/pluto
 
+## 0.2.8
+
+### Patch Changes
+
+- 62a0009: feat: instantiate resource infrastructure classes asynchronously within the base class of each resource
+- Updated dependencies [62a0009]
+  - @plutolang/base@0.2.8
+
 ## 0.2.7
 
 ### Patch Changes

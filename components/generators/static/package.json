@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/static-generator",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",
