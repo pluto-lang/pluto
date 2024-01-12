@@ -1,6 +1,8 @@
 import fs from "fs";
 import * as yaml from "js-yaml";
-import { arch, core, ProvisionType } from "@plutolang/base";
+import { ProvisionType } from "@plutolang/base";
+import { Architecture } from "@plutolang/base/arch";
+import { Deducer, Generator, Adapter, BasicArgs, NewAdapterArgs } from "@plutolang/base/core";
 
 /**
  * load the default export of the target package.
@@ -19,25 +21,22 @@ async function loadPackage(pkgName: string): Promise<any> {
   return (await import(pkgName)).default;
 }
 
-export async function buildDeducer(
-  deducerPkg: string,
-  basicArgs: core.BasicArgs
-): Promise<core.Deducer> {
-  return new (await loadPackage(deducerPkg))(basicArgs) as core.Deducer;
+export async function buildDeducer(deducerPkg: string, basicArgs: BasicArgs): Promise<Deducer> {
+  return new (await loadPackage(deducerPkg))(basicArgs) as Deducer;
 }
 
 export async function buildGenerator(
   generatorPkg: string,
-  basicArgs: core.BasicArgs
-): Promise<core.Generator> {
-  return new (await loadPackage(generatorPkg))(basicArgs) as core.Generator;
+  basicArgs: BasicArgs
+): Promise<Generator> {
+  return new (await loadPackage(generatorPkg))(basicArgs) as Generator;
 }
 
 export async function buildAdapter(
   adapterPkg: string,
-  adapterArgs: core.NewAdapterArgs
-): Promise<core.Adapter> {
-  return new (await loadPackage(adapterPkg))(adapterArgs) as core.Adapter;
+  adapterArgs: NewAdapterArgs
+): Promise<Adapter> {
+  return new (await loadPackage(adapterPkg))(adapterArgs) as Adapter;
 }
 
 export function selectAdapterByEngine(provisionType: ProvisionType): string | undefined {
@@ -48,7 +47,7 @@ export function selectAdapterByEngine(provisionType: ProvisionType): string | un
   return mapping[provisionType];
 }
 
-export function loadArchRef(filepath: string): arch.Architecture {
+export function loadArchRef(filepath: string): Architecture {
   const content = fs.readFileSync(filepath);
-  return yaml.load(content.toString()) as arch.Architecture;
+  return yaml.load(content.toString()) as Architecture;
 }

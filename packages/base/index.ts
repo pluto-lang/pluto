@@ -7,7 +7,6 @@ export * as core from "./core";
 
 export * as arch from "./arch";
 export * as simulator from "./simulator";
-export * as sandbox from "./sandbox";
 
 export * as utils from "./utils";
 export * as errors from "./errors";
