@@ -1,13 +1,10 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { IRouterInfraApi, RouterOptions } from "@plutolang/pluto";
+import { IRouterInfra, RouterOptions } from "@plutolang/pluto";
 import { FnResource, ResourceInfra } from "@plutolang/base";
-import { ServiceLambda } from "./serviceLambda";
+import { ServiceLambda } from "./function.service";
 
-export class IngressRouter
-  extends pulumi.ComponentResource
-  implements IRouterInfraApi, ResourceInfra
-{
+export class IngressRouter extends pulumi.ComponentResource implements ResourceInfra, IRouterInfra {
   readonly name: string;
 
   private _url: pulumi.Output<string>;

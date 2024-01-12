@@ -1,7 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { ResourceInfra } from "@plutolang/base";
-import { IKVStoreInfraApi, KVStoreInfraOptions } from "@plutolang/pluto";
+import { IKVStoreInfra, KVStoreOptions } from "@plutolang/pluto";
 import { Permission } from "./permission";
 
 export enum DynamoDbOps {
@@ -11,12 +11,12 @@ export enum DynamoDbOps {
 
 export class DynamoKVStore
   extends pulumi.ComponentResource
-  implements ResourceInfra, IKVStoreInfraApi
+  implements ResourceInfra, IKVStoreInfra
 {
   readonly name: string;
   arn: pulumi.Output<string>;
 
-  constructor(name: string, opts?: KVStoreInfraOptions) {
+  constructor(name: string, opts?: KVStoreOptions) {
     super("pluto:kvstore:aws/DynamoDB", name, opts);
     this.name = name;
 

@@ -1,6 +1,6 @@
-export { ApiGatewayRouter } from "./apiGatewayRouter";
-export { DynamoKVStore } from "./dynamoKVStore";
-export { SNSQueue } from "./snsQueue";
-export { Lambda } from "./lambda";
-export { CloudWatchSchedule } from "./cloudWatchSchedule";
+export { ApiGatewayRouter } from "./router.apigateway";
+export { DynamoKVStore } from "./kvstore.dynamodb";
+export { SNSQueue } from "./queue.sns";
+export { Lambda } from "./function.lambda";
+export { CloudWatchSchedule } from "./schedule.cloudwatch";
 export { Tester } from "./tester";

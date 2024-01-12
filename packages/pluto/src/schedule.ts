@@ -10,7 +10,13 @@ export interface Handler extends FnResource {
   (): Promise<void>;
 }
 
-export interface IScheduleCapturedProps extends IResourceCapturedProps {}
+/**
+ * The options for instantiating an infrastructure implementation class or a client implementation
+ * class.
+ */
+export interface ScheduleOptions {}
+
+export interface IScheduleClientApi extends IResourceClientApi {}
 
 export interface IScheduleInfraApi extends IResourceInfraApi {
   /**
@@ -20,12 +26,19 @@ export interface IScheduleInfraApi extends IResourceInfraApi {
    */
   cron(cron: string, fn: Handler): Promise<void>;
 }
+export interface IScheduleCapturedProps extends IResourceCapturedProps {}
 
-export interface IScheduleClientApi extends IResourceClientApi {}
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * client implementation class of a resource type.
+ */
+export type IScheduleClient = IScheduleClientApi & IScheduleCapturedProps;
 
-export interface ScheduleInfraOptions {}
-
-export interface ScheduleOptions extends ScheduleInfraOptions {}
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * infrastructure implementation class of a resource type.
+ */
+export type IScheduleInfra = IScheduleInfraApi & IScheduleCapturedProps;
 
 export class Schedule implements IResource {
   constructor(name: string, opts?: ScheduleOptions) {
@@ -37,8 +50,4 @@ export class Schedule implements IResource {
   }
 }
 
-export interface Schedule
-  extends IScheduleInfraApi,
-    IScheduleClientApi,
-    IScheduleCapturedProps,
-    IResource {}
+export interface Schedule extends IResource, IScheduleClient, IScheduleInfra {}

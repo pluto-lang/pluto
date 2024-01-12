@@ -2,8 +2,10 @@ import {
   FnResource,
   IResource,
   IResourceCapturedProps,
+  IResourceClientApi,
   IResourceInfraApi,
-  runtime,
+  PlatformType,
+  utils,
 } from "@plutolang/base";
 import { shared } from "./clients";
 
@@ -24,9 +26,16 @@ export interface RequestHandler extends FnResource {
   (request: HttpRequest): Promise<HttpResponse>;
 }
 
-export interface IRouterCapturedProps extends IResourceCapturedProps {
-  get url(): string;
-}
+/**
+ * The options for instantiating an infrastructure implementation class or a client implementation
+ * class.
+ */
+export interface RouterOptions {}
+
+/**
+ * Define the access methods for Router that operate during runtime.
+ */
+export interface IRouterClientApi extends IResourceClientApi {}
 
 /**
  * Define the methods for Router, which operate during compilation.
@@ -38,11 +47,24 @@ export interface IRouterInfraApi extends IResourceInfraApi {
   delete(path: string, fn: RequestHandler): void;
 }
 
-export interface RouterInfraOptions {}
 /**
- * The options for creating a client, which can be used at runtime.
+ * Define the properties for Router that are captured at compile time and accessed during runtime.
  */
-export interface RouterOptions extends RouterInfraOptions {}
+export interface IRouterCapturedProps extends IResourceCapturedProps {
+  get url(): string;
+}
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * client implementation class of a resource type.
+ */
+export type IRouterClient = IRouterClientApi & IRouterCapturedProps;
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * infrastructure implementation class of a resource type.
+ */
+export type IRouterInfra = IRouterInfraApi & IRouterCapturedProps;
 
 // TODO: abstract class
 export class Router implements IResource {
@@ -54,16 +76,16 @@ export class Router implements IResource {
     );
   }
 
-  public static buildClient(name: string, opts?: RouterOptions): IRouterCapturedProps {
-    const rtType = process.env["RUNTIME_TYPE"];
-    switch (rtType) {
-      case runtime.Type.AWS:
-      case runtime.Type.K8s:
+  public static buildClient(name: string, opts?: RouterOptions): IRouterClient {
+    const platformType = utils.currentPlatformType();
+    switch (platformType) {
+      case PlatformType.AWS:
+      case PlatformType.K8s:
         return new shared.RouterClient(name, opts);
       default:
-        throw new Error(`not support this runtime '${rtType}'`);
+        throw new Error(`not support this runtime '${platformType}'`);
     }
   }
 }
 
-export interface Router extends IResource, IRouterInfraApi, IRouterCapturedProps {}
+export interface Router extends IResource, IRouterClient, IRouterInfra {}

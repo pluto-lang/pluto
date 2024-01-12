@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { engine, runtime } from "@plutolang/base";
+import { ProvisionType, PlatformType } from "@plutolang/base";
 import { createProject } from "../builder";
 import logger from "../log";
 import { dumpProject } from "../utils";
@@ -11,16 +11,16 @@ const TEMPLATE_DIR = path.join(__dirname, "../../template");
 interface NewOptions {
   name?: string;
   stack?: string;
-  platform?: runtime.Type;
-  engine?: engine.Type;
+  platform?: PlatformType;
+  provision?: ProvisionType;
 }
 
 export async function create(opts: NewOptions) {
   const proj = await createProject({
     name: opts.name,
     stack: opts.stack,
-    rtType: opts.platform,
-    engType: opts.engine,
+    platformType: opts.platform,
+    provisionType: opts.provision,
   });
 
   genInitFiles(proj.name);

@@ -1,6 +1,8 @@
 import fs from "fs";
 import * as yaml from "js-yaml";
-import { arch, core, engine } from "@plutolang/base";
+import { ProvisionType } from "@plutolang/base";
+import { Architecture } from "@plutolang/base/arch";
+import { Deducer, Generator, Adapter, BasicArgs, NewAdapterArgs } from "@plutolang/base/core";
 
 /**
  * load the default export of the target package.
@@ -19,36 +21,45 @@ async function loadPackage(pkgName: string): Promise<any> {
   return (await import(pkgName)).default;
 }
 
-export async function buildDeducer(
-  deducerPkg: string,
-  basicArgs: core.BasicArgs
-): Promise<core.Deducer> {
-  return new (await loadPackage(deducerPkg))(basicArgs) as core.Deducer;
+export async function buildDeducer(deducerPkg: string, basicArgs: BasicArgs): Promise<Deducer> {
+  const deducer = new (await loadPackage(deducerPkg))(basicArgs);
+  if (deducer instanceof Deducer) {
+    return deducer;
+  }
+  throw new Error(`The default export of '${deducerPkg}' package is not a valid Deducer.`);
 }
 
 export async function buildGenerator(
   generatorPkg: string,
-  basicArgs: core.BasicArgs
-): Promise<core.Generator> {
-  return new (await loadPackage(generatorPkg))(basicArgs) as core.Generator;
+  basicArgs: BasicArgs
+): Promise<Generator> {
+  const generator = new (await loadPackage(generatorPkg))(basicArgs);
+  if (generator instanceof Generator) {
+    return generator;
+  }
+  throw new Error(`The default export of '${generatorPkg}' package is not a valid Generator.`);
 }
 
 export async function buildAdapter(
   adapterPkg: string,
-  adapterArgs: core.NewAdapterArgs
-): Promise<core.Adapter> {
-  return new (await loadPackage(adapterPkg))(adapterArgs) as core.Adapter;
+  adapterArgs: NewAdapterArgs
+): Promise<Adapter> {
+  const adapter = new (await loadPackage(adapterPkg))(adapterArgs);
+  if (adapter instanceof Adapter) {
+    return adapter;
+  }
+  throw new Error(`The default export of '${adapterPkg}' package is not a valid Adapter.`);
 }
 
-export function selectAdapterByEngine(engineType: engine.Type): string | undefined {
-  const mapping: { [k in engine.Type]?: string } = {
-    [engine.Type.pulumi]: "@plutolang/pulumi-adapter",
-    [engine.Type.simulator]: "@plutolang/simulator-adapter",
+export function selectAdapterByEngine(provisionType: ProvisionType): string | undefined {
+  const mapping: { [k in ProvisionType]?: string } = {
+    [ProvisionType.Pulumi]: "@plutolang/pulumi-adapter",
+    [ProvisionType.Simulator]: "@plutolang/simulator-adapter",
   };
-  return mapping[engineType];
+  return mapping[provisionType];
 }
 
-export function loadArchRef(filepath: string): arch.Architecture {
+export function loadArchRef(filepath: string): Architecture {
   const content = fs.readFileSync(filepath);
-  return yaml.load(content.toString()) as arch.Architecture;
+  return yaml.load(content.toString()) as Architecture;
 }

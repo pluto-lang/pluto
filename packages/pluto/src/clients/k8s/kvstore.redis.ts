@@ -1,11 +1,11 @@
 import { createClient, RedisClientType } from "redis";
-import { IKVStoreClientApi, KVStoreClientOptions } from "../../kvstore";
+import { IKVStoreClient, KVStoreOptions } from "../../kvstore";
 
-export class RedisKVStore implements IKVStoreClientApi {
+export class RedisKVStore implements IKVStoreClient {
   readonly tableName: string;
   client: RedisClientType;
 
-  constructor(name: string, opts?: KVStoreClientOptions) {
+  constructor(name: string, opts?: KVStoreOptions) {
     this.tableName = name;
     // TODO: Make namespace configurable.
     const host = `${this.tableName}-kvstore.default.svc.cluster.local`;

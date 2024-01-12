@@ -92,10 +92,10 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
 
   // TODO: make the workdir same with generated dir.
   const workdir = path.join(generatedDir, `compiled`);
-  // build the adapter based on the engine type
-  const adapterPkg = selectAdapterByEngine(stack.engineType);
+  // build the adapter based on the provisioning engine type
+  const adapterPkg = selectAdapterByEngine(stack.provisionType);
   if (!adapterPkg) {
-    logger.error(`There is no adapter for type ${stack.engineType}.`);
+    logger.error(`There is no adapter for type ${stack.provisionType}.`);
     process.exit(1);
   }
   const adapter = await buildAdapter(adapterPkg, {

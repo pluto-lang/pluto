@@ -1,5 +1,5 @@
-export { IngressRouter } from "./ingressRouter";
-export { RedisKVStore } from "./redisKVStore";
-export { RedisQueue } from "./redisQueue";
-export { ServiceLambda } from "./serviceLambda";
-export { PingSchedule } from "./pingSchedule";
+export { IngressRouter } from "./router.ingress";
+export { RedisKVStore } from "./kvstore.redis";
+export { RedisQueue } from "./queue.redis";
+export { ServiceLambda } from "./function.service";
+export { PingSchedule } from "./schedule.ping";

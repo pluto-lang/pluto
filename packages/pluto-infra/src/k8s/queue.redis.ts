@@ -1,14 +1,14 @@
-import { IQueueInfraApi, QueueInfraOptions } from "@plutolang/pluto";
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { ServiceLambda } from "./serviceLambda";
+import { ServiceLambda } from "./function.service";
 import { FnResource, ResourceInfra } from "@plutolang/base";
+import { IQueueInfra, QueueOptions } from "@plutolang/pluto";
 
-export class RedisQueue extends pulumi.ComponentResource implements ResourceInfra, IQueueInfraApi {
+export class RedisQueue extends pulumi.ComponentResource implements ResourceInfra, IQueueInfra {
   readonly name: string;
   url: pulumi.Output<string>;
 
-  constructor(name: string, args?: QueueInfraOptions, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: QueueOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:k8s:RedisQueue", name, args, opts);
     this.name = name;
 

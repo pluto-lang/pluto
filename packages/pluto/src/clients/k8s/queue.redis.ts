@@ -1,11 +1,11 @@
 import { createClient, RedisClientType } from "redis";
-import { CloudEvent, IQueueClientApi, QueueClientOptions } from "../../queue";
+import { CloudEvent, IQueueClient, QueueOptions } from "../../queue";
 
-export class RedisQueue implements IQueueClientApi {
+export class RedisQueue implements IQueueClient {
   readonly topicName: string;
   client: RedisClientType;
 
-  constructor(name: string, opts?: QueueClientOptions) {
+  constructor(name: string, opts?: QueueOptions) {
     this.topicName = name;
     // TODO: Make namespace configurable.
     const host = `${this.topicName}-queue.default.svc.cluster.local`;

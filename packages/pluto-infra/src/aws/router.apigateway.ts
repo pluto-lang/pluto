@@ -2,16 +2,16 @@ import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { IRouterCapturedProps, IRouterInfraApi, RouterInfraOptions } from "@plutolang/pluto";
+import { IRouterInfra, RouterOptions } from "@plutolang/pluto";
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
-import { Lambda } from "./lambda";
+import { Lambda } from "./function.lambda";
 import { currentAwsRegion } from "./utils";
 
 const DEFAULT_STAGE_NAME = "dev";
 
 export class ApiGatewayRouter
   extends pulumi.ComponentResource
-  implements IRouterInfraApi, IRouterCapturedProps, ResourceInfra
+  implements IRouterInfra, ResourceInfra
 {
   public readonly name: string;
   public _url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
@@ -19,7 +19,7 @@ export class ApiGatewayRouter
   private apiGateway: Api;
   private routes: Route[];
 
-  constructor(name: string, opts?: RouterInfraOptions) {
+  constructor(name: string, opts?: RouterOptions) {
     super("pluto:router:aws/ApiGateway", name, opts);
     this.name = name;
 

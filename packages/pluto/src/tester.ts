@@ -3,8 +3,9 @@ import {
   IResource,
   IResourceClientApi,
   IResourceInfraApi,
-  runtime,
+  PlatformType,
   simulator,
+  utils,
 } from "@plutolang/base";
 
 export interface TestCase {
@@ -17,11 +18,11 @@ export interface TestHandler extends FnResource {
   (): Promise<void>;
 }
 
-export interface ITesterCapturedProps extends IResourceInfraApi {}
-
-export interface ITesterInfraApi extends IResourceInfraApi {
-  it(description: string, fn: TestHandler): void;
-}
+/**
+ * The options for instantiating an infrastructure implementation class or a client implementation
+ * class.
+ */
+export interface TesterOptions {}
 
 /**
  * Don't export these methods to developers.
@@ -32,9 +33,23 @@ export interface ITesterClientApi extends IResourceClientApi {
   runTest(testCase: TestCase): Promise<void>;
 }
 
-export interface TesterInfraOptions {}
+export interface ITesterInfraApi extends IResourceInfraApi {
+  it(description: string, fn: TestHandler): void;
+}
 
-export interface TesterOptions extends TesterInfraOptions {}
+export interface ITesterCapturedProps extends IResourceInfraApi {}
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * client implementation class of a resource type.
+ */
+export type ITesterClient = ITesterClientApi & ITesterCapturedProps;
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * infrastructure implementation class of a resource type.
+ */
+export type ITesterInfra = ITesterInfraApi & ITesterCapturedProps;
 
 export class Tester implements IResource {
   constructor(name: string, opts?: TesterOptions) {
@@ -45,17 +60,17 @@ export class Tester implements IResource {
     );
   }
 
-  public static buildClient(name: string, opts?: TesterOptions): ITesterClientApi {
-    const rtType = process.env["RUNTIME_TYPE"];
-    switch (rtType) {
-      case runtime.Type.Simulator:
+  public static buildClient(name: string, opts?: TesterOptions): ITesterClient {
+    const platformType = utils.currentPlatformType();
+    switch (platformType) {
+      case PlatformType.Simulator:
         opts;
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:
-        throw new Error(`not support this runtime '${rtType}'`);
+        throw new Error(`not support this runtime '${platformType}'`);
     }
   }
 }
 
-export interface Tester extends ITesterInfraApi, ITesterCapturedProps, IResource {}
+export interface Tester extends IResource, ITesterClient, ITesterInfra {}

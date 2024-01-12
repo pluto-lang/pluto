@@ -28,7 +28,7 @@ async function main() {
           return val.toUpperCase();
         })
     )
-    .option("-e, --engine <engine>", "IaC engine")
+    .option("-e, --provision <provisioning engine>", "provisioning engine")
     .action(cmd.create);
 
   program

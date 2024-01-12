@@ -40,29 +40,11 @@
 
 ### 编译时如何确定具体的 Infra 实现类
 
-在 Infra SDK 中会 export 一个 `register` 方法，该方法会调用 `Registry` 类的 `register` 的逐个注册针对具体资源实现的类。
-
-```typescript
-interface Registry {
-  register(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls, cls: InfraCls): void;
-}
-
-type ResourceCls =
-  | {
-      new (name: string, opts?: object): Resource;
-    }
-  | "FnResource";
-
-type InfraCls = {
-  new (name: string, opts?: object): ResourceInfra;
-};
-```
-
-在生成的 IaC 代码中，会首先调用各个 Infra SDK 的 `register`，构建一个有效的 `Registry`，然后根据 `RUNTIME_TYPE` 和 `ENGINE_TYPE` 两环境变量，以及要创建的资源类型，选择最终的实现类。
+在 Infra SDK 中，针对每一个资源类型会有一个抽象基础类，其中包含一个 `createInstance` 静态方法，该方法会根据平台与引擎选择合适的实现类进行实例化。
 
 ### 运行时如何构建具体的 Client 实现类
 
-在用户态编写的 `new Queue(...)` 等资源构建过程，在最终的计算模块代码中会被重写为 `Queue.buildClient(...)`。同时，Pluto 会在运行时实例中注入 `RUNTIME_TYPE` 的环境变量，在运行时上 `buildClient` 会根据该环境变量创建具体的实现类。
+在用户态编写的 `new Queue(...)` 等资源构建过程，在最终的计算模块代码中会被重写为 `Queue.buildClient(...)`。同时，Pluto 会在运行时实例中注入 `PLUTO_PLATFORM_TYPE` 的环境变量，在运行时上 `buildClient` 会根据该环境变量创建具体的实现类。
 
 ### 为什么将 Client SDK 与 Infra SDK 分包
 

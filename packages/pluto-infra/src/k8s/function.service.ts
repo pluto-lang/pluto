@@ -4,14 +4,17 @@ import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import * as docker from "@pulumi/docker";
 import { ResourceInfra } from "@plutolang/base";
-import { FunctionOptions } from "@plutolang/pluto";
+import { FunctionOptions, IFunctionInfra } from "@plutolang/pluto";
 
 if (!process.env["WORK_DIR"]) {
   throw new Error("Missing environment variable WORK_DIR");
 }
 const WORK_DIR = process.env["WORK_DIR"]!;
 
-export class ServiceLambda extends pulumi.ComponentResource implements ResourceInfra {
+export class ServiceLambda
+  extends pulumi.ComponentResource
+  implements ResourceInfra, IFunctionInfra
+{
   readonly name: string;
 
   service: k8s.core.v1.Service;
@@ -67,7 +70,7 @@ CMD [ "node", "runtime.js" ]
 
     const envs: { name: string; value: string }[] = [
       { name: "COMPUTE_MODULE", value: `/app/${name}.js` },
-      { name: "RUNTIME_TYPE", value: "K8S" },
+      { name: "PLUTO_PLATFORM_TYPE", value: "K8S" },
     ];
     if (args?.envs) {
       for (const key of Object.keys(args?.envs)) {

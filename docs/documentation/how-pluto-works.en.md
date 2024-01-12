@@ -24,7 +24,7 @@ So, how does Pluto deploy user code step by step to the runtime? The following d
 
 Pluto's overall workflow consists of three stages: deduction, generation, and deployment. The functional components of each stage are respectively called deducers, generators, and adapters. The deducers and generators can be extended or replaced as needed.
 
-After the user submits the code, the deducers deduce the required cloud resources and the dependencies between resources from the user code, and build a cloud reference architecture. Then, the generators generate IaC (Infrastructure as Code) code based on the architecture reference, and split the user code into multiple business modules. Finally, the adapters call the corresponding IaC engine to execute the deployment based on the type of IaC code and deploy the application to the specified cloud platform.
+After the user submits the code, the deducers deduce the required cloud resources and the dependencies between resources from the user code, and build a cloud reference architecture. Then, the generators generate IaC (Infrastructure as Code) code based on the architecture reference, and split the user code into multiple business modules. Finally, the adapters call the corresponding provisioning engine to execute the deployment based on the type of IaC code and deploy the application to the specified cloud platform.
 
 ### Deduction Stage
 
@@ -54,4 +54,4 @@ The Pluto repository provides an implementation of [a generator based on the IaC
 
 ### Deployment Stage
 
-Finally, Pluto calls the corresponding adapter based on the generated IaC code type. The adapter then calls the corresponding IaC engine to execute the IaC code, completing the creation of infrastructure resources and the deployment of application compute modules. During the execution of the IaC code, operations such as encapsulation and packaging are performed to adapt to the deployment rules of various cloud platforms.
+Finally, Pluto calls the corresponding adapter based on the generated IaC code type. The adapter then calls the corresponding provisioning engine to execute the IaC code, completing the creation of infrastructure resources and the deployment of application compute modules. During the execution of the IaC code, operations such as encapsulation and packaging are performed to adapt to the deployment rules of various cloud platforms.

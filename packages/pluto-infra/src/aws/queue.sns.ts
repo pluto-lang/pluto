@@ -2,20 +2,20 @@ import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { IQueueInfraApi, QueueInfraOptions } from "@plutolang/pluto/dist/queue";
-import { Lambda } from "./lambda";
+import { IQueueInfra, QueueOptions } from "@plutolang/pluto";
+import { Lambda } from "./function.lambda";
 import { Permission } from "./permission";
 
 export enum SNSOps {
   PUSH = "push",
 }
 
-export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra, IQueueInfraApi {
+export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra, IQueueInfra {
   readonly name: string;
   topic: aws.sns.Topic;
 
-  constructor(name: string, opts?: QueueInfraOptions) {
-    super("pluto:queue:aws/SNS", name, opts);
+  constructor(name: string, options?: QueueOptions) {
+    super("pluto:queue:aws/SNS", name, options);
     this.name = name;
 
     this.topic = new aws.sns.Topic(

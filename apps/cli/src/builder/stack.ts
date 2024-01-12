@@ -1,10 +1,10 @@
 import { input, select } from "@inquirer/prompts";
-import { engine, runtime, config } from "@plutolang/base";
+import { ProvisionType, PlatformType, config } from "@plutolang/base";
 
 export interface CreateStackArgs {
   name?: string;
-  rtType?: runtime.Type;
-  engType?: engine.Type;
+  platformType?: PlatformType;
+  provisionType?: ProvisionType;
 }
 
 export async function createStack(args: CreateStackArgs): Promise<config.Stack> {
@@ -15,52 +15,52 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
       default: "dev",
     }));
 
-  args.rtType =
-    args.rtType ??
+  args.platformType =
+    args.platformType ??
     (await select({
       message: "Select a platform",
       choices: [
         {
           name: "AWS",
-          value: runtime.Type.AWS,
+          value: PlatformType.AWS,
         },
         {
           name: "Kubernetes",
-          value: runtime.Type.K8s,
+          value: PlatformType.K8s,
         },
         {
           name: "AliCloud",
-          value: runtime.Type.AliCloud,
+          value: PlatformType.AliCloud,
         },
         {
           name: "GCP",
-          value: runtime.Type.GCP,
+          value: PlatformType.GCP,
           disabled: "(Coming soon)",
         },
         {
           name: "Custom",
-          value: runtime.Type.Custom,
+          value: PlatformType.Custom,
           disabled: "(Coming soon)",
         },
       ],
     }));
 
-  args.engType =
-    args.engType ??
+  args.provisionType =
+    args.provisionType ??
     (await select({
-      message: "Select an IaC engine",
+      message: "Select an provisioning engine",
       choices: [
         {
           name: "Pulumi",
-          value: engine.Type.pulumi,
+          value: ProvisionType.Pulumi,
         },
         {
           name: "Terraform",
-          value: engine.Type.terraform,
+          value: ProvisionType.Terraform,
           disabled: "(Coming soon)",
         },
       ],
     }));
 
-  return new config.Stack(args.name, args.rtType, args.engType);
+  return new config.Stack(args.name, args.platformType, args.provisionType);
 }

@@ -46,7 +46,7 @@ $ pluto new
 ? Project name hello-pluto
 ? Stack name dev
 ? Select a platform AWS
-? Select an IaC engine Pulumi
+? Select an provisioning engine Pulumi
 Info:  Created a project, hello-pluto
 ```
 

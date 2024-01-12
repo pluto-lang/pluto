@@ -97,7 +97,7 @@ export class FCFnResource extends pulumi.ComponentResource implements ResourceIn
     const envs: Record<string, any> = {
       ...args?.envs,
       COMPUTE_MODULE: entrypoint,
-      RUNTIME_TYPE: "ALICLOUD",
+      PLUTO_PLATFORM_TYPE: "ALICLOUD",
     };
 
     const insName = formatName(`${name}_fc`);

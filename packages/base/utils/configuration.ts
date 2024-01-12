@@ -1,7 +1,9 @@
 import { homedir } from "os";
 import { join } from "path";
-import * as engine from "../engine";
-import * as runtime from "../runtime";
+import { PlatformType } from "../platform";
+import { isPlatformType } from "./platform";
+import { ProvisionType } from "../provision";
+import { isEngineType } from "./provision";
 
 /**
  * Returns the path to the global configuration directory.
@@ -13,20 +15,20 @@ export function systemConfigDir(): string {
 export const currentProjectName = () => fetchEnvWithThrow("PLUTO_PROJECT_NAME");
 export const currentStackName = () => fetchEnvWithThrow("PLUTO_STACK_NAME");
 
-export function currentPlatformType(): runtime.Type {
-  const val = fetchEnvWithThrow("RUNTIME_TYPE");
-  if (runtime.isRuntimeType(val)) {
+export function currentPlatformType(): PlatformType {
+  const val = fetchEnvWithThrow("PLUTO_PLATFORM_TYPE");
+  if (isPlatformType(val)) {
     return val;
   }
   throw new Error(`The '${val}' is not a valid platform type.`);
 }
 
-export function currentEngineType(): engine.Type {
-  const val = fetchEnvWithThrow("ENGINE_TYPE");
-  if (engine.isEngineType(val)) {
+export function currentEngineType(): ProvisionType {
+  const val = fetchEnvWithThrow("PLUTO_PROVISION_TYPE");
+  if (isEngineType(val)) {
     return val;
   }
-  throw new Error(`The '${val}' is not a valid engine type.`);
+  throw new Error(`The '${val}' is not a valid provisioning engine type.`);
 }
 
 function fetchEnvWithThrow(name: string): string {

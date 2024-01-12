@@ -1,6 +1,6 @@
 import { simulator } from "@plutolang/base";
 import { SimFunction } from "./function";
-import { CloudEvent, IQueueClientApi, QueueClientOptions } from "@plutolang/pluto";
+import { CloudEvent, IQueueClientApi, QueueOptions } from "@plutolang/pluto";
 
 export class SimQueue implements IQueueClientApi, simulator.IResourceInstance {
   readonly topicName: string;
@@ -8,7 +8,7 @@ export class SimQueue implements IQueueClientApi, simulator.IResourceInstance {
   private subscriber?: string;
   private context?: simulator.IContext;
 
-  constructor(name: string, opts?: QueueClientOptions) {
+  constructor(name: string, opts?: QueueOptions) {
     this.topicName = name;
     this.messages = [];
     opts;

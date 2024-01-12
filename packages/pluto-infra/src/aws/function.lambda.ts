@@ -3,10 +3,10 @@ import path from "path";
 import * as aws from "@pulumi/aws";
 import * as archive from "@pulumi/archive";
 import * as pulumi from "@pulumi/pulumi";
-import { ResourceInfra } from "@plutolang/base";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
-import { FunctionOptions } from "@plutolang/pluto";
+import { ResourceInfra } from "@plutolang/base";
+import { FunctionOptions, IFunctionInfra } from "@plutolang/pluto";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
@@ -17,7 +17,7 @@ if (!process.env["WORK_DIR"]) {
 }
 const WORK_DIR = process.env["WORK_DIR"]!;
 
-export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
+export class Lambda extends pulumi.ComponentResource implements ResourceInfra, IFunctionInfra {
   readonly name: string;
 
   // eslint-disable-next-line
@@ -76,7 +76,7 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra {
     const envs: Record<string, any> = {
       ...args?.envs,
       COMPUTE_MODULE: moduleFilename,
-      RUNTIME_TYPE: "AWS",
+      PLUTO_PLATFORM_TYPE: "AWS",
     };
 
     this.lambda = new aws.lambda.Function(

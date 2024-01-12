@@ -49,10 +49,10 @@ export async function destroy(opts: DestoryOptions) {
   // TODO: make the workdir same with generated dir.
   const workdir = path.join(generatedDir, `compiled`);
 
-  // build the adapter based on the engine type
-  const adapterPkg = selectAdapterByEngine(stack.engineType);
+  // build the adapter based on the provisioning engine type
+  const adapterPkg = selectAdapterByEngine(stack.provisionType);
   if (!adapterPkg) {
-    logger.error(`There is no adapter for type ${stack.engineType}.`);
+    logger.error(`There is no adapter for type ${stack.provisionType}.`);
     process.exit(1);
   }
   const adapter = await buildAdapter(adapterPkg, {
@@ -64,7 +64,7 @@ export async function destroy(opts: DestoryOptions) {
     workdir: workdir,
   });
   if (!adapter) {
-    logger.error(`There is no engine of type ${stack.engineType}.`);
+    logger.error(`There is no engine of type ${stack.provisionType}.`);
     process.exit(1);
   }
   if (stack.adapterState) {

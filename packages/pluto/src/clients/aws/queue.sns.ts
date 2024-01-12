@@ -1,14 +1,14 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-import { CloudEvent, IQueueClientApi, QueueClientOptions } from "../../queue";
+import { CloudEvent, IQueueClient, QueueOptions } from "../../queue";
 
 /**
  * Implementation of Queue using AWS SNS.
  */
-export class SNSQueue implements IQueueClientApi {
+export class SNSQueue implements IQueueClient {
   private topicName: string;
   private client: SNSClient;
 
-  constructor(name: string, opts?: QueueClientOptions) {
+  constructor(name: string, opts?: QueueOptions) {
     this.topicName = name;
     this.client = new SNSClient({});
     opts;

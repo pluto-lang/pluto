@@ -43,27 +43,11 @@ Currently, we agree that the package name of the Infra SDK will be the Client SD
 
 ### How to determine the specific Infra implementation class during compilation?
 
-The Infra SDK will export a `register` method. This method will register the specific resource implementation types one by one to the `Registry` type.
-
-```typescript
-interface Registry {
-  register(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls, cls: InfraCls): void;
-}
-type ResourceCls =
-  | {
-      new (name: string, opts?: object): Resource;
-    }
-  | "FnResource";
-type InfraCls = {
-  new (name: string, opts?: object): ResourceInfra;
-};
-```
-
-In the generated IaC code, the register methods of each Infra SDK will be called first to build a valid Registry. Then, based on the `RUNTIME_TYPE`, `ENGINE_TYPE` environment variables, and the type of resource to create, the final implementation class will be selected.
+In the Infra SDK, there is an abstract base class for each resource type. This includes a `createInstance` static method, which selects and instantiates the appropriate implementation class based on platform and engine choices.
 
 ### How to build specific Client implementation classes at runtime?
 
-The resource construction process, such as `new Queue(...)` written in user code, will be rewritten as `Queue.buildClient(...)` in the final compute module code. Additionally, Pluto will inject the `RUNTIME_TYPE` environment variable into the runtime instance, and the `buildClient` method will create the specific implementation class based on this environment variable.
+The resource construction process, such as `new Queue(...)` written in user code, will be rewritten as `Queue.buildClient(...)` in the final compute module code. Additionally, Pluto will inject the `PLUTO_PLATFORM_TYPE` environment variable into the runtime instance, and the `buildClient` method will create the specific implementation class based on this environment variable.
 
 ### Why separate Client SDK and Infra SDK into different packages?
 
