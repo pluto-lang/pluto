@@ -14,8 +14,8 @@
     "build": "tsc",
     "watch": "npm run build -- --watch",
     "lint": "eslint .",
-    "test": "NODE_ENV=test vitest run --coverage --reporter=verbose",
-    "test:watch": "NODE_ENV=test vitest --coverage --reporter=verbose",
+    "test": "NODE_ENV=test vitest run --coverage --reporter=verbose --passWithNoTests",
+    "test:watch": "NODE_ENV=test vitest --coverage --reporter=verbose --passWithNoTests",
     "clean": "tsc --build --clean"
   },
   "devDependencies": {

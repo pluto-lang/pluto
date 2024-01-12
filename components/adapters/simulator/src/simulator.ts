@@ -1,4 +1,4 @@
-import { arch, simulator } from "@plutolang/base";
+import { PlatformType, ProvisionType, arch, simulator } from "@plutolang/base";
 import http from "http";
 
 const SIM_HANDLE_PATH = "/call";
@@ -11,8 +11,8 @@ export class Simulator implements simulator.IContext {
   constructor() {
     this.resources = new Map();
 
-    process.env["PLUTO_PLATFORM_TYPE"] = "SIMULATOR";
-    process.env["PLUTO_PROVISION_TYPE"] = "simulator";
+    process.env["PLUTO_PLATFORM_TYPE"] = PlatformType.Simulator;
+    process.env["PLUTO_PROVISION_TYPE"] = ProvisionType.Simulator;
   }
 
   public async loadApp(archRef: arch.Architecture): Promise<void> {

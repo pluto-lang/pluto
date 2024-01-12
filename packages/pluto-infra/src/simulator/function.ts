@@ -1,5 +1,5 @@
 import path from "path";
-import { FnResource, simulator } from "@plutolang/base";
+import { FnResource, PlatformType, simulator } from "@plutolang/base";
 import { IFunctionClientApi, FunctionOptions } from "@plutolang/pluto";
 import { Sandbox } from "../utils/sandbox";
 
@@ -34,7 +34,7 @@ export class SimFunction implements simulator.IResourceInstance, IFunctionClient
     const envs: Record<string, any> = {
       ...this.opts?.envs,
       PLUTO_SIMULATOR_URL: this.context!.serverUrl,
-      PLUTO_PLATFORM_TYPE: "SIMULATOR",
+      PLUTO_PLATFORM_TYPE: PlatformType.Simulator,
     };
 
     const sb = new Sandbox(this.entrypoint, {
