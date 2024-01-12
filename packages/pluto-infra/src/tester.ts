@@ -1,10 +1,6 @@
 import { engine, runtime, utils } from "@plutolang/base";
-import { ITesterInfraApi, ITesterCapturedProps, TesterOptions } from "@plutolang/pluto";
+import { ITesterInfra, TesterOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
-
-// Construct a type that includes all the necessary methods required to be implemented within
-// the infrastructure class of a resource type.
-type ITesterInfra = ITesterInfraApi & ITesterCapturedProps;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that

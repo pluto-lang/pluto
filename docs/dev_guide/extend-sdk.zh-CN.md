@@ -74,13 +74,66 @@ export interface IQueueCapturedProps extends base.IResourceCapturedProps {}
 这里要求，将该资源类视作抽象类等同的存在，最终不会被实例化使用，但用户在开发时仍会通过实例化该类来使用。之所以没有将其设为抽象类，是开发者在开发时实例化抽象类将会报错。
 
 ```typescript
-import { Resource, runtime } from "@plutolang/base";
+import {
+  FnResource,
+  IResource,
+  IResourceCapturedProps,
+  IResourceClientApi,
+  IResourceInfraApi,
+  runtime,
+  simulator,
+  utils,
+} from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
-export type IQueueClient = IQueueCapturedProps & IQueueClientApi;
-export type IQueueInfra = IQueueCapturedProps & IQueueInfraApi;
+export interface CloudEvent {
+  timestamp: number;
+  data: string;
+}
 
-export class Queue {
+export interface EventHandler extends FnResource {
+  (evt: CloudEvent): Promise<void>;
+}
+
+/**
+ * The options for instantiating an infrastructure implementation class or a client implementation
+ * class.
+ */
+export interface QueueOptions {}
+
+/**
+ * Define the access methods for Queue that operate during runtime.
+ */
+export interface IQueueClientApi extends IResourceClientApi {
+  push(msg: string): Promise<void>;
+}
+
+/**
+ * Define the methods for Queue, which operate during compilation.
+ */
+export interface IQueueInfraApi extends IResourceInfraApi {
+  subscribe(fn: EventHandler): void;
+}
+
+/**
+ * Define the properties for Queue that are captured at compile time and accessed during runtime.
+ */
+export interface IQueueCapturedProps extends IResourceCapturedProps {}
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * client implementation class of a resource type.
+ */
+export type IQueueClient = IQueueClientApi & IQueueCapturedProps;
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * infrastructure implementation class of a resource type.
+ */
+export type IQueueInfra = IQueueInfraApi & IQueueCapturedProps;
+
+// TODO: abstract class
+export class Queue implements IResource {
   constructor(name: string, opts?: QueueOptions) {
     name;
     opts;
@@ -89,22 +142,23 @@ export class Queue {
     );
   }
 
-  public static buildClient(name: string, opts?: QueueClientOptions): IQueueClient {
-    const rtType = process.env["RUNTIME_TYPE"];
-    switch (rtType) {
+  public static buildClient(name: string, opts?: QueueOptions): IQueueClient {
+    const platformType = utils.currentPlatformType();
+    switch (platformType) {
+      case runtime.Type.AWS:
+        return new aws.SNSQueue(name, opts);
       case runtime.Type.K8s:
         return new k8s.RedisQueue(name, opts);
+      case runtime.Type.Simulator:
+        if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
+        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:
-        throw new Error(`not support this runtime '${rtType}'`);
+        throw new Error(`not support this runtime '${platformType}'`);
     }
   }
 }
 
-export interface Queue extends IQueueClient, IQueueInfra, IResource {}
-
-export interface QueueInfraOptions {}
-export interface QueueClientOptions {}
-export interface QueueOptions extends QueueInfraOptions, QueueClientOptions {}
+export interface Queue extends IResource, IQueueClient, IQueueInfra {}
 ```
 
 ## 添加资源类型的一种新实现
@@ -117,7 +171,7 @@ export interface QueueOptions extends QueueInfraOptions, QueueClientOptions {}
 
 ```typescript
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-import { CloudEvent, IQueueClient, QueueClientOptions } from "../../queue";
+import { CloudEvent, IQueueClient, QueueOptions } from "../../queue";
 
 /**
  * Implementation of Queue using AWS SNS.
@@ -126,7 +180,7 @@ export class SNSQueue implements IQueueClient {
   private topicName: string;
   private client: SNSClient;
 
-  constructor(name: string, opts?: QueueClientOptions) {
+  constructor(name: string, opts?: QueueOptions) {
     this.topicName = name;
     this.client = new SNSClient({});
     opts;
@@ -165,15 +219,15 @@ export class SNSQueue implements IQueueClient {
 
 ```typescript
 ...
-  public static buildClient(name: string, opts?: QueueClientOptions): IQueueClient {
-    const rtType = process.env["RUNTIME_TYPE"];
-    switch (rtType) {
+  public static buildClient(name: string, opts?: QueueOptions): IQueueClient {
+    const platformType = utils.currentPlatformType();
+    switch (platformType) {
       case runtime.Type.AWS:
         return new aws.SNSQueue(name, opts);
       case runtime.Type.K8s:
         return new k8s.RedisQueue(name, opts);
       default:
-        throw new Error(`not support this runtime '${rtType}'`);
+        throw new Error(`not support this runtime '${platformType}'`);
     }
   }
 ...
@@ -245,7 +299,7 @@ export abstract class Queue {
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Resource, ResourceInfra } from "@plutolang/base";
-import { IQueueInfra, QueueInfraOptions } from "@plutolang/pluto";
+import { IQueueInfra, QueueOptions } from "@plutolang/pluto";
 import { Lambda } from "./lambda";
 import { Permission } from "./permission";
 
@@ -257,7 +311,7 @@ export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra,
   readonly name: string;
   public readonly topic: aws.sns.Topic;
 
-  constructor(name: string, opts?: QueueInfraOptions) {
+  constructor(name: string, opts?: QueueOptions) {
     super("pluto:queue:aws/SNS", name, opts);
     this.name = name;
 

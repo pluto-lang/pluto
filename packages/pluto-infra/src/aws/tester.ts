@@ -1,9 +1,9 @@
 import * as pulumi from "@pulumi/pulumi";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { TestCase, ITesterInfraApi, TesterInfraOptions } from "@plutolang/pluto";
-import { Lambda } from "./lambda";
+import { TestCase, ITesterInfra, TesterOptions } from "@plutolang/pluto";
+import { Lambda } from "./function.lambda";
 
-export class Tester extends pulumi.ComponentResource implements ITesterInfraApi, ResourceInfra {
+export class Tester extends pulumi.ComponentResource implements ResourceInfra, ITesterInfra {
   public readonly name: string;
   private readonly description: string;
   private readonly testCases: TestCase[];
@@ -11,7 +11,7 @@ export class Tester extends pulumi.ComponentResource implements ITesterInfraApi,
   // eslint-disable-next-line
   public outputs: pulumi.Output<any>;
 
-  constructor(description: string, props?: TesterInfraOptions) {
+  constructor(description: string, props?: TesterOptions) {
     const name = description.replaceAll(/\s+/g, "");
     super("pluto:tester:aws/Tester", name, props);
     this.name = name;

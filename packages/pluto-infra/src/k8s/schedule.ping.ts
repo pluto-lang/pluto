@@ -1,16 +1,16 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { IScheduleInfraApi, ScheduleInfraOptions } from "@plutolang/pluto";
-import { ServiceLambda } from "./serviceLambda";
+import { IScheduleInfra, ScheduleOptions } from "@plutolang/pluto";
+import { ServiceLambda } from "./function.service";
 
 export class PingSchedule
   extends pulumi.ComponentResource
-  implements ResourceInfra, IScheduleInfraApi
+  implements ResourceInfra, IScheduleInfra
 {
   readonly name: string;
 
-  constructor(name: string, args?: ScheduleInfraOptions, opts?: pulumi.CustomResourceOptions) {
+  constructor(name: string, args?: ScheduleOptions, opts?: pulumi.CustomResourceOptions) {
     super("pluto:schedule:k8s/Ping", name, args, opts);
     this.name = name;
   }

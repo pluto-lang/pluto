@@ -1,10 +1,6 @@
 import { engine, runtime, utils } from "@plutolang/base";
-import { IScheduleInfraApi, IScheduleCapturedProps, ScheduleOptions } from "@plutolang/pluto";
+import { IScheduleInfra, ScheduleOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
-
-// Construct a type that includes all the necessary methods required to be implemented within
-// the infrastructure class of a resource type.
-type IScheduleInfra = IScheduleInfraApi & IScheduleCapturedProps;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that

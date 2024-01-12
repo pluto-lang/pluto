@@ -1,2 +1,2 @@
-export { RedisKVStore } from "./redisKVStore";
-export { RedisQueue } from "./redisQueue";
+export { RedisKVStore } from "./kvstore.redis";
+export { RedisQueue } from "./queue.redis";

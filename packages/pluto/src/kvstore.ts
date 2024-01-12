@@ -5,15 +5,16 @@ import {
   IResourceInfraApi,
   runtime,
   simulator,
+  utils,
 } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
-export interface IKVStoreCapturedProps extends IResourceCapturedProps {}
-
 /**
- * Define the methods for KVStore, which operate during compilation.
+ * The options for instantiating an infrastructure implementation class or a client implementation
+ * class.
  */
-export interface IKVStoreInfraApi extends IResourceInfraApi {}
+export interface KVStoreOptions {}
+
 /**
  * Define the access methods for KVStore that operate during runtime.
  */
@@ -22,13 +23,24 @@ export interface IKVStoreClientApi extends IResourceClientApi {
   set(key: string, val: string): Promise<void>;
 }
 
-export interface KVStoreInfraOptions {}
 /**
- * The options for creating a client, which can be used at runtime.
+ * Define the methods for KVStore, which operate during compilation.
  */
-export interface KVStoreClientOptions {}
+export interface IKVStoreInfraApi extends IResourceInfraApi {}
 
-export interface KVStoreOptions extends KVStoreInfraOptions, KVStoreClientOptions {}
+export interface IKVStoreCapturedProps extends IResourceCapturedProps {}
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * client implementation class of a resource type.
+ */
+export type IKVStoreClient = IKVStoreClientApi & IKVStoreCapturedProps;
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * infrastructure implementation class of a resource type.
+ */
+export type IKVStoreInfra = IKVStoreInfraApi & IKVStoreCapturedProps;
 
 // TODO: abstract class
 export class KVStore implements IResource {
@@ -40,9 +52,9 @@ export class KVStore implements IResource {
     );
   }
 
-  public static buildClient(name: string, opts?: KVStoreClientOptions): IKVStoreClientApi {
-    const rtType = process.env["RUNTIME_TYPE"];
-    switch (rtType) {
+  public static buildClient(name: string, opts?: KVStoreOptions): IKVStoreClient {
+    const platformType = utils.currentPlatformType();
+    switch (platformType) {
       case runtime.Type.AWS:
         return new aws.DynamoKVStore(name, opts);
       case runtime.Type.K8s:
@@ -51,13 +63,9 @@ export class KVStore implements IResource {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:
-        throw new Error(`not support this runtime '${rtType}'`);
+        throw new Error(`not support this runtime '${platformType}'`);
     }
   }
 }
 
-export interface KVStore
-  extends IKVStoreInfraApi,
-    IKVStoreClientApi,
-    IKVStoreCapturedProps,
-    IResource {}
+export interface KVStore extends IResource, IKVStoreClient, IKVStoreInfra {}

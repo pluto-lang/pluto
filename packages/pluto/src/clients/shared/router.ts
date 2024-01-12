@@ -1,7 +1,7 @@
 import { utils } from "@plutolang/base";
-import { IRouterCapturedProps, RouterOptions } from "../../router";
+import { IRouterClient, RouterOptions } from "../../router";
 
-export class RouterClient implements IRouterCapturedProps {
+export class RouterClient implements IRouterClient {
   private readonly id: string;
 
   constructor(name: string, opts?: RouterOptions) {

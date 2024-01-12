@@ -6,6 +6,7 @@ import {
   IResourceInfraApi,
   runtime,
   simulator,
+  utils,
 } from "@plutolang/base";
 import { aws, k8s } from "./clients";
 
@@ -18,14 +19,12 @@ export interface EventHandler extends FnResource {
   (evt: CloudEvent): Promise<void>;
 }
 
-export interface IQueueCapturedProps extends IResourceCapturedProps {}
-
 /**
- * Define the methods for Queue, which operate during compilation.
+ * The options for instantiating an infrastructure implementation class or a client implementation
+ * class.
  */
-export interface IQueueInfraApi extends IResourceInfraApi {
-  subscribe(fn: EventHandler): void;
-}
+export interface QueueOptions {}
+
 /**
  * Define the access methods for Queue that operate during runtime.
  */
@@ -33,12 +32,29 @@ export interface IQueueClientApi extends IResourceClientApi {
   push(msg: string): Promise<void>;
 }
 
-export interface QueueInfraOptions {}
 /**
- * The options for creating a client, which can be used at runtime.
+ * Define the methods for Queue, which operate during compilation.
  */
-export interface QueueClientOptions {}
-export interface QueueOptions extends QueueInfraOptions, QueueClientOptions {}
+export interface IQueueInfraApi extends IResourceInfraApi {
+  subscribe(fn: EventHandler): void;
+}
+
+/**
+ * Define the properties for Queue that are captured at compile time and accessed during runtime.
+ */
+export interface IQueueCapturedProps extends IResourceCapturedProps {}
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * client implementation class of a resource type.
+ */
+export type IQueueClient = IQueueClientApi & IQueueCapturedProps;
+
+/**
+ * Construct a type that includes all the necessary methods required to be implemented within the
+ * infrastructure implementation class of a resource type.
+ */
+export type IQueueInfra = IQueueInfraApi & IQueueCapturedProps;
 
 // TODO: abstract class
 export class Queue implements IResource {
@@ -50,9 +66,9 @@ export class Queue implements IResource {
     );
   }
 
-  public static buildClient(name: string, opts?: QueueClientOptions): IQueueClientApi {
-    const rtType = process.env["RUNTIME_TYPE"];
-    switch (rtType) {
+  public static buildClient(name: string, opts?: QueueOptions): IQueueClient {
+    const platformType = utils.currentPlatformType();
+    switch (platformType) {
       case runtime.Type.AWS:
         return new aws.SNSQueue(name, opts);
       case runtime.Type.K8s:
@@ -61,9 +77,9 @@ export class Queue implements IResource {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:
-        throw new Error(`not support this runtime '${rtType}'`);
+        throw new Error(`not support this runtime '${platformType}'`);
     }
   }
 }
 
-export interface Queue extends IQueueInfraApi, IQueueClientApi, IQueueCapturedProps, IResource {}
+export interface Queue extends IResource, IQueueClient, IQueueInfra {}

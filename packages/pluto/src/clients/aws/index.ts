@@ -1,2 +1,2 @@
-export { DynamoKVStore } from "./dynamoKVStore";
-export { SNSQueue } from "./snsQueue";
+export { DynamoKVStore } from "./kvstore.dynamodb";
+export { SNSQueue } from "./queue.sns";

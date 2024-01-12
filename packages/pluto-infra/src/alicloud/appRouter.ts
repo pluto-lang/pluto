@@ -1,6 +1,6 @@
 import * as pulumi from "@pulumi/pulumi";
 import { IResource, ResourceInfra } from "@plutolang/base";
-import { RequestHandler, IRouterInfraApi, RouterInfraOptions } from "@plutolang/pluto";
+import { RequestHandler, IRouterInfraApi, RouterOptions } from "@plutolang/pluto";
 import * as alicloud from "@pulumi/alicloud";
 import { FCFnResource } from "./fcFnResource";
 import { formatName } from "./utils";
@@ -16,7 +16,7 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfraA
 
   private _url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
 
-  constructor(name: string, args?: RouterInfraOptions, opts?: pulumi.ComponentResourceOptions) {
+  constructor(name: string, args?: RouterOptions, opts?: pulumi.ComponentResourceOptions) {
     if (REGION == undefined) {
       throw new Error(`Please set the environment variable ALICLOUD_REGION`);
     }
