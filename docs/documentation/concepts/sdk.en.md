@@ -18,12 +18,18 @@ In Pluto, there are two types of SDKs related to the cloud platform. These two S
 
 The `@plutolang/base` library contains three basic interfaces:
 
-1. Resource: Indicates that the class or interface is related to cloud resources. During compilation, whether an instantiated object's type implements this interface is used to determine if it is a cloud resource.
-2. FnResource: Indicates that the class or interface is related to FaaS resources. During compilation, whether a function type inherits this interface is used to determine if the function is an instance of FaaS resource.
-3. ResourceInfra: This interface must be implemented by infrastructure implementation classes. It is used to complete the creation of infrastructure components.
+1. **IResource**: Indicates that the class or interface is related to cloud resources. During compilation, whether an instantiated object's type implements this interface is used to determine if it is a cloud resource.
+2. **FnResource**: Indicates that the class or interface is related to FaaS resources. During compilation, whether a function type inherits this interface is used to determine if the function is an instance of FaaS resource.
+3. **ResourceInfra**: This interface must be implemented by infrastructure implementation classes. It is used to complete the creation of infrastructure components.
    - `get name()`: Retrieves the basic name of the resource object, which may be different from the name of the created resource instance.
    - `getPermission()`: Generates the necessary permissions for calling specific operations on itself.
    - `postProcess()`: Some operations need to be performed only after all configuration processes are completed. These operations are placed in this function. For example, AWS ApiGateway needs to configure Deployment and Stage after setting up all routes.
+4. **IResourceCapturedProps**: This interface should be extended within both the client implementaion and infrastructure implementation of a resource type. It contains some getter methods that defines the properties of the resource, which are generated at compile time and will be obtained during runtime. More details can be found in [this design document](../design/capture-value.en.md).
+   - For instance, the URL of a Router resource.
+5. **IResourceClientApi**: This interface should be extended within the client implementation of a resource type. It contains several methods that can be called during runtime. Typically, these methods represents the function provided by the platform's specific resource type.
+   - For instance, the `push` method of message queue is used to publish a message to the message queue during runtime.
+6. **IResourceInfraAPi**：This interface should be extended within the infrastructure implementation of a resource type. It contains several methods that can be called at compile time. Typically, these methods are employed to establish the connections between resources.
+   - For instance, methods such as Get and Post of the Router type are used to define the relationship between a Router resource object and a FaaS resource object.
 
 If you're looking to extend the SDKs, check out [this document](../../dev_guide/extend-sdk.en.md).
 

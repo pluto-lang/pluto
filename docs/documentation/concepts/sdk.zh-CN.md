@@ -13,14 +13,20 @@
   - 在构造方法中完成资源创建的过程，例如在 `pluto-infra.SNSQueue` 中进行 AWS SNS 组件的定义。
   - 在类方法中实现资源间的关联，例如 `pluto-infra.SNSQueue` 的 `subscribe` 中通过触发器构建 SNS 与 Lambda 之间的关联。
 
-在 `@plutolang/base` 库中包含三个基本接口：
+在 `@plutolang/base` 库中包含几个基本接口：
 
-- Resource：表明该类或接口与云资源相关，在编译时，通过查看开发者实例化对象的类型是否实现该接口来判断是否是云资源。
-- FnResource：表明该类或接口与 FaaS 资源相关，在编译时，通过查看函数类型是否继承该接口来判断该函数是否是 FaaS 资源实例。
-- ResourceInfra：基础设施实现类时必须实现的接口，用于完成基础设施组件的创建。
+- **IResource**：表明该类或接口与云资源相关，在编译时，通过查看开发者实例化对象的类型是否实现该接口来判断是否是云资源。
+- **FnResource**：表明该类或接口与 FaaS 资源相关，在编译时，通过查看函数类型是否继承该接口来判断该函数是否是 FaaS 资源实例。
+- **ResourceInfra**：基础设施实现类时必须实现的接口，用于完成基础设施组件的创建。
   - `get name()`：获取资源对象的基本名称，可能与创建的资源实例的名称不同。
   - `getPermission()`: 用于生成调用自身特定操作时所需的权限。
   - `postProcess()`: 存在某些操作需要待所有配置过程完成后再开始进行，将该类操作放置在函数中。例如，AWS 的 ApiGateway 需要在配置完所有路由后，再配置 Deployment 和 Stage。
+- **IResourceCapturedProps**：资源类型实例化后获得资源对象，资源对象提供用户可访问的属性值，即为资源的属性。
+  - 例如，Router 资源的 URL。
+- **IResourceClientApi**：资源类型提供给用户在运行时使用的一组功能接口。
+  - 例如，消息队列类型的 push 方法，用于在运行时向消息队列发布消息。
+- **IResourceInfraAPi**：资源类型提供用户用于指明资源间关系的一组功能接口。
+  - 例如，Router 类型的 Get、Post 等方法，用于指定一个 Router 资源对象与 Handler 对应的 FaaS 资源对象之间的关系。
 
 如果你想扩展 SDK，请参考[这篇文档](../../dev_guide/extend-sdk.zh-CN.md).
 
