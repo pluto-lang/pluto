@@ -1,4 +1,4 @@
-import { engine, runtime } from "@plutolang/base";
+import { ProvisionType, PlatformType } from "@plutolang/base";
 import { createStack } from "../builder";
 import logger from "../log";
 import { dumpProject, isPlutoProject, loadProject } from "../utils";
@@ -6,8 +6,8 @@ import { resolve } from "path";
 
 interface NewOptions {
   name?: string;
-  platform?: runtime.Type;
-  engine?: engine.Type;
+  platform?: PlatformType;
+  provision?: ProvisionType;
 }
 
 export async function newStack(opts: NewOptions) {
@@ -17,7 +17,11 @@ export async function newStack(opts: NewOptions) {
   }
   const proj = loadProject(resolve("./"));
 
-  const sta = await createStack({ name: opts.name, rtType: opts.platform, engType: opts.engine });
+  const sta = await createStack({
+    name: opts.name,
+    platformType: opts.platform,
+    provisionType: opts.provision,
+  });
   proj.addStack(sta);
   dumpProject(proj);
   logger.info("Created a stack.");

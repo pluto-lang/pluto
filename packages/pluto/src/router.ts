@@ -4,7 +4,7 @@ import {
   IResourceCapturedProps,
   IResourceClientApi,
   IResourceInfraApi,
-  runtime,
+  PlatformType,
   utils,
 } from "@plutolang/base";
 import { shared } from "./clients";
@@ -79,8 +79,8 @@ export class Router implements IResource {
   public static buildClient(name: string, opts?: RouterOptions): IRouterClient {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case runtime.Type.AWS:
-      case runtime.Type.K8s:
+      case PlatformType.AWS:
+      case PlatformType.K8s:
         return new shared.RouterClient(name, opts);
       default:
         throw new Error(`not support this runtime '${platformType}'`);

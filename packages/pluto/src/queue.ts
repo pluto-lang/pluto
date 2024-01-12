@@ -4,7 +4,7 @@ import {
   IResourceCapturedProps,
   IResourceClientApi,
   IResourceInfraApi,
-  runtime,
+  PlatformType,
   simulator,
   utils,
 } from "@plutolang/base";
@@ -69,11 +69,11 @@ export class Queue implements IResource {
   public static buildClient(name: string, opts?: QueueOptions): IQueueClient {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case runtime.Type.AWS:
+      case PlatformType.AWS:
         return new aws.SNSQueue(name, opts);
-      case runtime.Type.K8s:
+      case PlatformType.K8s:
         return new k8s.RedisQueue(name, opts);
-      case runtime.Type.Simulator:
+      case PlatformType.Simulator:
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:

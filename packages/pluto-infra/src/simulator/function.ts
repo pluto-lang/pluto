@@ -33,7 +33,7 @@ export class SimFunction implements simulator.IResourceInstance, IFunctionClient
     const envs: Record<string, any> = {
       ...this.opts?.envs,
       PLUTO_SIMULATOR_URL: this.context!.serverUrl,
-      RUNTIME_TYPE: "SIMULATOR",
+      PLUTO_PLATFORM_TYPE: "SIMULATOR",
     };
 
     const sb = new sandbox.Sandbox(this.entrypoint, {

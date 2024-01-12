@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 import { ConfigMap } from "@pulumi/pulumi/automation";
 import { fromEnv, fromIni } from "@aws-sdk/credential-providers";
 import { loadSharedConfigFiles } from "@smithy/shared-ini-file-loader";
-import { config, runtime } from "@plutolang/base";
+import { config, PlatformType } from "@plutolang/base";
 
 const PLUTO_GLOBAL_CONFIG_PATH = path.join(os.homedir(), ".pluto", "config.yml");
 const AWS_CREDENTIALS_QUERY_URL =
@@ -19,10 +19,10 @@ export type PlutoGlobalConfig = { [key: string]: unknown };
 type configGenFn = (sta: config.Stack) => Promise<ConfigMap>;
 
 export async function genPulumiConfigByRuntime(sta: config.Stack): Promise<ConfigMap> {
-  const genFnMapping: { [key in runtime.Type]?: configGenFn } = {
-    [runtime.Type.AWS]: genPulumiConfigForAWS,
-    [runtime.Type.K8s]: genPulumiConfigForK8s,
-    [runtime.Type.AliCloud]: genPulumiConfigForAliCloud,
+  const genFnMapping: { [key in PlatformType]?: configGenFn } = {
+    [PlatformType.AWS]: genPulumiConfigForAWS,
+    [PlatformType.K8s]: genPulumiConfigForK8s,
+    [PlatformType.AliCloud]: genPulumiConfigForAliCloud,
   };
   if (!(sta.platformType in genFnMapping)) {
     throw new Error("Not support this runtime.");

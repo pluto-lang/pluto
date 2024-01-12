@@ -1,4 +1,4 @@
-import { engine, runtime, utils } from "@plutolang/base";
+import { ProvisionType, PlatformType, utils } from "@plutolang/base";
 import { IScheduleInfra, ScheduleOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
 
@@ -10,15 +10,15 @@ type ScheduleInfraImplClass = new (name: string, options?: ScheduleOptions) => I
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
 const implClassMap = new ImplClassMap<IScheduleInfra, ScheduleInfraImplClass>({
-  [engine.Type.pulumi]: {
-    [runtime.Type.AWS]: async () => (await import("./aws")).CloudWatchSchedule,
-    [runtime.Type.K8s]: async () => (await import("./k8s")).PingSchedule,
+  [ProvisionType.Pulumi]: {
+    [PlatformType.AWS]: async () => (await import("./aws")).CloudWatchSchedule,
+    [PlatformType.K8s]: async () => (await import("./k8s")).PingSchedule,
   },
 });
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type
- * based on the target platform and engine.
+ * based on the target platform and provisioning engine.
  */
 export abstract class Schedule {
   /**

@@ -1,6 +1,6 @@
 import fs from "fs";
 import * as yaml from "js-yaml";
-import { arch, core, engine } from "@plutolang/base";
+import { arch, core, ProvisionType } from "@plutolang/base";
 
 /**
  * load the default export of the target package.
@@ -40,12 +40,12 @@ export async function buildAdapter(
   return new (await loadPackage(adapterPkg))(adapterArgs) as core.Adapter;
 }
 
-export function selectAdapterByEngine(engineType: engine.Type): string | undefined {
-  const mapping: { [k in engine.Type]?: string } = {
-    [engine.Type.pulumi]: "@plutolang/pulumi-adapter",
-    [engine.Type.simulator]: "@plutolang/simulator-adapter",
+export function selectAdapterByEngine(provisionType: ProvisionType): string | undefined {
+  const mapping: { [k in ProvisionType]?: string } = {
+    [ProvisionType.Pulumi]: "@plutolang/pulumi-adapter",
+    [ProvisionType.Simulator]: "@plutolang/simulator-adapter",
   };
-  return mapping[engineType];
+  return mapping[provisionType];
 }
 
 export function loadArchRef(filepath: string): arch.Architecture {

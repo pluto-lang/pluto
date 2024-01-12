@@ -121,8 +121,8 @@ export class PulumiAdapter extends core.Adapter {
 
   private async createPulumiStack(): Promise<Stack> {
     const envs: Record<string, string> = {
-      RUNTIME_TYPE: this.stack.platformType,
-      ENGINE_TYPE: this.stack.engineType,
+      PLUTO_PLATFORM_TYPE: this.stack.platformType,
+      PLUTO_PROVISION_TYPE: this.stack.provisionType,
       PULUMI_CONFIG_PASSPHRASE: this.passphrase,
       WORK_DIR: this.workdir,
     };

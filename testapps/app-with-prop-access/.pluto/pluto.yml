@@ -2,6 +2,6 @@ current: dev
 stacks:
   - configs: {}
     deployed: false
-    engineType: pulumi
+    provisionType: Pulumi
     name: dev
     platformType: AWS

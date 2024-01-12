@@ -44,7 +44,7 @@
 
 ### 运行时如何构建具体的 Client 实现类
 
-在用户态编写的 `new Queue(...)` 等资源构建过程，在最终的计算模块代码中会被重写为 `Queue.buildClient(...)`。同时，Pluto 会在运行时实例中注入 `RUNTIME_TYPE` 的环境变量，在运行时上 `buildClient` 会根据该环境变量创建具体的实现类。
+在用户态编写的 `new Queue(...)` 等资源构建过程，在最终的计算模块代码中会被重写为 `Queue.buildClient(...)`。同时，Pluto 会在运行时实例中注入 `PLUTO_PLATFORM_TYPE` 的环境变量，在运行时上 `buildClient` 会根据该环境变量创建具体的实现类。
 
 ### 为什么将 Client SDK 与 Infra SDK 分包
 

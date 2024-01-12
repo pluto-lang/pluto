@@ -70,7 +70,7 @@ CMD [ "node", "runtime.js" ]
 
     const envs: { name: string; value: string }[] = [
       { name: "COMPUTE_MODULE", value: `/app/${name}.js` },
-      { name: "RUNTIME_TYPE", value: "K8S" },
+      { name: "PLUTO_PLATFORM_TYPE", value: "K8S" },
     ];
     if (args?.envs) {
       for (const key of Object.keys(args?.envs)) {

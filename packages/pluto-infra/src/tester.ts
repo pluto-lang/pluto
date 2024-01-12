@@ -1,4 +1,4 @@
-import { engine, runtime, utils } from "@plutolang/base";
+import { ProvisionType, PlatformType, utils } from "@plutolang/base";
 import { ITesterInfra, TesterOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
 
@@ -10,14 +10,14 @@ type TesterInfraImplClass = new (name: string, options?: TesterOptions) => ITest
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
 const implClassMap = new ImplClassMap<ITesterInfra, TesterInfraImplClass>({
-  [engine.Type.pulumi]: {
-    [runtime.Type.AWS]: async () => (await import("./aws")).Tester,
+  [ProvisionType.Pulumi]: {
+    [PlatformType.AWS]: async () => (await import("./aws")).Tester,
   },
 });
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type
- * based on the target platform and engine.
+ * based on the target platform and provisioning engine.
  */
 export abstract class Tester {
   /**
@@ -28,8 +28,8 @@ export abstract class Tester {
   public static async createInstance(name: string, options?: TesterOptions): Promise<ITesterInfra> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
     if (
-      utils.currentPlatformType() === runtime.Type.Simulator &&
-      utils.currentEngineType() === engine.Type.simulator
+      utils.currentPlatformType() === PlatformType.Simulator &&
+      utils.currentEngineType() === ProvisionType.Simulator
     ) {
       return new (await import("./simulator")).SimTester(name, options) as any;
     }

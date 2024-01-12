@@ -145,11 +145,11 @@ export class Queue implements IResource {
   public static buildClient(name: string, opts?: QueueOptions): IQueueClient {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case runtime.Type.AWS:
+      case PlatformType.AWS:
         return new aws.SNSQueue(name, opts);
-      case runtime.Type.K8s:
+      case PlatformType.K8s:
         return new k8s.RedisQueue(name, opts);
-      case runtime.Type.Simulator:
+      case PlatformType.Simulator:
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
       default:
@@ -222,9 +222,9 @@ export class SNSQueue implements IQueueClient {
   public static buildClient(name: string, opts?: QueueOptions): IQueueClient {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case runtime.Type.AWS:
+      case PlatformType.AWS:
         return new aws.SNSQueue(name, opts);
-      case runtime.Type.K8s:
+      case PlatformType.K8s:
         return new k8s.RedisQueue(name, opts);
       default:
         throw new Error(`not support this runtime '${platformType}'`);
@@ -240,7 +240,7 @@ export class SNSQueue implements IQueueClient {
 在实现时需要注意，实现类的构造函数 和 Queue 的静态方法 `createInstance` 的参数需要与 Client 实现类的构造函数参数 保持一致。
 
 ```typescript
-import { engine, runtime, utils } from "@plutolang/base";
+import { ProvisionType, PlatformType, utils } from "@plutolang/base";
 import { IQueueInfra QueueOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
 
@@ -252,9 +252,9 @@ type QueueInfraImplClass = new (name: string, options?: QueueOptions) => IQueueI
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
 const implClassMap = new ImplClassMap<IQueueInfra, QueueInfraImplClass>({
-  [engine.Type.pulumi]: {
-    [runtime.Type.AWS]: async () => (await import("./aws")).SNSQueue,
-    [runtime.Type.K8s]: async () => (await import("./k8s")).RedisQueue,
+  [ProvisionType.Pulumi]: {
+    [PlatformType.AWS]: async () => (await import("./aws")).SNSQueue,
+    [PlatformType.K8s]: async () => (await import("./k8s")).RedisQueue,
   },
 });
 
@@ -271,8 +271,8 @@ export abstract class Queue {
   public static async createInstance(name: string, options?: QueueOptions): Promise<IQueueInfra> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
     if (
-      utils.currentPlatformType() === runtime.Type.Simulator &&
-      utils.currentEngineType() === engine.Type.simulator
+      utils.currentPlatformType() === PlatformType.Simulator &&
+      utils.currentEngineType() === ProvisionType.Simulator
     ) {
       return new (await import("./simulator")).SimQueue(name, options) as any;
     }
@@ -382,9 +382,9 @@ export class SNSQueue extends pulumi.ComponentResource implements ResourceInfra,
 
 ```typescript {3}
 const implClassMap = new ImplClassMap<IQueueInfra, QueueInfraImplClass>({
-  [engine.Type.pulumi]: {
-    [runtime.Type.AWS]: async () => (await import("./aws")).SNSQueue,
-    [runtime.Type.K8s]: async () => (await import("./k8s")).RedisQueue,
+  [ProvisionType.Pulumi]: {
+    [PlatformType.AWS]: async () => (await import("./aws")).SNSQueue,
+    [PlatformType.K8s]: async () => (await import("./k8s")).RedisQueue,
   },
 });
 ```

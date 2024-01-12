@@ -1,5 +1,5 @@
-import * as engine from "../engine";
-import * as runtime from "../runtime";
+import { ProvisionType } from "../provision";
+import { PlatformType } from "../platform";
 
 export class Stack {
   /** The configuration items are used for components, such as the kubeconfig path. */
@@ -17,9 +17,9 @@ export class Stack {
     /** The stack name. */
     public readonly name: string,
     /** The type of target platform. */
-    public readonly platformType: runtime.Type,
+    public readonly platformType: PlatformType,
     /** The type of provisioning engine. */
-    public readonly engineType: engine.Type
+    public readonly provisionType: ProvisionType
   ) {}
 
   public set archRefFile(filepath: string) {
@@ -59,7 +59,7 @@ export class Stack {
   }
 
   public deepCopy(): Stack {
-    const clonedStack = new Stack(this.name, this.platformType, this.engineType);
+    const clonedStack = new Stack(this.name, this.platformType, this.provisionType);
     clonedStack.configs = { ...this.configs };
     clonedStack.lastArchRefFile = this.lastArchRefFile;
     clonedStack.lastProvisionFile = this.lastProvisionFile;

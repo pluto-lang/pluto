@@ -47,7 +47,7 @@ In the Infra SDK, there is an abstract base class for each resource type. This i
 
 ### How to build specific Client implementation classes at runtime?
 
-The resource construction process, such as `new Queue(...)` written in user code, will be rewritten as `Queue.buildClient(...)` in the final compute module code. Additionally, Pluto will inject the `RUNTIME_TYPE` environment variable into the runtime instance, and the `buildClient` method will create the specific implementation class based on this environment variable.
+The resource construction process, such as `new Queue(...)` written in user code, will be rewritten as `Queue.buildClient(...)` in the final compute module code. Additionally, Pluto will inject the `PLUTO_PLATFORM_TYPE` environment variable into the runtime instance, and the `buildClient` method will create the specific implementation class based on this environment variable.
 
 ### Why separate Client SDK and Infra SDK into different packages?
 

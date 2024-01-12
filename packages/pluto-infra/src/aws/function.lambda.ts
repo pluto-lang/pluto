@@ -76,7 +76,7 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra, I
     const envs: Record<string, any> = {
       ...args?.envs,
       COMPUTE_MODULE: moduleFilename,
-      RUNTIME_TYPE: "AWS",
+      PLUTO_PLATFORM_TYPE: "AWS",
     };
 
     this.lambda = new aws.lambda.Function(

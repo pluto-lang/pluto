@@ -3,7 +3,7 @@ import {
   IResource,
   IResourceClientApi,
   IResourceInfraApi,
-  runtime,
+  PlatformType,
   simulator,
   utils,
 } from "@plutolang/base";
@@ -63,7 +63,7 @@ export class Tester implements IResource {
   public static buildClient(name: string, opts?: TesterOptions): ITesterClient {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case runtime.Type.Simulator:
+      case PlatformType.Simulator:
         opts;
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);

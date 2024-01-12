@@ -1,5 +1,5 @@
-import * as engine from "./engine";
-import * as runtime from "./runtime";
+import { ProvisionType } from "./provision";
+import { PlatformType } from "./platform";
 import { IResource, ResourceInfra } from "./resource";
 import { IResourceInstance } from "./simulator";
 
@@ -8,9 +8,18 @@ type ResourceCls = { new (name: string, opts?: object): IResource } | "FnResourc
 
 // eslint-disable-next-line
 export interface Registry {
-  register(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls, cls: InfraCls): void;
+  register(
+    platformType: PlatformType,
+    provisionType: ProvisionType,
+    resType: ResourceCls,
+    cls: InfraCls
+  ): void;
 
-  getResourceDef(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls): InfraCls;
+  getResourceDef(
+    platformType: PlatformType,
+    provisionType: ProvisionType,
+    resType: ResourceCls
+  ): InfraCls;
 }
 
 // eslint-disable-next-line
@@ -18,31 +27,31 @@ export class Registry implements Registry {
   readonly store: { [key: string]: InfraCls } = {};
 
   public register(
-    rtType: runtime.Type,
-    engType: engine.Type,
+    platformType: PlatformType,
+    provisionType: ProvisionType,
     resType: ResourceCls,
     cls: InfraCls
   ): void {
-    const key = this.getKey(rtType, engType, resType);
+    const key = this.getKey(platformType, provisionType, resType);
     this.store[key] = cls;
   }
 
   public getResourceDef(
-    rtType: runtime.Type,
-    engType: engine.Type,
+    platformType: PlatformType,
+    provisionType: ProvisionType,
     resType: ResourceCls
   ): InfraCls {
-    const key = this.getKey(rtType, engType, resType);
+    const key = this.getKey(platformType, provisionType, resType);
     if (!(key in this.store)) {
       throw new Error(
-        `cannot find the target infra resource class, RuntimeType: ${rtType}, EngineType: ${engType}, ResourceType: ${resType}`
+        `cannot find the target infra resource class, ype: ${platformType}, ype: ${provisionType}, ResourceType: ${resType}`
       );
     }
     return this.store[key];
   }
 
-  private getKey(rtType: runtime.Type, engType: engine.Type, resType: ResourceCls) {
+  private getKey(platformType: PlatformType, provisionType: ProvisionType, resType: ResourceCls) {
     const resName = typeof resType === "string" ? resType : resType.name;
-    return `${rtType}/${engType}/${resName}`;
+    return `${platformType}/${provisionType}/${resName}`;
   }
 }

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
-import { arch, config, core, engine, runtime, simulator } from "@plutolang/base";
+import { arch, config, core, ProvisionType, PlatformType, simulator } from "@plutolang/base";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
@@ -41,9 +41,9 @@ export async function test(entrypoint: string, opts: TestOptions) {
     process.exit(1);
   }
 
-  // If in simulation mode, switch the platform and engine of the stack to simulator.
+  // If in simulation mode, switch the platform and provisioning engine of the stack to simulator.
   if (opts.sim) {
-    stack = new config.Stack(stack.name, runtime.Type.Simulator, engine.Type.simulator);
+    stack = new config.Stack(stack.name, PlatformType.Simulator, ProvisionType.Simulator);
   }
 
   const basicArgs: core.BasicArgs = {
@@ -103,10 +103,10 @@ async function testOneGroup(
 
   // TODO: make the work dir same with generated dir.
   const workdir = path.join(generatedDir, `compiled`);
-  // build the adapter based on the engine type
-  const adapterPkg = selectAdapterByEngine(stack.engineType);
+  // build the adapter based on the provisioning engine type
+  const adapterPkg = selectAdapterByEngine(stack.provisionType);
   if (!adapterPkg) {
-    logger.error(`There is no adapter for type ${stack.engineType}.`);
+    logger.error(`There is no adapter for type ${stack.provisionType}.`);
     process.exit(1);
   }
   const adapter = await buildAdapter(adapterPkg, {
@@ -116,14 +116,18 @@ async function testOneGroup(
     workdir: workdir,
   });
 
-  const tmpSta = new config.Stack(`${stack.name}-${testId}`, stack.platformType, stack.engineType);
+  const tmpSta = new config.Stack(
+    `${stack.name}-${testId}`,
+    stack.platformType,
+    stack.provisionType
+  );
   try {
     logger.info("Applying...");
     const applyResult = await adapter.deploy();
     tmpSta.setDeployed();
     logger.info("Successfully applied!");
 
-    if (stack.platformType == runtime.Type.Simulator) {
+    if (stack.platformType == PlatformType.Simulator) {
       const simServerUrl = applyResult.outputs!["simulatorServerUrl"];
       for (const resourceName in testGroupArch.resources) {
         const resource = testGroupArch.resources[resourceName];
@@ -203,14 +207,14 @@ interface TesterClient {
 
 function buildTesterClient(sta: config.Stack, tester: Tester): TesterClient {
   switch (sta.platformType) {
-    case runtime.Type.AWS:
+    case PlatformType.AWS:
       return new AwsTesterClient(tester);
-    case runtime.Type.K8s:
-    case runtime.Type.Azure:
-    case runtime.Type.GCP:
-    case runtime.Type.AliCloud:
-    case runtime.Type.Simulator:
-    case runtime.Type.Custom:
+    case PlatformType.K8s:
+    case PlatformType.Azure:
+    case PlatformType.GCP:
+    case PlatformType.AliCloud:
+    case PlatformType.Simulator:
+    case PlatformType.Custom:
       throw new Error("Not implemented yet.");
     default:
       throw new Error(`Unknown runtime type, ${sta.platformType}`);

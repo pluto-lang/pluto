@@ -11,8 +11,8 @@ export class Simulator implements simulator.IContext {
   constructor() {
     this.resources = new Map();
 
-    process.env["RUNTIME_TYPE"] = "SIMULATOR";
-    process.env["ENGINE_TYPE"] = "simulator";
+    process.env["PLUTO_PLATFORM_TYPE"] = "SIMULATOR";
+    process.env["PLUTO_PROVISION_TYPE"] = "simulator";
   }
 
   public async loadApp(archRef: arch.Architecture): Promise<void> {
