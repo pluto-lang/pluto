@@ -22,21 +22,33 @@ async function loadPackage(pkgName: string): Promise<any> {
 }
 
 export async function buildDeducer(deducerPkg: string, basicArgs: BasicArgs): Promise<Deducer> {
-  return new (await loadPackage(deducerPkg))(basicArgs) as Deducer;
+  const deducer = new (await loadPackage(deducerPkg))(basicArgs);
+  if (deducer instanceof Deducer) {
+    return deducer;
+  }
+  throw new Error(`The default export of '${deducerPkg}' package is not a valid Deducer.`);
 }
 
 export async function buildGenerator(
   generatorPkg: string,
   basicArgs: BasicArgs
 ): Promise<Generator> {
-  return new (await loadPackage(generatorPkg))(basicArgs) as Generator;
+  const generator = new (await loadPackage(generatorPkg))(basicArgs);
+  if (generator instanceof Generator) {
+    return generator;
+  }
+  throw new Error(`The default export of '${generatorPkg}' package is not a valid Generator.`);
 }
 
 export async function buildAdapter(
   adapterPkg: string,
   adapterArgs: NewAdapterArgs
 ): Promise<Adapter> {
-  return new (await loadPackage(adapterPkg))(adapterArgs) as Adapter;
+  const adapter = new (await loadPackage(adapterPkg))(adapterArgs);
+  if (adapter instanceof Adapter) {
+    return adapter;
+  }
+  throw new Error(`The default export of '${adapterPkg}' package is not a valid Adapter.`);
 }
 
 export function selectAdapterByEngine(provisionType: ProvisionType): string | undefined {
