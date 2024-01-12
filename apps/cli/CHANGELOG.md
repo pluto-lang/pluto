@@ -1,5 +1,18 @@
 # @plutolang/cli
 
+## 0.2.11
+
+### Patch Changes
+
+- fe44c8e: chore(sdk): reformat the code to follow the norm
+- Updated dependencies [fe44c8e]
+  - @plutolang/simulator-adapter@0.2.10
+  - @plutolang/pulumi-adapter@0.2.10
+  - @plutolang/base@0.2.9
+  - @plutolang/static-deducer@0.2.9
+  - @plutolang/graphviz-generator@0.2.9
+  - @plutolang/static-generator@0.2.9
+
 ## 0.2.10
 
 ### Patch Changes
