@@ -1,5 +1,13 @@
 # @plutolang/pulumi-adapter
 
+## 0.2.10
+
+### Patch Changes
+
+- fe44c8e: chore(sdk): reformat the code to follow the norm
+- Updated dependencies [fe44c8e]
+  - @plutolang/base@0.2.9
+
 ## 0.2.9
 
 ### Patch Changes
