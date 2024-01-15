@@ -49,10 +49,18 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
     rootpath: path.resolve("."),
   };
   const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const closureBaseDir = path.join(stackBaseDir, "closures");
   const generatedDir = path.join(stackBaseDir, "generated");
 
   // construct the arch ref from user code
-  const { archRef } = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
+  const { archRef } = await loadAndDeduce(
+    opts.deducer,
+    {
+      ...basicArgs,
+      closureDir: closureBaseDir,
+    },
+    [entrypoint]
+  );
   const yamlText = yaml.dump(archRef, { noRefs: true });
   fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), yamlText);
 
@@ -65,7 +73,7 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
 
 export async function loadAndDeduce(
   deducerName: string,
-  basicArgs: core.BasicArgs,
+  basicArgs: core.NewDeducerArgs,
   files: string[]
 ): Promise<core.DeduceResult> {
   // try to construct the deducer, exit with error if failed to import

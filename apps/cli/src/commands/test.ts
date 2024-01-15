@@ -51,10 +51,19 @@ export async function test(entrypoint: string, opts: TestOptions) {
     stack: stack,
     rootpath: path.resolve("."),
   };
+  const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const closureBaseDir = path.join(stackBaseDir, "closures");
 
   // construct the arch ref from user code
   logger.info("Generating reference architecture...");
-  const { archRef } = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
+  const { archRef } = await loadAndDeduce(
+    opts.deducer,
+    {
+      ...basicArgs,
+      closureDir: closureBaseDir,
+    },
+    [entrypoint]
+  );
 
   const testGroupArchs = splitTestGroup(archRef);
   for (let testGroupIdx = 0; testGroupIdx < testGroupArchs.length; testGroupIdx++) {

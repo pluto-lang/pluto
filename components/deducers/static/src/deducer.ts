@@ -6,6 +6,7 @@ import { ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
+import { writeClosureToDir } from "./closure";
 
 export class StaticDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -13,8 +14,11 @@ export class StaticDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
   public readonly version = require(path.join(__dirname, "../package.json")).version;
 
-  constructor(args: core.BasicArgs) {
+  private readonly closureDir: string;
+
+  constructor(args: core.NewDeducerArgs) {
     super(args);
+    this.closureDir = args.closureDir;
   }
 
   public async deduce(entrypoints: string[]): Promise<core.DeduceResult> {
@@ -26,7 +30,23 @@ export class StaticDeducer extends core.Deducer {
     const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     const configJson = ts.parseJsonConfigFileContent(configFile.config, ts.sys, "./");
     const archRef = await compile(entrypoints, configJson.options);
+    this.exportEachClosure(archRef);
     return { archRef };
+  }
+
+  private exportEachClosure(archRef: arch.Architecture) {
+    const rootResource = archRef.getResource("App");
+
+    for (const resName in archRef.resources) {
+      const res = archRef.getResource(resName);
+      if (res.type != "FnResource") continue;
+
+      const dependentResources: arch.Resource[] = archRef.relationships
+        .filter((relat) => relat.from == res)
+        .map((relat) => relat.to);
+      const dirpath = path.resolve(this.closureDir, resName);
+      writeClosureToDir(rootResource, res, dependentResources, dirpath);
+    }
   }
 }
 

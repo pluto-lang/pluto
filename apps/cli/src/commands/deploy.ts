@@ -51,6 +51,7 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     stack: stack,
   };
   const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const closureBaseDir = path.join(stackBaseDir, "closures");
   const generatedDir = path.join(stackBaseDir, "generated");
   ensureDirSync(generatedDir);
 
@@ -60,7 +61,14 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
   if (!opts.apply) {
     // construct the arch ref from user code
     logger.info("Generating reference architecture...");
-    const deduceResult = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
+    const deduceResult = await loadAndDeduce(
+      opts.deducer,
+      {
+        ...basicArgs,
+        closureDir: closureBaseDir,
+      },
+      [entrypoint]
+    );
     archRef = deduceResult.archRef;
 
     const yamlText = yaml.dump(archRef, { noRefs: true });

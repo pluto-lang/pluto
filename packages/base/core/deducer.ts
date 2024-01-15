@@ -1,7 +1,10 @@
 import { Architecture } from "../arch";
 import { BaseComponent, BasicArgs } from "./base-component";
 
-export interface NewDeducerArgs extends BasicArgs {}
+export interface NewDeducerArgs extends BasicArgs {
+  /** The directory where the closures is stored. */
+  readonly closureDir: string;
+}
 
 export interface DeduceResult {
   /** The result of deducing. */
