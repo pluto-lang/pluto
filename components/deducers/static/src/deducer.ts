@@ -1,12 +1,20 @@
 import ts from "typescript";
 import path from "path";
-import { arch, core } from "@plutolang/base";
-import { genImportStats } from "./imports";
+import assert from "assert";
+import { arch, core, utils } from "@plutolang/base";
 import { ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
-import { writeClosureToDir } from "./closure";
+import { DependentResource, Location, writeClosureToDir } from "./closure";
+import { genImportStats } from "./imports";
+
+interface Context {
+  readonly projectName: string;
+  readonly stackName: string;
+  readonly rootpath: string;
+  readonly closureBaseDir: string;
+}
 
 export class StaticDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -29,30 +37,20 @@ export class StaticDeducer extends core.Deducer {
     const tsconfigPath = path.resolve("./", "tsconfig.json");
     const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
     const configJson = ts.parseJsonConfigFileContent(configFile.config, ts.sys, "./");
-    const archRef = await compile(entrypoints, configJson.options);
-    this.exportEachClosure(archRef);
+    const archRef = await compile(entrypoints, configJson.options, {
+      projectName: this.project,
+      stackName: this.stack.name,
+      rootpath: this.rootpath,
+      closureBaseDir: this.closureDir,
+    });
     return { archRef };
-  }
-
-  private exportEachClosure(archRef: arch.Architecture) {
-    const rootResource = archRef.getResource("App");
-
-    for (const resName in archRef.resources) {
-      const res = archRef.getResource(resName);
-      if (res.type != "FnResource") continue;
-
-      const dependentResources: arch.Resource[] = archRef.relationships
-        .filter((relat) => relat.from == res)
-        .map((relat) => relat.to);
-      const dirpath = path.resolve(this.closureDir, resName);
-      writeClosureToDir(rootResource, res, dependentResources, dirpath);
-    }
   }
 }
 
 async function compile(
   fileNames: string[],
-  tsOpts: ts.CompilerOptions
+  tsOpts: ts.CompilerOptions,
+  ctx: Context
 ): Promise<arch.Architecture> {
   const program = ts.createProgram(fileNames, tsOpts);
   const allDiagnostics = ts.getPreEmitDiagnostics(program);
@@ -105,17 +103,26 @@ async function compile(
     }
   });
 
-  return buildArchRef(resVarInfos, resRelatInfos);
+  // Find all closures, and write them into the closure directory.
+  storeAllClosure(resVarInfos, resRelatInfos, ctx);
+
+  return buildArchRef(resVarInfos, resRelatInfos, ctx);
 }
 
-function buildArchRef(
+function storeAllClosure(
   resVarInfos: ResourceVariableInfo[],
-  resRelatInfos: ResourceRelationshipInfo[]
-): arch.Architecture {
-  const archResources: arch.Resource[] = resVarInfos.map((varInfo): arch.Resource => {
-    const resName = varInfo.varName;
-    const resType = varInfo.resourceConstructInfo.constructExpression;
-    const resLocs = varInfo.resourceConstructInfo.locations.map((loc): arch.Location => {
+  resRelatInfos: ResourceRelationshipInfo[],
+  ctx: Context
+) {
+  resVarInfos.forEach((varInfo) => {
+    if (varInfo.resourceConstructInfo.constructExpression !== FN_RESOURCE_TYPE_NAME) {
+      return;
+    }
+
+    const clousureName = varInfo.varName;
+    const imports = genImportStats(varInfo.resourceConstructInfo.importElements).join("\n");
+
+    const locations: Location[] = varInfo.resourceConstructInfo.locations.map((loc) => {
       return {
         file: loc.file,
         depth: loc.depth,
@@ -125,55 +132,99 @@ function buildArchRef(
         },
       };
     });
-    const resParams =
-      varInfo.resourceConstructInfo.parameters?.map((param, idx): arch.Parameter => {
-        return {
-          index: idx,
-          name: "unknown",
-          value: param.getText(),
-        };
-      }) ?? [];
-    if (resType == FN_RESOURCE_TYPE_NAME) {
-      resParams?.push({ name: "name", index: 0, value: `"${resName}"` });
-    }
 
-    const res = new arch.Resource(resName, resType, resLocs, resParams);
-    const imports = genImportStats(varInfo.resourceConstructInfo.importElements);
-    res.addImports(...imports);
-    return res;
+    const dependentResources: DependentResource[] = [];
+    resRelatInfos
+      .filter((relatInfo) => relatInfo.fromVarName === clousureName)
+      .forEach((relatInfo) => {
+        resVarInfos
+          .filter((varInfo) => relatInfo.toVarNames.includes(varInfo.varName))
+          .forEach((varInfo) => {
+            dependentResources.push({
+              imports: genImportStats(varInfo.resourceConstructInfo.importElements).join("\n"),
+              name: varInfo.varName,
+              type: varInfo.resourceConstructInfo.constructExpression,
+              parameters:
+                varInfo.resourceConstructInfo.parameters
+                  ?.map((param) => param.getText())
+                  .join("\n") ?? "",
+            });
+          });
+      });
+
+    const dirpath = path.resolve(ctx.closureBaseDir, varInfo.varName);
+    writeClosureToDir(imports, locations, dependentResources, dirpath);
+  });
+}
+
+function buildArchRef(
+  resVarInfos: ResourceVariableInfo[],
+  resRelatInfos: ResourceRelationshipInfo[],
+  ctx: Context
+): arch.Architecture {
+  const archClosures: arch.Closure[] = [];
+  const archResources: arch.Resource[] = [];
+  resVarInfos.forEach((varInfo) => {
+    const resName = varInfo.varName;
+    const resType = varInfo.resourceConstructInfo.constructExpression;
+    if (resType === FN_RESOURCE_TYPE_NAME) {
+      // Closure
+      const dirpath = path
+        .resolve(ctx.closureBaseDir, resName)
+        .replace(new RegExp(`^${ctx.rootpath}\/?`), "");
+      archClosures.push(new arch.Closure(resName, dirpath));
+    } else {
+      // Resource
+      const resParams =
+        varInfo.resourceConstructInfo.parameters?.map((param, idx): arch.Parameter => {
+          return {
+            index: idx,
+            name: "unknown",
+            type: resType === FN_RESOURCE_TYPE_NAME ? "closure" : "text",
+            value: param.getText(),
+          };
+        }) ?? [];
+
+      const resId = utils.genResourceId(ctx.projectName, ctx.stackName, resType, resName);
+      const res = new arch.Resource(resId, resName, resType, resParams);
+      archResources.push(res);
+    }
   });
 
-  const hasFather = new Set<string>();
   const archRelats: arch.Relationship[] = resRelatInfos.map((relatInfo): arch.Relationship => {
-    if (relatInfo.type == arch.RelatType.CREATE) {
-      relatInfo.toVarNames.forEach((name) => hasFather.add(name));
-    }
+    const fromRes =
+      archResources.find((val) => val.name == relatInfo.fromVarName) ??
+      archClosures.find((val) => val.id == relatInfo.fromVarName);
+    const toRes =
+      archResources.find((val) => val.name == relatInfo.toVarNames[0]) ??
+      archClosures.find((val) => val.id == relatInfo.toVarNames[0]);
+    assert(fromRes !== undefined && toRes !== undefined);
 
-    const fromRes = archResources.find((val) => val.name == relatInfo.fromVarName)!;
-    const toRes = archResources.find((val) => val.name == relatInfo.toVarNames[0])!;
+    const fromType = fromRes instanceof arch.Closure ? "closure" : "resource";
+    const toType = toRes instanceof arch.Closure ? "closure" : "resource";
+
     const relatType = relatInfo.type;
     const relatOp = relatInfo.operation;
     const params = relatInfo.parameters.map((param): arch.Parameter => {
       return {
         index: param.order,
         name: param.name,
+        type: toRes instanceof arch.Closure ? "closure" : "text",
         value: param.resourceName ?? param.expression.getText(),
       };
     });
-    return new arch.Relationship(fromRes, toRes, relatType, relatOp, params);
+    return new arch.Relationship(
+      { id: fromRes.id, type: fromType },
+      [{ id: toRes.id, type: toType }],
+      relatType,
+      relatOp,
+      params
+    );
   });
 
-  const root = new arch.Resource("App", "Root"); // Resource Root
-  archResources
-    .filter((res) => !hasFather.has(res.name))
-    .forEach((res) => {
-      const relat = new arch.Relationship(root, res, arch.RelatType.CREATE, "new");
-      archRelats.push(relat);
-    });
-
   const archRef = new arch.Architecture();
-  archRef.addResource(root);
   archResources.forEach((res) => archRef.addResource(res));
+  archClosures.forEach((closure) => archRef.addClosure(closure));
   archRelats.forEach((relat) => archRef.addRelationship(relat));
   return archRef;
 }

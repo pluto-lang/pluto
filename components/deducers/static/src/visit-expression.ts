@@ -143,7 +143,7 @@ export function visitCallExpression(
   const resRelatInfo: ResourceRelationshipInfo = {
     fromVarName: accessorName,
     toVarNames: fnResVarInfos.map((r) => r.varName),
-    type: arch.RelatType.CREATE,
+    type: arch.RelatType.Create,
     operation: fnName,
     parameters: relatParams,
   };

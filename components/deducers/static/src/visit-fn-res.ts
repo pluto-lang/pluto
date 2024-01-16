@@ -154,7 +154,7 @@ function detectFnAccessCapturedProp(
     const resRelatInfo: ResourceRelationshipInfo = {
       fromVarName: fnResName,
       toVarNames: [accessorName],
-      type: arch.RelatType.PROPERTY,
+      type: arch.RelatType.PropertyAccess,
       operation: propertyName,
       parameters: [],
     };
@@ -211,7 +211,7 @@ function detectFnCallClientApi(
   const resRelatInfo: ResourceRelationshipInfo = {
     fromVarName: fnResName,
     toVarNames: [accessorName],
-    type: arch.RelatType.ACCESS,
+    type: arch.RelatType.PropertyAccess,
     operation: fnName,
     parameters: [],
   };

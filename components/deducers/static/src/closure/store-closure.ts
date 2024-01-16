@@ -1,5 +1,5 @@
-import { arch } from "@plutolang/base";
 import { ensureDirSync, readFileSync, writeFileSync } from "fs-extra";
+import { bundle } from "./compile";
 
 type Position = [number, number];
 
@@ -11,37 +11,51 @@ interface Segment {
 
 type FileSelection = Record<string, Segment[]>;
 
+export interface DependentResource {
+  imports: string;
+  name: string;
+  type: string;
+  parameters: string;
+}
+
+export interface Location {
+  file: string;
+  depth: number;
+  linenum: {
+    start: string;
+    end: string;
+  };
+}
+
 export function writeClosureToDir(
-  rootResource: arch.Resource,
-  currentResource: arch.Resource,
-  dependentResources: arch.Resource[],
+  imports: string,
+  locations: Location[],
+  dependentResources: DependentResource[],
   dirpath: string
 ) {
-  const sourceCode = generateSourceCode(rootResource, currentResource, dependentResources);
+  const sourceCode = generateSourceCode(imports, locations, dependentResources);
   ensureDirSync(dirpath);
-  writeFileSync(dirpath + "/index.ts", sourceCode);
+  const filepath = dirpath + "/index.ts";
+  writeFileSync(filepath, sourceCode);
+  bundle(filepath, dirpath);
 }
 
 function generateSourceCode(
-  rootRes: arch.Resource,
-  res: arch.Resource,
-  dependentResources: arch.Resource[]
+  imports: string,
+  locations: Location[],
+  dependentResources: DependentResource[]
 ): string {
-  let cirCode = res.getImports().join("\n") + "\n";
-  // Append all direct import statments to generated code
-  cirCode += rootRes.getImports().join("\n") + "\n";
+  let cirCode = imports + "\n";
 
   // Find the dependencies of this CIR and build corresponding instances.
   for (const dependentRes of dependentResources) {
     // TODO: verify if the buildClient function exists. If it does not, use the original statement.
-    cirCode += dependentRes.getImports() + "\n";
-    cirCode += `const ${dependentRes.name} = ${
-      dependentRes.type
-    }.buildClient(${dependentRes.getParamString()});\n`;
+    cirCode += dependentRes.imports + "\n";
+    cirCode += `const ${dependentRes.name} = ${dependentRes.type}.buildClient(${dependentRes.parameters});\n`;
   }
 
   const fileSelections: FileSelection = {};
-  res.locations.forEach((loc) => {
+  locations.forEach((loc) => {
     if (!fileSelections.hasOwnProperty(loc.file)) {
       fileSelections[loc.file] = [];
     }
