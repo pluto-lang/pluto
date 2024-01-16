@@ -4,6 +4,7 @@ export * from "./resource";
 export { Registry } from "./registry";
 
 export * as core from "./core";
+export * as closure from "./closure";
 
 export * as arch from "./arch";
 export * as simulator from "./simulator";

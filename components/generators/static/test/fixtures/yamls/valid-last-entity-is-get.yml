@@ -1,0 +1,46 @@
+resources:
+  - id: router
+    name: router
+    type: "@plutolang/pluto.Router"
+    parameters:
+      - index: 0
+        name: name
+        type: text
+        value: '"router"'
+  - id: queue
+    name: queue
+    type: "@plutolang/pluto.Queue"
+    parameters:
+      - index: 0
+        name: name
+        type: text
+        value: '"queue"'
+closures:
+  - id: fn_5_21
+    path: path/to/fn_5_21
+relationships:
+  - from:
+      id: router
+      type: resource
+    to:
+      - id: fn_5_21
+        type: closure
+    type: Create
+    operation: get
+    parameters:
+      - index: 0
+        name: path
+        type: closure
+        value: '"/echo"'
+      - index: 1
+        name: fn
+        type: closure
+        value: fn_5_21
+  - from:
+      id: fn_5_21
+      type: closure
+    to:
+      - id: queue
+        type: resource
+    type: MethodCall
+    operation: push
