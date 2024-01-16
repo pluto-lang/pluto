@@ -1,62 +1,105 @@
-import { Relationship } from "./relationship";
-import { Resource } from "./resource";
 import * as yaml from "js-yaml";
+import { Closure } from "./closure";
+import { Entity, Relationship } from "./relationship";
+import { Resource } from "./resource";
 
 export class Architecture {
-  readonly resources: { [name: string]: Resource };
-  readonly relationships: Relationship[];
+  public readonly extras: Record<string, any> = {};
 
-  constructor() {
-    this.resources = {};
-    this.relationships = [];
+  private readonly _resources: Resource[] = [];
+  private readonly _closures: Closure[] = [];
+  private readonly _relationships: Relationship[] = [];
+
+  constructor() {}
+
+  public get resources(): readonly Resource[] {
+    return this._resources;
   }
 
-  public addResource(res: Resource) {
-    if (res.name in this.resources) {
-      throw new Error(`there is a resource with same name '${res.name}'`);
-    }
-    this.resources[res.name] = res;
+  public get closures(): readonly Closure[] {
+    return this._closures;
   }
 
-  public getResource(name: string): Resource {
-    if (name in this.resources) {
-      return this.resources[name];
+  public get relationships(): readonly Relationship[] {
+    return this._relationships;
+  }
+
+  public addResource(resource: Resource) {
+    if (this._resources.findIndex((r) => r.id === resource.id) !== -1) {
+      throw new Error(`Resource '${resource.id}' already exists`);
     }
-    throw new Error(`there is no resource with name '${name}'`);
+    this._resources.push(resource);
+  }
+
+  public findResource(id: string): Resource | undefined {
+    return this._resources.find((r) => r.id === id);
+  }
+
+  public addClosure(closure: Closure) {
+    if (this._closures.findIndex((c) => c.id === closure.id) !== -1) {
+      throw new Error(`Compute closure '${closure.id}' already exists`);
+    }
+    this._closures.push(closure);
+  }
+
+  public findClosure(id: string): Closure | undefined {
+    return this._closures.find((c) => c.id === id);
+  }
+
+  public findResourceOrClosure(entity: Entity): Resource | Closure | undefined {
+    if (entity.type === "resource") {
+      return this.findResource(entity.id);
+    } else if (entity.type === "closure") {
+      return this.findClosure(entity.id);
+    }
+    throw new Error(
+      `The entity '${entity.id}' type is '${entity.type}', not a resource or closure`
+    );
   }
 
   public addRelationship(relat: Relationship) {
-    this.relationships.push(relat);
+    this._relationships.push(relat);
   }
 
   public toYaml(): string {
-    const resourceMap: { [name: string]: { [key: string]: unknown } } = {};
-    for (const resName in this.resources) {
-      const res = this.resources[resName];
-      resourceMap[resName] = {
-        type: res.type,
-        locations: res.locations,
-        parameters: res.parameters,
-      };
-    }
+    return yaml.dump(
+      {
+        resources: this._resources,
+        closures: this._closures,
+        relationships: this._relationships,
+        extras: this.extras,
+      },
+      {
+        indent: 2,
+        skipInvalid: true,
+        noArrayIndent: true,
+        replacer: skipNull,
+      }
+    );
 
-    const relatList: object[] = [];
-    for (const relat of this.relationships) {
-      const r = {
-        from: relat.from.name,
-        to: relat.to.name,
-        type: relat.type,
-        operation: relat.operation,
-        parameters: relat.parameters,
-      };
-      relatList.push(r);
+    function skipNull(_: string, value: any) {
+      // Filtering out properties
+      if (
+        value === null ||
+        value === undefined ||
+        (Array.isArray(value) && value.length === 0) || // empty array
+        (value && typeof value === "object" && Object.keys(value).length === 0) // empty object
+      ) {
+        return undefined; // Skip key
+      }
+      return value;
     }
-
-    return yaml.dump({ resources: resourceMap, relationships: relatList });
   }
 }
 
 export function parseArchFromYaml(yamlSource: string): Architecture {
-  const yamlObj = yaml.load(yamlSource) as Architecture;
-  return yamlObj;
+  const yamlObj = yaml.load(yamlSource) as any;
+  const arch = new Architecture();
+  Object.assign(arch, {
+    _resources: yamlObj.resources,
+    _closures: yamlObj.closures,
+    _relationships: yamlObj.relationships,
+    extras: yamlObj.extras,
+  });
+  return arch;
 }
