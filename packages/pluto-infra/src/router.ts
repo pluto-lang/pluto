@@ -1,15 +1,17 @@
-import { ProvisionType, PlatformType, utils } from "@plutolang/base";
+import { ProvisionType, PlatformType, utils, IResourceInfra } from "@plutolang/base";
 import { IRouterInfra, RouterOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
+
+type IRouterInfraImpl = IRouterInfra & IResourceInfra;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that
 // all implementation classes have the correct and same constructor signature.
-type RouterInfraImplClass = new (name: string, options?: RouterOptions) => IRouterInfra;
+type RouterInfraImplClass = new (name: string, options?: RouterOptions) => IRouterInfraImpl;
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IRouterInfra, RouterInfraImplClass>({
+const implClassMap = new ImplClassMap<IRouterInfraImpl, RouterInfraImplClass>({
   [ProvisionType.Pulumi]: {
     [PlatformType.AWS]: async () => (await import("./aws")).ApiGatewayRouter,
     [PlatformType.K8s]: async () => (await import("./k8s")).IngressRouter,
@@ -27,14 +29,17 @@ export abstract class Router {
    * must be consistent with the constructor of both the client class and infrastructure class associated
    * with this resource type.
    */
-  public static async createInstance(name: string, options?: RouterOptions): Promise<IRouterInfra> {
+  public static async createInstance(
+    name: string,
+    options?: RouterOptions
+  ): Promise<IRouterInfraImpl> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimRouter(name, options) as any;
-    }
+    // if (
+    //   utils.currentPlatformType() === PlatformType.Simulator &&
+    //   utils.currentEngineType() === ProvisionType.Simulator
+    // ) {
+    //   return new (await import("./simulator")).SimRouter(name, options) as any;
+    // }
 
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),

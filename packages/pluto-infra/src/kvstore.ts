@@ -1,15 +1,17 @@
-import { ProvisionType, PlatformType, utils } from "@plutolang/base";
+import { ProvisionType, PlatformType, utils, IResourceInfra } from "@plutolang/base";
 import { IKVStoreInfra, KVStoreOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
+
+type IKVStoreInfraImpl = IKVStoreInfra & IResourceInfra;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that
 // all implementation classes have the correct and same constructor signature.
-type KVStoreInfraImplClass = new (name: string, options?: KVStoreOptions) => IKVStoreInfra;
+type KVStoreInfraImplClass = new (name: string, options?: KVStoreOptions) => IKVStoreInfraImpl;
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IKVStoreInfra, KVStoreInfraImplClass>({
+const implClassMap = new ImplClassMap<IKVStoreInfraImpl, KVStoreInfraImplClass>({
   [ProvisionType.Pulumi]: {
     [PlatformType.AWS]: async () => (await import("./aws")).DynamoKVStore,
     [PlatformType.K8s]: async () => (await import("./k8s")).RedisKVStore,
@@ -29,14 +31,14 @@ export abstract class KVStore {
   public static async createInstance(
     name: string,
     options?: KVStoreOptions
-  ): Promise<IKVStoreInfra> {
+  ): Promise<IKVStoreInfraImpl> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimKVStore(name, options);
-    }
+    // if (
+    //   utils.currentPlatformType() === PlatformType.Simulator &&
+    //   utils.currentEngineType() === ProvisionType.Simulator
+    // ) {
+    //   return new (await import("./simulator")).SimKVStore(name, options);
+    // }
 
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
@@ -45,4 +47,6 @@ export abstract class KVStore {
       options
     );
   }
+
+  public static fqn = "@plutolang/pluto.KVStore";
 }

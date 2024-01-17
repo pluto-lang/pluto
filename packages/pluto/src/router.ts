@@ -12,9 +12,9 @@ import { shared } from "./clients";
 export interface HttpRequest {
   path: string;
   method: string;
-  headers: Record<string, string>;
-  query: Record<string, string>;
-  body: string | undefined;
+  headers: Record<string, string | undefined>;
+  query: Record<string, string | undefined>;
+  body: string | null;
 }
 
 export interface HttpResponse {
@@ -51,7 +51,7 @@ export interface IRouterInfraApi extends IResourceInfraApi {
  * Define the properties for Router that are captured at compile time and accessed during runtime.
  */
 export interface IRouterCapturedProps extends IResourceCapturedProps {
-  get url(): string;
+  url(): string;
 }
 
 /**
@@ -86,6 +86,8 @@ export class Router implements IResource {
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.Router";
 }
 
 export interface Router extends IResource, IRouterClient, IRouterInfra {}

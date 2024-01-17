@@ -6,7 +6,7 @@ import {
   IResourceInfraApi,
 } from "@plutolang/base";
 
-export interface Handler extends FnResource {
+export interface ScheduleHandler extends FnResource {
   (): Promise<void>;
 }
 
@@ -24,7 +24,7 @@ export interface IScheduleInfraApi extends IResourceInfraApi {
    *
    * Format: Minutes(0-59) Hours(0-23) Day-of-month(1-31) Month(1-12) Day-of-week(0-6)
    */
-  cron(cron: string, fn: Handler): Promise<void>;
+  cron(cron: string, fn: ScheduleHandler): Promise<void>;
 }
 export interface IScheduleCapturedProps extends IResourceCapturedProps {}
 
@@ -48,6 +48,8 @@ export class Schedule implements IResource {
       "Cannot instantiate this class, instead of its subclass depending on the target runtime."
     );
   }
+
+  public static fqn = "@plutolang/pluto.Schedule";
 }
 
 export interface Schedule extends IResource, IScheduleClient, IScheduleInfra {}

@@ -66,6 +66,8 @@ export class KVStore implements IResource {
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.KVStore";
 }
 
 export interface KVStore extends IResource, IKVStoreClient, IKVStoreInfra {}

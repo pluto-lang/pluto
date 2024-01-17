@@ -1,2 +1,2 @@
 export * from "./create-closure";
-export { isComputeClosure, Dependency } from "./types";
+export { isComputeClosure, Dependency, ComputeClosure } from "./types";

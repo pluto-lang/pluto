@@ -198,7 +198,10 @@ function buildArchRef(
     const toRes =
       archResources.find((val) => val.name == relatInfo.toVarNames[0]) ??
       archClosures.find((val) => val.id == relatInfo.toVarNames[0]);
-    assert(fromRes !== undefined && toRes !== undefined);
+    assert(
+      fromRes !== undefined && toRes !== undefined,
+      `${relatInfo.fromVarName} --${relatInfo.operation}--> ${relatInfo.toVarNames[0]}`
+    );
 
     const fromType = fromRes instanceof arch.Closure ? "closure" : "resource";
     const toType = toRes instanceof arch.Closure ? "closure" : "resource";

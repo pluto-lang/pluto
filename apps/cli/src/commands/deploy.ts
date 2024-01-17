@@ -45,6 +45,9 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     process.exit(1);
   }
 
+  process.env["PLUTO_PROJECT_NAME"] = project.name;
+  process.env["PLUTO_STACK_NAME"] = stack.name;
+
   const basicArgs: core.BasicArgs = {
     project: project.name,
     rootpath: projectRoot,
@@ -99,7 +102,7 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
   }
 
   // TODO: make the workdir same with generated dir.
-  const workdir = path.join(generatedDir, `compiled`);
+  const workdir = generatedDir;
   // build the adapter based on the provisioning engine type
   const adapterPkg = selectAdapterByEngine(stack.provisionType);
   if (!adapterPkg) {

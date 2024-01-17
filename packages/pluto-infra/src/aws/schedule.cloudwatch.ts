@@ -1,39 +1,46 @@
-import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
-import { IResource, ResourceInfra } from "@plutolang/base";
-import { IScheduleInfra, ScheduleOptions } from "@plutolang/pluto";
+import * as pulumi from "@pulumi/pulumi";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
+import { IScheduleInfra, Schedule, ScheduleHandler, ScheduleOptions } from "@plutolang/pluto";
 import { Lambda } from "./function.lambda";
+import { genAwsResourceName } from "./utils";
 
 export class CloudWatchSchedule
   extends pulumi.ComponentResource
-  implements ResourceInfra, IScheduleInfra
+  implements IResourceInfra, IScheduleInfra
 {
-  readonly name: string;
+  public readonly id: string;
 
   constructor(name: string, args?: ScheduleOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:queue:aws/CloudWatch", name, args, opts);
-    this.name = name;
+    this.id = genResourceId(Schedule.fqn, name);
   }
 
-  public async cron(cron: string, fn: IResource): Promise<void> {
-    if (!(fn instanceof Lambda)) {
-      throw new Error("Fn is not a subclass of LambdaDef.");
+  public async cron(cron: string, closure: ComputeClosure<ScheduleHandler>): Promise<void> {
+    if (!isComputeClosure(closure)) {
+      throw new Error("This closure is invalid.");
     }
 
+    const lambda = new Lambda(closure, {
+      name: `${this.id}-${cron}-func`,
+    });
+
     const rule = new aws.cloudwatch.EventRule(
-      `${this.name}-rule`,
+      genAwsResourceName(this.id, "rule"),
       {
-        name: `${this.name}-rule`,
+        name: genAwsResourceName(this.id, "rule"),
         scheduleExpression: `cron(${convertCronToAwsFmt(cron)})`,
       },
       { parent: this }
     );
 
     new aws.lambda.Permission(
-      `${this.name}-lmd-perm`,
+      genAwsResourceName(this.id, "permission"),
       {
         action: "lambda:InvokeFunction",
-        function: fn.lambda.name,
+        function: lambda.id,
         principal: "events.amazonaws.com",
         sourceArn: rule.arn,
       },
@@ -41,16 +48,16 @@ export class CloudWatchSchedule
     );
 
     new aws.cloudwatch.EventTarget(
-      `${this.name}-target`,
+      genAwsResourceName(this.id, "target"),
       {
         rule: rule.name,
-        arn: fn.lambda.arn,
+        arn: lambda.lambdaArn,
       },
       { parent: this }
     );
   }
 
-  public getPermission(op: string) {
+  public grantPermission(op: string) {
     op;
     throw new Error("This method should not be called.");
   }

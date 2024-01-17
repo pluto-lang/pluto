@@ -1,17 +1,19 @@
-import { ProvisionType, PlatformType, utils } from "@plutolang/base";
+import { ProvisionType, PlatformType, utils, IResourceInfra } from "@plutolang/base";
 import { ITesterInfra, TesterOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
+
+type ITesterInfraImpl = ITesterInfra & IResourceInfra;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that
 // all implementation classes have the correct and same constructor signature.
-type TesterInfraImplClass = new (name: string, options?: TesterOptions) => ITesterInfra;
+type TesterInfraImplClass = new (name: string, options?: TesterOptions) => ITesterInfraImpl;
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<ITesterInfra, TesterInfraImplClass>({
+const implClassMap = new ImplClassMap<ITesterInfraImpl, TesterInfraImplClass>({
   [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).Tester,
+    [PlatformType.AWS]: async () => (await import("./aws")).AwsTester,
   },
 });
 
@@ -25,14 +27,17 @@ export abstract class Tester {
    * must be consistent with the constructor of both the client class and infrastructure class associated
    * with this resource type.
    */
-  public static async createInstance(name: string, options?: TesterOptions): Promise<ITesterInfra> {
+  public static async createInstance(
+    name: string,
+    options?: TesterOptions
+  ): Promise<ITesterInfraImpl> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimTester(name, options) as any;
-    }
+    // if (
+    //   utils.currentPlatformType() === PlatformType.Simulator &&
+    //   utils.currentEngineType() === ProvisionType.Simulator
+    // ) {
+    //   return new (await import("./simulator")).SimTester(name, options) as any;
+    // }
 
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),

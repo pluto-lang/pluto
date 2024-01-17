@@ -1,19 +1,22 @@
-import { assert } from "console";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { IResource, ResourceInfra } from "@plutolang/base";
-import { IRouterInfra, RouterOptions } from "@plutolang/pluto";
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
+import { APIGatewayProxyHandler } from "aws-lambda";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import { HttpRequest, IRouterInfra, RequestHandler, Router, RouterOptions } from "@plutolang/pluto";
 import { Lambda } from "./function.lambda";
-import { currentAwsRegion } from "./utils";
+import { currentAwsRegion, genAwsResourceName } from "./utils";
 
 const DEFAULT_STAGE_NAME = "dev";
 
 export class ApiGatewayRouter
   extends pulumi.ComponentResource
-  implements IRouterInfra, ResourceInfra
+  implements IRouterInfra, IResourceInfra
 {
-  public readonly name: string;
+  public readonly id: string;
+
   public _url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
 
   private apiGateway: Api;
@@ -21,7 +24,7 @@ export class ApiGatewayRouter
 
   constructor(name: string, opts?: RouterOptions) {
     super("pluto:router:aws/ApiGateway", name, opts);
-    this.name = name;
+    this.id = genResourceId(Router.fqn, name);
 
     this.apiGateway = new aws.apigatewayv2.Api(
       `${name}-apigateway`,
@@ -37,65 +40,57 @@ export class ApiGatewayRouter
     this.routes = [];
   }
 
-  public get url(): string {
+  public url(): string {
     return this._url as any;
   }
 
   /**
    *
    * @param path The URL path to handle
-   * @param fn
+   * @param closure
    */
-  public get(path: string, fn: IResource): void {
-    if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
-    const lambda = fn as Lambda;
-
-    this.addHandler("GET", path, lambda);
+  public get(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.addHandler("GET", path, closure);
   }
 
-  public post(path: string, fn: IResource): void {
-    if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
-    const lambda = fn as Lambda;
-
-    this.addHandler("POST", path, lambda);
+  public post(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.addHandler("POST", path, closure);
   }
 
-  public put(path: string, fn: IResource): void {
-    if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
-    const lambda = fn as Lambda;
-
-    this.addHandler("PUT", path, lambda);
+  public put(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.addHandler("PUT", path, closure);
   }
 
-  public delete(path: string, fn: IResource): void {
-    if (!(fn instanceof Lambda)) throw new Error("Fn is not a subclass of LambdaDef.");
-    const lambda = fn as Lambda;
-
-    this.addHandler("DELETE", path, lambda);
+  public delete(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.addHandler("DELETE", path, closure);
   }
 
-  private addHandler(op: string, path: string, fn: Lambda) {
-    assert(
-      ["GET", "POST", "PUT", "DELETE"].indexOf(op.toUpperCase()) != -1,
-      `${op} method not allowed`
-    );
-    const resourceNamePrefix = `${fn.name}-${path.replace("/", "_")}-${op}`;
+  private addHandler(op: string, path: string, closure: ComputeClosure<RequestHandler>) {
+    if (!isComputeClosure(closure)) {
+      throw new Error("This closure is invalid.");
+    }
+    const resourceNamePrefix = `${this.id}-${path.replace("/", "_")}-${op}`;
+
+    const runtimeHandler = wrapClosure(adaptAwsRuntime(closure), closure);
+    const lambda = new Lambda(runtimeHandler, {
+      name: `${resourceNamePrefix}-func`,
+    });
 
     // 创建一个集成
     const integration = new aws.apigatewayv2.Integration(
-      `${resourceNamePrefix}-apiIntegration`,
+      genAwsResourceName(resourceNamePrefix, "integration"),
       {
         apiId: this.apiGateway.id,
         integrationType: "AWS_PROXY",
         integrationMethod: "POST",
-        integrationUri: fn.lambda.invokeArn,
+        integrationUri: lambda.lambdaInvokeArn,
       },
       { parent: this }
     );
 
     // 创建一个路由
     const route = new aws.apigatewayv2.Route(
-      `${resourceNamePrefix}-apiRoute`,
+      genAwsResourceName(resourceNamePrefix, "route"),
       {
         apiId: this.apiGateway.id,
         routeKey: `${op.toUpperCase()} ${path}`,
@@ -108,10 +103,10 @@ export class ApiGatewayRouter
 
     // 创建一个 HTTP 触发器
     new aws.lambda.Permission(
-      `${resourceNamePrefix}-httpTrigger`,
+      genAwsResourceName(resourceNamePrefix, "trigger"),
       {
         action: "lambda:InvokeFunction",
-        function: fn.lambda.name,
+        function: lambda.id,
         principal: "apigateway.amazonaws.com",
         sourceArn: pulumi.interpolate`${this.apiGateway.executionArn}/*`,
       },
@@ -119,7 +114,7 @@ export class ApiGatewayRouter
     );
   }
 
-  public getPermission(op: string, resource?: ResourceInfra) {
+  public grantPermission(op: string, resource?: IResourceInfra) {
     op;
     resource;
     throw new Error("Method not implemented.");
@@ -127,7 +122,7 @@ export class ApiGatewayRouter
 
   public postProcess() {
     const deployment = new aws.apigatewayv2.Deployment(
-      `${this.name}-deployment`,
+      genAwsResourceName(this.id, "deployment"),
       {
         apiId: this.apiGateway.id,
       },
@@ -135,7 +130,7 @@ export class ApiGatewayRouter
     );
 
     new aws.apigatewayv2.Stage(
-      `${this.name}-stage`,
+      genAwsResourceName(this.id, "stage"),
       {
         apiId: this.apiGateway.id,
         deploymentId: deployment.id,
@@ -144,4 +139,38 @@ export class ApiGatewayRouter
       { parent: this }
     );
   }
+}
+
+/**
+ * This function serves to bridge the gap between AWS runtime and Pluto, harmonizing their norms.
+ * @param handler The HTTP path handler contains the business logic.
+ */
+function adaptAwsRuntime(handler: RequestHandler): APIGatewayProxyHandler {
+  return async (event, context) => {
+    const accountId = context.invokedFunctionArn.split(":")[4];
+    process.env["AWS_ACCOUNT_ID"] = accountId;
+
+    const request: HttpRequest = {
+      path: event.resource,
+      method: event.httpMethod,
+      headers: event.headers,
+      query: event.queryStringParameters ?? {},
+      body: event.body,
+    };
+    console.log("Pluto: Handling HTTP request: ", request);
+
+    try {
+      const result = await handler(request);
+      return {
+        statusCode: result.statusCode,
+        body: result.body,
+      };
+    } catch (e) {
+      console.log("Faild to handle http request: ", e);
+      return {
+        statusCode: 500,
+        body: `Something wrong. Please contact the administrator.`,
+      };
+    }
+  };
 }

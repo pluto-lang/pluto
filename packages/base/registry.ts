@@ -1,9 +1,9 @@
 import { ProvisionType } from "./provision";
 import { PlatformType } from "./platform";
-import { IResource, ResourceInfra } from "./resource";
+import { IResource, IResourceInfra } from "./resource";
 import { IResourceInstance } from "./simulator";
 
-type InfraCls = { new (name: string, opts?: object): ResourceInfra | IResourceInstance };
+type InfraCls = { new (name: string, opts?: object): IResourceInfra | IResourceInstance };
 type ResourceCls = { new (name: string, opts?: object): IResource } | "FnResource";
 
 // eslint-disable-next-line

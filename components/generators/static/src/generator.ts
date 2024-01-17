@@ -41,6 +41,14 @@ export class StaticGenerator extends core.Generator {
         infraCode += this.generateInfraCode_Relationship(entity);
       }
     }
+
+    entities
+      .filter((entity) => entity instanceof arch.Resource)
+      .forEach((entity) => {
+        const resource = entity as arch.Resource;
+        infraCode += `${resource.id}.postProcess();\n`;
+      });
+
     return `
 ${globalImports}
 

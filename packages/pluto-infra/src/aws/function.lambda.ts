@@ -1,34 +1,49 @@
-import fs from "fs";
-import path from "path";
 import * as aws from "@pulumi/aws";
-import * as archive from "@pulumi/archive";
 import * as pulumi from "@pulumi/pulumi";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
-import { ResourceInfra } from "@plutolang/base";
-import { FunctionOptions, IFunctionInfra } from "@plutolang/pluto";
+import { IResourceInfra } from "@plutolang/base";
+import { ComputeClosure, Dependency, isComputeClosure } from "@plutolang/base/closure";
+import { createEnvNameForProperty, genResourceId } from "@plutolang/base/utils";
+import {
+  AnyFunction,
+  DEFAULT_FUNCTION_NAME,
+  FunctionOptions,
+  IFunctionInfra,
+  Function as PlutoFunction,
+} from "@plutolang/pluto";
+import { genAwsResourceName } from "./utils";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
 }
 
-if (!process.env["WORK_DIR"]) {
-  throw new Error("Missing environment variable WORK_DIR");
-}
-const WORK_DIR = process.env["WORK_DIR"]!;
-
-export class Lambda extends pulumi.ComponentResource implements ResourceInfra, IFunctionInfra {
-  readonly name: string;
+export class Lambda extends pulumi.ComponentResource implements IResourceInfra, IFunctionInfra {
+  private readonly name: string;
+  public readonly id: string;
 
   // eslint-disable-next-line
-  lambda: Function;
-  iam: Role;
-  statements: aws.types.input.iam.GetPolicyDocumentStatement[];
+  private readonly lambda: Function;
+  private readonly iam: Role;
+  private readonly statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
-  constructor(name: string, args?: FunctionOptions, opts?: pulumi.ComponentResourceOptions) {
-    super("pluto:lambda:aws/Lambda", name, args, opts);
+  public get lambdaArn(): pulumi.Output<string> {
+    return this.lambda.arn;
+  }
+
+  public get lambdaInvokeArn(): pulumi.Output<string> {
+    return this.lambda.invokeArn;
+  }
+
+  constructor(closure: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
+    const name = options?.name ?? DEFAULT_FUNCTION_NAME;
+    super("pluto:function:aws/Lambda", name, options);
     this.name = name;
-    this.statements = [];
+    this.id = genResourceId(PlutoFunction.fqn, this.name);
+
+    if (!isComputeClosure(closure)) {
+      throw new Error("This closure is invalid.");
+    }
 
     const role = aws.iam.getPolicyDocument(
       {
@@ -48,88 +63,115 @@ export class Lambda extends pulumi.ComponentResource implements ResourceInfra, I
       { parent: this }
     );
 
-    this.iam = new aws.iam.Role(`${name}-iam`, {
-      assumeRolePolicy: role.then((assumeRole) => assumeRole.json),
-    });
-
-    // copy the compute module and runtime to a directory
-    const moduleFilename = `${this.name}.js`;
-    const runtimeFilename = "runtime.js";
-    const modulePath = path.join(WORK_DIR, moduleFilename);
-    const runtimePath = path.join(__dirname, runtimeFilename);
-    const sourceDir = path.join(WORK_DIR, `${this.name}-payload`);
-    fs.mkdirSync(sourceDir, { recursive: true });
-    fs.copyFileSync(modulePath, path.join(sourceDir, moduleFilename));
-    fs.copyFileSync(runtimePath, path.join(sourceDir, runtimeFilename));
-
-    // build the zip file
-    const outputPath = path.join(WORK_DIR, `${this.name}-payload.zip`);
-    archive.getFile(
+    this.iam = new aws.iam.Role(
+      genAwsResourceName(this.id, "role"),
       {
-        type: "zip",
-        outputPath: outputPath,
-        sourceDir: sourceDir,
+        name: genAwsResourceName(this.id, "role"),
+        assumeRolePolicy: role.then((assumeRole) => assumeRole.json),
       },
       { parent: this }
     );
 
     const envs: Record<string, any> = {
-      ...args?.envs,
-      COMPUTE_MODULE: moduleFilename,
+      ...options?.envs,
       PLUTO_PLATFORM_TYPE: "AWS",
     };
 
-    this.lambda = new aws.lambda.Function(
-      `${this.name}-lambda`,
+    closure.dependencies
+      ?.filter((dep) => dep.type === "property")
+      .forEach((dep) => {
+        const envName = createEnvNameForProperty(dep.resourceObject.id, dep.operation);
+        envs[envName] = (dep.resourceObject as any)[dep.operation]();
+      });
+
+    // TODO: Pulumi automatically packages all properties of a closure, which may lead to errors.
+    // Therefore, we clear the dependencies property of the closure before building Lambda. However,
+    // this action could affect external callers reusing the closure.
+    extractAndClearDependency(closure);
+    this.lambda = new aws.lambda.CallbackFunction(
+      this.id,
       {
-        code: new pulumi.asset.FileArchive(outputPath),
-        role: this.iam.arn,
-        handler: "runtime.default",
-        runtime: "nodejs18.x",
+        name: this.id,
+        callback: closure,
+        role: this.iam,
         environment: {
           variables: envs,
         },
+        runtime: "nodejs18.x",
         timeout: 30,
       },
       { parent: this }
     );
 
-    this.getPermission(Ops.WATCH_LOG, this);
+    this.statements = [this.grantPermission(Ops.WATCH_LOG, this)];
+    const dependentStatements = closure.dependencies
+      ?.filter((dep) => dep.type === "method")
+      .map((dep) => dep.resourceObject.grantPermission(dep.operation, this));
+    if (dependentStatements !== undefined) {
+      this.statements.push(...dependentStatements);
+    }
   }
 
-  public getPermission(op: string, resource: ResourceInfra) {
+  public grantPermission(
+    op: string,
+    _: IResourceInfra
+  ): aws.types.input.iam.GetPolicyDocumentStatement {
     const WATCH_LOG_ARN = "arn:aws:logs:*:*:*";
-
-    if (resource !== this) {
-      const stat: aws.types.input.iam.GetPolicyDocumentStatement = resource.getPermission(op);
-      this.statements.push(stat);
-    } else {
-      switch (op.toUpperCase()) {
-        case Ops.WATCH_LOG:
-          this.statements.push({
-            effect: "Allow",
-            actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
-            resources: [WATCH_LOG_ARN],
-          });
-          break;
-        default:
-          throw new Error(`Unknown op: ${op}`);
-      }
+    switch (op.toUpperCase()) {
+      case Ops.WATCH_LOG:
+        return {
+          effect: "Allow",
+          actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+          resources: [WATCH_LOG_ARN],
+        };
+      default:
+        throw new Error(`Unknown op: ${op}`);
     }
   }
 
   public postProcess(): void {
-    const policyDocument = aws.iam.getPolicyDocument({
-      statements: this.statements,
-    });
-    const policy = new aws.iam.Policy(`${this.name}-iam-policy`, {
-      path: "/",
-      description: "IAM policy",
-      policy: policyDocument.then((policyDocument) => policyDocument.json),
-    });
-    new aws.iam.RolePolicyAttachment(`${this.name}-iam-attachment`, {
-      role: this.iam.name,
-      policyArn: policy.arn,
-    });
+    const policyDocument = aws.iam.getPolicyDocument(
+      {
+        statements: this.statements,
+      },
+      { parent: this }
+    );
+
+    const policy = new aws.iam.Policy(
+      genAwsResourceName(this.id, "policy"),
+      {
+        name: genAwsResourceName(this.id, "policy"),
+        path: "/",
+        description: "IAM policy",
+        policy: policyDocument.then((policyDocument) => policyDocument.json),
+      },
+      { parent: this }
+    );
+
+    new aws.iam.RolePolicyAttachment(
+      genAwsResourceName(this.id, "iam-attachment"),
+      {
+        role: this.iam.name,
+        policyArn: policy.arn,
+      },
+      { parent: this }
+    );
   }
+}
+
+interface NestedDependencies {
+  dependencies?: Dependency[];
+  innerClosureParts?: NestedDependencies;
+}
+
+function extractAndClearDependency(closure: ComputeClosure<AnyFunction>): NestedDependencies {
+  const parts: NestedDependencies = {
+    dependencies: closure.dependencies,
+  };
+  closure.dependencies = undefined;
+
+  if (closure.innerClosure) {
+    parts.innerClosureParts = extractAndClearDependency(closure.innerClosure);
+  }
+  return parts;
 }

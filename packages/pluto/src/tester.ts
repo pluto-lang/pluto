@@ -71,6 +71,8 @@ export class Tester implements IResource {
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.Tester";
 }
 
 export interface Tester extends IResource, ITesterClient, ITesterInfra {}

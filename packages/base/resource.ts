@@ -1,12 +1,5 @@
 export interface FnResource extends IResource {}
 
-export interface ResourceInfra extends IResource {
-  get name(): string;
-  // eslint-disable-next-line
-  getPermission(op: string, resource?: ResourceInfra): any;
-  postProcess(): void;
-}
-
 /**
  * The class implementing this interface represents the type of cloud resource.
  * It's also the type that Pluto needs to detect and process.
@@ -37,3 +30,19 @@ export interface IResourceInfraApi {}
  * both the Client SDK and the Infra SDK.
  */
 export interface IResourceCapturedProps {}
+
+/**
+ * These methods need to be implemented within the infrastructure implementation classes for each
+ * resource.
+ */
+export interface IResourceInfra extends IResourceInfraApi {
+  get id(): string;
+  // eslint-disable-next-line
+  /**
+   * Grant the 'resource' permission to perform the 'operation'.
+   * @param operation
+   * @param resource
+   */
+  grantPermission(operation: string, resource?: IResourceInfra): any;
+  postProcess(): void;
+}

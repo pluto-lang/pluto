@@ -1,5 +1,5 @@
 import { ensureDirSync, readFileSync, writeFileSync } from "fs-extra";
-import { bundle } from "./compile";
+import { compile } from "./compile";
 
 type Position = [number, number];
 
@@ -37,7 +37,7 @@ export function writeClosureToDir(
   ensureDirSync(dirpath);
   const filepath = dirpath + "/index.ts";
   writeFileSync(filepath, sourceCode);
-  bundle(filepath, dirpath);
+  compile(filepath, dirpath, /* bundle */ false);
 }
 
 function generateSourceCode(

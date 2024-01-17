@@ -1,8 +1,9 @@
 import * as esbuild from "esbuild";
 
-export function bundle(tsPath: string, outdir: string): void {
+export function compile(tsPath: string, outdir: string, bundle: boolean = true): void {
   const result = esbuild.buildSync({
-    bundle: true,
+    bundle: bundle,
+    format: "cjs",
     minify: false,
     entryPoints: [tsPath],
     platform: "node",

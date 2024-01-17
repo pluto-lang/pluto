@@ -80,6 +80,8 @@ export class Queue implements IResource {
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.Queue";
 }
 
 export interface Queue extends IResource, IQueueClient, IQueueInfra {}

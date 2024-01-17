@@ -2,22 +2,26 @@ import {
   IResource,
   IResourceCapturedProps,
   IResourceInfraApi,
+  IResourceClientApi,
   PlatformType,
-  simulator,
   utils,
 } from "@plutolang/base";
-import { IResourceClientApi } from "@plutolang/base";
+import { aws } from "./clients";
+
+export type AnyFunction = (...args: any[]) => any;
+export const DEFAULT_FUNCTION_NAME = "default";
 
 /**
  * The options for instantiating an infrastructure implementation class or a client implementation
  * class.
  */
 export interface FunctionOptions {
+  name?: string;
   envs?: Record<string, any>;
 }
 
-export interface IFunctionClientApi extends IResourceClientApi {
-  invoke(payload: string): Promise<string>;
+export interface IFunctionClientApi<T extends AnyFunction> extends IResourceClientApi {
+  invoke(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>>;
 }
 
 export interface IFunctionInfraApi extends IResourceInfraApi {}
@@ -28,7 +32,7 @@ export interface IFunctionCapturedProps extends IResourceCapturedProps {}
  * Construct a type that includes all the necessary methods required to be implemented within the
  * client implementation class of a resource type.
  */
-export type IFunctionClient = IFunctionClientApi & IFunctionCapturedProps;
+export type IFunctionClient<T extends AnyFunction> = IFunctionClientApi<T> & IFunctionCapturedProps;
 
 /**
  * Construct a type that includes all the necessary methods required to be implemented within the
@@ -36,26 +40,32 @@ export type IFunctionClient = IFunctionClientApi & IFunctionCapturedProps;
  */
 export type IFunctionInfra = IFunctionInfraApi & IFunctionCapturedProps;
 
-export class Function implements IResource {
-  constructor(name: string, opts?: FunctionOptions) {
-    name;
+export class Function<T extends AnyFunction> implements IResource {
+  constructor(func: T, opts?: FunctionOptions) {
+    func;
     opts;
     throw new Error(
       "Cannot instantiate this class, instead of its subclass depending on the target runtime."
     );
   }
 
-  public static buildClient(name: string, opts?: FunctionOptions): IFunctionClient {
+  public static buildClient<T extends AnyFunction>(
+    func: T,
+    opts?: FunctionOptions
+  ): IFunctionClient<T> {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case PlatformType.Simulator:
-        opts;
-        if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
-        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
+      case PlatformType.AWS:
+        return new aws.LambdaFunction(func, opts);
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.Function";
 }
 
-export interface Function extends IResource, IFunctionClient, IFunctionInfra {}
+export interface Function<T extends AnyFunction>
+  extends IResource,
+    IFunctionClient<T>,
+    IFunctionInfra {}
