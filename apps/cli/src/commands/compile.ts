@@ -1,6 +1,5 @@
 import fs from "fs";
 import path, { resolve } from "path";
-import * as yaml from "js-yaml";
 import { arch, core } from "@plutolang/base";
 import logger from "../log";
 import { buildDeducer, buildGenerator } from "./utils";
@@ -61,8 +60,7 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
     },
     [entrypoint]
   );
-  const yamlText = yaml.dump(archRef, { noRefs: true });
-  fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), yamlText);
+  fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), archRef.toYaml());
 
   // generate the graphviz file
   await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, basicArgs, archRef, stackBaseDir);

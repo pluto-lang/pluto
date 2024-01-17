@@ -143,36 +143,34 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
 
 async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Promise<boolean> {
   // Create the resource table for printing.
-  const resData = [["Name", "Type", "Location"]];
-  for (const resName in archRef.resources) {
-    const resource = archRef.resources[resName];
-    if (resource.type == "Root") continue;
-
-    let position = "";
-    if (resource.locations.length > 0) {
-      const loc = resource.locations[0];
-      position = path.basename(loc.file) + `:${loc.linenum.start},${loc.linenum.end}`;
-    }
-    resData.push([resName, resource.type, position]);
-  }
+  const resData = [
+    ["ID", "Name", "Resource Type", "Entity Type"],
+    ...archRef.resources.map((resource) => [resource.id, resource.name, resource.type, "Resource"]),
+    ...archRef.closures.map((closure) => [closure.id, "-", "-", "Closure"]),
+  ];
 
   // To display the resource table, which includes the resources in the arch ref
   const resConfig: TableUserConfig = {
     drawHorizontalLine: (lineIndex: number, rowCount: number) => {
-      return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
+      return (
+        lineIndex === 0 ||
+        lineIndex === 2 ||
+        lineIndex === 1 ||
+        lineIndex === rowCount ||
+        lineIndex === archRef.resources.length + 2
+      );
     },
     header: {
-      content: "Resource in Architecture Reference",
+      content: "Architecture Entities",
     },
   };
   console.log(table(resData, resConfig));
 
   // Create the relationship table for printing.
-  const relatData = [["From", "To", "Type", "Operation"]];
+  const relatData = [["Source Entity ID", "Target Entity ID", "Relationship Type", "Operation"]];
   for (const relat of archRef.relationships) {
-    if (relat.from.type == "Root") continue;
-
-    relatData.push([relat.from.name, relat.to.name, relat.type, relat.operation]);
+    const toIds = relat.to.map((to) => to.id).join("\n");
+    relatData.push([relat.from.id, toIds, relat.type, relat.operation]);
   }
 
   // To display the relationship table, which includes the relationships among resources in the arch ref.
@@ -181,7 +179,7 @@ async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Prom
       return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
     },
     header: {
-      content: "Relationship between Resources",
+      content: "Entity Relationships",
     },
   };
   console.log(table(relatData, relatConfig));
