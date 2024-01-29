@@ -5,7 +5,7 @@ import { genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
 import { IScheduleInfra, Schedule, ScheduleHandler, ScheduleOptions } from "@plutolang/pluto";
 import { Lambda } from "./function.lambda";
-import { genAwsResourceName } from "./utils";
+import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 
 export class CloudWatchSchedule
   extends pulumi.ComponentResource

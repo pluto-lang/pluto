@@ -6,8 +6,9 @@ import { IResourceInfra } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import { HttpRequest, IRouterInfra, RequestHandler, Router, RouterOptions } from "@plutolang/pluto";
+import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 import { Lambda } from "./function.lambda";
-import { currentAwsRegion, genAwsResourceName } from "./utils";
+import { currentAwsRegion } from "./utils";
 
 const DEFAULT_STAGE_NAME = "dev";
 
@@ -106,7 +107,7 @@ export class ApiGatewayRouter
       genAwsResourceName(resourceNamePrefix, "trigger"),
       {
         action: "lambda:InvokeFunction",
-        function: lambda.id,
+        function: lambda.lambdaName,
         principal: "apigateway.amazonaws.com",
         sourceArn: pulumi.interpolate`${this.apiGateway.executionArn}/*`,
       },
@@ -143,9 +144,9 @@ export class ApiGatewayRouter
 
 /**
  * This function serves to bridge the gap between AWS runtime and Pluto, harmonizing their norms.
- * @param handler The HTTP path handler contains the business logic.
+ * @param __handler_ The HTTP path handler contains the business logic.
  */
-function adaptAwsRuntime(handler: RequestHandler): APIGatewayProxyHandler {
+function adaptAwsRuntime(__handler_: RequestHandler): APIGatewayProxyHandler {
   return async (event, context) => {
     const accountId = context.invokedFunctionArn.split(":")[4];
     process.env["AWS_ACCOUNT_ID"] = accountId;
@@ -160,7 +161,7 @@ function adaptAwsRuntime(handler: RequestHandler): APIGatewayProxyHandler {
     console.log("Pluto: Handling HTTP request: ", request);
 
     try {
-      const result = await handler(request);
+      const result = await __handler_(request);
       return {
         statusCode: result.statusCode,
         body: result.body,

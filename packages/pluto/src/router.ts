@@ -13,7 +13,7 @@ export interface HttpRequest {
   path: string;
   method: string;
   headers: Record<string, string | undefined>;
-  query: Record<string, string | undefined>;
+  query: Record<string, string | string[] | undefined>;
   body: string | null;
 }
 

@@ -1,21 +1,33 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { ServiceLambda } from "./function.service";
-import { FnResource, ResourceInfra } from "@plutolang/base";
-import { IQueueInfra, QueueOptions } from "@plutolang/pluto";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import {
+  AnyFunction,
+  CloudEvent,
+  EventHandler,
+  IQueueInfra,
+  Queue,
+  QueueOptions,
+} from "@plutolang/pluto";
+import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
+import { KnativeService } from "./function.service";
+import { responseAndClose, runtimeBase } from "./utils";
 
-export class RedisQueue extends pulumi.ComponentResource implements ResourceInfra, IQueueInfra {
-  readonly name: string;
-  url: pulumi.Output<string>;
+export class RedisQueue extends pulumi.ComponentResource implements IResourceInfra, IQueueInfra {
+  public readonly id: string;
+
+  private readonly url: pulumi.Output<string>;
 
   constructor(name: string, args?: QueueOptions, opts?: pulumi.ComponentResourceOptions) {
-    super("pluto:k8s:RedisQueue", name, args, opts);
-    this.name = name;
+    super("pluto:queue:k8s/Redis", name, args, opts);
+    this.id = genResourceId(Queue.fqn, name);
 
-    const redisLabel = { app: `${name}-que-redis` };
+    const redisLabel = { app: genK8sResourceName(this.id) };
 
     new k8s.apps.v1.Deployment(
-      `${name}-redis-que-deployment`,
+      genK8sResourceName(this.id, "deploy"),
       {
         metadata: {
           labels: redisLabel,
@@ -42,10 +54,10 @@ export class RedisQueue extends pulumi.ComponentResource implements ResourceInfr
     );
 
     const redisService = new k8s.core.v1.Service(
-      `${name}-queue`,
+      genK8sResourceName(this.id, "service"),
       {
         metadata: {
-          name: `${name}-queue`,
+          name: genK8sResourceName(this.id, "service"),
           labels: redisLabel,
           namespace: "default", // TODO: Make it configurable.
         },
@@ -60,28 +72,34 @@ export class RedisQueue extends pulumi.ComponentResource implements ResourceInfr
     this.url = redisService.spec.apply((s) => `${s.clusterIP}:6379`);
   }
 
-  public subscribe(fn: FnResource): void {
-    if (!(fn instanceof ServiceLambda)) throw new Error("fn is not the instance of ServiceDef");
-    const lambda = fn as ServiceLambda;
+  public subscribe(closure: ComputeClosure<AnyFunction>): void {
+    if (!isComputeClosure(closure)) {
+      throw new Error("This closure is invalid.");
+    }
+
+    const adaptHandler = wrapClosure(adaptK8sRuntime(closure), closure);
+    const func = new KnativeService(adaptHandler, {
+      name: `${this.id}-func`,
+    });
 
     new k8s.apiextensions.CustomResource(
-      `${lambda.name}-${this.name}-subscription`,
+      genK8sResourceName(this.id, "sub"),
       {
         apiVersion: "sources.knative.dev/v1alpha1",
         kind: "RedisStreamSource",
         metadata: {
-          name: `${this.name}-${lambda.name}-source`,
+          name: genK8sResourceName({ maxLength: 20 }, this.id, "sub"),
           namespace: "default", // TODO: Make it configurable.
         },
         spec: {
           address: pulumi.interpolate`redis://${this.url}`,
-          stream: this.name,
-          group: this.name,
+          stream: this.id,
+          group: this.id,
           sink: {
             ref: {
-              apiVersion: lambda.kservice.apiVersion,
-              kind: lambda.kservice.kind,
-              name: lambda.kservice.metadata.name,
+              apiVersion: func.kserviceMeta.apiVersion,
+              kind: func.kserviceMeta.kind,
+              name: func.kserviceMeta.name,
             },
           },
         },
@@ -90,9 +108,34 @@ export class RedisQueue extends pulumi.ComponentResource implements ResourceInfr
     );
   }
 
-  public getPermission(op: string) {
-    op;
-  }
+  public grantPermission(_: string) {}
 
   public postProcess(): void {}
+}
+
+function adaptK8sRuntime(__handler_: EventHandler) {
+  return async () => {
+    runtimeBase(async (_, res, parsed) => {
+      if (!parsed.body) {
+        res.writeHead(400);
+        res.end(`The body of the request is empty.`);
+        return;
+      }
+
+      const events = JSON.parse(parsed.body);
+      if (events.length < 2) {
+        res.writeHead(400);
+        res.end(`Event is invalid: ${parsed.body}`);
+        return;
+      }
+
+      const evt: CloudEvent = JSON.parse(events[1]);
+      try {
+        await __handler_(evt);
+        responseAndClose(res, 200, "");
+      } catch (e) {
+        responseAndClose(res, 500, `Event processing failed: ${e}`);
+      }
+    });
+  };
 }

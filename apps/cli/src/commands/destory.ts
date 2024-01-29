@@ -46,8 +46,6 @@ export async function destroy(opts: DestoryOptions) {
 
   const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
   const generatedDir = path.join(stackBaseDir, "generated");
-  // TODO: make the workdir same with generated dir.
-  const workdir = path.join(generatedDir, `compiled`);
 
   // build the adapter based on the provisioning engine type
   const adapterPkg = selectAdapterByEngine(stack.provisionType);
@@ -61,7 +59,7 @@ export async function destroy(opts: DestoryOptions) {
     stack: stack,
     archRef: loadArchRef(stack.archRefFile),
     entrypoint: stack.provisionFile,
-    workdir: workdir,
+    workdir: generatedDir,
   });
   if (!adapter) {
     logger.error(`There is no engine of type ${stack.provisionType}.`);

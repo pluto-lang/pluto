@@ -5,7 +5,7 @@ import { IResourceInfra } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import { CloudEvent, EventHandler, IQueueInfra, Queue, QueueOptions } from "@plutolang/pluto";
-import { genAwsResourceName } from "./utils";
+import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 import { Lambda } from "./function.lambda";
 import { Permission } from "./permission";
 
@@ -23,9 +23,9 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
     this.id = genResourceId(Queue.fqn, name);
 
     this.topic = new aws.sns.Topic(
-      this.id,
+      genAwsResourceName(this.id),
       {
-        name: this.id,
+        name: genAwsResourceName(this.id),
       },
       { parent: this }
     );
@@ -55,7 +55,7 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
       genAwsResourceName(this.id, "trigger"),
       {
         action: "lambda:InvokeFunction",
-        function: lambda.id,
+        function: lambda.lambdaName,
         principal: "sns.amazonaws.com",
         sourceArn: this.topic.arn,
       },
@@ -67,7 +67,7 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
     const actions = [];
     switch (op) {
       case SNSOps.PUSH:
-        actions.push("sns:*");
+        actions.push("SNS:Publish");
         break;
       default:
         throw new Error(`Unknown operation: ${op}`);
@@ -89,9 +89,9 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
 
 /**
  * This function serves to bridge the gap between AWS runtime and Pluto, harmonizing their norms.
- * @param handler The cloud event handler contains the business logic.
+ * @param __handler_ The cloud event handler contains the business logic.
  */
-function adaptAwsRuntime(handler: EventHandler): SNSHandler {
+function adaptAwsRuntime(__handler_: EventHandler): SNSHandler {
   return async (event, context) => {
     const accountId = context.invokedFunctionArn.split(":")[4];
     process.env["AWS_ACCOUNT_ID"] = accountId;
@@ -104,7 +104,7 @@ function adaptAwsRuntime(handler: EventHandler): SNSHandler {
       const payload = record["Sns"]["Message"];
       const event: CloudEvent = JSON.parse(payload);
       console.log("Pluto: Handling event: ", event);
-      await handler(event).catch((e: Error) => {
+      await __handler_(event).catch((e: Error) => {
         console.log("Faild to handle event: ", e);
       });
     }

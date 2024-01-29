@@ -1,52 +1,66 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { IRouterInfra, RouterOptions } from "@plutolang/pluto";
-import { FnResource, ResourceInfra } from "@plutolang/base";
-import { ServiceLambda } from "./function.service";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import { IRouterInfra, RequestHandler, Router, RouterOptions, HttpRequest } from "@plutolang/pluto";
+import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
+import { KnativeService } from "./function.service";
+import { responseAndClose, runtimeBase } from "./utils";
 
-export class IngressRouter extends pulumi.ComponentResource implements ResourceInfra, IRouterInfra {
-  readonly name: string;
+export class IngressRouter
+  extends pulumi.ComponentResource
+  implements IResourceInfra, IRouterInfra
+{
+  public readonly id: string;
 
-  private _url: pulumi.Output<string>;
-  private routes: { path: string; handler: ServiceLambda }[];
+  private readonly _url: pulumi.Output<string>;
+  private readonly routes: { path: string; handler: KnativeService }[];
 
   constructor(name: string, args?: RouterOptions, opts?: pulumi.ComponentResourceOptions) {
-    super("pluto:k8s:Ingress", name, args, opts);
-    this.name = name;
+    super("pluto:router:k8s/Ingress", name, args, opts);
+    this.id = genResourceId(Router.fqn, name);
     this.routes = [];
-    this._url = pulumi.interpolate`${this.name}.localdev.me`;
+
+    this._url = pulumi.interpolate`${genK8sResourceName(this.id)}.localdev.me`;
   }
 
-  public get url(): string {
+  public url(): string {
     return this._url as any;
   }
 
-  public get(path: string, fn: FnResource): void {
-    const handler = fn as ServiceLambda;
-    this.routes.push({ path, handler });
+  public get(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.routes.push({ path, handler: this.createService("GET", path, closure) });
   }
 
-  public post(path: string, fn: FnResource): void {
-    const handler = fn as ServiceLambda;
-    this.routes.push({ path, handler });
+  public post(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.routes.push({ path, handler: this.createService("POST", path, closure) });
   }
 
-  public put(path: string, fn: FnResource): void {
-    const handler = fn as ServiceLambda;
-    this.routes.push({ path, handler });
+  public put(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.routes.push({ path, handler: this.createService("PUT", path, closure) });
   }
 
-  public delete(path: string, fn: FnResource): void {
-    const handler = fn as ServiceLambda;
-    this.routes.push({ path, handler });
+  public delete(path: string, closure: ComputeClosure<RequestHandler>): void {
+    this.routes.push({ path, handler: this.createService("DELETE", path, closure) });
   }
 
-  public getPermission(op: string) {
-    op;
+  private createService(method: string, path: string, closure: ComputeClosure<RequestHandler>) {
+    if (!isComputeClosure(closure)) {
+      throw new Error("This closure is invalid.");
+    }
+
+    const adaptHandler = wrapClosure(adaptK8sRuntime(closure), closure);
+    const func = new KnativeService(adaptHandler, {
+      name: `${this.id}-${method}-${path.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`,
+    });
+    return func;
   }
+
+  public grantPermission(_: string) {}
 
   public postProcess(): void {
-    const appLabels = { app: this.name };
+    const appLabels = { app: genK8sResourceName(this.id) };
 
     const paths: pulumi.Input<k8s.types.input.networking.v1.HTTPIngressPath>[] = [];
     this.routes.forEach((item) => {
@@ -55,7 +69,7 @@ export class IngressRouter extends pulumi.ComponentResource implements ResourceI
         pathType: "ImplementationSpecific",
         backend: {
           service: {
-            name: item.handler.service.metadata.name,
+            name: item.handler.serviceMeta.name,
             port: { number: 80 },
           },
         },
@@ -63,7 +77,7 @@ export class IngressRouter extends pulumi.ComponentResource implements ResourceI
     });
 
     new k8s.networking.v1.Ingress(
-      `${this.name}-ingress`,
+      genK8sResourceName(this.id, "ingress"),
       {
         metadata: {
           labels: appLabels,
@@ -75,7 +89,7 @@ export class IngressRouter extends pulumi.ComponentResource implements ResourceI
           ingressClassName: "nginx",
           rules: [
             {
-              host: this.url,
+              host: this.url(),
               http: {
                 paths: paths,
               },
@@ -86,4 +100,29 @@ export class IngressRouter extends pulumi.ComponentResource implements ResourceI
       { parent: this }
     );
   }
+}
+
+function adaptK8sRuntime(__handler_: RequestHandler) {
+  return async () => {
+    runtimeBase(async (req, res, parsed) => {
+      const plutoRequest: HttpRequest = {
+        path: parsed.url.pathname || "/",
+        method: req.method || "UNKNOWN",
+        headers: {},
+        query: parsed.url.query || {},
+        body: parsed.body ?? null,
+      };
+      console.log("Request:", plutoRequest);
+
+      try {
+        const respBody = await __handler_(plutoRequest);
+        responseAndClose(res, respBody.statusCode, JSON.stringify(respBody.body), {
+          contentType: "application/json",
+        });
+      } catch (e) {
+        console.log("Http processing failed:", e);
+        responseAndClose(res, 500, "Internal Server Error");
+      }
+    });
+  };
 }

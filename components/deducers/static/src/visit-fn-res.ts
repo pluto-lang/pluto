@@ -211,7 +211,7 @@ function detectFnCallClientApi(
   const resRelatInfo: ResourceRelationshipInfo = {
     fromVarName: fnResName,
     toVarNames: [accessorName],
-    type: arch.RelatType.PropertyAccess,
+    type: arch.RelatType.MethodCall,
     operation: fnName,
     parameters: [],
   };

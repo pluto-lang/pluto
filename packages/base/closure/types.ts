@@ -1,5 +1,6 @@
 import { IResourceInfra } from "../resource";
 
+/** @internal */
 export type AnyFunction = (...args: any[]) => any;
 
 export interface Dependency {
@@ -37,8 +38,9 @@ export interface ComputeClosure<T extends AnyFunction> {
 }
 
 export function isComputeClosure<T extends AnyFunction>(obj: any): obj is ComputeClosure<T> {
+  if (obj === undefined) return false;
   const isFunction = typeof obj === "function";
   const hasDirpath = typeof obj.dirpath === "string";
-  const hasValidDependencies = !("dependencies" in obj) || Array.isArray(obj.dependencies);
+  const hasValidDependencies = obj.dependencies === undefined || Array.isArray(obj.dependencies);
   return isFunction && hasDirpath && hasValidDependencies;
 }

@@ -74,9 +74,8 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     );
     archRef = deduceResult.archRef;
 
-    const yamlText = yaml.dump(archRef, { noRefs: true });
     const archRefFile = path.join(stackBaseDir, "arch.yml");
-    fs.writeFileSync(archRefFile, yamlText);
+    fs.writeFileSync(archRefFile, archRef.toYaml());
     stack.archRefFile = archRefFile;
 
     const confirmed = await confirmArch(archRef, opts.yes);

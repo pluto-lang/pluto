@@ -37,7 +37,7 @@ export function writeClosureToDir(
   ensureDirSync(dirpath);
   const filepath = dirpath + "/index.ts";
   writeFileSync(filepath, sourceCode);
-  compile(filepath, dirpath, /* bundle */ false);
+  compile(filepath, dirpath, /* bundle */ true);
 }
 
 function generateSourceCode(

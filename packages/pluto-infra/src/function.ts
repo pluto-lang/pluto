@@ -18,7 +18,7 @@ type FunctionInfraImplClass = new (
 const implClassMap = new ImplClassMap<IFunctionInfraImpl, FunctionInfraImplClass>({
   [ProvisionType.Pulumi]: {
     [PlatformType.AWS]: async () => (await import("./aws")).Lambda,
-    [PlatformType.K8s]: async () => (await import("./k8s")).ServiceLambda,
+    [PlatformType.K8s]: async () => (await import("./k8s")).KnativeService,
   },
 });
 

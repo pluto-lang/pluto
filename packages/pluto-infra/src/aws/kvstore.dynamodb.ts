@@ -4,6 +4,7 @@ import { IResourceInfra } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
 import { IKVStoreInfra, KVStore, KVStoreOptions } from "@plutolang/pluto";
 import { Permission } from "./permission";
+import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 
 export enum DynamoDbOps {
   GET = "get",
@@ -23,9 +24,9 @@ export class DynamoKVStore
     this.id = genResourceId(KVStore.fqn, name);
 
     const db = new aws.dynamodb.Table(
-      this.id,
+      genAwsResourceName(this.id),
       {
-        name: name,
+        name: genAwsResourceName(this.id),
         attributes: [
           {
             name: "Id",

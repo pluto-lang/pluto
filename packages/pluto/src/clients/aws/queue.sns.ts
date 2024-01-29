@@ -1,15 +1,22 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
-import { CloudEvent, IQueueClient, QueueOptions } from "../../queue";
+import { genResourceId } from "@plutolang/base/utils";
+import { CloudEvent, IQueueClient, Queue, QueueOptions } from "../../queue";
+import { genAwsResourceName } from "./utils";
 
 /**
  * Implementation of Queue using AWS SNS.
  */
 export class SNSQueue implements IQueueClient {
-  private topicName: string;
+  private readonly id: string;
+  private readonly topicArn: string;
+
   private client: SNSClient;
 
   constructor(name: string, opts?: QueueOptions) {
-    this.topicName = name;
+    this.id = genResourceId(Queue.fqn, name);
+
+    const topicName = genAwsResourceName(this.id);
+    this.topicArn = this.buildARN(topicName);
     this.client = new SNSClient({});
     opts;
   }
@@ -21,7 +28,7 @@ export class SNSQueue implements IQueueClient {
     };
     await this.client.send(
       new PublishCommand({
-        TopicArn: this.buildARN(this.topicName),
+        TopicArn: this.topicArn,
         Message: JSON.stringify(evt),
       })
     );

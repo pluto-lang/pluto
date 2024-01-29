@@ -1,14 +1,17 @@
 import { createClient, RedisClientType } from "redis";
-import { CloudEvent, IQueueClient, QueueOptions } from "../../queue";
+import { CloudEvent, IQueueClient, Queue, QueueOptions } from "../../queue";
+import { genResourceId } from "@plutolang/base/utils";
+import { genK8sResourceName } from "./utils";
 
 export class RedisQueue implements IQueueClient {
-  readonly topicName: string;
-  client: RedisClientType;
+  private readonly id: string;
+  private client: RedisClientType;
 
   constructor(name: string, opts?: QueueOptions) {
-    this.topicName = name;
+    this.id = genResourceId(Queue.fqn, name);
+    const serviceName = genK8sResourceName(this.id, "service");
     // TODO: Make namespace configurable.
-    const host = `${this.topicName}-queue.default.svc.cluster.local`;
+    const host = `${serviceName}.default.svc.cluster.local`;
     this.client = createClient({
       url: `redis://${host}:6379`,
     });
@@ -21,7 +24,7 @@ export class RedisQueue implements IQueueClient {
       data: msg,
     };
     await this.client.connect();
-    await this.client.xAdd(this.topicName, "*", { data: JSON.stringify(evt) });
+    await this.client.xAdd(this.id, "*", { data: JSON.stringify(evt) });
     await this.client.disconnect();
   }
 }

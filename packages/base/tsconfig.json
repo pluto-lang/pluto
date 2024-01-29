@@ -18,7 +18,8 @@
     "emitDecoratorMetadata": true,
     "declaration": true,
     "baseUrl": ".",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "stripInternal": true
   },
   "exclude": ["node_modules"]
 }
