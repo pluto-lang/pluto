@@ -81,6 +81,7 @@ export class Router implements IResource {
     switch (platformType) {
       case PlatformType.AWS:
       case PlatformType.K8s:
+      case PlatformType.AliCloud:
         return new shared.RouterClient(name, opts);
       default:
         throw new Error(`not support this runtime '${platformType}'`);

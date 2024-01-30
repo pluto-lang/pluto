@@ -165,7 +165,7 @@ export interface Queue extends IResource, IQueueClient, IQueueInfra {}
 
 In the `src/clients/aws` directory of `@plutolang/pluto`, create an `snsQueue.ts` file. The file and the class it contains are usually named after the component and the type.
 
-In this file, the `SNSQueue` class implements the `IQueueClient` interface using the AWS SDK. When calling the `PublishCommand` in the aws-sdk, the ARN of the SNS topic needs to be specified. Here, the ARN is constructed by concatenating the required parameters obtained from the environment variables, which are set in the aws `runtime.ts` of `@plutolang/pluto-infra`.
+In this file, the `SNSQueue` class implements the `IQueueClient` interface using the AWS SDK. When calling the `PublishCommand` in the aws-sdk, the ARN of the SNS topic needs to be specified. Here, the ARN is constructed by concatenating the required parameters obtained from the environment variables, which are set in the `queue.sns.ts` of `@plutolang/pluto-infra`.
 
 _Currently, there is no effective solution on how to transfer the information generated during compilation to the runtime for effective use._
 

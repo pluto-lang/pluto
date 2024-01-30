@@ -77,7 +77,7 @@ export class ApiGatewayRouter
       name: `${resourceNamePrefix}-func`,
     });
 
-    // 创建一个集成
+    // Create an integration
     const integration = new aws.apigatewayv2.Integration(
       genAwsResourceName(resourceNamePrefix, "integration"),
       {
@@ -89,7 +89,7 @@ export class ApiGatewayRouter
       { parent: this }
     );
 
-    // 创建一个路由
+    // Create a route
     const route = new aws.apigatewayv2.Route(
       genAwsResourceName(resourceNamePrefix, "route"),
       {
@@ -102,7 +102,7 @@ export class ApiGatewayRouter
     );
     this.routes.push(route);
 
-    // 创建一个 HTTP 触发器
+    // Create a trigger
     new aws.lambda.Permission(
       genAwsResourceName(resourceNamePrefix, "trigger"),
       {

@@ -5,7 +5,7 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
-import { IResourceInfra } from "@plutolang/base";
+import { IResourceInfra, PlatformType } from "@plutolang/base";
 import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
 import {
   createEnvNameForProperty,
@@ -52,7 +52,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       ...options?.envs,
       PLUTO_PROJECT_NAME: currentProjectName(),
       PLUTO_STACK_NAME: currentStackName(),
-      PLUTO_PLATFORM_TYPE: "AWS",
+      PLUTO_PLATFORM_TYPE: PlatformType.AWS,
     };
     closure.dependencies
       ?.filter((dep) => dep.type === "property")
