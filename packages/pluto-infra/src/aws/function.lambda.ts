@@ -1,12 +1,13 @@
 import * as os from "os";
 import * as fs from "fs-extra";
 import * as path from "path";
+import { Context } from "aws-lambda";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Role } from "@pulumi/aws/iam";
 import { Function } from "@pulumi/aws/lambda";
 import { IResourceInfra, PlatformType } from "@plutolang/base";
-import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
+import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import {
   createEnvNameForProperty,
   currentProjectName,
@@ -45,6 +46,16 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
+    }
+
+    // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
+    // platform adaption function.
+    //
+    // TODO: The closure that meets the below condition might not necessarily be one created by the
+    // user themselves. It could also potentially be created by a SDK developer. We need to find a
+    // more better method to verify this.
+    if (closure.dirpath !== "inline" && closure.innerClosure === undefined) {
+      closure = wrapClosure(adaptAwsRuntime(closure), closure);
     }
 
     // Extract the environment variables from the closure.
@@ -194,4 +205,39 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       { parent: this }
     );
   }
+}
+
+interface DirectCallResponse {
+  statusCode: number;
+  body: string;
+}
+
+type DirectCallHandler = (payload: any[], context: Context) => Promise<DirectCallResponse>;
+
+function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
+  return async function (payload, context) {
+    const accountId = context.invokedFunctionArn.split(":")[4];
+    process.env["AWS_ACCOUNT_ID"] = accountId;
+
+    try {
+      console.log("Payload:", payload);
+      if (!Array.isArray(payload)) {
+        return {
+          statusCode: 400,
+          body: `Payload should be an array.`,
+        };
+      }
+
+      const result = await __handler_(...payload);
+      return {
+        statusCode: 200,
+        body: JSON.stringify(result),
+      };
+    } catch (e) {
+      return {
+        statusCode: 500,
+        body: `Something wrong. Please contact the administrator.`,
+      };
+    }
+  };
 }

@@ -47,6 +47,4 @@ export abstract class KVStore {
       options
     );
   }
-
-  public static fqn = "@plutolang/pluto.KVStore";
 }

@@ -1,11 +1,6 @@
 import ts from "typescript";
 import { arch } from "@plutolang/base";
-import {
-  ResourceRelatVarUnion,
-  ResourceRelationshipInfo,
-  ResourceVariableInfo,
-  Location,
-} from "./types";
+import { ResourceRelationshipInfo, ResourceVariableInfo, Location, VisitResult } from "./types";
 import { ImportElement, buildImportStore } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
@@ -22,7 +17,7 @@ export function visitFnResourceBody(
   fnNode: ts.Expression,
   checker: ts.TypeChecker,
   fnResName: string
-): ResourceRelatVarUnion {
+): VisitResult {
   const fnScope: Scope = [fnNode.getStart(), fnNode.getEnd()];
   // Visit this function body, and detect the variable accessing, function calling and resource using in the access chain.
   const detectResult = detectAccessChain(fnNode, fnScope, checker, fnResName, 0);

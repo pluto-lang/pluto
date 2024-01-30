@@ -7,6 +7,7 @@ import {
   Function,
 } from "../../function";
 import { genResourceId } from "@plutolang/base/utils";
+import { genAwsResourceName } from "./utils";
 
 const successfulStatusCode = {
   RequestResponse: 200,
@@ -16,16 +17,18 @@ const successfulStatusCode = {
 
 export class LambdaFunction<T extends AnyFunction> implements IFunctionClient<T> {
   private readonly id: string;
+  private readonly lambdaName: string;
 
   constructor(func: T, opts?: FunctionOptions) {
     this.id = genResourceId(Function.fqn, opts?.name || DEFAULT_FUNCTION_NAME);
+    this.lambdaName = genAwsResourceName(this.id);
     func;
   }
 
   public async invoke(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
     const lambdaClient = new LambdaClient();
     const params: InvokeCommandInput = {
-      FunctionName: this.id,
+      FunctionName: this.lambdaName,
       InvocationType: "RequestResponse",
       LogType: "None",
       Payload: JSON.stringify(args), // 可选

@@ -5,11 +5,14 @@ import {
   IResourceClientApi,
   PlatformType,
   utils,
+  FnResource,
 } from "@plutolang/base";
 import { aws } from "./clients";
 
 export type AnyFunction = (...args: any[]) => any;
 export const DEFAULT_FUNCTION_NAME = "default";
+
+interface FunctionHandler extends AnyFunction, FnResource {}
 
 /**
  * The options for instantiating an infrastructure implementation class or a client implementation
@@ -41,7 +44,7 @@ export type IFunctionClient<T extends AnyFunction> = IFunctionClientApi<T> & IFu
 export type IFunctionInfra = IFunctionInfraApi & IFunctionCapturedProps;
 
 export class Function<T extends AnyFunction> implements IResource {
-  constructor(func: T, opts?: FunctionOptions) {
+  constructor(func: FunctionHandler, opts?: FunctionOptions) {
     func;
     opts;
     throw new Error(

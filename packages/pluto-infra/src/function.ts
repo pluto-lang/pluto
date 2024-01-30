@@ -52,6 +52,4 @@ export abstract class Function {
       options
     );
   }
-
-  public static fqn = "@plutolang/pluto.Function";
 }

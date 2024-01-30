@@ -1,3 +1,6 @@
+import http from "http";
+import url from "url";
+import qs from "querystring";
 interface ParsedItem {
   readonly url: url.UrlWithParsedQuery;
   readonly body?: string;
@@ -9,9 +12,6 @@ type RuntimeHandler = (
   parsedItem: ParsedItem
 ) => Promise<void>;
 
-import http from "http";
-import url from "url";
-import qs from "querystring";
 export function runtimeBase(handler: RuntimeHandler) {
   const port = process.env.PORT || "8080";
 

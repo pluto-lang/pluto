@@ -2,7 +2,12 @@ import ts from "typescript";
 import path from "path";
 import assert from "assert";
 import { arch, core, utils } from "@plutolang/base";
-import { ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
+import {
+  ResourceRelationshipInfo,
+  ResourceVariableInfo,
+  VisitResult,
+  concatVisitResult,
+} from "./types";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
@@ -70,22 +75,23 @@ async function compile(
   const sourceFile = program.getSourceFile(fileNames[0])!;
   const checker = program.getTypeChecker();
 
-  const resVarInfos: ResourceVariableInfo[] = [];
-  const resRelatInfos: ResourceRelationshipInfo[] = [];
+  let visitResult: VisitResult = {
+    resourceRelatInfos: [],
+    resourceVarInfos: [],
+  };
 
   // Iterate through all the nodes in the global area.
   ts.forEachChild(sourceFile, (node) => {
     const kindName = ts.SyntaxKind[node.kind];
     switch (node.kind) {
       case ts.SyntaxKind.VariableStatement: {
-        const curVarInfos = visitVariableStatement(node as ts.VariableStatement, checker);
-        resVarInfos.push(...curVarInfos);
+        const result = visitVariableStatement(node as ts.VariableStatement, checker);
+        visitResult = concatVisitResult(visitResult, result);
         break;
       }
       case ts.SyntaxKind.ExpressionStatement: {
-        const union = visitExpression(node as ts.ExpressionStatement, checker);
-        resVarInfos.push(...union.resourceVarInfos);
-        resRelatInfos.push(...union.resourceRelatInfos);
+        const result = visitExpression(node as ts.ExpressionStatement, checker);
+        visitResult = concatVisitResult(visitResult, result);
         break;
       }
       case ts.SyntaxKind.ImportDeclaration:
@@ -104,9 +110,9 @@ async function compile(
   });
 
   // Find all closures, and write them into the closure directory.
-  storeAllClosure(resVarInfos, resRelatInfos, ctx);
+  storeAllClosure(visitResult.resourceVarInfos!, visitResult.resourceRelatInfos!, ctx);
 
-  return buildArchRef(resVarInfos, resRelatInfos, ctx);
+  return buildArchRef(visitResult.resourceVarInfos!, visitResult.resourceRelatInfos!, ctx);
 }
 
 function storeAllClosure(
@@ -119,7 +125,7 @@ function storeAllClosure(
       return;
     }
 
-    const clousureName = varInfo.varName;
+    const closureName = varInfo.varName;
     const imports = genImportStats(varInfo.resourceConstructInfo.importElements).join("\n");
 
     const locations: Location[] = varInfo.resourceConstructInfo.locations.map((loc) => {
@@ -135,7 +141,7 @@ function storeAllClosure(
 
     const dependentResources: DependentResource[] = [];
     resRelatInfos
-      .filter((relatInfo) => relatInfo.fromVarName === clousureName)
+      .filter((relatInfo) => relatInfo.fromVarName === closureName)
       .forEach((relatInfo) => {
         resVarInfos
           .filter((varInfo) => relatInfo.toVarNames.includes(varInfo.varName))
@@ -146,8 +152,8 @@ function storeAllClosure(
               type: varInfo.resourceConstructInfo.constructExpression,
               parameters:
                 varInfo.resourceConstructInfo.parameters
-                  ?.map((param) => param.getText())
-                  .join("\n") ?? "",
+                  ?.map((param) => param.resourceName ?? param.expression?.getText() ?? "undefined")
+                  .join(", ") ?? "",
             });
           });
       });
@@ -176,12 +182,12 @@ function buildArchRef(
     } else {
       // Resource
       const resParams =
-        varInfo.resourceConstructInfo.parameters?.map((param, idx): arch.Parameter => {
+        varInfo.resourceConstructInfo.parameters?.map((param): arch.Parameter => {
           return {
-            index: idx,
-            name: "unknown",
-            type: resType === FN_RESOURCE_TYPE_NAME ? "closure" : "text",
-            value: param.getText(),
+            index: param.order,
+            name: param.name,
+            type: param.resourceName ? "closure" : "text",
+            value: param.resourceName ?? param.expression?.getText() ?? "undefined",
           };
         }) ?? [];
 
@@ -212,8 +218,8 @@ function buildArchRef(
       return {
         index: param.order,
         name: param.name,
-        type: toRes instanceof arch.Closure ? "closure" : "text",
-        value: param.resourceName ?? param.expression.getText(),
+        type: param.resourceName ? "closure" : "text",
+        value: param.resourceName ?? param.expression?.getText() ?? "undefined",
       };
     });
     return new arch.Relationship(

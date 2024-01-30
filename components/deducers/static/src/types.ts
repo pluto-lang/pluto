@@ -2,6 +2,31 @@ import ts from "typescript";
 import { arch } from "@plutolang/base";
 import { ImportElement } from "./imports";
 
+export interface VisitResult {
+  resourceRelatInfos?: ResourceRelationshipInfo[];
+  resourceVarInfos?: ResourceVariableInfo[];
+}
+
+export function concatVisitResult(...visitResults: (VisitResult | undefined)[]): VisitResult {
+  const resourceRelatInfos: ResourceRelationshipInfo[] = [];
+  const resourceVarInfos: ResourceVariableInfo[] = [];
+  for (const visitResult of visitResults) {
+    if (!visitResult) {
+      continue;
+    }
+    if (visitResult.resourceRelatInfos != undefined) {
+      resourceRelatInfos.push(...visitResult.resourceRelatInfos);
+    }
+    if (visitResult.resourceVarInfos != undefined) {
+      resourceVarInfos.push(...visitResult.resourceVarInfos);
+    }
+  }
+  return {
+    resourceRelatInfos,
+    resourceVarInfos,
+  };
+}
+
 export interface ResourceVariableInfo {
   varName: string;
   resourceConstructInfo: ResourceConstructInfo;
@@ -15,26 +40,20 @@ export interface ResourceRelationshipInfo {
   parameters: ParameterInfo[];
 }
 
-export interface ResourceRelatVarUnion {
-  resourceRelatInfos: ResourceRelationshipInfo[];
-  // The resources that are created in the arguments of the call.
-  resourceVarInfos: ResourceVariableInfo[];
-}
-
 export interface ResourceConstructInfo {
   // The expression that constructs the resource.
   constructExpression: string;
   // The information of the package from which the resource type is imported.
   importElements: ImportElement[];
   // The constructor parameters.
-  parameters?: ts.Expression[];
+  parameters?: ParameterInfo[];
   locations: Location[];
 }
 
 export interface ParameterInfo {
   name: string; // The parameter name in the function signature.
   resourceName?: string;
-  expression: ts.Expression;
+  expression: ts.Expression | undefined;
   order: number;
 }
 
