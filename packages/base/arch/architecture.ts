@@ -1,7 +1,9 @@
 import * as yaml from "js-yaml";
 import { Closure } from "./closure";
-import { Entity, Relationship } from "./relationship";
+import { IdWithType, Relationship } from "./relationship";
 import { Resource } from "./resource";
+import { TopoSorter } from "./topo-sorter";
+import { Entity } from "./types";
 
 export class Architecture {
   public readonly extras: Record<string, any> = {};
@@ -46,7 +48,7 @@ export class Architecture {
     return this._closures.find((c) => c.id === id);
   }
 
-  public findResourceOrClosure(entity: Entity): Resource | Closure | undefined {
+  public findResourceOrClosure(entity: IdWithType): Resource | Closure | undefined {
     if (entity.type === "resource") {
       return this.findResource(entity.id);
     } else if (entity.type === "closure") {
@@ -59,6 +61,11 @@ export class Architecture {
 
   public addRelationship(relat: Relationship) {
     this._relationships.push(relat);
+  }
+
+  public topoSort(): Entity[] {
+    const topoSort = new TopoSorter(this);
+    return topoSort.topologySort();
   }
 
   public toYaml(): string {

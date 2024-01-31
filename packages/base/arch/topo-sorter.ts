@@ -1,7 +1,6 @@
 import { createHash } from "crypto";
-import { Architecture, Relationship, Closure, Resource, RelatType } from "@plutolang/base/arch";
-
-type Entity = Resource | Closure | Relationship;
+import { Architecture, Closure, Resource, RelatType } from "./";
+import { Entity } from "./types";
 
 type EntityMap = Record<string, Entity>;
 function genNodeIndex(node: Entity): string {
@@ -17,6 +16,7 @@ function genNodeIndex(node: Entity): string {
 
 type Graph = Record<string, string[]>;
 
+/** @internal */
 export class TopoSorter {
   private readonly archRef: Architecture;
 

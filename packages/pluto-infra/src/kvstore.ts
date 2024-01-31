@@ -33,12 +33,12 @@ export abstract class KVStore {
     options?: KVStoreOptions
   ): Promise<IKVStoreInfraImpl> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    // if (
-    //   utils.currentPlatformType() === PlatformType.Simulator &&
-    //   utils.currentEngineType() === ProvisionType.Simulator
-    // ) {
-    //   return new (await import("./simulator")).SimKVStore(name, options);
-    // }
+    if (
+      utils.currentPlatformType() === PlatformType.Simulator &&
+      utils.currentEngineType() === ProvisionType.Simulator
+    ) {
+      return new (await import("./simulator")).SimKVStore(name, options) as any;
+    }
 
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),

@@ -139,20 +139,31 @@ function storeAllClosure(
       };
     });
 
+    // Find all relationships that this closure is the source. Then find all resources that this
+    // relationship directs to. These resources are the dependent resources.
     const dependentResources: DependentResource[] = [];
     resRelatInfos
       .filter((relatInfo) => relatInfo.fromVarName === closureName)
       .forEach((relatInfo) => {
         resVarInfos
-          .filter((varInfo) => relatInfo.toVarNames.includes(varInfo.varName))
+          .filter((varInfo) => relatInfo.toVarNames.includes(varInfo.varName)) // Find the dependent resources.
           .forEach((varInfo) => {
+            // Extract the imports, name, type, and parameters of the dependent resource.
             dependentResources.push({
               imports: genImportStats(varInfo.resourceConstructInfo.importElements).join("\n"),
               name: varInfo.varName,
               type: varInfo.resourceConstructInfo.constructExpression,
               parameters:
                 varInfo.resourceConstructInfo.parameters
-                  ?.map((param) => param.resourceName ?? param.expression?.getText() ?? "undefined")
+                  ?.map((param) => {
+                    if (param.resourceName) {
+                      // TODO: Check if this parameter is a closure, or a resource. This is used to
+                      // generate the closure source code. If the parameter is a closure, we use the
+                      // any type to fill.
+                      return "({} as any)";
+                    }
+                    return param.expression?.getText() ?? "undefined";
+                  })
                   .join(", ") ?? "",
             });
           });
@@ -191,8 +202,11 @@ function buildArchRef(
           };
         }) ?? [];
 
-      const resId = utils.genResourceId(ctx.projectName, ctx.stackName, resType, resName);
-      const res = new arch.Resource(resId, resName, resType, resParams);
+      // TODO: remove this temporary solution, fetch full quilified name of the resource type from
+      // the user code.
+      const tmpResType = "@plutolang/pluto." + resType;
+      const resId = utils.genResourceId(ctx.projectName, ctx.stackName, tmpResType, resName);
+      const res = new arch.Resource(resId, resName, tmpResType, resParams);
       archResources.push(res);
     }
   });

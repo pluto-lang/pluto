@@ -24,9 +24,11 @@ import {
 } from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 import { serializeClosureToDir } from "../utils";
+import { currentAwsRegion } from "./utils";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
+  INVOKE = "INVOKE",
 }
 
 export class Lambda extends pulumi.ComponentResource implements IResourceInfra, IFunctionInfra {
@@ -36,7 +38,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   private readonly iam: Role;
   private readonly statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
-  public readonly lambdaName: pulumi.Output<string>;
+  public readonly lambdaName: string;
   public readonly lambdaArn: pulumi.Output<string>;
   public readonly lambdaInvokeArn: pulumi.Output<string>;
 
@@ -81,8 +83,8 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
     // Create the IAM role and lambda function.
     this.iam = this.createIAM();
+    this.lambdaName = genAwsResourceName(this.id);
     this.lambda = this.createLambda(workdir, entrypointFilePathP, exportName, envs);
-    this.lambdaName = this.lambda.name;
     this.lambdaArn = this.lambda.arn;
     this.lambdaInvokeArn = this.lambda.invokeArn;
 
@@ -110,6 +112,13 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
           actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
           resources: [WATCH_LOG_ARN],
         };
+      case Ops.INVOKE:
+        const fuzzyArn = `arn:aws:lambda:${currentAwsRegion()}:*:function:${this.lambdaName}`;
+        return {
+          effect: "Allow",
+          actions: ["lambda:InvokeFunction"],
+          resources: [fuzzyArn],
+        };
       default:
         throw new Error(`Unknown op: ${op}`);
     }
@@ -133,9 +142,9 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
     });
 
     return new aws.lambda.Function(
-      genAwsResourceName(this.id),
+      this.lambdaName,
       {
-        name: genAwsResourceName(this.id),
+        name: this.lambdaName,
         code: entrypointFilePathP.then(() => new pulumi.asset.FileArchive(workdir)),
         role: this.iam.arn,
         handler: handlerName,

@@ -1,6 +1,5 @@
 import { IResourceInfra } from "../resource";
 
-/** @internal */
 export type AnyFunction = (...args: any[]) => any;
 
 export interface Dependency {

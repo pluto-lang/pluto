@@ -38,7 +38,7 @@ export class AwsTester extends pulumi.ComponentResource implements IResourceInfr
 
     this.testCases.push({
       description: description,
-      fnResourceId: lambda.lambdaArn,
+      testHandler: lambda.lambdaArn,
     });
   }
 

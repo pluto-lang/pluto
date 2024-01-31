@@ -4,7 +4,13 @@ import { ResourceRelationshipInfo, ResourceVariableInfo, Location, VisitResult }
 import { ImportElement, buildImportStore } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
-import { getLocationOfNode, isConstVar, isResourceVar, propBelongsToCapturedProps } from "./utils";
+import {
+  getLocationOfNode,
+  isConstVar,
+  isResourceVar,
+  methodBelongsToClientApi,
+  propBelongsToCapturedProps,
+} from "./utils";
 
 type Scope = [number, number];
 
@@ -171,6 +177,7 @@ function detectFnCallClientApi(
   checker: ts.TypeChecker,
   fnResName: string
 ): DetectFnAccessChainResult | undefined {
+  let callExpression;
   let propAccessExp;
   // Write operation, e.g. state.set(), queue.push()
   if (
@@ -179,6 +186,7 @@ function detectFnCallClientApi(
     ts.isCallExpression(curNode.expression.expression) &&
     ts.isPropertyAccessExpression(curNode.expression.expression.expression)
   ) {
+    callExpression = curNode.expression.expression;
     propAccessExp = curNode.expression.expression.expression;
   } else if (ts.isVariableStatement(curNode)) {
     // Read operation, e.g. state.get()
@@ -189,8 +197,13 @@ function detectFnCallClientApi(
       ts.isCallExpression(initExp.expression) &&
       ts.isPropertyAccessExpression(initExp.expression.expression)
     ) {
+      callExpression = initExp.expression;
       propAccessExp = initExp.expression.expression;
     }
+  }
+
+  if (!callExpression || !methodBelongsToClientApi(callExpression, checker)) {
+    return;
   }
   if (!propAccessExp || !isResourceVar(propAccessExp.expression, checker)) {
     return;

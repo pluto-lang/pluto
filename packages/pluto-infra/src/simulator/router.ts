@@ -1,25 +1,38 @@
+import http from "http";
 import express from "express";
 import { simulator } from "@plutolang/base";
-import { HttpRequest, HttpResponse, RouterOptions } from "@plutolang/pluto";
-import { SimFunction } from "./function";
+import { HttpRequest, IRouterClient, RequestHandler, RouterOptions } from "@plutolang/pluto";
+import { findAvailablePort } from "../utils";
+import { ComputeClosure } from "@plutolang/base/closure";
 
 const VALID_HTTP_METHODS = ["get", "post", "put", "delete", "head", "options", "patch", "connect"];
 
-export class SimRouter implements simulator.IResourceInstance {
-  private context?: simulator.IContext;
+export class SimRouter implements simulator.IResourceInstance, IRouterClient {
   private readonly expressApp: express.Application;
+  private httpServer?: http.Server;
+  private port?: number;
 
   constructor(name: string, opts?: RouterOptions) {
     this.expressApp = express();
+    const portP = findAvailablePort();
+    portP.then((port) => {
+      this.port = port;
+      this.httpServer = this.expressApp.listen(port);
+    });
     name;
     opts;
   }
 
-  public async setup(context: simulator.IContext) {
-    this.context = context;
+  public url(): string {
+    if (!this.port) {
+      throw new Error("The router is not running yet.");
+    }
+    return `http://localhost:${this.port}`;
   }
 
-  public addEventHandler(op: string, args: string, fnResourceId: string): void {
+  public async setup() {}
+
+  public addEventHandler(op: string, args: any[]): void {
     if (VALID_HTTP_METHODS.indexOf(op.toLocaleLowerCase()) === -1) {
       throw new Error(`Invalid HTTP method: ${op}`);
     }
@@ -32,14 +45,12 @@ export class SimRouter implements simulator.IResourceInstance {
       | "options"
       | "patch"
       | "connect";
-    const path = JSON.parse(args)[0] as string;
+    const path = args[0] as string;
+    const closure = args[1] as ComputeClosure<RequestHandler>;
 
-    const context = this.context!;
     this.expressApp[method](
       path,
       async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        const fn = context.findInstance(fnResourceId) as SimFunction;
-
         const reqPluto: HttpRequest = {
           path: req.path,
           method: req.method,
@@ -52,8 +63,8 @@ export class SimRouter implements simulator.IResourceInstance {
         }
 
         try {
-          const resp = (await fn.invoke(JSON.stringify(reqPluto))) as HttpResponse;
-          res.status(resp.statusCode).send(resp.body);
+          const resp = await closure(reqPluto);
+          res.status(resp.statusCode).end(resp.body);
         } catch (e) {
           return next(e);
         }
@@ -61,5 +72,9 @@ export class SimRouter implements simulator.IResourceInstance {
     );
   }
 
-  public async cleanup(): Promise<void> {}
+  public async cleanup(): Promise<void> {
+    if (this.httpServer) {
+      this.httpServer.close();
+    }
+  }
 }

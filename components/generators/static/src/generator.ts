@@ -2,7 +2,6 @@ import path from "path";
 import * as ts from "typescript";
 import { arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
-import { TopoSorter } from "./topo-sorter";
 
 // The name of the compiled entrypoint
 const ENTRYPOINT_FILENAME = "pulumi";
@@ -27,8 +26,7 @@ export class StaticGenerator extends core.Generator {
   }
 
   private generateInfraCode(archRef: arch.Architecture): string {
-    const topoSort: TopoSorter = new TopoSorter(archRef);
-    const entities = topoSort.topologySort();
+    const entities = archRef.topoSort();
 
     let globalImports = `import { createClosure } from "@plutolang/base/closure";`;
     let infraCode = ``;
@@ -109,8 +107,14 @@ const ${resource.id} = await (
       .join(",");
 
     const dirpath = path.resolve(this.rootpath, closure.path);
+    // We encapsulate the closure within a function because the statements in the closure's global
+    // scope are executed upon import. However, these statements are likely intended to run on the
+    // target platform, not during the deployment stage.
     return `
-const ${closure.id}_func = (await import("${dirpath}")).default;
+const ${closure.id}_func = async (...args: any[]) => {
+  const handler = (await import("${dirpath}")).default;
+  return await handler(...args);
+}
 const ${closure.id} = createClosure(${closure.id}_func, {
   dirpath: "${dirpath}",
   dependencies: [${dependenciesString}],

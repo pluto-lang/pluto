@@ -1,16 +1,10 @@
 export interface IResourceInstance {
-  addEventHandler(op: string, args: string, fnResourceId: string): void;
-  setup(context: IContext): Promise<void>;
+  addEventHandler(op: string, args: any[]): void;
   cleanup(): Promise<void>;
 }
 
-export interface IContext {
-  get serverUrl(): string;
-  findInstance(resourceName: string): IResourceInstance;
-}
-
 export interface ServerRequest {
-  resourceName: string;
+  resourceId: string;
   op: string;
   args: any[];
 }

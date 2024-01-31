@@ -14,7 +14,7 @@ beforeAll(async () => {
   const yamlText = fs.readFileSync(YAML_PATH, "utf-8");
   const archRef = arch.parseArchFromYaml(yamlText);
 
-  simulator = new Simulator();
+  simulator = new Simulator(APP_PATH);
   expect(async () => await simulator.loadApp(archRef)).not.toThrow();
 
   await simulator.start();

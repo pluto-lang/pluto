@@ -6,6 +6,7 @@ import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils"
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import { buildAdapter, selectAdapterByEngine } from "./utils";
+import { genResourceId } from "@plutolang/base/utils";
 
 interface TestOptions {
   sim: boolean;
@@ -26,6 +27,7 @@ export async function test(entrypoint: string, opts: TestOptions) {
     process.exit(1);
   }
   const proj = loadProject(projectRoot);
+  process.env["PLUTO_PROJECT_NAME"] = proj.name;
 
   const stackName = opts.stack ?? proj.current;
   if (!stackName) {
@@ -40,6 +42,7 @@ export async function test(entrypoint: string, opts: TestOptions) {
     logger.error(`There is no stack named ${stackName}.`);
     process.exit(1);
   }
+  process.env["PLUTO_STACK_NAME"] = stack.name;
 
   // If in simulation mode, switch the platform and provisioning engine of the stack to simulator.
   if (opts.sim) {
@@ -110,8 +113,6 @@ async function testOneGroup(
     generatedDir
   );
 
-  // TODO: make the work dir same with generated dir.
-  const workdir = path.join(generatedDir, `compiled`);
   // build the adapter based on the provisioning engine type
   const adapterPkg = selectAdapterByEngine(stack.provisionType);
   if (!adapterPkg) {
@@ -122,7 +123,7 @@ async function testOneGroup(
     ...basicArgs,
     archRef: testGroupArch,
     entrypoint: generateResult.entrypoint!,
-    workdir: workdir,
+    workdir: generatedDir,
   });
 
   const tmpSta = new config.Stack(
@@ -140,7 +141,8 @@ async function testOneGroup(
       const simServerUrl = applyResult.outputs!["simulatorServerUrl"];
       for (const resourceName in testGroupArch.resources) {
         const resource = testGroupArch.resources[resourceName];
-        if (resource.type !== "Tester") {
+        // TODO: support other types of tester from other packages.
+        if (resource.type !== "@plutolang/pluto.Tester") {
           continue;
         }
 
@@ -149,7 +151,8 @@ async function testOneGroup(
           throw new Error(`The description of ${resourceName} is not found.`);
         }
 
-        const simClient = simulator.makeSimulatorClient(simServerUrl, description);
+        const testId = genResourceId("@plutolang/pluto.Tester", description);
+        const simClient = simulator.makeSimulatorClient(simServerUrl, testId);
         const testerClient = new SimTesterClient(description, simClient);
 
         await testerClient.runTests();

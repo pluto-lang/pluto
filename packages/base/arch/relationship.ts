@@ -6,24 +6,24 @@ export enum RelatType {
   PropertyAccess = "PropertyAccess",
 }
 
-export interface Entity {
-  type: "resource" | "closure";
+export interface IdWithType {
   id: string;
+  type: "resource" | "closure";
 }
 
 export class Relationship {
   public readonly extras: Record<string, any> = {};
 
   /**
-   * @param {Entity} from - The source node.
-   * @param {Entity[]} to - The target nodes.
+   * @param {IdWithType} from - The source node.
+   * @param {IdWithType[]} to - The target nodes.
    * @param {RelatType} type
    * @param {string} operation
    * @param {Parameter[]} parameters
    */
   constructor(
-    public readonly from: Entity,
-    public readonly to: Entity[],
+    public readonly from: IdWithType,
+    public readonly to: IdWithType[],
     public readonly type: RelatType,
     public readonly operation: string,
     public readonly parameters: Parameter[] = []
