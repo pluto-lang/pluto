@@ -5,18 +5,25 @@ import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import * as docker from "@pulumi/docker";
 import { IResourceInfra, PlatformType } from "@plutolang/base";
-import { currentProjectName, currentStackName, genResourceId } from "@plutolang/base/utils";
-import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
+import {
+  createEnvNameForProperty,
+  currentProjectName,
+  currentStackName,
+  genResourceId,
+} from "@plutolang/base/utils";
+import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import {
   FunctionOptions,
   IFunctionInfra,
   Function,
   AnyFunction,
   DEFAULT_FUNCTION_NAME,
+  DirectCallResponse,
 } from "@plutolang/pluto";
 import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 import { Metadata } from "./types";
 import { serializeClosureToDir } from "../utils";
+import { responseAndClose, runtimeBase } from "./utils";
 
 export class KnativeService
   extends pulumi.ComponentResource
@@ -24,12 +31,11 @@ export class KnativeService
 {
   public readonly id: string;
 
-  public readonly serviceMeta: Metadata;
-  public readonly kserviceMeta: Metadata;
-  public readonly url: pulumi.Output<string>;
-
   private readonly appLabels: { app: string };
   private readonly namespace: string = "default";
+
+  public readonly serviceMeta: Metadata;
+  public readonly kserviceMeta: Metadata;
 
   constructor(closure: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
     const name = options?.name || DEFAULT_FUNCTION_NAME;
@@ -41,16 +47,14 @@ export class KnativeService
       throw new Error("This closure is invalid.");
     }
 
-    // extract the environment variables from the closure.
-    const envs: { name: string; value: string }[] = [
-      { name: "PLUTO_PROJECT_NAME", value: currentProjectName() },
-      { name: "PLUTO_STACK_NAME", value: currentStackName() },
-      { name: "PLUTO_PLATFORM_TYPE", value: PlatformType.K8s },
-    ];
-    if (options?.envs) {
-      for (const key of Object.keys(options?.envs)) {
-        envs.push({ name: key, value: options.envs[key] });
-      }
+    // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
+    // platform adaption function.
+    //
+    // TODO: The closure that meets the below condition might not necessarily be one created by the
+    // user themselves. It could also potentially be created by a SDK developer. We need to find a
+    // more better method to verify this.
+    if (closure.dirpath !== "inline" && closure.innerClosure === undefined) {
+      closure = wrapClosure(adaptK8sRuntime(closure), closure);
     }
 
     // Serialize the closure with its dependencies to a directory.
@@ -61,14 +65,6 @@ export class KnativeService
     // Build the image.
     const image = this.buildImage(workdir, entrypointFilePathP);
 
-    // Create the knative service.
-    const kservice = this.createKnativeService(image, envs);
-    this.kserviceMeta = {
-      apiVersion: kservice.apiVersion,
-      kind: kservice.kind,
-      name: kservice.metadata.name,
-    };
-
     // Create the service.
     const service = this.createService();
     this.serviceMeta = {
@@ -76,8 +72,28 @@ export class KnativeService
       kind: service.kind,
       name: service.metadata.name,
     };
+    const serviceInternalIP = service.spec.clusterIP;
 
-    this.url = pulumi.interpolate`http://${this.id}.${this.namespace}.svc.cluster.local`;
+    // extract the environment variables from the closure.
+    const envs: { name: string; value: string | pulumi.Output<string> }[] = [
+      { name: "PLUTO_PROJECT_NAME", value: currentProjectName() },
+      { name: "PLUTO_STACK_NAME", value: currentStackName() },
+      { name: "PLUTO_PLATFORM_TYPE", value: PlatformType.K8s },
+      { name: createEnvNameForProperty(this.id, "clusterIP"), value: serviceInternalIP },
+    ];
+    if (options?.envs) {
+      for (const key of Object.keys(options?.envs)) {
+        envs.push({ name: key, value: options.envs[key] });
+      }
+    }
+
+    // Create the knative service.
+    const kservice = this.createKnativeService(image, envs);
+    this.kserviceMeta = {
+      apiVersion: kservice.apiVersion,
+      kind: kservice.kind,
+      name: kservice.metadata.name,
+    };
   }
 
   public grantPermission(_: string) {}
@@ -119,7 +135,10 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
     return image;
   }
 
-  private createKnativeService(image: docker.Image, envs: { name: string; value: string }[]) {
+  private createKnativeService(
+    image: docker.Image,
+    envs: { name: string; value: string | pulumi.Output<string> }[]
+  ) {
     const kservice = new k8s.apiextensions.CustomResource(
       genK8sResourceName(this.id, "kservice"),
       {
@@ -160,6 +179,9 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
           name: genK8sResourceName(this.id, "service"),
           labels: this.appLabels,
           namespace: this.namespace,
+          annotations: {
+            "pulumi.com/skipAwait": "true",
+          },
         },
         spec: {
           selector: this.appLabels,
@@ -176,4 +198,49 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
     );
     return service;
   }
+}
+
+function adaptK8sRuntime(__handler_: AnyFunction) {
+  return async () => {
+    runtimeBase(async (_, res, parsedBody) => {
+      try {
+        const payload = JSON.parse(parsedBody.body ?? "[]");
+        console.log("Payload:", payload);
+        if (!Array.isArray(payload)) {
+          responseAndClose(
+            res,
+            200,
+            JSON.stringify({
+              statusCode: 400,
+              body: `Payload should be an array.`,
+            })
+          );
+          return;
+        }
+
+        let response: DirectCallResponse;
+        try {
+          const respBody = await __handler_(...payload);
+          response = {
+            statusCode: 200,
+            body: respBody,
+          };
+        } catch (e) {
+          // The error comes from inside the user function.
+          console.log("Function execution failed:", e);
+          response = {
+            statusCode: 400,
+            body: `Function execution failed: ` + (e instanceof Error ? e.message : e),
+          };
+        }
+        responseAndClose(res, 200, JSON.stringify(response), {
+          contentType: "application/json",
+        });
+      } catch (e) {
+        // The error is caused by the HTTP processing, not the user function.
+        console.log("Http processing failed:", e);
+        responseAndClose(res, 500, "Internal Server Error");
+      }
+    });
+  };
 }

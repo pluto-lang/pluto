@@ -17,6 +17,7 @@ import {
 import {
   AnyFunction,
   DEFAULT_FUNCTION_NAME,
+  DirectCallResponse,
   FunctionOptions,
   IFunctionInfra,
   Function as PlutoFunction,
@@ -207,11 +208,6 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   }
 }
 
-interface DirectCallResponse {
-  statusCode: number;
-  body: string;
-}
-
 type DirectCallHandler = (payload: any[], context: Context) => Promise<DirectCallResponse>;
 
 function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
@@ -228,12 +224,22 @@ function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
         };
       }
 
-      const result = await __handler_(...payload);
-      return {
-        statusCode: 200,
-        body: JSON.stringify(result),
-      };
+      try {
+        const result = await __handler_(...payload);
+        return {
+          statusCode: 200,
+          body: result,
+        };
+      } catch (e) {
+        // The error comes from inside the user function.
+        console.log("Function execution failed:", e);
+        return {
+          statusCode: 400,
+          body: `Function execution failed: ` + (e instanceof Error ? e.message : e),
+        };
+      }
     } catch (e) {
+      // The error is caused by the HTTP processing, not the user function.
       return {
         statusCode: 500,
         body: `Something wrong. Please contact the administrator.`,

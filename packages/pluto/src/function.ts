@@ -7,10 +7,20 @@ import {
   utils,
   FnResource,
 } from "@plutolang/base";
-import { aws } from "./clients";
+import { aws, k8s } from "./clients";
 
 export type AnyFunction = (...args: any[]) => any;
 export const DEFAULT_FUNCTION_NAME = "default";
+
+/**
+ * The interal protocol for the direct call response.
+ */
+export interface DirectCallResponse {
+  // The status code of the response, same as the HTTP status code.
+  statusCode: number;
+  // The result of the function call, or the error message.
+  body: any;
+}
 
 interface FunctionHandler extends AnyFunction, FnResource {}
 
@@ -60,6 +70,8 @@ export class Function<T extends AnyFunction> implements IResource {
     switch (platformType) {
       case PlatformType.AWS:
         return new aws.LambdaFunction(func, opts);
+      case PlatformType.K8s:
+        return new k8s.KnativeService(func, opts);
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }

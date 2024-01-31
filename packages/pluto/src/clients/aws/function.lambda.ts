@@ -5,6 +5,7 @@ import {
   IFunctionClient,
   DEFAULT_FUNCTION_NAME,
   Function,
+  DirectCallResponse,
 } from "../../function";
 import { genResourceId } from "@plutolang/base/utils";
 import { genAwsResourceName } from "./utils";
@@ -44,10 +45,17 @@ export class LambdaFunction<T extends AnyFunction> implements IFunctionClient<T>
       }
 
       if (response.Payload !== undefined) {
-        const payload = JSON.parse(Buffer.from(response.Payload).toString());
-        return payload as Awaited<ReturnType<T>>;
+        const payload: DirectCallResponse = JSON.parse(Buffer.from(response.Payload).toString());
+        if (payload.statusCode === 200) {
+          return payload.body;
+        } else {
+          throw new Error(payload.body);
+        }
+      } else {
+        throw new Error(
+          `The invocation of the Lambda function has failed, returning an empty payload.`
+        );
       }
-      return;
     } catch (error) {
       console.error("Error calling Lambda function:", error);
       throw new Error(
