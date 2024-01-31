@@ -211,7 +211,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 type DirectCallHandler = (payload: any[], context: Context) => Promise<DirectCallResponse>;
 
 function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
-  return async function (payload, context) {
+  return async function (payload, context): Promise<DirectCallResponse> {
     const accountId = context.invokedFunctionArn.split(":")[4];
     process.env["AWS_ACCOUNT_ID"] = accountId;
 
@@ -219,29 +219,31 @@ function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
       console.log("Payload:", payload);
       if (!Array.isArray(payload)) {
         return {
-          statusCode: 400,
+          code: 400,
           body: `Payload should be an array.`,
         };
       }
 
+      let response: DirectCallResponse;
       try {
         const result = await __handler_(...payload);
-        return {
-          statusCode: 200,
+        response = {
+          code: 200,
           body: result,
         };
       } catch (e) {
         // The error comes from inside the user function.
         console.log("Function execution failed:", e);
-        return {
-          statusCode: 400,
+        response = {
+          code: 400,
           body: `Function execution failed: ` + (e instanceof Error ? e.message : e),
         };
       }
+      return response;
     } catch (e) {
       // The error is caused by the HTTP processing, not the user function.
       return {
-        statusCode: 500,
+        code: 500,
         body: `Something wrong. Please contact the administrator.`,
       };
     }

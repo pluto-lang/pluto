@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as alicloud from "@pulumi/alicloud";
 import * as archive from "@pulumi/archive";
 import { IResourceInfra, PlatformType } from "@plutolang/base";
-import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
+import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import {
   createEnvNameForProperty,
   currentProjectName,
@@ -15,6 +15,7 @@ import {
 import {
   AnyFunction,
   DEFAULT_FUNCTION_NAME,
+  DirectCallResponse,
   Function,
   FunctionOptions,
   IFunctionInfra,
@@ -54,6 +55,16 @@ export class FCInstance extends pulumi.ComponentResource implements IResourceInf
 
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
+    }
+
+    // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
+    // platform adaption function.
+    //
+    // TODO: The closure that meets the below condition might not necessarily be one created by the
+    // user themselves. It could also potentially be created by a SDK developer. We need to find a
+    // more better method to verify this.
+    if (closure.dirpath !== "inline" && closure.innerClosure === undefined) {
+      closure = wrapClosure(adaptAliCloudRuntime(closure), closure);
     }
 
     // Extract the environment variables from the closure.
@@ -223,4 +234,42 @@ export class FCInstance extends pulumi.ComponentResource implements IResourceInf
       );
     });
   }
+}
+
+type CallbackFn = (error: Error | null, data?: object) => Promise<void>;
+
+function adaptAliCloudRuntime(__handler_: AnyFunction) {
+  return async (inData: Buffer, context: any, callback: CallbackFn) => {
+    const accountId = context.accountId;
+    process.env["ALICLOUD_ACCOUNT_ID"] = accountId;
+
+    try {
+      const payload = JSON.parse(inData.toString());
+      console.log("Payload:", payload);
+      if (!Array.isArray(payload)) {
+        callback(new Error("The payload is not an array."));
+        return;
+      }
+
+      let response: DirectCallResponse;
+      try {
+        const respData = await __handler_(...payload);
+        response = {
+          code: 200,
+          body: respData,
+        };
+      } catch (e) {
+        // The error comes from inside the user function.
+        console.log("Function execution failed:", e);
+        response = {
+          code: 400,
+          body: `Function execution failed: ` + (e instanceof Error ? e.message : e),
+        };
+      }
+      callback(null, response);
+    } catch (e) {
+      console.log("Failed to handle http request: ", e);
+      callback(new Error("Internal Server Error"));
+    }
+  };
 }

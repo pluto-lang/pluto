@@ -116,7 +116,7 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
     const imageName = `localhost:5001/pluto/${genK8sResourceName(
       { maxLength: 20 },
       this.id
-    )}:latest`;
+    )}:${Date.now()}`;
     const image = new docker.Image(
       genK8sResourceName(this.id, "image"),
       {
@@ -207,14 +207,7 @@ function adaptK8sRuntime(__handler_: AnyFunction) {
         const payload = JSON.parse(parsedBody.body ?? "[]");
         console.log("Payload:", payload);
         if (!Array.isArray(payload)) {
-          responseAndClose(
-            res,
-            200,
-            JSON.stringify({
-              statusCode: 400,
-              body: `Payload should be an array.`,
-            })
-          );
+          responseAndClose(res, 500, `Payload should be an array.`);
           return;
         }
 
@@ -222,14 +215,14 @@ function adaptK8sRuntime(__handler_: AnyFunction) {
         try {
           const respBody = await __handler_(...payload);
           response = {
-            statusCode: 200,
+            code: 200,
             body: respBody,
           };
         } catch (e) {
           // The error comes from inside the user function.
           console.log("Function execution failed:", e);
           response = {
-            statusCode: 400,
+            code: 400,
             body: `Function execution failed: ` + (e instanceof Error ? e.message : e),
           };
         }

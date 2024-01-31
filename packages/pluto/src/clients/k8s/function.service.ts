@@ -10,13 +10,13 @@ import {
   DirectCallResponse,
 } from "../../function";
 import { genK8sResourceName } from "./utils";
-
-class InvokeError extends Error {}
+import { InvokeError } from "../errors";
 
 const isLocalMode = process.env.NODE_ENV === "local";
 
 export class KnativeService<T extends AnyFunction> implements IFunctionClient<T> {
   private readonly id: string;
+
   private readonly serviceName: string;
   private readonly namespace: string;
   private readonly clusterIP?: string;
@@ -37,19 +37,22 @@ export class KnativeService<T extends AnyFunction> implements IFunctionClient<T>
       if (isLocalMode) {
         return this.invokeLocal(...args);
       } else {
-        return this.invokeRemote(...args);
+        return this.invokeCluster(...args);
       }
     } catch (e) {
       if (e instanceof InvokeError) {
         // Re-throw the InvokeError came from insied the user function.
         throw e;
       } else {
-        console.error(e);
+        console.error("Error calling Knative service function:", e);
         throw new Error(`The invocation of the Knative service '${this.id}' has failed.`);
       }
     }
   }
 
+  /**
+   * Invoke the function locally using kubectl's port-forwarding feature.
+   */
   private async invokeLocal(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
     const portForward = new KubectlPortForwardProcess();
     const port = await findAvailablePort();
@@ -61,7 +64,12 @@ export class KnativeService<T extends AnyFunction> implements IFunctionClient<T>
     }
   }
 
-  private async invokeRemote(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
+  /**
+   * Invoke the function in the container of the cluster.
+   * @param args
+   * @returns
+   */
+  private async invokeCluster(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
     if (!this.clusterIP) {
       throw new Error(`The cluster IP of the Knative service '${this.id}' is not available.`);
     }
@@ -78,13 +86,16 @@ export class KnativeService<T extends AnyFunction> implements IFunctionClient<T>
     });
 
     if (response.status !== 200) {
+      // The process of invoking the function is failed.
       throw new Error(`The response status code is ${response.status}.`);
     }
 
     const data: DirectCallResponse = await response.json();
-    if (data.statusCode === 200) {
+    if (data.code === 200) {
+      // The function is successfully executed.
       return data.body;
     } else {
+      // The function is failed to execute.
       throw new InvokeError(data.body);
     }
   }
@@ -108,6 +119,7 @@ class KubectlPortForwardProcess {
 
       this.process.stdout.on("data", (data: any) => {
         if (data.toString().includes("Forwarding from")) {
+          // The port-forwarding is ready.
           resolve();
         }
       });
