@@ -21,9 +21,7 @@ Simulator 根据 Arch Ref 的 resource 列表依次构建每一个 BaaS 组件�
    1. 构建 arch 拓扑
    2. 遍历 resources，加载依赖库，根据 resource 的 type 及 参数 创建 client 实例对象
    3. 遍历 relationships，给 from 资源添加 Event Handler
-5. test command 根据 test 函数的 id 通知 simulator 调用执行相应函数，并获取执行结果
-   1. 根据 函数 ID 找到 函数 的实例对象
-   2. 执行函数对象的 invoke 方法
-      1. invoke 创建 VM 沙盒，执行函数
-      2. 函数依赖的资源对象都为 Proxy 对象
+5. test command 根据 tester 实例的 id 通知 simulator 中相应 tester 实例调用执行相应测试用例，并获取执行结果
+   1. tester 示例根据用例名称找到相应的计算闭包
+   2. 执行相应的计算闭包
 6. test command 展示测试结果

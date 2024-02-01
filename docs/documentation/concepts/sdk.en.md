@@ -4,12 +4,9 @@
 
 The above class diagram illustrates the inheritance relationship between types in the SDK using a message queue as an example. In this diagram, the message queue is ultimately implemented using AWS SNS.
 
-In Pluto, there are two types of SDKs related to the cloud platform. These two SDKs each include multiple runtime implementations. They are:
+In Pluto, there are two categories of SDKs related to the cloud platform. These include: 1) Functions supported by resource components at runtime, and 2) Methods for associating resource components. Each of these SDKs includes multiple runtime implementations.
 
 1. Client SDK:
-   - Defines two types of methods:
-     1. Functions supported by resource components at runtime.
-     2. Methods for associating resource components.
    - SDKs based on resource components implement the first type of methods. These methods typically encapsulate the functionality supported by BaaS components at runtime. For example, the `push` method in `pluto.SNSQueue` wraps the `PublishCommand` of SNS and is called by Lambda during runtime.
 2. Infrastructure SDK (Infra SDK):
    - Implements the second type of above methods based on the IaC SDK.
@@ -20,7 +17,7 @@ The `@plutolang/base` library contains three basic interfaces:
 
 1. **IResource**: Indicates that the class or interface is related to cloud resources. During compilation, whether an instantiated object's type implements this interface is used to determine if it is a cloud resource.
 2. **FnResource**: Indicates that the class or interface is related to FaaS resources. During compilation, whether a function type inherits this interface is used to determine if the function is an instance of FaaS resource.
-3. **ResourceInfra**: This interface must be implemented by infrastructure implementation classes. It is used to complete the creation of infrastructure components.
+3. **IResourceInfra**: This interface must be implemented by infrastructure implementation classes. It is used to complete the creation of infrastructure components.
    - `get name()`: Retrieves the basic name of the resource object, which may be different from the name of the created resource instance.
    - `getPermission()`: Generates the necessary permissions for calling specific operations on itself.
    - `postProcess()`: Some operations need to be performed only after all configuration processes are completed. These operations are placed in this function. For example, AWS ApiGateway needs to configure Deployment and Stage after setting up all routes.
