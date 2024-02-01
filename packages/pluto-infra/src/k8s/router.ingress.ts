@@ -17,12 +17,15 @@ export class IngressRouter
   private readonly _url: pulumi.Output<string>;
   private readonly routes: { path: string; handler: KnativeService }[];
 
+  public outputs?: pulumi.Output<any>;
+
   constructor(name: string, args?: RouterOptions, opts?: pulumi.ComponentResourceOptions) {
     super("pluto:router:k8s/Ingress", name, args, opts);
     this.id = genResourceId(Router.fqn, name);
     this.routes = [];
 
     this._url = pulumi.interpolate`${genK8sResourceName(this.id)}.localdev.me`;
+    this.outputs = this._url;
   }
 
   public url(): string {

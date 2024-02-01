@@ -13,7 +13,7 @@ export class AwsTester extends pulumi.ComponentResource implements IResourceInfr
   private readonly testCases: TestCase[];
 
   // eslint-disable-next-line
-  public outputs: pulumi.Output<any>;
+  public outputs?: pulumi.Output<any>;
 
   constructor(description: string, props?: TesterOptions) {
     const name = description.replaceAll(/\s+/g, "");
@@ -22,8 +22,6 @@ export class AwsTester extends pulumi.ComponentResource implements IResourceInfr
 
     this.description = description;
     this.testCases = [];
-
-    this.outputs = pulumi.output({});
   }
 
   public it(description: string, closure: ComputeClosure<TestHandler>): void {

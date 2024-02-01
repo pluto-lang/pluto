@@ -17,6 +17,8 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfra,
 
   private _url: pulumi.Output<string>;
 
+  public outputs?: pulumi.Output<any>;
+
   constructor(name: string, opts?: RouterOptions) {
     super("pluto:router:alicloud/Api", name, opts);
     this.id = genResourceId(Router.fqn, name);
@@ -99,6 +101,7 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfra,
     );
 
     this._url = pulumi.interpolate`https://${this.group.subDomain}`;
+    this.outputs = this._url;
   }
 
   public url(): string {

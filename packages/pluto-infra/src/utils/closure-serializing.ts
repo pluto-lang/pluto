@@ -185,6 +185,10 @@ function modifyEntrypointFile(entrypointFilePath: string, closure: ComputeClosur
   // file. This import statement imports the user-defined closure from its directory. Then, it
   // replaces the placeholder "__handler_: undefined" in the entrypoint file with "__handler_:
   // __handler_".
+  //
+  // We postpone the require statement by placing it within an asynchronous function. This approach
+  // is necessary because the module being imported might need information from the environment,
+  // which is initialized in the platform adaptation function, such as the AWS_ACCOUNT_ID.
   const userClosureImportStat = `
 var __handler_ = async (...args) => {
   const handler = require("./${path.basename(closureDirpath)}").default;

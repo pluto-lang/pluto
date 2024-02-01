@@ -23,6 +23,8 @@ export class ApiGatewayRouter
   private apiGateway: Api;
   private routes: Route[];
 
+  public outputs?: pulumi.Output<any>;
+
   constructor(name: string, opts?: RouterOptions) {
     super("pluto:router:aws/ApiGateway", name, opts);
     this.id = genResourceId(Router.fqn, name);
@@ -37,6 +39,7 @@ export class ApiGatewayRouter
 
     const region = currentAwsRegion();
     this._url = pulumi.interpolate`https://${this.apiGateway.id}.execute-api.${region}.amazonaws.com/${DEFAULT_STAGE_NAME}`;
+    this.outputs = this._url;
 
     this.routes = [];
   }

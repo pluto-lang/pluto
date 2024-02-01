@@ -12,12 +12,22 @@ export class SimRouter implements simulator.IResourceInstance, IRouterClient {
   private httpServer?: http.Server;
   private port?: number;
 
+  private cleaned: boolean = false;
+
   constructor(name: string, opts?: RouterOptions) {
     this.expressApp = express();
     const portP = findAvailablePort();
     portP.then((port) => {
       this.port = port;
       this.httpServer = this.expressApp.listen(port);
+      if (this.cleaned && this.httpServer) {
+        // There's a possibility that the router may be cleaned up before the http server even
+        // starts. If the 'cleaned' flag is set to true and 'httpServer' is not undefined, it
+        // indicates that the router was cleaned up before the server's initiation. Therefore, it's
+        // necessary to close the server in this scenario.
+        this.httpServer.close();
+        this.httpServer = undefined;
+      }
     });
     name;
     opts;
@@ -73,8 +83,10 @@ export class SimRouter implements simulator.IResourceInstance, IRouterClient {
   }
 
   public async cleanup(): Promise<void> {
+    this.cleaned = true;
     if (this.httpServer) {
       this.httpServer.close();
+      this.httpServer = undefined;
     }
   }
 }

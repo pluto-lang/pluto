@@ -29,7 +29,7 @@ export class SimulatorAdapter extends core.Adapter {
     await this.simulator.start();
     process.env.PLUTO_SIMULATOR_URL = this.simulator.serverUrl;
 
-    this.simulator.loadApp(this.archRef);
+    await this.simulator.loadApp(this.archRef);
 
     return {
       outputs: {
