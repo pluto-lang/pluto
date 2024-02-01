@@ -11,12 +11,15 @@ type KVStoreInfraImplClass = new (name: string, options?: KVStoreOptions) => IKV
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IKVStoreInfraImpl, KVStoreInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).DynamoKVStore,
-    [PlatformType.K8s]: async () => (await import("./k8s")).RedisKVStore,
-  },
-});
+const implClassMap = new ImplClassMap<IKVStoreInfraImpl, KVStoreInfraImplClass>(
+  "@plutolang/pluto.KVStore",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).DynamoKVStore,
+      [PlatformType.K8s]: async () => (await import("./k8s")).RedisKVStore,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type

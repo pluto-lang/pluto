@@ -11,12 +11,15 @@ type ScheduleInfraImplClass = new (name: string, options?: ScheduleOptions) => I
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IScheduleInfraImpl, ScheduleInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).CloudWatchSchedule,
-    [PlatformType.K8s]: async () => (await import("./k8s")).PingSchedule,
-  },
-});
+const implClassMap = new ImplClassMap<IScheduleInfraImpl, ScheduleInfraImplClass>(
+  "@plutolang/pluto.Schedule",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).CloudWatchSchedule,
+      [PlatformType.K8s]: async () => (await import("./k8s")).PingSchedule,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type

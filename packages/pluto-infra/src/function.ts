@@ -15,13 +15,16 @@ type FunctionInfraImplClass = new (
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IFunctionInfraImpl, FunctionInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).Lambda,
-    [PlatformType.K8s]: async () => (await import("./k8s")).KnativeService,
-    [PlatformType.AliCloud]: async () => (await import("./alicloud")).FCInstance,
-  },
-});
+const implClassMap = new ImplClassMap<IFunctionInfraImpl, FunctionInfraImplClass>(
+  "@plutolang/pluto.Function",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).Lambda,
+      [PlatformType.K8s]: async () => (await import("./k8s")).KnativeService,
+      [PlatformType.AliCloud]: async () => (await import("./alicloud")).FCInstance,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type

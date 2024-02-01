@@ -11,11 +11,14 @@ type TesterInfraImplClass = new (name: string, options?: TesterOptions) => ITest
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<ITesterInfraImpl, TesterInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).AwsTester,
-  },
-});
+const implClassMap = new ImplClassMap<ITesterInfraImpl, TesterInfraImplClass>(
+  "@plutolang/pluto.Tester",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).AwsTester,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type

@@ -11,13 +11,16 @@ type RouterInfraImplClass = new (name: string, options?: RouterOptions) => IRout
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IRouterInfraImpl, RouterInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).ApiGatewayRouter,
-    [PlatformType.K8s]: async () => (await import("./k8s")).IngressRouter,
-    [PlatformType.AliCloud]: async () => (await import("./alicloud")).AppRouter,
-  },
-});
+const implClassMap = new ImplClassMap<IRouterInfraImpl, RouterInfraImplClass>(
+  "@plutolang/pluto.Router",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).ApiGatewayRouter,
+      [PlatformType.K8s]: async () => (await import("./k8s")).IngressRouter,
+      [PlatformType.AliCloud]: async () => (await import("./alicloud")).AppRouter,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type

@@ -20,7 +20,7 @@ router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
 // Retrieve a message from the KV database based on its name.
 router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
   const name = req.query["name"] ?? "Anonym";
-  const message = await kvstore.get(name);
+  const message = await kvstore.get(Array.isArray(name) ? name[0] : name);
   return {
     statusCode: 200,
     body: `Fetch ${name} access message: ${message}.`,

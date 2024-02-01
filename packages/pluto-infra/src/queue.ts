@@ -11,12 +11,15 @@ type QueueInfraImplClass = new (name: string, options?: QueueOptions) => IQueueI
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IQueueInfraImpl, QueueInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).SNSQueue,
-    [PlatformType.K8s]: async () => (await import("./k8s")).RedisQueue,
-  },
-});
+const implClassMap = new ImplClassMap<IQueueInfraImpl, QueueInfraImplClass>(
+  "@plutolang/pluto.Queue",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).SNSQueue,
+      [PlatformType.K8s]: async () => (await import("./k8s")).RedisQueue,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type
