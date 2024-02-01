@@ -32,15 +32,17 @@ function archToGraphviz(archRef: arch.Architecture): string {
   }
   for (const relat of archRef.relationships) {
     let label =
-      relat.type == arch.RelatType.CREATE ? relat.operation.toUpperCase() : relat.operation;
-    const color = relat.type == arch.RelatType.CREATE ? "black" : "blue";
+      relat.type == arch.RelatType.Create ? relat.operation.toUpperCase() : relat.operation;
+    const color = relat.type == arch.RelatType.Create ? "black" : "blue";
     label +=
       " " +
       relat.parameters
         .map((p) => `${p.name}:${p.value}`)
         .join(",")
         .replace(/"/g, '\\"');
-    dotSource += `  ${relat.from.name} -> ${relat.to.name} [label="${label}",color="${color}"];\n`;
+    const fromId = relat.from.id;
+    const toIds = relat.to.map((r) => r.id).join(",");
+    dotSource += `  ${fromId} -> ${toIds} [label="${label}",color="${color}"];\n`;
   }
   dotSource += "}";
   return dotSource;

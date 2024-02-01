@@ -54,8 +54,9 @@ export type IFunctionClient<T extends AnyFunction> = IFunctionClientApi<T> & IFu
  */
 export type IFunctionInfra = IFunctionInfraApi & IFunctionCapturedProps;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class Function<T extends FunctionHandler> implements IResource {
-  constructor(func: T, opts?: FunctionOptions) {
+  constructor(func: FunctionHandler, opts?: FunctionOptions) {
     func;
     opts;
     throw new Error(

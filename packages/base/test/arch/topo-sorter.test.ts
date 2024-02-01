@@ -1,7 +1,7 @@
 import * as path from "path";
 import { describe, it, expect } from "vitest";
-import { TopoSorter } from "../src/topo-sorter";
-import { Architecture, RelatType, parseArchFromYaml } from "@plutolang/base/arch";
+import { TopoSorter } from "../../arch/topo-sorter";
+import { Architecture, RelatType, parseArchFromYaml } from "../../arch";
 import { readFileSync } from "fs";
 
 const FIXTURES_DIRPATH = path.resolve(__dirname, "fixtures");

@@ -72,7 +72,8 @@ const obj2 = new Router("obj2"), obj3 = new pluto.Router("obj3");
     if (ts.isVariableStatement(node)) {
       test("check if there are resource variables: " + node.getText(), async () => {
         const resNum = node.getText().match(/new/g)?.length ?? 0;
-        const resVarInfos = visitVariableStatement(node as ts.VariableStatement, checker);
+        const visitResult = visitVariableStatement(node as ts.VariableStatement, checker);
+        const resVarInfos = visitResult.resourceVarInfos;
         expect(resVarInfos).toHaveLength(resNum);
 
         const nameImportElem: ImportElement = {
@@ -135,8 +136,8 @@ obj3.get("/", async (req: HttpRequest): Promise<HttpResponse> => {
       if (ts.isBinaryExpression(childNode)) {
         test("check binary expression: " + childNode.getText(), async () => {
           const resNum = node.getText().match(/new/g)?.length ?? 0;
-          const resVarInfos = visitBinaryExpression(childNode, checker);
-          expect(resVarInfos).toHaveLength(resNum);
+          const visitResult = visitBinaryExpression(childNode, checker);
+          expect(visitResult?.resourceVarInfos ?? []).toHaveLength(resNum);
         });
       } else if (ts.isCallExpression(childNode)) {
         test("check call expression: " + childNode.getText().split("\n")[0], async () => {

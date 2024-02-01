@@ -16,8 +16,8 @@
     "build": "tsc",
     "watch": "npm run build -- --watch",
     "lint": "eslint .",
-    "test": "vitest run --coverage --reporter=verbose",
-    "test:watch": "vitest --coverage --reporter=verbose"
+    "test": "vitest run --coverage --reporter=verbose --passWithNoTests",
+    "test:watch": "vitest --coverage --reporter=verbose --passWithNoTests"
   },
   "dependencies": {
     "@plutolang/base": "workspace:^",
