@@ -60,11 +60,11 @@ export class AwsTester extends pulumi.ComponentResource implements IResourceInfr
  * This function serves to bridge the gap between AWS runtime and Pluto, harmonizing their norms.
  * @param handler The HTTP path handler contains the business logic.
  */
-function adaptAwsRuntime(handler: TestHandler): Handler {
+function adaptAwsRuntime(__handler_: TestHandler): Handler {
   return async (_, context) => {
     const accountId = context.invokedFunctionArn.split(":")[4];
     process.env["AWS_ACCOUNT_ID"] = accountId;
 
-    await handler();
+    await __handler_();
   };
 }

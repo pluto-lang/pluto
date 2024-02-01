@@ -1,5 +1,8 @@
 import { Queue, KVStore, CloudEvent, Tester, Router, Function } from "@plutolang/pluto";
 
+/**
+ * The following section is testing the KVStore and Queue.
+ */
 // TODO: bug: The variable name must match the argument. This is because the resource ID, generated
 // during the deduction stage, depends on the variable name. Meanwhile, the resource ID generated at
 // runtime depends on the user-provided argument. Ensuring these two are identical is crucial for
@@ -19,13 +22,17 @@ const queueTester = new Tester("queueTester");
 queueTester.it("push a message to the queue", async (): Promise<void> => {
   await queue.push(JSON.stringify({ name: "pluto", message: "test" }));
   // It's possible that the message is not yet stored, even after it has been returned.
-  await sleep(5000);
+  await sleep(10000);
   const val = await kvstore.get("pluto");
   if (val !== "test") {
     throw new Error("failed.");
   }
 });
 
+/**
+ * The subsequent section conducts tests on the Router, which includes accessing properties via
+ * router.url(), and making direct HTTP requests to the router.
+ */
 const router = new Router("router");
 
 router.get("/hello", async () => {
@@ -41,7 +48,7 @@ routerTester.it("access the router url", async (): Promise<void> => {
   // TODO: In the simulation, all method no matter what they are, are async. Because all methods are
   // invoked via RPC. We need to discover if there is a way can invoke sync method synchronously.
   const url = await router.url();
-  if (!url.startsWith("http://localhost:")) {
+  if (!url.startsWith("http")) {
     throw new Error("failed.");
   }
 });
@@ -55,6 +62,9 @@ routerTester.it("GET /hello, responds with Hello, Pluto", async (): Promise<void
   }
 });
 
+/**
+ * The following section tests the Function class.
+ */
 const echoFunction = new Function(
   async function (input: string) {
     return input;

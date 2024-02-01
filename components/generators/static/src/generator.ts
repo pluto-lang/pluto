@@ -40,12 +40,27 @@ export class StaticGenerator extends core.Generator {
       }
     }
 
+    // Append the postProcess calling for each resource.
     entities
       .filter((entity) => entity instanceof arch.Resource)
       .forEach((entity) => {
         const resource = entity as arch.Resource;
         infraCode += `${resource.id}.postProcess();\n`;
       });
+
+    // Append the output items of each resource.
+    // TODO: Currently, these outputs are only utilized during testing. We need to evaluate their
+    // necessity, as this approach requires the SDK developer to specifically write outputs for
+    // certain resources, which may not be developer-friendly.
+    const outputItems = entities
+      .filter((entity) => entity instanceof arch.Resource)
+      .map((entity) => {
+        const resource = entity as arch.Resource;
+        return `${resource.id}: ${resource.id}.outputs`;
+      });
+    infraCode += `return {
+${outputItems.join(",\n")}
+}`;
 
     return `
 ${globalImports}
@@ -74,6 +89,11 @@ const ${resource.id} = await (
       readonly operation: string;
     }
 
+    // This section identifies all dependencies of the closure, which fall into two categories:
+    // 1. Resources whose properties the closure accesses. For these resources, we need to transfer
+    //    the properties to the runtime environment via environment variables.
+    // 2. Resources whose methods the closure calls. For these resources, we need to request
+    //    permissions so that the closure can invoke these methods during runtime on the platform.
     const dependencies: Dependency[] = [];
     archRef.relationships
       .filter(
@@ -94,6 +114,7 @@ const ${resource.id} = await (
           });
       });
 
+    // Construct the dependency items and concatenate them using a comma separator.
     const dependenciesString = dependencies
       .map(
         (dep) => `

@@ -2,11 +2,12 @@ import fs from "fs";
 import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 import { arch, config, core, ProvisionType, PlatformType, simulator } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { TestCase } from "@plutolang/pluto";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import { buildAdapter, selectAdapterByEngine } from "./utils";
-import { genResourceId } from "@plutolang/base/utils";
 
 interface TestOptions {
   sim: boolean;
@@ -185,11 +186,6 @@ async function testOneGroup(
   }
 }
 
-interface TestCase {
-  description: string;
-  fnResourceId: string;
-}
-
 interface Tester {
   description: string;
   testCases: TestCase[];
@@ -263,7 +259,7 @@ class AwsTesterClient implements TesterClient {
 
   private async runOne(testCase: TestCase): Promise<void> {
     const command = new InvokeCommand({
-      FunctionName: testCase.fnResourceId,
+      FunctionName: testCase.testHandler,
       LogType: LogType.Tail,
     });
 

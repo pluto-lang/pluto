@@ -1,10 +1,11 @@
 import { simulator } from "@plutolang/base";
+import { ComputeClosure } from "@plutolang/base/closure";
 import { CloudEvent, EventHandler, IQueueClient, QueueOptions } from "@plutolang/pluto";
 
 export class SimQueue implements IQueueClient, simulator.IResourceInstance {
   readonly topicName: string;
   private readonly messages: CloudEvent[];
-  private subscriber?: EventHandler;
+  private subscriber?: ComputeClosure<EventHandler>;
 
   constructor(name: string, opts?: QueueOptions) {
     this.topicName = name;

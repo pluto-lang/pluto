@@ -1,6 +1,5 @@
 import path, { resolve } from "path";
 import fs from "fs";
-import * as yaml from "js-yaml";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
 import { arch, core } from "@plutolang/base";

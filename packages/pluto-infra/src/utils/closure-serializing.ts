@@ -185,9 +185,11 @@ function modifyEntrypointFile(entrypointFilePath: string, closure: ComputeClosur
   // file. This import statement imports the user-defined closure from its directory. Then, it
   // replaces the placeholder "__handler_: undefined" in the entrypoint file with "__handler_:
   // __handler_".
-  const userClosureImportStat = `var __handler_ = require("./${path.basename(
-    closureDirpath
-  )}").default;\n`;
+  const userClosureImportStat = `
+var __handler_ = async (...args) => {
+  const handler = require("./${path.basename(closureDirpath)}").default;
+  return await handler(...args);
+};\n`;
   const entrypointFileContent = fs
     .readFileSync(entrypointFilePath, "utf-8")
     .replace(/__handler_: undefined/g, "__handler_: __handler_");
