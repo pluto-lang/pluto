@@ -96,7 +96,7 @@ export class KnativeService
     };
   }
 
-  public grantPermission(_: string) {}
+  public grantPermission() {}
 
   public postProcess(): void {}
 

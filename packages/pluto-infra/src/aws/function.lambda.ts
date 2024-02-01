@@ -5,7 +5,7 @@ import { Context } from "aws-lambda";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Role } from "@pulumi/aws/iam";
-import { Function } from "@pulumi/aws/lambda";
+import { Function as AwsLambda } from "@pulumi/aws/lambda";
 import { IResourceInfra, PlatformType } from "@plutolang/base";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import {
@@ -34,7 +34,7 @@ export enum Ops {
 export class Lambda extends pulumi.ComponentResource implements IResourceInfra, IFunctionInfra {
   public readonly id: string;
 
-  private readonly lambda: Function;
+  private readonly lambda: AwsLambda;
   private readonly iam: Role;
   private readonly statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
@@ -112,13 +112,14 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
           actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
           resources: [WATCH_LOG_ARN],
         };
-      case Ops.INVOKE:
+      case Ops.INVOKE: {
         const fuzzyArn = `arn:aws:lambda:${currentAwsRegion()}:*:function:${this.lambdaName}`;
         return {
           effect: "Allow",
           actions: ["lambda:InvokeFunction"],
           resources: [fuzzyArn],
         };
+      }
       default:
         throw new Error(`Unknown op: ${op}`);
     }

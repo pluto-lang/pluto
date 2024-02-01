@@ -84,10 +84,11 @@ export class Router implements IResource {
       case PlatformType.K8s:
       case PlatformType.AliCloud:
         return new shared.RouterClient(name, opts);
-      case PlatformType.Simulator:
+      case PlatformType.Simulator: {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         const resourceId = utils.genResourceId(Router.fqn, name);
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, resourceId);
+      }
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }

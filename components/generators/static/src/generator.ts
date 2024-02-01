@@ -28,7 +28,7 @@ export class StaticGenerator extends core.Generator {
   private generateInfraCode(archRef: arch.Architecture): string {
     const entities = archRef.topoSort();
 
-    let globalImports = `import { createClosure } from "@plutolang/base/closure";`;
+    const globalImports = `import { createClosure } from "@plutolang/base/closure";`;
     let infraCode = ``;
     for (const entity of entities) {
       if (entity instanceof arch.Resource) {

@@ -38,7 +38,7 @@ export function backfillDependency(
 }
 
 /** @internal */
-export async function canBeSerialized(handler: Function) {
+export async function canBeSerialized(handler: AnyFunction) {
   try {
     await pulumi.runtime.serializeFunction(handler);
     return true;
@@ -160,11 +160,7 @@ function modifyEntrypointFile(entrypointFilePath: string, closure: ComputeClosur
   // iterates over the closures until it finds a user-defined closure (one that is not inline).
   let closureDirpath: string | undefined;
   let currentClosure: ComputeClosure<AnyFunction> | undefined = closure;
-  while (true) {
-    if (currentClosure === undefined) {
-      break;
-    }
-
+  while (currentClosure !== undefined) {
     if (currentClosure.dirpath !== "inline") {
       if (closureDirpath === undefined) {
         closureDirpath = currentClosure.dirpath;

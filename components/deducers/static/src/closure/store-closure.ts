@@ -56,7 +56,7 @@ function generateSourceCode(
 
   const fileSelections: FileSelection = {};
   locations.forEach((loc) => {
-    if (!fileSelections.hasOwnProperty(loc.file)) {
+    if (!(loc.file in fileSelections)) {
       fileSelections[loc.file] = [];
     }
 

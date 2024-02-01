@@ -188,7 +188,7 @@ function buildArchRef(
       // Closure
       const dirpath = path
         .resolve(ctx.closureBaseDir, resName)
-        .replace(new RegExp(`^${ctx.rootpath}\/?`), "");
+        .replace(new RegExp(`^${ctx.rootpath}/?`), "");
       archClosures.push(new arch.Closure(resName, dirpath));
     } else {
       // Resource

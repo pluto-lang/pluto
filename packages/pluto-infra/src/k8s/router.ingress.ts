@@ -60,7 +60,7 @@ export class IngressRouter
     return func;
   }
 
-  public grantPermission(_: string) {}
+  public grantPermission() {}
 
   public postProcess(): void {
     const appLabels = { app: genK8sResourceName(this.id) };

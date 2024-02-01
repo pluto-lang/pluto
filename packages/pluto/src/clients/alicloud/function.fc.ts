@@ -87,7 +87,7 @@ function createClient(): FCClient {
   process.env["ALIBABA_CLOUD_ACCESS_KEY_ID"] = process.env["ALICLOUD_ACCESS_KEY"];
   process.env["ALIBABA_CLOUD_ACCESS_KEY_SECRET"] = process.env["ALICLOUD_SECRET_KEY"];
 
-  let config = new OpenApi.Config();
+  const config = new OpenApi.Config();
   // The document about the credential can be found at
   // https://help.aliyun.com/zh/sdk/developer-reference/v2-manage-node-js-access-credentials
   const credentialClient = new Credential();

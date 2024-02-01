@@ -71,6 +71,7 @@ export class Simulator {
       throw new Error(`Closure ${closurePath} not found.`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const handler = require(closurePath).default;
     return createClosure(handler, {
       dirpath: closure.path,
@@ -130,7 +131,7 @@ export class Simulator {
           result = (resource as any)[op](...args);
         } catch (err) {
           res.writeHead(500, { "Content-Type": "application/json" });
-          let replyError = err instanceof Error ? err : new Error(`${err}`);
+          const replyError = err instanceof Error ? err : new Error(`${err}`);
           res.end(
             JSON.stringify({
               error: {

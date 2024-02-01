@@ -108,7 +108,7 @@ export class RedisQueue extends pulumi.ComponentResource implements IResourceInf
     );
   }
 
-  public grantPermission(_: string) {}
+  public grantPermission() {}
 
   public postProcess(): void {}
 }

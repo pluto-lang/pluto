@@ -54,8 +54,8 @@ export type IFunctionClient<T extends AnyFunction> = IFunctionClientApi<T> & IFu
  */
 export type IFunctionInfra = IFunctionInfraApi & IFunctionCapturedProps;
 
-export class Function<T extends AnyFunction> implements IResource {
-  constructor(func: FunctionHandler, opts?: FunctionOptions) {
+export class Function<T extends FunctionHandler> implements IResource {
+  constructor(func: T, opts?: FunctionOptions) {
     func;
     opts;
     throw new Error(
@@ -63,7 +63,7 @@ export class Function<T extends AnyFunction> implements IResource {
     );
   }
 
-  public static buildClient<T extends AnyFunction>(
+  public static buildClient<T extends FunctionHandler>(
     func: T,
     opts?: FunctionOptions
   ): IFunctionClient<T> {
@@ -75,10 +75,11 @@ export class Function<T extends AnyFunction> implements IResource {
         return new k8s.KnativeService(func, opts);
       case PlatformType.AliCloud:
         return new ali.FCInstance(func, opts);
-      case PlatformType.Simulator:
+      case PlatformType.Simulator: {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
         const resourceId = utils.genResourceId(Function.fqn, opts?.name ?? DEFAULT_FUNCTION_NAME);
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, resourceId);
+      }
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }
@@ -87,7 +88,7 @@ export class Function<T extends AnyFunction> implements IResource {
   public static fqn = "@plutolang/pluto.Function";
 }
 
-export interface Function<T extends AnyFunction>
+export interface Function<T extends FunctionHandler>
   extends IResource,
     IFunctionClient<T>,
     IFunctionInfra {}

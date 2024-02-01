@@ -63,7 +63,7 @@ export class RedisKVStore
     );
   }
 
-  public grantPermission(_: string) {}
+  public grantPermission() {}
 
   public postProcess(): void {}
 }

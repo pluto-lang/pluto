@@ -1,14 +1,7 @@
 import ts from "typescript";
 import { arch } from "@plutolang/base";
-import {
-  ParameterInfo,
-  ResourceRelationshipInfo,
-  ResourceVariableInfo,
-  VisitResult,
-  concatVisitResult,
-} from "./types";
-import { isFunctionType, isResourceType, isResourceVar } from "./utils";
-import { visitFnResourceBody } from "./visit-fn-res";
+import { ResourceRelationshipInfo, VisitResult, concatVisitResult } from "./types";
+import { isFunctionType, isResourceVar } from "./utils";
 import { visitAssignmentExpression } from "./visit-var-def";
 import { visitCallingArguments } from "./visit-calling-arguments";
 
