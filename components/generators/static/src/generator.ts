@@ -1,14 +1,10 @@
 import path from "path";
-import fs from "fs";
 import * as ts from "typescript";
-import * as esbuild from "esbuild";
-import { arch, core, utils } from "@plutolang/base";
+import { arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 // The name of the compiled entrypoint
 const ENTRYPOINT_FILENAME = "pulumi";
-// The name of the compiled compute module for each resource
-const COMP_MOD_FILENAME = (resName: string) => `${resName}`;
 
 export class StaticGenerator extends core.Generator {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -21,237 +17,156 @@ export class StaticGenerator extends core.Generator {
   }
 
   public async generate(archRef: arch.Architecture, outdir: string): Promise<core.GenerateResult> {
-    const compiledDir = path.join(outdir, "compiled");
-
-    const pirTsCode = genPirCode(archRef, this.project, this.stack.name);
+    const pirTsCode = this.generateInfraCode(archRef);
     writeToFile(outdir, ENTRYPOINT_FILENAME + ".ts", pirTsCode);
     const pirJsCode = compileTs(pirTsCode);
-    writeToFile(compiledDir, ENTRYPOINT_FILENAME + ".js", pirJsCode);
+    writeToFile(outdir, ENTRYPOINT_FILENAME + ".js", pirJsCode);
 
-    const cirCodes = genAllCirCode(archRef);
-    cirCodes.forEach((cir) => {
-      const cirTsPath = COMP_MOD_FILENAME(cir.resource.name) + ".ts";
-      writeToFile(outdir, cirTsPath, cir.code);
-      bundle(path.join(outdir, cirTsPath), compiledDir);
-    });
-
-    return { entrypoint: path.join(compiledDir, ENTRYPOINT_FILENAME + ".js") };
+    return { entrypoint: path.join(outdir, ENTRYPOINT_FILENAME + ".js") };
   }
-}
 
-function bundle(tsPath: string, outdir: string): void {
-  const result = esbuild.buildSync({
-    bundle: true,
-    minify: false,
-    entryPoints: [tsPath],
-    platform: "node",
-    target: "node18",
-    outdir: outdir,
-  });
-  if (result.errors.length > 0) {
-    throw new Error("Failed to bundle: " + result.errors[0].text);
+  private generateInfraCode(archRef: arch.Architecture): string {
+    const entities = archRef.topoSort();
+
+    const globalImports = `import { createClosure } from "@plutolang/base/closure";`;
+    let infraCode = ``;
+    for (const entity of entities) {
+      if (entity instanceof arch.Resource) {
+        infraCode += this.generateInfraCode_Resource(entity);
+      } else if (entity instanceof arch.Closure) {
+        infraCode += this.generateInfraCode_Closure(entity, archRef);
+      } else if (entity instanceof arch.Relationship) {
+        infraCode += this.generateInfraCode_Relationship(entity);
+      }
+    }
+
+    // Append the postProcess calling for each resource.
+    entities
+      .filter((entity) => entity instanceof arch.Resource)
+      .forEach((entity) => {
+        const resource = entity as arch.Resource;
+        infraCode += `${resource.id}.postProcess();\n`;
+      });
+
+    // Append the output items of each resource.
+    // TODO: Currently, these outputs are only utilized during testing. We need to evaluate their
+    // necessity, as this approach requires the SDK developer to specifically write outputs for
+    // certain resources, which may not be developer-friendly.
+    const outputItems = entities
+      .filter((entity) => entity instanceof arch.Resource)
+      .map((entity) => {
+        const resource = entity as arch.Resource;
+        return `${resource.id}: ${resource.id}.outputs`;
+      });
+    infraCode += `return {
+${outputItems.join(",\n")}
+}`;
+
+    return `
+${globalImports}
+
+export default (async () => {
+${infraCode}
+})();
+`;
+  }
+
+  private generateInfraCode_Resource(resource: arch.Resource): string {
+    const dotPos = resource.type.lastIndexOf(".");
+    const pkgName = dotPos == -1 ? "@plutolang/pluto" : resource.type.substring(0, dotPos);
+    const typeName = dotPos == -1 ? resource.type : resource.type.substring(dotPos + 1);
+    return `
+const ${resource.id} = await (
+  await import("${pkgName}-infra")
+).${typeName}.createInstance(${resource.getParamString()});
+`;
+  }
+
+  private generateInfraCode_Closure(closure: arch.Closure, archRef: arch.Architecture): string {
+    interface Dependency {
+      readonly resourceId: string;
+      readonly type: "method" | "property";
+      readonly operation: string;
+    }
+
+    // This section identifies all dependencies of the closure, which fall into two categories:
+    // 1. Resources whose properties the closure accesses. For these resources, we need to transfer
+    //    the properties to the runtime environment via environment variables.
+    // 2. Resources whose methods the closure calls. For these resources, we need to request
+    //    permissions so that the closure can invoke these methods during runtime on the platform.
+    const dependencies: Dependency[] = [];
+    archRef.relationships
+      .filter(
+        (relat) =>
+          relat.from.type === "closure" &&
+          relat.from.id === closure.id &&
+          relat.type !== arch.RelatType.Create
+      )
+      .forEach((relat) => {
+        relat.to
+          .filter((to) => to.type === "resource")
+          .forEach((to) => {
+            dependencies.push({
+              resourceId: to.id,
+              type: relat.type === arch.RelatType.MethodCall ? "method" : "property",
+              operation: relat.operation,
+            });
+          });
+      });
+
+    // Construct the dependency items and concatenate them using a comma separator.
+    const dependenciesString = dependencies
+      .map(
+        (dep) => `
+{ 
+  resourceObject: ${dep.resourceId}, 
+  type: "${dep.type}", 
+  operation: "${dep.operation}" 
+}
+`
+      )
+      .join(",");
+
+    const dirpath = path.resolve(this.rootpath, closure.path);
+    // We encapsulate the closure within a function because the statements in the closure's global
+    // scope are executed upon import. However, these statements are likely intended to run on the
+    // target platform, not during the deployment stage.
+    return `
+const ${closure.id}_func = async (...args: any[]) => {
+  const handler = (await import("${dirpath}")).default;
+  return await handler(...args);
+}
+const ${closure.id} = createClosure(${closure.id}_func, {
+  dirpath: "${dirpath}",
+  dependencies: [${dependenciesString}],
+});
+`;
+  }
+
+  private generateInfraCode_Relationship(relationship: arch.Relationship): string {
+    return `
+${relationship.from.id}.${relationship.operation}(${relationship.getParamString()});
+`;
   }
 }
 
 function compileTs(code: string): string {
-  return ts.transpileModule(code, {
+  const result = ts.transpileModule(code, {
     compilerOptions: { module: ts.ModuleKind.CommonJS },
-  }).outputText;
-}
-
-function genPirCode(archRef: arch.Architecture, projectName: string, stackName: string): string {
-  const outputVars = [];
-  let iacSource = "";
-
-  // Resource definition, first for BaaS, second for FaaS
-  for (const resName in archRef.resources) {
-    const res = archRef.getResource(resName);
-    if (res.type == "Root" || res.type == "FnResource") continue;
-
-    // TODO: choose the correct package that specified by the user.
-    iacSource += `
-const ${resName} = await (
-  await import("@plutolang/pluto-infra")
-).${res.type}.createInstance(${res.getParamString()});\n
-`;
-  }
-
-  // Specify the dependency of FaaS on this particular BaaS, because the building image process needs to be performed after exporting Dapr YAML.
-  for (const resName in archRef.resources) {
-    const res = archRef.getResource(resName);
-    if (res.type != "FnResource") continue;
-
-    const envVars = [`PLUTO_PROJECT_NAME: "${projectName}"`, `PLUTO_STACK_NAME: "${stackName}"`];
-    const deps = [];
-    for (const relat of archRef.relationships) {
-      if (relat.from != res) continue;
-      if (relat.type === arch.RelatType.ACCESS) {
-        deps.push(relat.to.name);
-      } else if (relat.type === arch.RelatType.PROPERTY) {
-        const resourceId = utils.genResourceId(projectName, stackName, relat.to.name);
-        const propEnvName = utils.createEnvNameForProperty(
-          /* Resource type */ relat.to.type,
-          /* Reosurce id */ resourceId,
-          /* Property Name */ relat.operation
-        );
-        const propEnvVal = `${relat.to.name}.${relat.operation}`;
-        envVars.push(`${propEnvName}: ${propEnvVal}`);
-      }
-    }
-
-    // TODO: choose the correct package that specified by the user.
-    iacSource += `
-const ${resName} = await (
-  await import("@plutolang/pluto-infra")
-).Function.createInstance(
-  ${res.getParamString()}, 
-  {
-    envs: {${envVars.join(",\n")}}
-  }, 
-  { 
-    dependsOn: [${deps.join(",")}] 
-  }
-);\n
-`;
-  }
-
-  // Establish resource dependencies, including triggering and accessing.
-  for (const relat of archRef.relationships) {
-    if (relat.from.type == "Root") continue;
-
-    if (relat.type == arch.RelatType.CREATE) {
-      iacSource += `${relat.from.name}.${relat.operation}(${relat.getParamString()});\n`;
-    } else if (relat.type == arch.RelatType.ACCESS) {
-      iacSource += `${relat.from.name}.getPermission("${relat.operation}", ${relat.to.name});\n`;
-    }
-  }
-
-  iacSource += "\n";
-  let outputed = false;
-  for (const resName in archRef.resources) {
-    const res = archRef.getResource(resName);
-    if (res.type == "Root") continue;
-    iacSource += `${resName}.postProcess();\n`;
-
-    // TODO: update the output mechanism
-    if (res.type == "Router" && !outputed) {
-      outputed = true;
-      outputVars.push(`url: ${res.name}.url`);
-    }
-    if (res.type == "Tester") {
-      iacSource += `const ${res.name}Out = ${res.name}.outputs;\n`;
-      outputVars.push(`${res.name}Out`);
-    }
-  }
-
-  return `
-export default (async () => {
-${iacSource}
-
-// The return values are the outputs of the resources.
-  return {
-${outputVars.join(",\n")}
-  }
-})()
-`;
-}
-
-interface ComputeIR {
-  resource: arch.Resource;
-  code: string;
-}
-
-interface Segment {
-  depth: number;
-  start: [number, number];
-  end: [number, number];
-}
-
-type FileSelection = Map<string, Segment[]>;
-
-function genAllCirCode(archRef: arch.Architecture): ComputeIR[] {
-  const rootRes: arch.Resource = archRef.getResource("App");
-
-  const genCirCode = (res: arch.Resource): string => {
-    let cirCode = res.getImports().join("\n") + "\n";
-    // Append all direct import statments to generated code
-    cirCode += rootRes.getImports().join("\n") + "\n";
-
-    // Find the dependencies of this CIR and build corresponding instances.
-    for (const relat of archRef.relationships) {
-      if (relat.from != res) continue;
-      // TODO: verify if the buildClient function exists. If it does not, use the original statement.
-      cirCode += relat.to.getImports() + "\n";
-      cirCode += `const ${relat.to.name} = ${
-        relat.to.type
-      }.buildClient(${relat.to.getParamString()});\n`;
-    }
-
-    const fileSelections: FileSelection = new Map();
-    res.locations.forEach((loc) => {
-      if (!fileSelections.has(loc.file)) {
-        fileSelections.set(loc.file, []);
-      }
-
-      const startPos = loc.linenum["start"].split("-").map((n) => Number(n));
-      const endPos = loc.linenum["end"].split("-").map((n) => Number(n));
-      fileSelections.get(loc.file)!.push({
-        depth: loc.depth,
-        start: startPos as [number, number],
-        end: endPos as [number, number],
-      });
-    });
-    if (fileSelections.size != 1) {
-      throw new Error(`Currently, Pluto only supports a single file.`);
-    }
-
-    const fileCodes: [string, string][] = []; // file, code
-    fileSelections.forEach((segments, file) => {
-      const curFileCode = genFileCode(file, segments);
-      fileCodes.push([file, curFileCode]);
-    });
-    return cirCode + fileCodes[0][1];
-  };
-
-  const cirs: ComputeIR[] = [];
-  for (const resName in archRef.resources) {
-    const res = archRef.getResource(resName);
-    if (res.type != "FnResource") continue;
-    cirs.push({ resource: res, code: genCirCode(res) });
-  }
-  return cirs;
-}
-
-function genFileCode(file: string, segments: Segment[]): string {
-  segments.sort((a, b) => {
-    if (a.start[0] != b.start[0]) return a.start[0] - b.start[0];
-    return a.start[1] - b.start[1];
   });
-
-  const usercode = fs.readFileSync(file, "utf-8");
-  const lines = usercode.split("\n");
-
-  let curFileCode = "";
-  for (const segment of segments) {
-    const [startLine, startPos] = segment.start;
-    const [endLine, endPos] = segment.end;
-
-    let curSegCode = "";
-    // Iterate through the range of this segment and construct the code.
-    for (let lineIdx = startLine; lineIdx <= endLine; lineIdx++) {
-      const linecode = lines[lineIdx];
-      let curLineCode = "";
-      if (lineIdx == startLine) {
-        if (segment.depth == 0) curLineCode = `export default `;
-        curLineCode += linecode.slice(startPos);
-      } else if (lineIdx == endLine) {
-        curLineCode = linecode.slice(0, endPos);
+  if (result.diagnostics) {
+    result.diagnostics.forEach((diagnostic) => {
+      if (diagnostic.file) {
+        const { line, character } = ts.getLineAndCharacterOfPosition(
+          diagnostic.file,
+          diagnostic.start!
+        );
+        const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+        console.log(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
       } else {
-        curLineCode = linecode;
+        console.log(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"));
       }
-      curSegCode += curLineCode + "\n";
-    }
-    curFileCode += curSegCode + "\n";
+    });
   }
-  return curFileCode;
+  return result.outputText;
 }

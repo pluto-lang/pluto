@@ -2,10 +2,10 @@ import { ServerRequest, ServerResponse, SimulatorCleint } from "./interfaces";
 
 const SIM_HANDLE_PATH = "/call";
 
-export function makeSimulatorClient(url: string, resourceName: string): SimulatorCleint {
+export function makeSimulatorClient(url: string, resourceId: string): SimulatorCleint {
   const get = (_target: any, op: string) => {
     return async function (...args: any[]) {
-      const body: ServerRequest = { resourceName, op, args };
+      const body: ServerRequest = { resourceId, op, args };
       const resp = await fetch(url + SIM_HANDLE_PATH, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

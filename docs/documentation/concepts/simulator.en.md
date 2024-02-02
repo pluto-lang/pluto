@@ -21,9 +21,7 @@ The capability provided externally is the Infra type of the resource, but what i
    1. Build the arch topology.
    2. Iterate through the resources, load dependencies, and create client instances based on the resource type and parameters.
    3. Iterate through the relationships and add Event Handlers to the "from" resources.
-5. The test command notifies the simulator to invoke the corresponding function based on the test function's ID and retrieves the execution result.
-   1. Find the instance object of the function based on its ID.
-   2. Invoke the invoke method of the function object.
-      1. Invoke creates a VM sandbox and executes the function.
-      2. The resource objects that the function depends on are all Proxy objects.
+5. The test command communicates with the corresponding tester instance within the simulator, identified by the tester's ID. It triggers the test case and retrieves the execution result.
+   1. Tester instance find the compute closure based on test case information.
+   2. Invoke the compute closure.
 6. The test command displays the test results.

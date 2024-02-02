@@ -1,7 +1,8 @@
 import ts from "typescript";
-import { ResourceConstructInfo, ResourceVariableInfo } from "./types";
+import { ResourceVariableInfo, VisitResult, concatVisitResult } from "./types";
 import { buildImportStore } from "./imports";
 import { getLocationOfNode, isResourceType } from "./utils";
+import { visitCallingArguments } from "./visit-calling-arguments";
 
 /**
  * Check if this variable declaration is defining a resource. If it is,
@@ -10,41 +11,34 @@ import { getLocationOfNode, isResourceType } from "./utils";
 export function visitVariableStatement(
   parNode: ts.VariableStatement,
   checker: ts.TypeChecker
-): ResourceVariableInfo[] {
+): VisitResult | undefined {
   if (process.env.DEBUG) {
     console.log(`Visit a VariableStatement: `, parNode.getText());
   }
 
-  const resVarInfos = parNode.declarationList.declarations.map(
-    (declaration): ResourceVariableInfo | undefined => {
-      if (declaration.initializer == undefined) {
-        // This is a variable declaration without initial value.
-        // e.g. let x;
+  let visitResult: VisitResult | undefined;
+  parNode.declarationList.declarations.forEach((declaration) => {
+    if (declaration.initializer == undefined) {
+      // This is a variable declaration without initial value.
+      // e.g. let x;
+      return;
+    }
+
+    if (ts.isNewExpression(declaration.initializer)) {
+      // This is a constructor call. May resource initialization.
+      // e.g. new MyClass()
+
+      const varName = declaration.name;
+      if (!ts.isIdentifier(varName)) {
+        console.warn("Found a variable name that is not an identifier: ", varName.getText());
         return;
       }
 
-      if (ts.isNewExpression(declaration.initializer)) {
-        // This is a constructor call. May resource initialization.
-        // e.g. new MyClass()
-        const resConstInfo = visitNewExpression(declaration.initializer, checker);
-        if (resConstInfo == undefined) {
-          return;
-        }
-
-        const varName = declaration.name;
-        if (!ts.isIdentifier(varName)) {
-          console.warn("Found a variable name that is not an identifier: ", varName.getText());
-          return;
-        }
-        return {
-          varName: varName.text,
-          resourceConstructInfo: resConstInfo,
-        };
-      }
-      return;
+      const result = visitNewExpression(declaration.initializer, checker, varName.getText());
+      visitResult = concatVisitResult(visitResult, result);
     }
-  );
-  return resVarInfos.filter((v) => v !== undefined) as ResourceVariableInfo[];
+  });
+  return visitResult;
 }
 
 /**
@@ -53,7 +47,7 @@ export function visitVariableStatement(
 export function visitAssignmentExpression(
   parNode: ts.BinaryExpression,
   checker: ts.TypeChecker
-): ResourceVariableInfo | undefined {
+): VisitResult | undefined {
   if (process.env.DEBUG) {
     console.log(`Visit a visitAssignmentExpression: `, parNode.getText());
   }
@@ -61,15 +55,9 @@ export function visitAssignmentExpression(
     return;
   }
 
-  const resConstInfo = visitNewExpression(parNode.right, checker);
-  if (resConstInfo == undefined) {
-    return;
-  }
   const varName = parNode.left.getText();
-  return {
-    varName: varName,
-    resourceConstructInfo: resConstInfo,
-  };
+  const visitResult = visitNewExpression(parNode.right, checker, varName);
+  return visitResult;
 }
 
 /**
@@ -78,8 +66,9 @@ export function visitAssignmentExpression(
  */
 export function visitNewExpression(
   parNode: ts.NewExpression,
-  checker: ts.TypeChecker
-): ResourceConstructInfo | undefined {
+  checker: ts.TypeChecker,
+  varName: string
+): VisitResult | undefined {
   if (process.env.DEBUG) {
     console.log(`Visit a NewExpression: `, parNode.getText());
   }
@@ -121,10 +110,36 @@ export function visitNewExpression(
     );
   }
 
+  // The following code is to extract the closures from the constructor arguments.
+  // 1. Get the constructor signature.
+  let signature: ts.Signature | undefined;
+  for (const member of clsDecl.members) {
+    if (ts.isConstructorDeclaration(member)) {
+      signature = checker.getSignatureFromDeclaration(member);
+    }
+  }
+  if (!signature) {
+    throw new Error(`Cannot find the constructor signature: ${clsDecl.getText()}`);
+  }
+  // 2. Iterate through all the parameters of the constructor, and check if it is a closure. If it
+  //    is, create a closure item to replace the original argument.
+  const { closureInfos, closureDependencies, parameters } = visitCallingArguments(
+    signature,
+    parNode.arguments,
+    checker
+  );
+
+  const resourceVarInfo: ResourceVariableInfo = {
+    varName: varName,
+    resourceConstructInfo: {
+      constructExpression: constructExpression,
+      importElements: [importElement],
+      parameters: parameters,
+      locations: [getLocationOfNode(parNode, 0)],
+    },
+  };
   return {
-    constructExpression: constructExpression,
-    importElements: [importElement],
-    parameters: parNode.arguments?.map((v) => v),
-    locations: [getLocationOfNode(parNode, 0)],
+    resourceRelatInfos: closureDependencies,
+    resourceVarInfos: closureInfos.concat(resourceVarInfo),
   };
 }

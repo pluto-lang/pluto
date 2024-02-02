@@ -1,7 +1,7 @@
 import { simulator } from "@plutolang/base";
-import { IKVStoreClientApi, KVStoreOptions } from "@plutolang/pluto";
+import { IKVStoreClient, KVStoreOptions } from "@plutolang/pluto";
 
-export class SimKVStore implements IKVStoreClientApi, simulator.IResourceInstance {
+export class SimKVStore implements IKVStoreClient, simulator.IResourceInstance {
   private readonly table: Map<string, any>;
 
   constructor(name: string, opts?: KVStoreOptions) {
@@ -10,14 +10,9 @@ export class SimKVStore implements IKVStoreClientApi, simulator.IResourceInstanc
     opts;
   }
 
-  public async setup(context: simulator.IContext) {
-    context;
-  }
-
-  public addEventHandler(op: string, args: string, fnResourceId: string): void {
+  public addEventHandler(op: string, args: any[]): void {
     op;
     args;
-    fnResourceId;
     throw new Error("Method should not be called.");
   }
 

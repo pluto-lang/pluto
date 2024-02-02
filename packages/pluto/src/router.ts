@@ -5,6 +5,7 @@ import {
   IResourceClientApi,
   IResourceInfraApi,
   PlatformType,
+  simulator,
   utils,
 } from "@plutolang/base";
 import { shared } from "./clients";
@@ -12,9 +13,9 @@ import { shared } from "./clients";
 export interface HttpRequest {
   path: string;
   method: string;
-  headers: Record<string, string>;
-  query: Record<string, string>;
-  body: string | undefined;
+  headers: Record<string, string | undefined>;
+  query: Record<string, string | string[] | undefined>;
+  body: string | null;
 }
 
 export interface HttpResponse {
@@ -51,7 +52,7 @@ export interface IRouterInfraApi extends IResourceInfraApi {
  * Define the properties for Router that are captured at compile time and accessed during runtime.
  */
 export interface IRouterCapturedProps extends IResourceCapturedProps {
-  get url(): string;
+  url(): string;
 }
 
 /**
@@ -81,11 +82,19 @@ export class Router implements IResource {
     switch (platformType) {
       case PlatformType.AWS:
       case PlatformType.K8s:
+      case PlatformType.AliCloud:
         return new shared.RouterClient(name, opts);
+      case PlatformType.Simulator: {
+        if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
+        const resourceId = utils.genResourceId(Router.fqn, name);
+        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, resourceId);
+      }
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.Router";
 }
 
 export interface Router extends IResource, IRouterClient, IRouterInfra {}

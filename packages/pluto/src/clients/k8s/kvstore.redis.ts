@@ -1,16 +1,19 @@
 import { createClient, RedisClientType } from "redis";
-import { IKVStoreClient, KVStoreOptions } from "../../kvstore";
+import { IKVStoreClient, KVStore, KVStoreOptions } from "../../kvstore";
+import { genResourceId } from "@plutolang/base/utils";
+import { genK8sResourceName } from "./utils";
 
 export class RedisKVStore implements IKVStoreClient {
-  readonly tableName: string;
-  client: RedisClientType;
+  private readonly id: string;
+  private client: RedisClientType;
 
   constructor(name: string, opts?: KVStoreOptions) {
-    this.tableName = name;
+    this.id = genResourceId(KVStore.fqn, name);
+    const serviceName = genK8sResourceName(this.id, "service");
     // TODO: Make namespace configurable.
-    const host = `${this.tableName}-kvstore.default.svc.cluster.local`;
+    const host = `${serviceName}.default.svc.cluster.local`;
     this.client = createClient({
-      url: `redis://default:${this.tableName}-redis-password@${host}:6379`,
+      url: `redis://default:${this.id}-redis-password@${host}:6379`,
     });
     opts;
   }

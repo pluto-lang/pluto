@@ -1,17 +1,23 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand, GetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { IKVStoreClient, KVStoreOptions } from "../../kvstore";
+import { IKVStoreClient, KVStore, KVStoreOptions } from "../../kvstore";
+import { genResourceId } from "@plutolang/base/utils";
+import { genAwsResourceName } from "./utils";
 
 /**
  * Implementation of KVStore using AWS DynamoDB.
  */
 export class DynamoKVStore implements IKVStoreClient {
-  private tableName: string;
+  private readonly id: string;
+  private readonly tableName: string;
+
   private client: DynamoDBClient;
   private docClient: DynamoDBDocumentClient;
 
   constructor(name: string, opts?: KVStoreOptions) {
-    this.tableName = name;
+    this.id = genResourceId(KVStore.fqn, name);
+    this.tableName = genAwsResourceName(this.id);
+
     this.client = new DynamoDBClient();
     this.docClient = DynamoDBDocumentClient.from(this.client);
     opts;

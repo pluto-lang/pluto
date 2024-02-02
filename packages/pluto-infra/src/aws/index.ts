@@ -3,4 +3,4 @@ export { DynamoKVStore } from "./kvstore.dynamodb";
 export { SNSQueue } from "./queue.sns";
 export { Lambda } from "./function.lambda";
 export { CloudWatchSchedule } from "./schedule.cloudwatch";
-export { Tester } from "./tester";
+export { AwsTester } from "./tester";

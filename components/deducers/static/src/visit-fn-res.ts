@@ -1,15 +1,16 @@
 import ts from "typescript";
 import { arch } from "@plutolang/base";
-import {
-  ResourceRelatVarUnion,
-  ResourceRelationshipInfo,
-  ResourceVariableInfo,
-  Location,
-} from "./types";
+import { ResourceRelationshipInfo, ResourceVariableInfo, Location, VisitResult } from "./types";
 import { ImportElement, buildImportStore } from "./imports";
 import { resolveImportDeps } from "./dep-resolve";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
-import { getLocationOfNode, isConstVar, isResourceVar, propBelongsToCapturedProps } from "./utils";
+import {
+  getLocationOfNode,
+  isConstVar,
+  isResourceVar,
+  methodBelongsToClientApi,
+  propBelongsToCapturedProps,
+} from "./utils";
 
 type Scope = [number, number];
 
@@ -22,7 +23,7 @@ export function visitFnResourceBody(
   fnNode: ts.Expression,
   checker: ts.TypeChecker,
   fnResName: string
-): ResourceRelatVarUnion {
+): VisitResult {
   const fnScope: Scope = [fnNode.getStart(), fnNode.getEnd()];
   // Visit this function body, and detect the variable accessing, function calling and resource using in the access chain.
   const detectResult = detectAccessChain(fnNode, fnScope, checker, fnResName, 0);
@@ -154,7 +155,7 @@ function detectFnAccessCapturedProp(
     const resRelatInfo: ResourceRelationshipInfo = {
       fromVarName: fnResName,
       toVarNames: [accessorName],
-      type: arch.RelatType.PROPERTY,
+      type: arch.RelatType.PropertyAccess,
       operation: propertyName,
       parameters: [],
     };
@@ -176,6 +177,7 @@ function detectFnCallClientApi(
   checker: ts.TypeChecker,
   fnResName: string
 ): DetectFnAccessChainResult | undefined {
+  let callExpression;
   let propAccessExp;
   // Write operation, e.g. state.set(), queue.push()
   if (
@@ -184,6 +186,7 @@ function detectFnCallClientApi(
     ts.isCallExpression(curNode.expression.expression) &&
     ts.isPropertyAccessExpression(curNode.expression.expression.expression)
   ) {
+    callExpression = curNode.expression.expression;
     propAccessExp = curNode.expression.expression.expression;
   } else if (ts.isVariableStatement(curNode)) {
     // Read operation, e.g. state.get()
@@ -194,8 +197,13 @@ function detectFnCallClientApi(
       ts.isCallExpression(initExp.expression) &&
       ts.isPropertyAccessExpression(initExp.expression.expression)
     ) {
+      callExpression = initExp.expression;
       propAccessExp = initExp.expression.expression;
     }
+  }
+
+  if (!callExpression || !methodBelongsToClientApi(callExpression, checker)) {
+    return;
   }
   if (!propAccessExp || !isResourceVar(propAccessExp.expression, checker)) {
     return;
@@ -211,7 +219,7 @@ function detectFnCallClientApi(
   const resRelatInfo: ResourceRelationshipInfo = {
     fromVarName: fnResName,
     toVarNames: [accessorName],
-    type: arch.RelatType.ACCESS,
+    type: arch.RelatType.MethodCall,
     operation: fnName,
     parameters: [],
   };

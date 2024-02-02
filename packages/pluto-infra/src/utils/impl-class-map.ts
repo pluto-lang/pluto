@@ -8,9 +8,17 @@ type EngineToRuntimeMap<K> = { [key in ProvisionType]?: RuntimeToImportMap<K> };
  * Implementation class map that handles lazy loading of implementation classes based on platform and engine.
  */
 export class ImplClassMap<T, K extends new (...args: any[]) => T> {
+  private readonly resourceTypeFQN: string;
   private readonly mapping: EngineToRuntimeMap<K> = {};
 
-  constructor(initialMapping?: EngineToRuntimeMap<K>) {
+  /**
+   * Creates a new instance of the implementation class map.
+   * @param resourceTypeFQN The fully qualified name of the resource type. This is used for error
+   * messages, for example, '@plutolang/pluto.KVStore'.
+   * @param initialMapping The initial mapping table.
+   */
+  constructor(resourceTypeFQN: string, initialMapping?: EngineToRuntimeMap<K>) {
+    this.resourceTypeFQN = resourceTypeFQN;
     this.mapping = { ...this.mapping, ...initialMapping };
   }
 
@@ -50,7 +58,7 @@ export class ImplClassMap<T, K extends new (...args: any[]) => T> {
     const implClassImporter = runtimeImportMap[platformType];
     if (implClassImporter == undefined) {
       throw new Error(
-        `The implementation class for '${provisionType}' provisioning engine on '${platformType}' platform cannot be located.`
+        `The implementation class for the resource type '${this.resourceTypeFQN}', intended for the '${provisionType}' provisioning engine on the '${platformType}' platform, cannot be found.`
       );
     }
     return await implClassImporter();

@@ -1,21 +1,25 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { ResourceInfra } from "@plutolang/base";
-import { IKVStoreInfra, KVStoreOptions } from "@plutolang/pluto";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { IKVStoreInfra, KVStore, KVStoreOptions } from "@plutolang/pluto";
+import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 
-export class RedisKVStore extends pulumi.ComponentResource implements ResourceInfra, IKVStoreInfra {
-  readonly name: string;
-  url: pulumi.Output<string>;
+export class RedisKVStore
+  extends pulumi.ComponentResource
+  implements IResourceInfra, IKVStoreInfra
+{
+  public readonly id: string;
 
   constructor(name: string, args?: KVStoreOptions, opts?: pulumi.ComponentResourceOptions) {
-    super("pluto:k8s:RedisState", name, args, opts);
-    this.name = name;
+    super("pluto:kvstore:k8s/Redis", name, args, opts);
+    this.id = genResourceId(KVStore.fqn, name);
 
-    const redisLabel = { app: "redis" };
-    const redisPassword = `${name}-redis-password`;
+    const redisLabel = { app: genK8sResourceName(this.id) };
+    const redisPassword = `${this.id}-redis-password`;
 
     new k8s.apps.v1.Deployment(
-      `${name}-redis-state-deploy`,
+      genK8sResourceName(this.id, "deploy"),
       {
         metadata: {
           labels: redisLabel,
@@ -42,11 +46,11 @@ export class RedisKVStore extends pulumi.ComponentResource implements ResourceIn
       { parent: this }
     );
 
-    const redisService = new k8s.core.v1.Service(
-      `${name}-kvstore`,
+    new k8s.core.v1.Service(
+      genK8sResourceName(this.id, "service"),
       {
         metadata: {
-          name: `${name}-kvstore`,
+          name: genK8sResourceName(this.id, "service"),
           labels: redisLabel,
           namespace: "default", // TODO: Make it configurable.
         },
@@ -57,13 +61,9 @@ export class RedisKVStore extends pulumi.ComponentResource implements ResourceIn
       },
       { parent: this }
     );
-
-    this.url = redisService.spec.apply((s) => `${s.clusterIP}:6379`);
   }
 
-  public getPermission(op: string) {
-    op;
-  }
+  public grantPermission() {}
 
   public postProcess(): void {}
 }

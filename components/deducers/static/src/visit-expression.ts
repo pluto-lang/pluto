@@ -1,14 +1,9 @@
 import ts from "typescript";
 import { arch } from "@plutolang/base";
-import {
-  ParameterInfo,
-  ResourceRelatVarUnion,
-  ResourceRelationshipInfo,
-  ResourceVariableInfo,
-} from "./types";
-import { isFunctionType, isResourceType, isResourceVar } from "./utils";
-import { visitFnResourceBody } from "./visit-fn-res";
+import { ResourceRelationshipInfo, VisitResult, concatVisitResult } from "./types";
+import { isFunctionType, isResourceVar } from "./utils";
 import { visitAssignmentExpression } from "./visit-var-def";
+import { visitCallingArguments } from "./visit-calling-arguments";
 
 /**
  * Check if this expression is doing something about resource, including:
@@ -18,38 +13,31 @@ import { visitAssignmentExpression } from "./visit-var-def";
 export function visitExpression(
   parNode: ts.ExpressionStatement,
   checker: ts.TypeChecker
-): ResourceRelatVarUnion {
+): VisitResult | undefined {
   if (process.env.DEBUG) {
     console.log(`Visit an ExpressionStatement: `, parNode.getText());
   }
 
-  const resVarInfos: ResourceVariableInfo[] = [];
-  const resRelatInfos: ResourceRelationshipInfo[] = [];
+  let visitResult: VisitResult | undefined;
 
   const childNode = parNode.expression;
   if (ts.isBinaryExpression(childNode)) {
-    const varInfos = visitBinaryExpression(childNode, checker);
-    resVarInfos.push(...varInfos);
+    const result = visitBinaryExpression(childNode, checker);
+    visitResult = concatVisitResult(visitResult, result);
   }
 
   if (ts.isCallExpression(childNode)) {
-    const relatVarUnion = visitCallExpression(childNode, checker);
-    if (relatVarUnion != undefined) {
-      resVarInfos.push(...relatVarUnion.resourceVarInfos);
-      resRelatInfos.push(...relatVarUnion.resourceRelatInfos);
-    }
+    const result = visitCallExpression(childNode, checker);
+    visitResult = concatVisitResult(visitResult, result);
   }
 
-  return {
-    resourceRelatInfos: resRelatInfos,
-    resourceVarInfos: resVarInfos,
-  };
+  return visitResult;
 }
 
 export function visitCallExpression(
   parNode: ts.CallExpression,
   checker: ts.TypeChecker
-): ResourceRelatVarUnion | undefined {
+): VisitResult | undefined {
   if (process.env.DEBUG) {
     console.log(`Visit a CallExpression: `, parNode.getText());
   }
@@ -82,55 +70,11 @@ export function visitCallExpression(
   if (signature == undefined) {
     throw new Error(`Cannot get resolved signature:  + ${parNode.getText()}`);
   }
-
-  const fnResVarInfos: ResourceVariableInfo[] = [];
-  const fnAccessRelatInfos: ResourceRelationshipInfo[] = []; // Record the access relationship information that is located in the body of FnResource.
-
-  const relatParams: ParameterInfo[] = []; // Record the argument information for this call.
-  const args = parNode.arguments;
-  signature.parameters.forEach((paramSig, idx) => {
-    const paramName = paramSig.name;
-    const arg = args[idx];
-    const relatParam: ParameterInfo = { name: paramName, order: idx, expression: arg };
-
-    const paramType = checker.getTypeOfSymbol(paramSig);
-    const decls = paramType.symbol?.declarations;
-    if (
-      decls != undefined &&
-      decls.length >= 1 &&
-      (ts.isInterfaceDeclaration(decls[0]) || ts.isClassDeclaration(decls[0])) &&
-      isResourceType(decls[0], checker, true)
-    ) {
-      // This parameter type is FnResource. Construct a resource.
-      if (decls.length != 1) {
-        console.warn("Found a parameter with more than one declarations: " + parNode.getText());
-      }
-
-      // Generate the fn resource name
-      let fnResName = "";
-      if (ts.isFunctionExpression(arg)) {
-        fnResName = arg.name?.getText() ?? "";
-      }
-      if (fnResName == "") {
-        const { line, character } = ts.getLineAndCharacterOfPosition(
-          arg.getSourceFile(),
-          arg.getStart()
-        );
-        fnResName = `fn_${line + 1}_${character + 1}`;
-      }
-
-      const fnUnion = visitFnResourceBody(arg, checker, fnResName);
-      fnResVarInfos.push(...fnUnion.resourceVarInfos);
-      fnAccessRelatInfos.push(...fnUnion.resourceRelatInfos);
-
-      relatParam.resourceName = fnResName;
-      relatParams.push(relatParam);
-      return;
-    }
-
-    relatParams.push(relatParam);
-    return;
-  });
+  const { closureInfos, closureDependencies, parameters } = visitCallingArguments(
+    signature,
+    parNode.arguments,
+    checker
+  );
 
   // Construct the relationship information for this function call.
   const accessorName = headNode.getText();
@@ -142,14 +86,14 @@ export function visitCallExpression(
 
   const resRelatInfo: ResourceRelationshipInfo = {
     fromVarName: accessorName,
-    toVarNames: fnResVarInfos.map((r) => r.varName),
-    type: arch.RelatType.CREATE,
+    toVarNames: closureInfos.map((r) => r.varName),
+    type: arch.RelatType.Create,
     operation: fnName,
-    parameters: relatParams,
+    parameters: parameters,
   };
   return {
-    resourceRelatInfos: [resRelatInfo].concat(...fnAccessRelatInfos),
-    resourceVarInfos: fnResVarInfos,
+    resourceRelatInfos: [resRelatInfo].concat(...closureDependencies),
+    resourceVarInfos: closureInfos,
   };
 }
 
@@ -159,38 +103,41 @@ export function visitCallExpression(
 export function visitBinaryExpression(
   parNode: ts.BinaryExpression,
   checker: ts.TypeChecker
-): ResourceVariableInfo[] {
+): VisitResult | undefined {
   if (process.env.DEBUG) {
     console.log(`Visit a BinaryExpression: `, parNode.getText());
   }
 
-  const resVarInfos: ResourceVariableInfo[] = [];
+  // const resVarInfos: ResourceVariableInfo[] = [];
   // Check if this is an assignment expression.
   // e.g. x = new MyClass();
   if (parNode.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
-    const resVarInfo = visitAssignmentExpression(parNode, checker);
-    if (resVarInfo != undefined) {
-      resVarInfos.push(resVarInfo);
-    }
-    return resVarInfos;
+    const visitResult = visitAssignmentExpression(parNode, checker);
+    return visitResult;
   }
 
   if (parNode.operatorToken.kind !== ts.SyntaxKind.CommaToken) {
     console.warn("The operator token is not '=' or ',', please check if the result is valid.");
   }
 
+  let visitResult: VisitResult | undefined;
   const leftNode = parNode.left;
   const rightNode = parNode.right;
+
   // FIXME: might not be a binary expression, instead, it could be a call expression
   if (ts.isBinaryExpression(leftNode)) {
-    resVarInfos.push(...visitBinaryExpression(leftNode, checker));
+    const result = visitBinaryExpression(leftNode, checker);
+    visitResult = concatVisitResult(visitResult, result);
   } else {
     throw new Error("The left node of the binary expression is not a binary expression.");
   }
+
   if (ts.isBinaryExpression(rightNode)) {
-    resVarInfos.push(...visitBinaryExpression(rightNode, checker));
+    const result = visitBinaryExpression(rightNode, checker);
+    visitResult = concatVisitResult(visitResult, result);
   } else {
     throw new Error("The left node of the binary expression is not a binary expression.");
   }
-  return resVarInfos;
+
+  return visitResult;
 }

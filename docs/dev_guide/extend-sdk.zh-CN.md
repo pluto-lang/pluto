@@ -165,9 +165,9 @@ export interface Queue extends IResource, IQueueClient, IQueueInfra {}
 
 ### 创建 客户端 实现类
 
-在 `@plutolang/pluto` 的 src/clients/aws 目录下，创建一个 `snsQueue.ts` 文件，文件与包含的类名通常以 组件名 + 类型名 来命名。
+在 `@plutolang/pluto` 的 `src/clients/aws` 目录下，创建一个 `snsQueue.ts` 文件，文件与包含的类名通常以 组件名 + 类型名 来命名。
 
-该文件主要通过使用 AWS SDK 实现 `IQueueClient` 接口，在使用 aws-sdk 调用 `PublishCommand` 时需要指定 SNS 主题的 ARN，这里采用拼接的方式构建 ARN，其中依赖的参数信息从环境变量获得，而环境变量在 `@plutolang/pluto-infra` 的 aws `runtime.ts` 设定。
+该文件主要通过使用 AWS SDK 实现 `IQueueClient` 接口，在使用 aws-sdk 调用 `PublishCommand` 时需要指定 SNS 主题的 ARN，这里采用拼接的方式构建 ARN，其中依赖的参数信息从环境变量获得，而环境变量在 `@plutolang/pluto-infra` 中 `queue.sns.ts` 的适配函数中设定。
 
 ```typescript
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";

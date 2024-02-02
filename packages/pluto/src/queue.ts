@@ -73,13 +73,17 @@ export class Queue implements IResource {
         return new aws.SNSQueue(name, opts);
       case PlatformType.K8s:
         return new k8s.RedisQueue(name, opts);
-      case PlatformType.Simulator:
+      case PlatformType.Simulator: {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
-        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
+        const resourceId = utils.genResourceId(Queue.fqn, name);
+        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, resourceId);
+      }
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }
   }
+
+  public static fqn = "@plutolang/pluto.Queue";
 }
 
 export interface Queue extends IResource, IQueueClient, IQueueInfra {}

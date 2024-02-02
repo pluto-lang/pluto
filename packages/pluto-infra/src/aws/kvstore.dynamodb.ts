@@ -1,8 +1,10 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
-import { ResourceInfra } from "@plutolang/base";
-import { IKVStoreInfra, KVStoreOptions } from "@plutolang/pluto";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { IKVStoreInfra, KVStore, KVStoreOptions } from "@plutolang/pluto";
 import { Permission } from "./permission";
+import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 
 export enum DynamoDbOps {
   GET = "get",
@@ -11,19 +13,20 @@ export enum DynamoDbOps {
 
 export class DynamoKVStore
   extends pulumi.ComponentResource
-  implements ResourceInfra, IKVStoreInfra
+  implements IResourceInfra, IKVStoreInfra
 {
-  readonly name: string;
-  arn: pulumi.Output<string>;
+  public readonly id: string;
+
+  public readonly arn: pulumi.Output<string>;
 
   constructor(name: string, opts?: KVStoreOptions) {
     super("pluto:kvstore:aws/DynamoDB", name, opts);
-    this.name = name;
+    this.id = genResourceId(KVStore.fqn, name);
 
     const db = new aws.dynamodb.Table(
-      name,
+      genAwsResourceName(this.id),
       {
-        name: name,
+        name: genAwsResourceName(this.id),
         attributes: [
           {
             name: "Id",
@@ -40,7 +43,7 @@ export class DynamoKVStore
     this.arn = db.arn;
   }
 
-  public getPermission(op: string): Permission {
+  public grantPermission(op: string): Permission {
     const actions: string[] = [];
     switch (op) {
       case DynamoDbOps.GET:
@@ -63,6 +66,6 @@ export class DynamoKVStore
   public postProcess(): void {}
 
   private fuzzyArn() {
-    return `arn:aws:dynamodb:*:*:table/${this.name}`;
+    return `arn:aws:dynamodb:*:*:table/${this.id}`;
   }
 }

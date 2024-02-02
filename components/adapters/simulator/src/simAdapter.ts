@@ -24,11 +24,12 @@ export class SimulatorAdapter extends core.Adapter {
   }
 
   public async deploy(): Promise<core.DeployResult> {
-    this.simulator = new Simulator();
-    this.simulator.loadApp(this.archRef);
+    this.simulator = new Simulator(this.rootpath);
 
-    process.env.WORK_DIR = join(this.workdir);
     await this.simulator.start();
+    process.env.PLUTO_SIMULATOR_URL = this.simulator.serverUrl;
+
+    await this.simulator.loadApp(this.archRef);
 
     return {
       outputs: {

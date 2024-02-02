@@ -14,7 +14,7 @@ const tester = new Tester("e2e");
 
 tester.it("test echo", async () => {
   // Verify the correctness of business logic.
-  const res = await fetch(router.url + "/echo?message=Hello%20Pluto!");
+  const res = await fetch(router.url() + "/echo?message=Hello%20Pluto!");
   const body = await res.text();
   if (res.status !== 200) {
     throw new Error(`Unexpected status code: ${res.status}`);

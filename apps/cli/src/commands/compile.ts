@@ -1,6 +1,5 @@
 import fs from "fs";
 import path, { resolve } from "path";
-import * as yaml from "js-yaml";
 import { arch, core } from "@plutolang/base";
 import logger from "../log";
 import { buildDeducer, buildGenerator } from "./utils";
@@ -49,12 +48,19 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
     rootpath: path.resolve("."),
   };
   const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const closureBaseDir = path.join(stackBaseDir, "closures");
   const generatedDir = path.join(stackBaseDir, "generated");
 
   // construct the arch ref from user code
-  const { archRef } = await loadAndDeduce(opts.deducer, basicArgs, [entrypoint]);
-  const yamlText = yaml.dump(archRef, { noRefs: true });
-  fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), yamlText);
+  const { archRef } = await loadAndDeduce(
+    opts.deducer,
+    {
+      ...basicArgs,
+      closureDir: closureBaseDir,
+    },
+    [entrypoint]
+  );
+  fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), archRef.toYaml());
 
   // generate the graphviz file
   await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, basicArgs, archRef, stackBaseDir);
@@ -65,7 +71,7 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
 
 export async function loadAndDeduce(
   deducerName: string,
-  basicArgs: core.BasicArgs,
+  basicArgs: core.NewDeducerArgs,
   files: string[]
 ): Promise<core.DeduceResult> {
   // try to construct the deducer, exit with error if failed to import

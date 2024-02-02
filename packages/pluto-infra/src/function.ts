@@ -1,20 +1,30 @@
-import { ProvisionType, PlatformType, utils } from "@plutolang/base";
-import { IFunctionInfra, FunctionOptions } from "@plutolang/pluto";
+import { ProvisionType, PlatformType, utils, IResourceInfra } from "@plutolang/base";
+import { ComputeClosure } from "@plutolang/base/closure";
+import { IFunctionInfra, FunctionOptions, AnyFunction } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
+
+export type IFunctionInfraImpl = IFunctionInfra & IResourceInfra;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that
 // all implementation classes have the correct and same constructor signature.
-type FunctionInfraImplClass = new (name: string, options?: FunctionOptions) => IFunctionInfra;
+type FunctionInfraImplClass = new (
+  func: ComputeClosure<AnyFunction>,
+  options?: FunctionOptions
+) => IFunctionInfraImpl;
 
 // Construct a map that contains all the implementation classes for this resource type.
 // The final selection will be determined at runtime, and the class will be imported lazily.
-const implClassMap = new ImplClassMap<IFunctionInfra, FunctionInfraImplClass>({
-  [ProvisionType.Pulumi]: {
-    [PlatformType.AWS]: async () => (await import("./aws")).Lambda,
-    [PlatformType.K8s]: async () => (await import("./k8s")).ServiceLambda,
-  },
-});
+const implClassMap = new ImplClassMap<IFunctionInfraImpl, FunctionInfraImplClass>(
+  "@plutolang/pluto.Function",
+  {
+    [ProvisionType.Pulumi]: {
+      [PlatformType.AWS]: async () => (await import("./aws")).Lambda,
+      [PlatformType.K8s]: async () => (await import("./k8s")).KnativeService,
+      [PlatformType.AliCloud]: async () => (await import("./alicloud")).FCInstance,
+    },
+  }
+);
 
 /**
  * This is a factory class that provides an interface to create instances of this resource type
@@ -27,21 +37,21 @@ export abstract class Function {
    * with this resource type.
    */
   public static async createInstance(
-    name: string,
+    func: ComputeClosure<AnyFunction>,
     options?: FunctionOptions
-  ): Promise<IFunctionInfra> {
+  ): Promise<IFunctionInfraImpl> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
     if (
       utils.currentPlatformType() === PlatformType.Simulator &&
       utils.currentEngineType() === ProvisionType.Simulator
     ) {
-      return new (await import("./simulator")).SimFunction(name, options);
+      return new (await import("./simulator")).SimFunction(func, options) as any;
     }
 
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),
-      name,
+      func,
       options
     );
   }

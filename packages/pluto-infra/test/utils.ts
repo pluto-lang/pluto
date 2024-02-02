@@ -17,21 +17,24 @@ export function testPulumiProgram(caseName: string, program: () => Promise<any>)
         // Prepare the test environment, including create the temporary directory,
         // and set the environment variables.
         const projectName = "pluto-infra-test";
+        const stackName = "dev";
+
         const projectRoot = path.join(os.tmpdir(), projectName);
         fs.ensureDirSync(projectRoot);
-
         const workdir = projectRoot;
+
         const envs = {
           AWS_REGION: "us-east-1",
           WORK_DIR: workdir,
           PULUMI_CONFIG_PASSPHRASE: "pluto-test-temp",
+          PLUTO_PROJECT_NAME: projectName,
+          PLUTO_STACK_NAME: stackName,
         };
         for (const key of Object.keys(envs)) {
           process.env[key] = envs[key];
         }
 
         // Create the Pulumi stack.
-        const stackName = "dev";
         stack = await LocalWorkspace.createOrSelectStack(
           {
             stackName: stackName,
@@ -60,6 +63,7 @@ export function testPulumiProgram(caseName: string, program: () => Promise<any>)
           throw new Error("stack is undefined.");
         }
 
+        await stack.cancel();
         const result = await stack.up();
 
         const outputs = result.outputs;

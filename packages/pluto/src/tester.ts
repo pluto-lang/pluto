@@ -11,7 +11,7 @@ import {
 export interface TestCase {
   description: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fnResourceId: any; // Not using pulumi.Output to avoid depending on pulumi.
+  testHandler: any; // Not using pulumi.Output to avoid depending on pulumi.
 }
 
 export interface TestHandler extends FnResource {
@@ -63,14 +63,18 @@ export class Tester implements IResource {
   public static buildClient(name: string, opts?: TesterOptions): ITesterClient {
     const platformType = utils.currentPlatformType();
     switch (platformType) {
-      case PlatformType.Simulator:
-        opts;
+      case PlatformType.Simulator: {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
-        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, name);
+        const resourceId = utils.genResourceId(Tester.fqn, name);
+        return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, resourceId);
+      }
       default:
         throw new Error(`not support this runtime '${platformType}'`);
     }
+    opts;
   }
+
+  public static fqn = "@plutolang/pluto.Tester";
 }
 
 export interface Tester extends IResource, ITesterClient, ITesterInfra {}

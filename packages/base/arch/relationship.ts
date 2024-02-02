@@ -1,26 +1,33 @@
 import { Parameter } from "./parameter";
-import { Resource } from "./resource";
 
 export enum RelatType {
-  CREATE = "create",
-  ACCESS = "access",
-  PROPERTY = "property",
+  Create = "Create",
+  MethodCall = "MethodCall",
+  PropertyAccess = "PropertyAccess",
+}
+
+export interface IdWithType {
+  id: string;
+  type: "resource" | "closure";
 }
 
 export class Relationship {
-  from: Resource;
-  to: Resource;
-  type: RelatType;
-  operation: string;
-  parameters: Parameter[];
+  public readonly extras: Record<string, any> = {};
 
-  constructor(from: Resource, to: Resource, type: RelatType, op: string, params?: Parameter[]) {
-    this.from = from;
-    this.to = to;
-    this.type = type;
-    this.operation = op;
-    this.parameters = params || [];
-  }
+  /**
+   * @param {IdWithType} from - The source node.
+   * @param {IdWithType[]} to - The target nodes.
+   * @param {RelatType} type
+   * @param {string} operation
+   * @param {Parameter[]} parameters
+   */
+  constructor(
+    public readonly from: IdWithType,
+    public readonly to: IdWithType[],
+    public readonly type: RelatType,
+    public readonly operation: string,
+    public readonly parameters: Parameter[] = []
+  ) {}
 
   public getParamString(): string {
     this.parameters.sort((a, b) => a.index - b.index);
