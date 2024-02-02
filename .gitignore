@@ -40,3 +40,7 @@ yarn-error.log*
 **/compiled/
 
 devapps/
+
+# python
+**/__pycache__/
+**/*.pyc
