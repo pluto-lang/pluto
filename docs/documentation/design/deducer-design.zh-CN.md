@@ -11,9 +11,12 @@ date: 2024-02-05
 
 Deducer 对一类特殊类型的实例化对象（下称特殊对象）予以特殊关注，关注特殊类型的实例化过程（即构造函数的调用），以及特殊类型的实例化对象（特殊对象）对特殊方法的调用。具体地，关注构造函数、特殊方法每一次调用时传入的参数信息，如果函数定义中对应的参数类型是函数类型，则需要将其提取成计算闭包，其他类型，则需要将其具体的值推导出来，推导或提取失败可报错。
 
-- **特殊类型(Special Type)**：实现或扩展了某个特殊接口的类或接口。例如，下方示例中 `base.IResource` 是指定的特殊接口，`resource.Queue` 扩展了 `base.IResource` 接口，因此 `resource.Queue` 是一种特殊类型。
-- **特殊方法(Special Method)**：实现或扩展了某个特殊接口或类中包含的方法。例如，下方示例中有 `base.IResourceClientApi`、`base.IResourceInfraApi`、`base.IResourceCapturedProps` 三个特殊接口，分别被 `resource.IQueueClientApi` 、`resource.IQueueInfraApi`、`resource.IQueueCapturedProps` 扩展，这三个接口中包含的方法都属于特殊方法。需要注意的是，特殊方法只有作为特殊类型的方法调用时，才会被特殊关注，否则认为是普通方法。例如，示例中的 `push`、`subscribe`、`id` 方法只有被作为 `resource.Queue` 类型的方法被调用时，才被认为是特殊方法。
+- **根类型(Root Type)**：指 Pluto 在 Base SDK 中规定的一组特殊接口，不同接口的含义与效果不尽相同。这些根接口是 Deducer 判断某对象或方法是否需要被特殊关注的根本依据。例如，下方示例中的 `base.IResource`、`base.IResourceClientApi`、`base.IResourceInfraApi`、`base.IResourceCapturedProps` 都是根类型，其中 `base.IResource` 用于标识其子类或接口是云资源类型；`base.IResourceClientApi` 表示其子类或接口中的方法为云资源实例的功能方法，可被运行时访问；`base.IResourceInfraApi` 用于标识其子类或接口中的方法为部署时需执行的方法，用于构建云资源实例与关系；`base.IResourceCapturedProps` 用于标识其子类或接口中的方法为云资源属性，且该属性的具体值是在部署时才产生的，感兴趣可以阅读[这篇文档](./capture-value.zh-CN.md)。
+- **特殊类型(Special Type)**：指实现或扩展了某个根类型的类或接口。例如，下方示例中 `resource.Queue` 扩展了 `base.IResource` 根类型，因此 `resource.Queue` 是一种特殊类型。
+- **特殊方法(Special Method)**：实现或扩展了某个根类型的类或接口中包含的方法。例如，下方示例中 `resource.IQueueClientApi` 、`resource.IQueueInfraApi`、`resource.IQueueCapturedProps` 分别扩展了 `base.IResourceClientApi`、`base.IResourceInfraApi`、`base.IResourceCapturedProps` 三个根类型，这三个接口中包含的方法都属于特殊方法。需要注意的是，只有特殊方法的调用方是特殊类型时，才会被特殊关注，否则认为是普通方法。例如，示例中的 `push`、`subscribe`、`id` 方法只有被作为 `resource.Queue` 类型的方法被调用时，才被认为是特殊方法。
 - **特殊对象(Special Object)**：特殊类型的实例化对象。
+
+通过实现特殊类型与特殊方法，可以将平台能力提供到用户的业务编程界面中，即以用户友好的形式将平台能力暴露给用户。例如用户在程序代码中创建一个 `resource.Queue` 类型的对象，在部署时即可自动创建一个 AWS SNS 实例或 K8s 集群中的 Redis Deployment。特殊类型与特殊方法的实现过程通常存在于 [Pluto 模式的 SDK](../concepts/sdk.zh-CN.md) 中，具体扩展过程可参考[这篇文档](../../dev_guide/extend-sdk.zh-CN.md)。
 
 TypeScript 示例：
 
@@ -46,59 +49,68 @@ Python 示例：
 ```python
 # base module
 class IResource(ABC):
-	pass
+    pass
+
 
 class IResourceClientApi(ABC):
-	pass
+    pass
+
 
 class IResourceInfraApi(ABC):
-	pass
+    pass
+
 
 class IResourceCapturedProps(ABC):
-	pass
+    pass
+
 
 # resource module
 class IQueueClientApi(ABC, base.IResourceClientApi):
-  @abstractmethod
-	def push(message: str) -> None: # special method
-		pass
+    @abstractmethod
+    def push(message: str) -> None:  # special method
+        pass
+
 
 class IQueueInfraApi(ABC, base.IResourceInfraApi):
-  @abstractmethod
-	def subscribe(handler: Callable) -> None: # special method
-		pass
+    @abstractmethod
+    def subscribe(handler: Callable) -> None:  # special method
+        pass
+
 
 class IQueueCapturedProps(ABC, base.IResourceCapturedProps):
-  @abstractmethod
-	def id() -> str: # special method
-		pass
+    @abstractmethod
+    def id() -> str:  # special method
+        pass
+
 
 # following class is a special type
 class Queue(base.IResource, IQueueClientApi, IQueueInfraApi, IQueueCapturedProps):
-	def push(message: str) -> None: # special method
-		# do something
+    def push(message: str) -> None:  # special method
+        # do something
+        pass
 
-	def subscribe(handler: Callable) -> None: # special method
-		# do something
+    def subscribe(handler: Callable) -> None:  # special method
+        # do something
+        pass
 
-	def id() -> str: # special method
-		# do something
-		return _id
+    def id() -> str:  # special method
+        # do something
+        return _id
 ```
 
 因此，Deducer 需要在程序代码中找到：1）特殊对象被实例化的过程（构造函数的调用过程）；2）特殊对象对特殊方法的调用过程。同时确定这些调用过程中的信息。由于，程序代码的组织形式复杂多样，这些过程可能出现在各类位置，包括嵌套函数、函数闭包、依赖库等情况，这里列举几个例子，在实现中并不一定全部支持，但需要给用户友好提示。
 
 **（1）实例化过程在闭包内**
 
-该例子中，实例化过程封装在一个函数 `createAndConfigQueue` 中，构造函数的参数由上层函数入参给定。 `createAndConfigQueue` 函数作为参数入参传入 `buildQueue` 函数中，并在其中被调用。
+下面例子中，实例化过程封装在一个函数 `createAndConfigQueue` 中，构造函数的参数由上层函数入参给定。 `createAndConfigQueue` 函数作为参数入参传入 `buildQueue` 函数中，并在其中被调用。
 
 Deducer 需要确定：
 
 1. `new resource.Queue` 被调用两次，两次传入的参数分别是 `queue1` 和 `queue2`，分别对应于 `queue1`、`queue2` 两个特殊对象。
 
 ```typescript
-function createAndConfigQueue(name: string, kv): resource.Queue {
-  const queue = new resource.Queue(name /* other configuration */);
+function createAndConfigQueue(name: string, options?: ConfigOptions): resource.Queue {
+  const queue = new resource.Queue(name, options);
   // do something
   return queue;
 }
@@ -113,7 +125,7 @@ const queue2 = buildQueue("queue2", createAndConfigQueue);
 
 **（2）隐含特殊对象**
 
-该例子中，特殊类型的构造函数返回没有赋值给变量，而是直接调用了该返回值的特殊方法`subscribe`。
+下面例子中，特殊类型的构造函数返回没有赋值给变量，而是直接调用了该返回值的特殊方法`subscribe`。
 
 Deducer 需要确定：
 
@@ -129,7 +141,7 @@ new resource.Queue().subscribe(async () => {
 
 **（3）函数入参做特殊方法的调用方**
 
-该例子中，特殊方法 `push` 在函数 `pushOneMessage` 被调用，而调用方，则是根据函数入参确定。
+下面例子中，特殊方法 `push` 在函数 `pushOneMessage` 被调用，而调用方，则是根据函数入参确定。
 
 Deducer 需要确定：
 
@@ -149,7 +161,7 @@ pushOneMessage(queue1, "Hello, Pluto!");
 
 **（4）函数参数是函数返回值**
 
-该例子中，特殊类型 `resource.Queue` 的构造函数传入的参数是 `getName()` 的返回值。
+下面例子中，特殊类型 `resource.Queue` 的构造函数传入的参数是 `getName()` 的返回值。
 
 Deducer 需要确定：
 
@@ -165,7 +177,7 @@ const queue = new resource.Queue(getName());
 
 **（5）特殊方法重命名，间接访问**
 
-该例子中，特殊对象 `queue` 的特殊方法 `subscribe` 被赋值给 subFunc 函数变量，随用调用了该函数变量。
+下面例子中，特殊对象 `queue` 的特殊方法 `subscribe` 被赋值给 subFunc 函数变量，随用调用了该函数变量。
 
 Deducer 需要确定：
 
@@ -185,7 +197,7 @@ subFunc(async () => {
 
 **（6）动态资源对象访问，间接访问**
 
-该例子中，构建了一个 JS 对象 `queues`，该对象包含键值对，值都为特殊对象。随后，通过索引访问其中一个特殊对象。
+下面例子中，构建了一个 JS 对象 `queues`，该对象包含键值对，值都为特殊对象。随后，通过索引访问其中一个特殊对象。
 
 Deducer 需要确定：
 
@@ -229,4 +241,10 @@ queues["one"].subscribe(async () => {
 
 在推导传入参数具体值时，如果遇到函数类型参数，需要将其提取成闭包。提取时，首先利用**数据流图**找到函数变量定义的位置，然后利用**控制流图**将函数依赖的所有过程抽取。对于闭包捕获的变量，必须保证其是常量变量，因为闭包的执行环境本身是无状态的，因此，如果不是常量，应该给用户报错。此外，由于函数参数没有被调用，所以该函数并没有体现在 **Call Graph** 中，因此在提取闭包时，需要同时查看是否存在特殊对象的构造过程和特殊方法的调用过程，判断是否存在不应该出现在闭包中的过程。
 
-在针对特殊对象进行值演算时，需要检查在整个数据链路中，特殊对象的类型是否发生变化或被强制类型转换，此类操作都是被禁止的。如果发现此类行为，则报错并提示发生位置。
+### 边界情况
+
+Deducer 要求特殊对象的类型不能发生变化，特殊对象不能复制给其他类型的变量，同时其他类型的变量也不能赋值或强制类型转换成特殊对象。在针对特殊对象进行值演算时，需要检查在整个数据链路中，特殊对象的类型是否发生变化、丢失，或被强制类型转换，如果发现此类行为，则报错并提示发生位置。
+
+Deducer 工作的前提是能够查找出特殊类型与特殊方法，如果程序代码中没有任何类型信息，则直接报错退出。如果存在部分 `any` 类型的使用，则给出警告信息。
+
+如果在对参数值进行值演算时发生类型丢失，如果影响值的推断，则报错并提示发生位置，否则忽略。
