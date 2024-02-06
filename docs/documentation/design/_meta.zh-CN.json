@@ -1,4 +1,5 @@
 {
   "capture-value": "运行时函数访问基础设施代码在编译时生成的值",
-  "closure-mode": "基于计算闭包的执行模式"
+  "closure-mode": "基于计算闭包的执行模式",
+  "deducer-design": "Deducer 需求与设计"
 }
