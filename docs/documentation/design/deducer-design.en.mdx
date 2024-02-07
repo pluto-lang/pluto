@@ -11,7 +11,7 @@ This document provides a detailed description of the functional requirements and
 
 Deducer focuses on a special type of instantiated objects (referred to as "special objects"), monitoring the instantiation process (i.e., the invocation of constructors) of special types, as well as the invocation of special methods by special objects. Specifically, it tracks the arguments passed during each invocation of the constructor and special methods. If the corresponding argument type in the function definition is a function type, it needs to be extracted as a computational closure; otherwise, its specific value needs to be deduced. An error can be reported if the deduction or extraction fails.
 
-- **Root Type**: This refers to a set of special interfaces defined by Pluto in the Base SDK, with different interfaces having different meanings and effects. These root interfaces are the fundamental basis for Deducer to determine whether an object or method needs special attention. For example, in the example below, `base.IResource`, `base.IResourceClientApi`, `base.IResourceInfraApi`, and `base.IResourceCapturedProps` are all root types, where `base.IResource` is used to indicate that its subclasses or interfaces are cloud resource types; `base.IResourceClientApi` indicates that the methods in its subclasses or interfaces are functional methods of cloud resource instances, accessible at runtime; `base.IResourceInfraApi` is used to indicate that the methods in its subclasses or interfaces are methods that need to be executed during deployment, used to construct cloud resource instances and relationships; `base.IResourceCapturedProps` is used to indicate that the methods in its subclasses or interfaces are cloud resource properties, and the specific values of these properties are generated at deployment time. If interested, you can read [this document](./capture-value.en.md).
+- **Root Type**: This refers to a set of special interfaces defined by Pluto in the Base SDK, with different interfaces having different meanings and effects. These root interfaces are the fundamental basis for Deducer to determine whether an object or method needs special attention. For example, in the example below, `base.IResource`, `base.IResourceClientApi`, `base.IResourceInfraApi`, and `base.IResourceCapturedProps` are all root types, where `base.IResource` is used to indicate that its subclasses or interfaces are cloud resource types; `base.IResourceClientApi` indicates that the methods in its subclasses or interfaces are functional methods of cloud resource instances, accessible at runtime; `base.IResourceInfraApi` is used to indicate that the methods in its subclasses or interfaces are methods that need to be executed during deployment, used to construct cloud resource instances and relationships; `base.IResourceCapturedProps` is used to indicate that the methods in its subclasses or interfaces are cloud resource properties, and the specific values of these properties are generated at deployment time. If interested, you can read [this document](./capture-value.en.mdx).
 - **Special Type**: Refers to a class or interface that implements or extends a root type. For example, in the example below, `resource.Queue` extends the root type `base.IResource`, so `resource.Queue` is a special type.
 - **Special Method**: Refers to the methods contained in a class or interface that implements or extends a root type. For example, in the example below, `resource.IQueueClientApi`, `resource.IQueueInfraApi`, and `resource.IQueueCapturedProps` each extend the root types `base.IResourceClientApi`, `base.IResourceInfraApi`, and `base.IResourceCapturedProps`, respectively, and the methods contained in these three interfaces are all special methods. It should be noted that a method is only considered a special method when it is invoked by a special type; otherwise, it is considered a normal method. For example, the `push`, `subscribe`, and `id` methods in the example are considered special methods only when they are called as methods of the `resource.Queue` type.
 - **Special Object**: An instantiated object of a special type.
@@ -20,7 +20,7 @@ By implementing special types and special methods, platform capabilities can be 
 
 TypeScript example:
 
-```typescript
+```typescript filename="TypeScript Example"
 // base package
 interface IResource {}
 interface IResourceClientApi {}
@@ -46,7 +46,7 @@ interface Queue extends base.IResource, IQueueClientApi, IQueueInfraApi, IQueueC
 
 Python example:
 
-```python
+```python filename="Python Example"
 # base module
 class IResource(ABC):
     pass

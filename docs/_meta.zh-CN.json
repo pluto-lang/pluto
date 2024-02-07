@@ -1,21 +1,23 @@
 {
+  "*": {
+    "type": "page"
+  },
   "index": {
     "title": "首页",
-    "type": "page",
     "theme": {
       "typesetting": "article"
     }
   },
   "documentation": {
-    "title": "文档",
-    "type": "page"
+    "title": "文档"
   },
   "blogs": {
     "title": "博客",
-    "type": "page"
+    "theme": {
+      "typesetting": "article"
+    }
   },
   "dev_guide": {
-    "title": "开发者指南",
-    "type": "page"
+    "title": "开发者指南"
   }
 }

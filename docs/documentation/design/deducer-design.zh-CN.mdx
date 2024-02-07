@@ -11,7 +11,7 @@ date: 2024-02-05
 
 Deducer 对一类特殊类型的实例化对象（下称特殊对象）予以特殊关注，关注特殊类型的实例化过程（即构造函数的调用），以及特殊类型的实例化对象（特殊对象）对特殊方法的调用。具体地，关注构造函数、特殊方法每一次调用时传入的参数信息，如果函数定义中对应的参数类型是函数类型，则需要将其提取成计算闭包，其他类型，则需要将其具体的值推导出来，推导或提取失败可报错。
 
-- **根类型(Root Type)**：指 Pluto 在 Base SDK 中规定的一组特殊接口，不同接口的含义与效果不尽相同。这些根接口是 Deducer 判断某对象或方法是否需要被特殊关注的根本依据。例如，下方示例中的 `base.IResource`、`base.IResourceClientApi`、`base.IResourceInfraApi`、`base.IResourceCapturedProps` 都是根类型，其中 `base.IResource` 用于标识其子类或接口是云资源类型；`base.IResourceClientApi` 表示其子类或接口中的方法为云资源实例的功能方法，可被运行时访问；`base.IResourceInfraApi` 用于标识其子类或接口中的方法为部署时需执行的方法，用于构建云资源实例与关系；`base.IResourceCapturedProps` 用于标识其子类或接口中的方法为云资源属性，且该属性的具体值是在部署时才产生的，感兴趣可以阅读[这篇文档](./capture-value.zh-CN.md)。
+- **根类型(Root Type)**：指 Pluto 在 Base SDK 中规定的一组特殊接口，不同接口的含义与效果不尽相同。这些根接口是 Deducer 判断某对象或方法是否需要被特殊关注的根本依据。例如，下方示例中的 `base.IResource`、`base.IResourceClientApi`、`base.IResourceInfraApi`、`base.IResourceCapturedProps` 都是根类型，其中 `base.IResource` 用于标识其子类或接口是云资源类型；`base.IResourceClientApi` 表示其子类或接口中的方法为云资源实例的功能方法，可被运行时访问；`base.IResourceInfraApi` 用于标识其子类或接口中的方法为部署时需执行的方法，用于构建云资源实例与关系；`base.IResourceCapturedProps` 用于标识其子类或接口中的方法为云资源属性，且该属性的具体值是在部署时才产生的，感兴趣可以阅读[这篇文档](./capture-value.zh-CN.mdx)。
 - **特殊类型(Special Type)**：指实现或扩展了某个根类型的类或接口。例如，下方示例中 `resource.Queue` 扩展了 `base.IResource` 根类型，因此 `resource.Queue` 是一种特殊类型。
 - **特殊方法(Special Method)**：实现或扩展了某个根类型的类或接口中包含的方法。例如，下方示例中 `resource.IQueueClientApi` 、`resource.IQueueInfraApi`、`resource.IQueueCapturedProps` 分别扩展了 `base.IResourceClientApi`、`base.IResourceInfraApi`、`base.IResourceCapturedProps` 三个根类型，这三个接口中包含的方法都属于特殊方法。需要注意的是，只有特殊方法的调用方是特殊类型时，才会被特殊关注，否则认为是普通方法。例如，示例中的 `push`、`subscribe`、`id` 方法只有被作为 `resource.Queue` 类型的方法被调用时，才被认为是特殊方法。
 - **特殊对象(Special Object)**：特殊类型的实例化对象。
@@ -20,7 +20,7 @@ Deducer 对一类特殊类型的实例化对象（下称特殊对象）予以特
 
 TypeScript 示例：
 
-```typescript
+```typescript filename="TypeScript 示例"
 // base package
 interface IResource {}
 interface IResourceClientApi {}
@@ -46,7 +46,7 @@ interface Queue extends base.IResource, IQueueClientApi, IQueueInfraApi, IQueueC
 
 Python 示例：
 
-```python
+```python filename="Python 示例"
 # base module
 class IResource(ABC):
     pass
