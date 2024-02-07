@@ -1,5 +1,7 @@
 ---
 title: Rethinking a Cloud-Native Application Development Paradigm
+date: 2023-12-27
+description: The existing development model for cloud-native applications encounters challenges in the FaaS environment. This article introduces a novel development paradigm, "Monolithic Programming, Compile-Time Splitting, and Distributed Execution," with the objective of streamlining cloud application development, and improving development efficiency. The concept entails utilizing a compiler to automatically split monolithic application code, enabling distributed execution on cloud infrastructure.
 ---
 
 # Rethinking a Cloud-Native Application Development Paradigm
