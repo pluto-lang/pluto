@@ -248,3 +248,115 @@ Deducer 要求特殊对象的类型不能发生变化，特殊对象不能复制
 Deducer 工作的前提是能够查找出特殊类型与特殊方法，如果程序代码中没有任何类型信息，则直接报错退出。如果存在部分 `any` 类型的使用，则给出警告信息。
 
 如果在对参数值进行值演算时发生类型丢失，如果影响值的推断，则报错并提示发生位置，否则忽略。
+
+## 案例分析
+
+针对具体示例推演整个分析过程，验证实现思路可行性。
+
+### 示例代码
+
+```typescript
+function createAndConfigQueue(name: string, options?: ConfigOptions): resource.Queue {
+  const queue = new resource.Queue(name, options);
+  // do something
+  return queue;
+}
+
+function buildQueue(queueName: string, buildClosure: Function): resource.Queue {
+  return buildClosure(queueName);
+}
+
+const queue1 = buildQueue("queue", createAndConfigQueue);
+
+const plutoName = "Plutolang";
+
+function printHello() {
+  console.log(`Hello, ${plutoName}!`);
+}
+
+buildQueue("queue2", createAndConfigQueue).subscribe(async () => {
+  printHello();
+});
+```
+
+### 基础能力
+
+#### 类的继承链分析
+
+能够深入依赖库，获取指定类型的继承链，包括类实现方法的继承链，得到下图所示的关系
+
+![Class Inheritance](../../../assets/deducer-design-class-inheritance.png)
+
+### 分析过程
+
+#### 1）寻找 构造特殊对象的语句 与 调用特殊方法的语句
+
+![Call Graph](../../../assets/deducer-design-call-graph.png)
+
+上图是示例程序的 Call Graph，从 Call Graph 中，可以看到程序调用了 `buildQueue`、`createAndConfigQueue`、`resource.Queue` 函数，其中 `resource.Queue` 是 Pluto 资源特殊类型。我们自顶向下进行遍历每个函数，遍历时首先判断该函数是否特殊对象的构造过程或特殊方法的调用过程。
+
+- 判断“是否特殊对象的构造过程”的方法是：
+  1.  首先判断是否为 new 操作
+  2.  如果是，判断该类的继承链上是否有 `@plutolang/base.IResource` 接口
+  3.  如果是，说明是这是一次特殊对象的构造过程，实例化得到的对象为特殊对象
+- 判断“是否特殊方法的调用过程”的方法是：
+  1.  首先判断函数调用是否是某对象的方法调用
+  2.  如果是，判断该对象的类型是否是特殊类型，即判断继承链上是否有 `@plutolang/base.IResource` 接口
+  3.  如果是，判断这个方法是否属于某个接口，如果是，这个接口的继承链上是否有 `@plutolang/base.IResourceCapturedProps`、`@plutolang/base.IResourceClientApi`、`@plutolang/base.IResourceInfraApi` 其中之一。 _特殊方法会被声明在扩展了根类型的接口中，特殊类型的基类会实现这些接口。_
+  4.  如果是，说明是这是一次特殊方法的调用过程
+
+如果判断出该函数是否特殊对象的构造过程或特殊方法的调用过程，则将其记录，并且不再继续深入遍历。
+
+根据分析方法可以得到，示例代码中 `new resource.Queue` 特殊对象的构造过程，`resource.Queue.subscribe`是特殊方法的调用过程。
+
+#### 2）寻找构造的若干个特殊对象
+
+程序的控制流图：
+![Control Flow Graph](../../../assets/deducer-design-cfg.png)
+
+程序的数据流图：
+![Data Flow Graph](../../../assets/deducer-design-dfg.png)
+
+接下来，需要确定程序构造了哪些特殊对象、每个特殊对象构造时传入的参数是什么。
+
+从上一个阶段，我们已经知道特殊对象的构造过程是 `new resource.Queue`，因此，本阶段的目标是：找到 `resource.Queue` 被调用了几次，每次调用传入的参数是什么。从 Call Graph 自底向上追溯，可以知道 `resource.Queue` 被调用的链路是：`Global -> buildQueue -> createAndConfigQueue -> resource.Queue`。
+
+**首先，分析这条调用链路在程序中被执行了几次。**分析每一个函数的控制流图，分别判断 `buildQueue`、`createAndConfigQueue`、 `new resource.Resource` 的调用过程是否处于条件、循环等控制结构中，如果是，则记录为错误信息。示例代码中没有处在条件、循环等控制结构中，最终可以获知 `new resource.Queue` 被执行了两次，可以得到两条链，分别记录了两次执行链路上的节点。
+
+**接下来，分析每一次执行时传入的参数。**针对每一条执行链路，自底向上分析，进行值演算。首先，通过 `createAndConfigQueue` 的数据流图可以知道 `resource.Queue` 传入的两个参数 `name, options` 都直接依赖于 `createAndConfigQueue` 入参。`createAndConfigQueue` 在 `buildQueue` 中被调用，分析 `buildQueue` 数据流图可知传入调用 `createAndConfigQueue` 两个参数分别是自身的入参 `queueName` 和 `undefined`。继续向上追溯，在全局域的数据流图中，可以得到两次执行链路上传入 `buildQueue` 的参数分别是 `"queue1"`、`"queue2"`。在分析过程中，如果发现参数依赖于某个函数的执行，则记录为错误信息。
+
+**最后，需要记录执行链路上有哪些变量是特殊对象，且分别对应哪个特殊对象，**便于后续进行闭包依赖分析等操作。首先 `resource.Queue` 的返回值是特殊对象，返回值赋值给 `queue` 变量，则 `queue` 为特殊对象，`queue` 是 `createAndConfigQueue` 的返回值，所以该返回值是特殊对象，返回值又作为 `buildQueue` 的返回值返回到了全局域，因此 `buildQueue` 的返回值是特殊对象，第一次调用`buildQueue`的返回值赋值给了 `queue1`，所以 `queue1` 是特殊对象。
+
+经过以上分析，可以得到：
+
+- `resource.Queue` 被调用了 2 次，分别传入的参数是 `"queue1", undefined` 和 `"queue2", undefined`。
+- 每条执行链路上，部分节点被标记为特殊对象。
+
+#### 3）寻找调用的若干次特殊方法
+
+接下来，需要确定每一个特殊方法被执行了几次、调用的是哪个特殊对象的特殊方法、调用时传入的参数是什么。分析方法与特殊对象的确定过程相近，额外需要确定特殊方法的调用方对应哪个特殊对象。确定方法同样是递归查找调用方的数据链路，并判断数据链路与哪个特殊对象构造过程的执行链路（上一阶段的结果）有交点，即表示调用方为哪个特殊对象。
+
+经过分析可以得到：
+
+- `resource.Queue.subscribe` 被调用 1 次，调用方是 `buildQueue` 第二次执行的返回值所在的节点，传入的参数是一个匿名函数，后续将提取为计算闭包。
+
+#### 4）闭包提取
+
+针对特殊对象构造过程和特殊方法调用过程中传入的函数参数，需要将其提取并构造成计算闭包。
+
+通过 Call Graph，可以直接获取到函数参数依赖的所有函数，接下来需要获取计算闭包依赖的所有变量。
+
+针对每个函数中访问的每一个变量，判断它是否是函数外的变量，如果不是忽略即可，如果是，则需要将其封装到闭包内：
+
+- 如果访问的外部变量是特殊对象，则通过确定特殊方法调用方的方式获取具体依赖哪个特殊对象，并记录在闭包信息中，同时记录调用了特殊对象的哪个方法。
+- 如果不是特殊对象，我们则可以采用上述通过数据链路确定参数的方式来演算出外部变量具体的值，如果推导不出来，则记录为错误信息。
+
+在演算过程中，需要在外部变量的节点上记录其被该闭包依赖。当同一个非特殊对象的变量被多个闭包依赖，且变量不是字面量常量时，说明该变量为程序的状态变量，在 FaaS 中不支持有状态，需要记录为错误信息。当一个闭包访问的外部变量在闭包中被修改时，同样说明该变量为程序的状态变量，需要记录为错误信息。
+
+在提取过程中，如果发现特殊对象的构造过程或特殊方法的调用过程，则记录为报错信息。
+
+最终，通过以上操作可以提取出计算闭包的函数依赖、变量依赖、特殊对象依赖。
+
+#### 其他
+
+整个分析过程中记录到的错误信息，随版本迭代逐步支持。
