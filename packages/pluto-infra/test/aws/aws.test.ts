@@ -10,3 +10,4 @@ function pulumiProgram(filepath: string) {
 
 testPulumiProgram("kvstore on aws: dynamodb", pulumiProgram("./dynamodb"));
 testPulumiProgram("queue on aws: sns", pulumiProgram("./sns"));
+testPulumiProgram("deploy a hugging face model on aws sagemaker", pulumiProgram("./sagemaker"));
