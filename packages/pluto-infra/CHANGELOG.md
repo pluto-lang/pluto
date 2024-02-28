@@ -1,5 +1,13 @@
 # @plutolang/pluto-infra
 
+## 0.3.1
+
+### Patch Changes
+
+- e2aa07b: feat(sdk): support aws sagemaker
+- Updated dependencies [e2aa07b]
+  - @plutolang/pluto@0.3.1
+
 ## 0.3.0
 
 ### Minor Changes
