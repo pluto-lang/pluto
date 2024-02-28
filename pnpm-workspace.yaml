@@ -4,3 +4,4 @@ packages:
   - "packages/*"
   # - "devapps/*"
   - "testapps/*"
+  - "examples/*"

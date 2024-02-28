@@ -7,5 +7,12 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["tester", "app-with-prop-access"]
+  "ignore": [
+    "tester",
+    "app-with-prop-access",
+    "chat-bot",
+    "daily-joke-slack",
+    "quickstart",
+    "gpt2-hf-sagemaker"
+  ]
 }
