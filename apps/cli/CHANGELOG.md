@@ -1,5 +1,12 @@
 # @plutolang/cli
 
+## 0.3.1
+
+### Patch Changes
+
+- @plutolang/simulator-adapter@0.3.1
+- @plutolang/static-deducer@0.3.0
+
 ## 0.3.0
 
 ### Minor Changes
