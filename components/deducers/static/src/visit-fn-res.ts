@@ -250,7 +250,7 @@ function detectFnAccessConst(
   const type = checker.getTypeOfSymbol(symbol);
   if (!type.isLiteral()) {
     throw new Error(
-      "Currently, Pluto only supports accessing constant variables with literal values that are outside the scope of a function."
+      `The constant variable '${symbol.name}' is not a literal. Currently, Pluto only supports accessing constant variables with literal values that are outside the scope of a function.`
     );
   }
 
