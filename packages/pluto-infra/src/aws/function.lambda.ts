@@ -153,7 +153,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         environment: {
           variables: envs,
         },
-        timeout: 30,
+        timeout: 10 * 60,
       },
       { parent: this }
     );
