@@ -1,5 +1,5 @@
 {
-  "name": "chat-bot",
+  "name": "gpt2-hf-sagemaker",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -9,15 +9,14 @@
     "destroy": "pluto destroy"
   },
   "dependencies": {
-    "@plutolang/pluto": "latest",
-    "openai": "^4.13.0"
+    "@plutolang/pluto": "latest"
   },
   "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5.2.2",
     "@plutolang/base": "latest",
     "@plutolang/pluto-infra": "latest",
-    "@pulumi/pulumi": "^3.88.0",
-    "@types/node": "^20",
-    "typescript": "^5.2.2"
+    "@pulumi/pulumi": "^3.88.0"
   },
   "main": "dist/index.js"
 }

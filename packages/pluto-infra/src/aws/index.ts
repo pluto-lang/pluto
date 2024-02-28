@@ -4,3 +4,4 @@ export { SNSQueue } from "./queue.sns";
 export { Lambda } from "./function.lambda";
 export { CloudWatchSchedule } from "./schedule.cloudwatch";
 export { AwsTester } from "./tester";
+export { SageMaker } from "./sagemaker";
