@@ -40,7 +40,9 @@ export interface IFunctionClientApi<T extends AnyFunction> extends IResourceClie
 
 export interface IFunctionInfraApi extends IResourceInfraApi {}
 
-export interface IFunctionCapturedProps extends IResourceCapturedProps {}
+export interface IFunctionCapturedProps extends IResourceCapturedProps {
+  url(): string;
+}
 
 /**
  * Construct a type that includes all the necessary methods required to be implemented within the
