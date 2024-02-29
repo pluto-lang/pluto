@@ -1,5 +1,11 @@
 # @plutolang/pluto
 
+## 0.3.2
+
+### Patch Changes
+
+- a94e19b: feat(sdk): add a captured property `url` to resource type `function`
+
 ## 0.3.1
 
 ### Patch Changes
