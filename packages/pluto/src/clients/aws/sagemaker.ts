@@ -9,7 +9,7 @@ import { genAwsResourceName } from "./utils";
 
 export class SageMaker implements ISageMakerClient {
   private readonly id: string;
-  private readonly endpointName: string;
+  public readonly endpointName: string;
 
   private readonly client: SageMakerRuntimeClient;
 

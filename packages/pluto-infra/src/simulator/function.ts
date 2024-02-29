@@ -10,6 +10,10 @@ export class SimFunction implements simulator.IResourceInstance, IFunctionClient
     options;
   }
 
+  public url(): string {
+    throw new Error("The simulator function URL is currently not supported.");
+  }
+
   public addEventHandler(op: string, args: any[]): void {
     op;
     args;

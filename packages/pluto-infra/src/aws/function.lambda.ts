@@ -35,12 +35,15 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   public readonly id: string;
 
   private readonly lambda: AwsLambda;
+  private readonly lambdaUrl: aws.lambda.FunctionUrl;
   private readonly iam: Role;
   private readonly statements: aws.types.input.iam.GetPolicyDocumentStatement[];
 
   public readonly lambdaName: string;
   public readonly lambdaArn: pulumi.Output<string>;
   public readonly lambdaInvokeArn: pulumi.Output<string>;
+
+  public readonly outputs?: pulumi.Output<any> | string;
 
   constructor(closure: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
     const name = options?.name ?? DEFAULT_FUNCTION_NAME;
@@ -85,6 +88,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
     this.iam = this.createIAM();
     this.lambdaName = genAwsResourceName(this.id);
     this.lambda = this.createLambda(workdir, entrypointFilePathP, exportName, envs);
+    this.lambdaUrl = this.createLambdaUrl();
     this.lambdaArn = this.lambda.arn;
     this.lambdaInvokeArn = this.lambda.invokeArn;
 
@@ -101,6 +105,12 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       }
       this.grantIAMPermission();
     });
+
+    this.outputs = this.url();
+  }
+
+  public url(): string {
+    return this.lambdaUrl.functionUrl as any;
   }
 
   public grantPermission(op: string): aws.types.input.iam.GetPolicyDocumentStatement {
@@ -153,7 +163,21 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         environment: {
           variables: envs,
         },
-        timeout: 30,
+        timeout: 10 * 60,
+      },
+      { parent: this }
+    );
+  }
+
+  private createLambdaUrl() {
+    return new aws.lambda.FunctionUrl(
+      genAwsResourceName(this.id, "url"),
+      {
+        functionName: this.lambda.name,
+        authorizationType: "NONE",
+        cors: {
+          allowOrigins: ["*"],
+        },
       },
       { parent: this }
     );
@@ -218,15 +242,33 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   }
 }
 
-type DirectCallHandler = (payload: any[], context: Context) => Promise<DirectCallResponse>;
+type DirectCallHandler = (payload: any, context: Context) => Promise<DirectCallResponse>;
 
 function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
+  function isHttpPayload(payload: any): boolean {
+    return (
+      payload !== null &&
+      typeof payload === "object" &&
+      Object.prototype.hasOwnProperty.call(payload, "headers") &&
+      Object.prototype.hasOwnProperty.call(payload, "queryStringParameters") &&
+      Object.prototype.hasOwnProperty.call(payload, "rawPath")
+    );
+  }
+
   return async function (payload, context): Promise<DirectCallResponse> {
     const accountId = context.invokedFunctionArn.split(":")[4];
     process.env["AWS_ACCOUNT_ID"] = accountId;
 
     try {
       console.log("Payload:", payload);
+
+      // When users make a direct call to the function using an HTTP request, the payload differs
+      // from that of an SDK invocation. Therefore, we interpret the body of the request as
+      // arguments for the function.
+      if (isHttpPayload(payload)) {
+        payload = JSON.parse(payload.body);
+      }
+
       if (!Array.isArray(payload)) {
         return {
           code: 400,

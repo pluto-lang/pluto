@@ -31,6 +31,10 @@ export class FCInstance<T extends AnyFunction> implements IFunctionClient<T> {
     func;
   }
 
+  public url(): string {
+    throw new Error("The FC URL is currently not supported.");
+  }
+
   public async invoke(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
     const client = createClient();
     const invokeFunctionHeaders = new InvokeFunctionHeaders({

@@ -96,6 +96,10 @@ export class KnativeService
     };
   }
 
+  public url(): string {
+    throw new Error("The Knative service URL is currently not supported.");
+  }
+
   public grantPermission() {}
 
   public postProcess(): void {}

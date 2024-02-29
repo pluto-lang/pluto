@@ -115,6 +115,10 @@ export class FCInstance extends pulumi.ComponentResource implements IResourceInf
     });
   }
 
+  public url(): string {
+    throw new Error("The FC URL is currently not supported.");
+  }
+
   public grantPermission(op: string): RamPolicy {
     switch (op.toUpperCase()) {
       case Ops.WATCH_LOG:

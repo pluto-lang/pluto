@@ -32,6 +32,10 @@ export class KnativeService<T extends AnyFunction> implements IFunctionClient<T>
     func;
   }
 
+  public url(): string {
+    throw new Error("The Knative service URL is currently not supported.");
+  }
+
   public async invoke(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
     try {
       if (isLocalMode) {

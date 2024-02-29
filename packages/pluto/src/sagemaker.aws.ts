@@ -71,6 +71,7 @@ export interface ISageMakerNormalApi {
    * interface.
    */
   // get endpointUrl(): string;
+  get endpointName(): string;
 }
 
 export interface ISageMakerClientApi extends IResourceClientApi {

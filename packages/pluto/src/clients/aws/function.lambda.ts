@@ -7,7 +7,7 @@ import {
   Function,
   DirectCallResponse,
 } from "../../function";
-import { genResourceId } from "@plutolang/base/utils";
+import { genResourceId, getEnvValForProperty } from "@plutolang/base/utils";
 import { genAwsResourceName } from "./utils";
 import { InvokeError } from "../errors";
 
@@ -25,6 +25,10 @@ export class LambdaFunction<T extends AnyFunction> implements IFunctionClient<T>
     this.id = genResourceId(Function.fqn, opts?.name || DEFAULT_FUNCTION_NAME);
     this.lambdaName = genAwsResourceName(this.id);
     func;
+  }
+
+  public url(): string {
+    return getEnvValForProperty(this.id, "url");
   }
 
   public async invoke(...args: Parameters<T>): Promise<Awaited<ReturnType<T> | void>> {
