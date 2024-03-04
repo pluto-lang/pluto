@@ -66,6 +66,6 @@ export class DynamoKVStore
   public postProcess(): void {}
 
   private fuzzyArn() {
-    return `arn:aws:dynamodb:*:*:table/${this.id}`;
+    return `arn:aws:dynamodb:*:*:table/${genAwsResourceName(this.id)}`;
   }
 }

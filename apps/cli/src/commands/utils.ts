@@ -1,8 +1,10 @@
 import fs from "fs";
+import path from "path";
 import * as yaml from "js-yaml";
 import { ProvisionType } from "@plutolang/base";
 import { Architecture } from "@plutolang/base/arch";
 import { Deducer, Generator, Adapter, BasicArgs, NewAdapterArgs } from "@plutolang/base/core";
+import { isPlutoProject, loadProject } from "../utils";
 
 /**
  * load the default export of the target package.
@@ -40,10 +42,16 @@ export async function buildGenerator(
   throw new Error(`The default export of '${generatorPkg}' package is not a valid Generator.`);
 }
 
-export async function buildAdapter(
-  adapterPkg: string,
+export async function buildAdapterByProvisionType(
+  provisionType: ProvisionType,
   adapterArgs: NewAdapterArgs
 ): Promise<Adapter> {
+  // build the adapter based on the provisioning engine type
+  const adapterPkg = selectAdapterByEngine(provisionType);
+  if (!adapterPkg) {
+    throw new Error(`There is no adapter for type ${provisionType}.`);
+  }
+
   const adapter = new (await loadPackage(adapterPkg))(adapterArgs);
   if (adapter instanceof Adapter) {
     return adapter;
@@ -62,4 +70,36 @@ export function selectAdapterByEngine(provisionType: ProvisionType): string | un
 export function loadArchRef(filepath: string): Architecture {
   const content = fs.readFileSync(filepath);
   return yaml.load(content.toString()) as Architecture;
+}
+
+export function stackStateFile(stateDir: string): string {
+  return path.join(stateDir, "state.json");
+}
+
+export function loadProjectRoot() {
+  // Get the absolute path of the project root.
+  const projectRoot = path.resolve("./");
+  if (!isPlutoProject(projectRoot)) {
+    throw new Error("The current location is not located at the root of a Pluto project.");
+  }
+  return projectRoot;
+}
+
+export function loadProjectAndStack(projectRoot: string, stackInCmd?: string) {
+  // Load the project configuration.
+  const project = loadProject(projectRoot);
+
+  // Get the stack name from the options or the default stack set in the project configuration.
+  const stackName = stackInCmd ?? project.current;
+  if (!stackName) {
+    throw new Error(
+      "There isn't a default stack. Please use the --stack option to specify which stack you want."
+    );
+  }
+
+  const stack = project.getStack(stackName);
+  if (!stack) {
+    throw new Error(`There is no stack named ${stackName}.`);
+  }
+  return { project, stack };
 }

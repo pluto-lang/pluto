@@ -1,17 +1,24 @@
 import { ProvisionType } from "../provision";
 import { PlatformType } from "../platform";
 
+export interface StackState {
+  /** The file path to the last deduction result. */
+  lastArchRefFile?: string;
+  /** The argument used in the last adapter construction. */
+  lastProvisionFile?: string;
+
+  deployed: boolean;
+}
+
 export class Stack {
   /** The configuration items are used for components, such as the kubeconfig path. */
   public configs: Record<string, any> = {};
-  /** The file path to the last deduction result. */
-  private lastArchRefFile?: string;
-  /** The argument used in the last adapter construction. */
-  private lastProvisionFile?: string;
-  /** The state data of adapter. */
-  private adapterData?: string;
 
-  private deployed: boolean = false;
+  public state: StackState = {
+    lastArchRefFile: undefined,
+    lastProvisionFile: undefined,
+    deployed: false,
+  };
 
   constructor(
     /** The stack name. */
@@ -23,48 +30,39 @@ export class Stack {
   ) {}
 
   public set archRefFile(filepath: string) {
-    this.lastArchRefFile = filepath;
+    this.state.lastArchRefFile = filepath;
   }
 
   public get archRefFile(): string | undefined {
-    return this.lastArchRefFile;
+    return this.state.lastArchRefFile;
   }
 
   public set provisionFile(provisionFile: string) {
-    this.lastProvisionFile = provisionFile;
+    this.state.lastProvisionFile = provisionFile;
   }
 
   public get provisionFile(): string | undefined {
-    return this.lastProvisionFile;
-  }
-
-  public set adapterState(data: string) {
-    this.adapterData = data;
-  }
-
-  public get adapterState(): string | undefined {
-    return this.adapterData;
+    return this.state.lastProvisionFile;
   }
 
   public setDeployed() {
-    this.deployed = true;
+    this.state.deployed = true;
   }
 
   public setUndeployed() {
-    this.deployed = false;
+    this.state.deployed = false;
   }
 
   public isDeployed(): boolean {
-    return this.deployed;
+    return this.state.deployed;
   }
 
   public deepCopy(): Stack {
     const clonedStack = new Stack(this.name, this.platformType, this.provisionType);
     clonedStack.configs = { ...this.configs };
-    clonedStack.lastArchRefFile = this.lastArchRefFile;
-    clonedStack.lastProvisionFile = this.lastProvisionFile;
-    clonedStack.adapterData = this.adapterData;
-    clonedStack.deployed = this.deployed;
+    clonedStack.state.lastArchRefFile = this.state.lastArchRefFile;
+    clonedStack.state.lastProvisionFile = this.state.lastProvisionFile;
+    clonedStack.state.deployed = this.state.deployed;
     return clonedStack;
   }
 }

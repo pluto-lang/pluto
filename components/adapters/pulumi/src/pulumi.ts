@@ -1,13 +1,56 @@
-import { readdirSync } from "fs";
-import { ensureDirSync } from "fs-extra";
+import { ensureDirSync, existsSync, readFileSync, writeFileSync } from "fs-extra";
+import { randomUUID } from "crypto";
 import { isAbsolute, join, resolve } from "path";
-import { core, utils } from "@plutolang/base";
+import { core } from "@plutolang/base";
 import { CommandError, LocalWorkspace, Stack } from "@pulumi/pulumi/automation";
-import { genPulumiConfigByRuntime } from "./utils";
+import { genPulumiConfig, updateInProgress } from "./utils";
+
+const STATE_FILE_NAME = "pulumi-state.json";
+
+/**
+ * The status of the pulumi stack.
+ * - undeployed: The stack has not been deployed.
+ * - updating: The stack is being updated, including deploying and destroying.
+ * - deployed: The stack has been deployed.
+ *
+ * State Transitions:
+ *
+ *  +-------------------+
+ *  |   undeployed      |
+ *  +-------------------+
+ *          |   deploy
+ *          V
+ *  +------------------+
+ *  |   updating       |
+ *  +------------------+
+ *          |   deploy
+ *          V
+ *  +-------------------+
+ *  |   deployed        |
+ *  +-------------------+
+ *          |   destroy
+ *          V
+ *  +-------------------+
+ *  |   updating        |
+ *  +-------------------+
+ *          |   destroy
+ *          V
+ *  +-------------------+
+ *  |   undeployed      |
+ *  +-------------------+
+ */
+type PulumiStatus = "undeployed" | "updating" | "deployed";
+
+interface PulumiState {
+  passphrase: string;
+  status: PulumiStatus;
+}
 
 export class PulumiAdapter extends core.Adapter {
-  private readonly backendPath: string;
-  private passphrase: string;
+  private readonly workDir: string;
+
+  private readonly passphrase: string;
+  private status: PulumiStatus;
 
   //eslint-disable-next-line @typescript-eslint/no-var-requires
   public readonly name = require(join(__dirname, "../package.json")).name;
@@ -20,10 +63,19 @@ export class PulumiAdapter extends core.Adapter {
     }
 
     super(args);
-    this.backendPath = join(utils.systemConfigDir(), "pulumi");
-    ensureDirSync(this.backendPath);
-    // this.passphrase = randomUUID();
-    this.passphrase = "pluto";
+
+    this.workDir = join(this.stateDir, "pulumi");
+    ensureDirSync(this.workDir);
+
+    const state = this.load();
+    if (state) {
+      this.passphrase = state.passphrase;
+      this.status = state.status;
+    } else {
+      this.passphrase = randomUUID();
+      this.status = "undeployed";
+      this.dump();
+    }
   }
 
   public async state(): Promise<core.StateResult> {
@@ -62,17 +114,24 @@ export class PulumiAdapter extends core.Adapter {
   public async deploy(opts: core.DeployOptions = {}): Promise<core.DeployResult> {
     try {
       const pulumiStack = await this.createPulumiStack();
-      if (this.updateInProgress()) {
+      if (
+        this.status === "updating" ||
+        updateInProgress(this.project, this.stack.name, this.workDir)
+      ) {
         if (opts.force) {
           await pulumiStack.cancel();
         } else {
+          // If the force option is not set, we will throw an error.
           throw new Error(
             "This stack is currently being updated. If you want to update forcefully, you can use the --force option."
           );
         }
       }
 
+      this.status = "updating";
       const result = await pulumiStack.up();
+      this.status = "deployed";
+
       return { outputs: result.outputs["default"]?.value ?? {} };
     } catch (e) {
       if (e instanceof CommandError) {
@@ -80,16 +139,22 @@ export class PulumiAdapter extends core.Adapter {
       } else {
         throw e;
       }
+    } finally {
+      this.dump();
     }
   }
 
   public async destroy(opts: core.DestroyOptions = {}): Promise<void> {
     try {
       const pulumiStack = await this.createPulumiStack();
-      if (this.updateInProgress()) {
+      if (
+        this.status === "updating" ||
+        updateInProgress(this.project, this.stack.name, this.workDir)
+      ) {
         if (opts.force) {
           await pulumiStack.cancel();
         } else {
+          // If the force option is not set, we will throw an error.
           throw new Error(
             "This stack is currently being updated. If you want to update forcefully, you can use the --force option."
           );
@@ -97,7 +162,10 @@ export class PulumiAdapter extends core.Adapter {
       }
 
       await pulumiStack.refresh();
+      this.status = "updating";
       await pulumiStack.destroy();
+      this.status = "undeployed";
+
       await pulumiStack.workspace.removeStack(this.stack.name);
     } catch (e) {
       if (e instanceof Error) {
@@ -105,60 +173,62 @@ export class PulumiAdapter extends core.Adapter {
       } else {
         throw new Error("Met error during run 'pulumi destroy', " + e);
       }
+    } finally {
+      this.dump();
     }
   }
 
-  public dump(): string {
-    return JSON.stringify({
+  private dump(): void {
+    const stateFile = resolve(this.workDir, STATE_FILE_NAME);
+    const state: PulumiState = {
       passphrase: this.passphrase,
-    });
+      status: this.status,
+    };
+    writeFileSync(stateFile, JSON.stringify(state), "utf-8");
   }
 
-  public load(data: string): void {
-    const config = JSON.parse(data);
-    this.passphrase = config["passphrase"];
+  private load(): PulumiState | undefined {
+    const stateFile = resolve(this.workDir, STATE_FILE_NAME);
+    if (existsSync(stateFile) === false) {
+      return;
+    }
+
+    const stateData = readFileSync(stateFile, "utf-8");
+    const state = JSON.parse(stateData);
+    return state;
   }
 
   private async createPulumiStack(): Promise<Stack> {
     const envs: Record<string, string> = {
+      PLUTO_PROJECT_NAME: this.project,
+      PLUTO_STACK_NAME: this.stack.name,
       PLUTO_PLATFORM_TYPE: this.stack.platformType,
       PLUTO_PROVISION_TYPE: this.stack.provisionType,
       PULUMI_CONFIG_PASSPHRASE: this.passphrase,
-      WORK_DIR: this.workdir,
+      WORK_DIR: this.stateDir,
     };
 
     const pulumiStack = await LocalWorkspace.createOrSelectStack(
       {
         stackName: this.stack.name,
-        workDir: this.workdir,
+        workDir: this.workDir,
       },
       {
-        workDir: this.workdir,
+        workDir: this.workDir,
         envVars: envs,
         projectSettings: {
           runtime: "nodejs",
           name: this.project,
           main: this.entrypoint,
-          backend: { url: "file://" + this.backendPath },
+          backend: { url: "file://" + this.workDir },
         },
       }
     );
     for (const key of Object.keys(envs)) process.env[key] = envs[key];
 
-    const pulumiConfig = await genPulumiConfigByRuntime(this.stack);
+    const pulumiConfig = await genPulumiConfig(this.stack);
     await pulumiStack.setAllConfig(pulumiConfig);
     return pulumiStack;
-  }
-
-  private updateInProgress(): boolean {
-    const locksDir = resolve(
-      this.backendPath,
-      ".pulumi/locks/organization",
-      this.project,
-      this.stack.name
-    );
-    const files = readdirSync(locksDir);
-    return files.length > 0;
   }
 }
 

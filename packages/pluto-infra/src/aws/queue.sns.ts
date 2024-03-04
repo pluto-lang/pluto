@@ -83,7 +83,7 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
   public postProcess() {}
 
   private fuzzyArn() {
-    return `arn:aws:sns:*:*:${this.id}`;
+    return `arn:aws:sns:*:*:${genAwsResourceName(this.id)}`;
   }
 }
 

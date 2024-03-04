@@ -5,7 +5,9 @@ const queue = new Queue("queue");
 const router = new Router("router");
 
 router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
-  const name = req.query["name"] ?? "Anonym";
+  const query = req.query["name"] ?? "Anonym";
+  const name = Array.isArray(query) ? query.join(",") : query;
+
   const message = `${name} access at ${Date.now()}`;
   await queue.push(JSON.stringify({ name, message }));
   return {
@@ -15,7 +17,9 @@ router.get("/hello", async (req: HttpRequest): Promise<HttpResponse> => {
 });
 
 router.get("/store", async (req: HttpRequest): Promise<HttpResponse> => {
-  const name = req.query["name"] ?? "Anonym";
+  const query = req.query["name"] ?? "Anonym";
+  const name = Array.isArray(query) ? query.join(",") : query;
+
   const message = await kvstore.get(name);
   return {
     statusCode: 200,

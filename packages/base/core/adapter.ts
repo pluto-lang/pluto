@@ -24,7 +24,12 @@ export interface NewAdapterArgs extends BasicArgs {
   readonly archRef: Architecture;
   /** The absolute path to the entry point. */
   readonly entrypoint: string;
-  readonly workdir: string;
+
+  /**
+   * The absolute path to the state directory, used for storing the private state generated while
+   * the adapter is working. This directory should not be made public.
+   */
+  readonly stateDir: string;
 }
 
 export interface PreviewResult {
@@ -57,29 +62,28 @@ export interface DestroyOptions {
 
 export abstract class Adapter extends BaseComponent {
   protected readonly archRef: Architecture;
+  /**
+   * The absolute path to the infrastructure provisioning file.
+   */
   protected readonly entrypoint: string;
-  protected readonly workdir: string;
+  /**
+   * The absolute path to the state directory of adapter, used for storing the private state
+   * generated while the adapter is working. And this directory is unique for each stack. The
+   * adapter can use this directory to store the stateful data, like the server URL of the simulator
+   * or the passphrase used for the pulumi local backend.
+   *
+   * Note: This directory should not be made public.
+   */
+  protected readonly stateDir: string;
 
   constructor(args: NewAdapterArgs) {
     super(args);
     this.archRef = args.archRef;
     this.entrypoint = args.entrypoint;
-    this.workdir = args.workdir;
+    this.stateDir = args.stateDir;
   }
 
   public abstract state(): Promise<StateResult>;
   public abstract deploy(options?: DeployOptions): Promise<DeployResult>;
   public abstract destroy(options?: DestroyOptions): Promise<void>;
-  /**
-   * Adapter can have some stateful properties, like the server URL of the simulator
-   * or the passphrase used for the pulumi local backend. This method is used to
-   * save this data to a local file, which can be helpful in creating an adapter
-   * with the same state in the future.
-   */
-  public abstract dump(): string;
-  /**
-   * Load the state data dumped last time.
-   * @param config
-   */
-  public abstract load(data: string): void;
 }
