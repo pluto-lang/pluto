@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = 'pluto-client'
+name = 'pluto-base'
 version = '0.0.1'
-description = 'The Client Library for Pluto Programming Language.'
+description = 'The Base Library for Pluto Programming Language.'
 readme = 'README.md'
 classifiers = [
     'Development Status :: 1 - Planning',
