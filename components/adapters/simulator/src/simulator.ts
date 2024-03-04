@@ -1,4 +1,4 @@
-import { PlatformType, ProvisionType, arch, simulator } from "@plutolang/base";
+import { arch, simulator } from "@plutolang/base";
 import { ComputeClosure, AnyFunction, createClosure } from "@plutolang/base/closure";
 import http from "http";
 import path from "path";
@@ -18,9 +18,6 @@ export class Simulator {
     this.projectRoot = projectRoot;
     this.resources = new Map();
     this.closures = new Map();
-
-    process.env["PLUTO_PLATFORM_TYPE"] = PlatformType.Simulator;
-    process.env["PLUTO_PROVISION_TYPE"] = ProvisionType.Simulator;
   }
 
   public async loadApp(archRef: arch.Architecture): Promise<void> {
