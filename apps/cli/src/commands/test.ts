@@ -1,13 +1,17 @@
 import fs from "fs";
-import path from "path";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 import { arch, config, core, ProvisionType, PlatformType, simulator } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
 import { TestCase } from "@plutolang/pluto";
-import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
+import { dumpStackState, getStackBasicDirs, prepareStackDirs } from "../utils";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
-import { buildAdapter, selectAdapterByEngine } from "./utils";
+import {
+  buildAdapterByProvisionType,
+  loadProjectAndStack,
+  loadProjectRoot,
+  stackStateFile,
+} from "./utils";
 
 interface TestOptions {
   sim: boolean;
@@ -17,61 +21,50 @@ interface TestOptions {
 }
 
 export async function test(entrypoint: string, opts: TestOptions) {
-  // Ensure the entrypoint exist.
-  if (!fs.existsSync(entrypoint)) {
-    throw new Error(`No such file, ${entrypoint}`);
-  }
+  try {
+    // Ensure the entrypoint exist.
+    if (!fs.existsSync(entrypoint)) {
+      throw new Error(`No such file, ${entrypoint}`);
+    }
 
-  const projectRoot = path.resolve("./");
-  if (!isPlutoProject(projectRoot)) {
-    logger.error("The current location is not located at the root of a Pluto project.");
-    process.exit(1);
-  }
-  const proj = loadProject(projectRoot);
-  process.env["PLUTO_PROJECT_NAME"] = proj.name;
+    const projectRoot = loadProjectRoot();
+    const { project, stack: initialStack } = loadProjectAndStack(projectRoot);
+    let stack = initialStack;
 
-  const stackName = opts.stack ?? proj.current;
-  if (!stackName) {
-    logger.error(
-      "There isn't a default stack. Please use the --stack option to specify which stack you want."
+    // If in simulation mode, switch the platform and provisioning engine of the stack to simulator.
+    if (opts.sim) {
+      stack = new config.Stack(stack.name, PlatformType.Simulator, ProvisionType.Simulator);
+    }
+
+    const { closuresDir } = getStackBasicDirs(projectRoot, stack.name);
+
+    // construct the arch ref from user code
+    logger.info("Generating reference architecture...");
+    const { archRef } = await loadAndDeduce(
+      opts.deducer,
+      {
+        project: project.name,
+        stack: stack,
+        rootpath: projectRoot,
+        closureDir: closuresDir,
+      },
+      [entrypoint]
     );
+
+    const testGroupArchs = splitTestGroup(archRef);
+    for (let testGroupIdx = 0; testGroupIdx < testGroupArchs.length; testGroupIdx++) {
+      await testOneGroup(testGroupIdx, testGroupArchs[testGroupIdx], project, stack, opts);
+    }
+  } catch (e) {
+    if (e instanceof Error) {
+      logger.error(e.message);
+      if (process.env.DEBUG) {
+        logger.error(e.stack);
+      }
+    } else {
+      logger.error(e);
+    }
     process.exit(1);
-  }
-
-  let stack = proj.getStack(stackName);
-  if (!stack) {
-    logger.error(`There is no stack named ${stackName}.`);
-    process.exit(1);
-  }
-  process.env["PLUTO_STACK_NAME"] = stack.name;
-
-  // If in simulation mode, switch the platform and provisioning engine of the stack to simulator.
-  if (opts.sim) {
-    stack = new config.Stack(stack.name, PlatformType.Simulator, ProvisionType.Simulator);
-  }
-
-  const basicArgs: core.BasicArgs = {
-    project: proj.name,
-    stack: stack,
-    rootpath: path.resolve("."),
-  };
-  const stackBaseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
-  const closureBaseDir = path.join(stackBaseDir, "closures");
-
-  // construct the arch ref from user code
-  logger.info("Generating reference architecture...");
-  const { archRef } = await loadAndDeduce(
-    opts.deducer,
-    {
-      ...basicArgs,
-      closureDir: closureBaseDir,
-    },
-    [entrypoint]
-  );
-
-  const testGroupArchs = splitTestGroup(archRef);
-  for (let testGroupIdx = 0; testGroupIdx < testGroupArchs.length; testGroupIdx++) {
-    await testOneGroup(testGroupIdx, testGroupArchs[testGroupIdx], proj, stack, opts);
   }
 }
 
@@ -90,52 +83,48 @@ async function testOneGroup(
   stack: config.Stack,
   opts: TestOptions
 ) {
-  const testId = `test-${testGroupIdx}`;
+  const testId = `test.${testGroupIdx}`;
 
-  const basicArgs: core.BasicArgs = {
-    project: project.name,
-    rootpath: project.rootpath,
-    stack: stack,
-  };
-  const generatedDir = path.join(
-    project.rootpath,
-    PLUTO_PROJECT_OUTPUT_DIR,
-    stack.name,
-    testId,
-    "generated"
-  );
-
-  // generate the IR code based on the arch ref
-  logger.info("Generating the IaC Code and computing modules...");
-  const generateResult = await loadAndGenerate(
-    opts.generator,
-    basicArgs,
-    testGroupArch,
-    generatedDir
-  );
-
-  // build the adapter based on the provisioning engine type
-  const adapterPkg = selectAdapterByEngine(stack.provisionType);
-  if (!adapterPkg) {
-    logger.error(`There is no adapter for type ${stack.provisionType}.`);
-    process.exit(1);
-  }
-  const adapter = await buildAdapter(adapterPkg, {
-    ...basicArgs,
-    archRef: testGroupArch,
-    entrypoint: generateResult.entrypoint!,
-    workdir: generatedDir,
-  });
-
-  const tmpSta = new config.Stack(
-    `${stack.name}-${testId}`,
+  const testStack = new config.Stack(
+    `${stack.name}.${testId}`,
     stack.platformType,
     stack.provisionType
   );
+
+  let exitCode = 0;
+  let adapter: core.Adapter | undefined;
   try {
+    // Prepare the directories for the stack.
+    const { generatedDir, stateDir } = await prepareStackDirs(project.rootpath, testStack.name);
+
+    const basicArgs: core.BasicArgs = {
+      project: project.name,
+      rootpath: project.rootpath,
+      // TODO: Should be testStack. But, currently, the simulator adapter deploys the stack based on
+      // the arch ref generated from the original stack.
+      stack: stack,
+    };
+
+    // generate the IR code based on the arch ref
+    logger.info("Generating the IaC Code and computing modules...");
+    const generateResult = await loadAndGenerate(
+      opts.generator,
+      basicArgs,
+      testGroupArch,
+      generatedDir
+    );
+
+    adapter = await buildAdapterByProvisionType(stack.provisionType, {
+      ...basicArgs,
+      archRef: testGroupArch,
+      entrypoint: generateResult.entrypoint!,
+      stateDir: stateDir,
+    });
+
     logger.info("Applying...");
     const applyResult = await adapter.deploy();
-    tmpSta.setDeployed();
+    testStack.setDeployed();
+    dumpStackState(stackStateFile(stateDir), stack.state);
     logger.info("Successfully applied!");
 
     if (stack.platformType == PlatformType.Simulator) {
@@ -167,23 +156,32 @@ async function testOneGroup(
         }
       }
       for (const tester of testers) {
-        const testerClient = buildTesterClient(tmpSta, tester);
+        const testerClient = buildTesterClient(testStack, tester);
         await testerClient.runTests();
       }
     }
-
-    logger.info("Destroying...");
-    await adapter.destroy();
-    tmpSta.setUndeployed();
-    logger.info("Successfully destroyed!");
   } catch (e) {
+    exitCode = 1;
     if (e instanceof Error) {
       logger.error(e.message);
+      if (process.env.DEBUG) {
+        logger.error(e.stack);
+      }
     } else {
       logger.error(e);
     }
-    process.exit(1);
+  } finally {
+    if (adapter) {
+      const { stateDir } = getStackBasicDirs(project.rootpath, testStack.name);
+
+      logger.info("Destroying...");
+      await adapter.destroy();
+      testStack.setUndeployed();
+      dumpStackState(stackStateFile(stateDir), stack.state);
+      logger.info("Successfully destroyed!");
+    }
   }
+  process.exit(exitCode);
 }
 
 interface Tester {

@@ -60,6 +60,7 @@ async function main() {
     .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
     .option("-s, --stack <stack>", "Specified stack")
     .option("-y, --yes", "Automatically approve and perform the deployment", false)
+    .option("-f, --force", "Force the deployment", false)
     .addOption(
       new Option(
         "-d, --deducer <deducer>",

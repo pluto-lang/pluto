@@ -1,10 +1,11 @@
-import { homedir } from "os";
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import { join, resolve } from "path";
-import { ensureFileSync } from "fs-extra";
-import { dump } from "js-yaml";
+import * as os from "os";
+import * as path from "path";
+import * as fs from "fs-extra";
+import * as yaml from "js-yaml";
 import updateNotifier from "update-notifier";
 import { config } from "@plutolang/base";
+import { StackState } from "@plutolang/base/config";
+import { stackStateFile } from "./commands/utils";
 
 // eslint-disable-next-line
 const packageJson = require("../package.json");
@@ -18,7 +19,7 @@ export const PLUTO_PROJECT_OUTPUT_DIR = ".pluto";
 export const PLUTO_PROJECT_CONFIG_PATH = ".pluto/pluto.yml";
 
 /** The pluto system configuration file's absolute path. */
-export const PLUTO_SYSTEM_CONFIG_DIR = resolve(homedir(), ".pluto");
+export const PLUTO_SYSTEM_CONFIG_DIR = path.resolve(os.homedir(), ".pluto");
 
 /**
  * Reads the project name from the package.json file located at the root of the given path, and returns it.
@@ -27,7 +28,7 @@ export const PLUTO_SYSTEM_CONFIG_DIR = resolve(homedir(), ".pluto");
  */
 export function getProjectName(projectRoot: string): string {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(join(projectRoot, "package.json")).name;
+  return require(path.join(projectRoot, "package.json")).name;
 }
 
 /**
@@ -35,9 +36,42 @@ export function getProjectName(projectRoot: string): string {
  * @param projectRoot The root directory of the project.
  */
 export function loadProject(projectRoot: string): config.Project {
-  const content = readFileSync(join(projectRoot, PLUTO_PROJECT_CONFIG_PATH));
+  const content = fs.readFileSync(path.join(projectRoot, PLUTO_PROJECT_CONFIG_PATH));
   const projectName = getProjectName(projectRoot);
-  return config.Project.loadFromYaml(projectName, projectRoot, content.toString());
+  const project = config.Project.loadFromYaml(projectName, projectRoot, content.toString());
+
+  // Load the stack state from the state file.
+  project.stacks.forEach((stack) => {
+    const { stateDir } = getStackBasicDirs(projectRoot, stack.name);
+    const stateFilepath = stackStateFile(stateDir);
+    if (fs.existsSync(stateFilepath)) {
+      stack.state = loadStackState(stateFilepath);
+    } else {
+      stack.state = {
+        deployed: false,
+      };
+    }
+  });
+  return project;
+}
+
+/**
+ * Load the stack state from the given file path in JSON format.
+ * @param stateFilepath - The file path to load the stack state.
+ * @returns The stack state.
+ */
+export function loadStackState(stateFilepath: string): StackState {
+  const data = fs.readFileSync(stateFilepath);
+  return JSON.parse(data.toString());
+}
+
+/**
+ * Dump the stack state to the given file path in JSON format.
+ * @param stateFilepath - The file path to dump the stack state.
+ * @param stackState - The stack state to dump.
+ */
+export function dumpStackState(stateFilepath: string, stackState: StackState) {
+  fs.writeFileSync(stateFilepath, JSON.stringify(stackState, null, 2));
 }
 
 /**
@@ -49,11 +83,11 @@ export function dumpProject(project: config.Project) {
   const obj = project.deepCopy() as any;
   delete obj.name;
   delete obj.rootpath;
-  const content = dump(obj, { sortKeys: true });
+  const content = yaml.dump(obj, { sortKeys: true });
 
-  const configFile = join(rootpath, PLUTO_PROJECT_CONFIG_PATH);
-  ensureFileSync(configFile);
-  writeFileSync(configFile, content);
+  const configFile = path.join(rootpath, PLUTO_PROJECT_CONFIG_PATH);
+  fs.ensureFileSync(configFile);
+  fs.writeFileSync(configFile, content);
 }
 
 /**
@@ -62,10 +96,10 @@ export function dumpProject(project: config.Project) {
  */
 export function isPlutoProject(rootpath: string): boolean {
   return (
-    existsSync(join(rootpath, PLUTO_PROJECT_CONFIG_PATH)) &&
-    existsSync(join(rootpath, "package.json")) &&
+    fs.existsSync(path.join(rootpath, PLUTO_PROJECT_CONFIG_PATH)) &&
+    fs.existsSync(path.join(rootpath, "package.json")) &&
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require(join(rootpath, "package.json")).name
+    require(path.join(rootpath, "package.json")).name
   );
 }
 
@@ -78,4 +112,29 @@ export function checkUpdate() {
     pkg: { name: packageName, version: version },
     updateCheckInterval: ONE_HOUR,
   }).notify({ isGlobal: true, defer: false });
+}
+
+export function getStackBasicDirs(projectRoot: string, stackName: string) {
+  const baseDir = path.join(projectRoot, PLUTO_PROJECT_OUTPUT_DIR, stackName);
+  const closuresDir = path.join(baseDir, "closures");
+  const generatedDir = path.join(baseDir, "generated");
+  const stateDir = path.join(baseDir, "state");
+  return { baseDir, closuresDir, generatedDir, stateDir };
+}
+
+/**
+ * Prepare the directories for the stack, including:
+ * - The directory stores closures separated from user code.
+ * - The directory stores the generated files, such as the Pulumi code, architecture diagram, etc.
+ * - The directory contains state files generated by the adapter working with this stack.
+ */
+export async function prepareStackDirs(projectRoot: string, stackName: string) {
+  const { baseDir, closuresDir, generatedDir, stateDir } = getStackBasicDirs(
+    projectRoot,
+    stackName
+  );
+  fs.ensureDirSync(closuresDir);
+  fs.ensureDirSync(generatedDir);
+  fs.ensureDirSync(stateDir);
+  return { baseDir, closuresDir, generatedDir, stateDir };
 }

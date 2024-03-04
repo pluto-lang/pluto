@@ -34,4 +34,5 @@ yarn-error.log*
 **/dist/
 
 # pluto
-**/compiled/
+.pluto/**/state/
+.pluto/*.test.*/

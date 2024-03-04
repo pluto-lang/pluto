@@ -2,7 +2,7 @@ import { load } from "js-yaml";
 import { Stack } from "./stack";
 
 export class Project {
-  private readonly stacks: Stack[] = [];
+  public readonly stacks: Stack[] = [];
   /** The name of the current specified stack. */
   public current?: string;
 
