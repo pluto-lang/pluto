@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = 'plutolang'
+version = '0.0.1'
+description = 'The Client Library for Pluto Programming Language.'
+readme = 'README.md'
+classifiers = [
+    'Development Status :: 1 - Planning',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Topic :: Software Development',
+    'License :: OSI Approved :: Apache Software License',
+]
+
+[project.urls]
+Homepage = "https://github.com/pluto-lang/pluto"
+Issues = "https://github.com/pluto-lang/pluto/issues"
