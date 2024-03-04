@@ -1,7 +1,6 @@
 current: aws
 stacks:
   - configs: {}
-    deployed: false
     provisionType: Pulumi
     name: aws
     platformType: AWS
