@@ -1,5 +1,21 @@
 # @plutolang/cli
 
+## 0.3.3
+
+### Patch Changes
+
+- d285a49: Feature: refactor Pluto's output management
+
+  Refactor Pluto's output management by introducing a dedicated directory for the adapter to maintain its state. Migrate all state-related configurations, including lastArchRefFile, from the existing configuration file to this new state directory.
+
+- Updated dependencies [d285a49]
+  - @plutolang/simulator-adapter@0.3.3
+  - @plutolang/pulumi-adapter@0.3.1
+  - @plutolang/base@0.3.1
+  - @plutolang/static-deducer@0.3.1
+  - @plutolang/graphviz-generator@0.3.1
+  - @plutolang/static-generator@0.3.1
+
 ## 0.3.2
 
 ### Patch Changes
