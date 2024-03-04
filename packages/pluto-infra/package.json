@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/pluto-infra",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "",
   "scripts": {
     "build": "tsc",

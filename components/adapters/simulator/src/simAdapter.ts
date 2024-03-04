@@ -1,5 +1,5 @@
 import { join } from "path";
-import { core, errors } from "@plutolang/base";
+import { PlatformType, ProvisionType, core, errors } from "@plutolang/base";
 import { Simulator } from "./simulator";
 
 /**
@@ -17,6 +17,11 @@ export class SimulatorAdapter extends core.Adapter {
 
   constructor(args: core.NewAdapterArgs) {
     super(args);
+
+    process.env.PLUTO_PROJECT_NAME = args.project;
+    process.env.PLUTO_STACK_NAME = args.stack.name;
+    process.env["PLUTO_PLATFORM_TYPE"] = PlatformType.Simulator;
+    process.env["PLUTO_PROVISION_TYPE"] = ProvisionType.Simulator;
   }
 
   public async state(): Promise<core.StateResult> {

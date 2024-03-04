@@ -1,12 +1,10 @@
 current: aws
 stacks:
   - configs: {}
-    deployed: false
     provisionType: Pulumi
     name: aws
     platformType: AWS
   - configs: {}
-    deployed: false
     provisionType: Pulumi
     name: k8s
     platformType: K8S
