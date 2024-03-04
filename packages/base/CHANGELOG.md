@@ -1,5 +1,13 @@
 # @plutolang/base
 
+## 0.3.1
+
+### Patch Changes
+
+- d285a49: Feature: refactor Pluto's output management
+
+  Refactor Pluto's output management by introducing a dedicated directory for the adapter to maintain its state. Migrate all state-related configurations, including lastArchRefFile, from the existing configuration file to this new state directory.
+
 ## 0.3.0
 
 ### Minor Changes
