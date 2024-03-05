@@ -5,3 +5,4 @@ packages:
   # - "devapps/*"
   - "testapps/*"
   - "examples/*"
+  - "!components/deducers/python-pyright/libs/*"
