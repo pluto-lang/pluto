@@ -39,6 +39,9 @@ jobs:
         with:
           version: 8
 
+      - name: Prepare dependent packages
+        run: bash scripts/prepare.sh
+
       - name: Install dependencies
         run: pnpm install
 
