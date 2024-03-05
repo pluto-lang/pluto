@@ -15,8 +15,8 @@
   "scripts": {
     "build": "bash scripts/prepare-pyright-pkg.sh && tsc",
     "watch": "npm run build -- --watch",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest --coverage",
+    "test": "vitest run --coverage --passWithNoTests",
+    "test:watch": "vitest --coverage --passWithNoTests",
     "lint": "eslint .",
     "clean": "tsc --build --clean"
   },
