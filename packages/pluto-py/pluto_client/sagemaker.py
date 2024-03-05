@@ -1,7 +1,12 @@
 from enum import Enum
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
-from pluto_base.resource import IResource, IResourceCapturedProps, IResourceClientApi, IResourceInfraApi
+from pluto_base.resource import (
+    IResource,
+    IResourceCapturedProps,
+    IResourceClientApi,
+    IResourceInfraApi,
+)
 from pluto_base.platform import PlatformType
 from pluto_base import utils
 from clients import aws
@@ -68,7 +73,9 @@ class ISageMakerCapturedProps(IResourceCapturedProps):
         raise NotImplementedError
 
 
-class ISageMakerClient(ISageMakerClientApi, ISageMakerCapturedProps, ISageMakerNormalApi):
+class ISageMakerClient(
+    ISageMakerClientApi, ISageMakerCapturedProps, ISageMakerNormalApi
+):
     pass
 
 
@@ -79,13 +86,17 @@ class ISageMakerInfra(ISageMakerInfraApi, ISageMakerCapturedProps):
 class SageMaker(IResource, ISageMakerClient, ISageMakerInfra):
     fqn = "@plutolang/pluto.aws.SageMaker"
 
-    def __init__(self, name: str, image_uri: str, opts: Optional[SageMakerOptions] = None):
+    def __init__(
+        self, name: str, image_uri: str, opts: Optional[SageMakerOptions] = None
+    ):
         raise NotImplementedError(
             "Cannot instantiate this class, instead of its subclass depending on the target runtime."
         )
 
     @staticmethod
-    def build_client(name: str, image_uri: str, opts: Optional[SageMakerOptions] = None) -> 'ISageMakerClient':
+    def build_client(
+        name: str, image_uri: str, opts: Optional[SageMakerOptions] = None
+    ) -> "ISageMakerClient":
         platform_type = utils.current_platform_type()
         if platform_type != PlatformType.AWS:
             raise NotImplementedError("SageMaker is only supported on AWS")

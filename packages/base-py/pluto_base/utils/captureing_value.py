@@ -2,8 +2,7 @@ import os
 
 
 def create_env_name_for_property(resource_id: str, property_name: str) -> str:
-    env_name = f"{resource_id}_{property_name}".upper().replace(
-        r'[^a-zA-Z0-9_]', "_")
+    env_name = f"{resource_id}_{property_name}".upper().replace(r"[^a-zA-Z0-9_]", "_")
     return env_name
 
 

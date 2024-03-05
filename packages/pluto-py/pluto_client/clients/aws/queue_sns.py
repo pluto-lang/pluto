@@ -13,21 +13,20 @@ class SNSQueue(IQueueClient):
         self.__id = gen_resource_id(Queue.fqn, name)
         self.__topic_name = gen_aws_resource_name(self.__id)
         self.__topic_arn = self.__build_arn(self.__topic_name)
-        self.__client = boto3.client('sns')
+        self.__client = boto3.client("sns")
 
     def push(self, msg: str) -> None:
         event = CloudEvent(time.time(), msg)
         self.__client.publish(
-            TopicArn=self.__topic_arn,
-            Message=json.dumps(event.__dict__)
+            TopicArn=self.__topic_arn, Message=json.dumps(event.__dict__)
         )
 
     def __build_arn(self, topic_name: str) -> str:
-        region = os.environ.get('AWS_REGION')
+        region = os.environ.get("AWS_REGION")
         if not region:
             raise EnvironmentError("Missing AWS Region")
 
-        account_id = os.environ.get('AWS_ACCOUNT_ID')
+        account_id = os.environ.get("AWS_ACCOUNT_ID")
         if not account_id:
             raise EnvironmentError("Missing AWS Account ID")
 

@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
-from pluto_base.resource import IResource, IResourceCapturedProps, IResourceInfraApi, IResourceClientApi
+from pluto_base.resource import (
+    IResource,
+    IResourceCapturedProps,
+    IResourceInfraApi,
+    IResourceClientApi,
+)
 from pluto_base.platform import PlatformType
 from pluto_base import utils
 from .clients import aws
@@ -8,13 +13,12 @@ from .clients import aws
 
 DEFAULT_FUNCTION_NAME = "default"
 
-FnHandler = TypeVar('FnHandler', bound=Callable[..., Any])
+FnHandler = TypeVar("FnHandler", bound=Callable[..., Any])
 
 
-class DirectCallResponse:
-    def __init__(self, code: int, body: Any):
-        self.code = code
-        self.body = body
+class DirectCallResponse(BaseModel):
+    code: int
+    body: Any
 
 
 class FunctionOptions(BaseModel):
@@ -53,10 +57,11 @@ class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
         )
 
     @staticmethod
-    def build_client(func: FnHandler, opts: Optional[FunctionOptions] = None) -> IFunctionClient[FnHandler]:
+    def build_client(
+        func: FnHandler, opts: Optional[FunctionOptions] = None
+    ) -> IFunctionClient[FnHandler]:
         platform_type = utils.current_platform_type()
-        raise NotImplementedError
-        # if platform_type == PlatformType.AWS:
-        #     return aws.LambdaFunction(func, opts)
-        # else:
-        #     raise ValueError(f"not support this runtime '{platform_type}'")
+        if platform_type == PlatformType.AWS:
+            return aws.LambdaFunction(func, opts)
+        else:
+            raise ValueError(f"not support this runtime '{platform_type}'")

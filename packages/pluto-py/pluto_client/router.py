@@ -1,24 +1,21 @@
 from pydantic import BaseModel
-from typing import Callable, Dict, Optional, Union
+from typing import Callable, Dict, Optional
 from pluto_base.platform import PlatformType
 from pluto_base import utils, resource
 from .clients import shared
 
 
-class HttpRequest:
-    def __init__(self, path: str, method: str, headers: Dict[str, Optional[str]],
-                 query: Dict[str, Optional[Union[str, list]]], body: Optional[str]):
-        self.path = path
-        self.method = method
-        self.headers = headers
-        self.query = query
-        self.body = body
+class HttpRequest(BaseModel):
+    path: str
+    method: str
+    headers: Dict[str, str]
+    query: Dict[str, str | list[str]]
+    body: Optional[str]
 
 
-class HttpResponse:
-    def __init__(self, status_code: int, body: str):
-        self.status_code = status_code
-        self.body = body
+class HttpResponse(BaseModel):
+    status_code: int
+    body: str
 
 
 RequestHandler = Callable[[HttpRequest], HttpResponse]
@@ -64,7 +61,8 @@ class Router(resource.IResource, IRouterClient, IRouterInfra):
 
     def __init__(self, name: str, opts: Optional[RouterOptions] = None):
         raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime.")
+            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
+        )
 
     @staticmethod
     def build_client(name: str, opts: Optional[RouterOptions] = None) -> IRouterClient:

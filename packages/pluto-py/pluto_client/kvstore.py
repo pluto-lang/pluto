@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import Optional
-from pluto_base.resource import IResource, IResourceCapturedProps, IResourceClientApi, IResourceInfraApi
+from pluto_base.resource import (
+    IResource,
+    IResourceCapturedProps,
+    IResourceClientApi,
+    IResourceInfraApi,
+)
 from pluto_base.platform import PlatformType
 from pluto_base import utils
 from .clients import aws
@@ -39,10 +44,13 @@ class KVStore(IResource, IKVStoreClient, IKVStoreInfra):
 
     def __init__(self, name: str, opts: Optional[KVStoreOptions] = None):
         raise NotImplementedError(
-            "cannot instantiate this class, instead of its subclass depending on the target runtime.")
+            "cannot instantiate this class, instead of its subclass depending on the target runtime."
+        )
 
     @staticmethod
-    def build_client(name: str, opts: Optional[KVStoreOptions] = None) -> IKVStoreClient:
+    def build_client(
+        name: str, opts: Optional[KVStoreOptions] = None
+    ) -> IKVStoreClient:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
             return aws.DynamoKVStore(name, opts)

@@ -1,15 +1,19 @@
 from pydantic import BaseModel
 from typing import Any, Callable, Optional
-from pluto_base.resource import IResource, IResourceCapturedProps, IResourceClientApi, IResourceInfraApi
+from pluto_base.resource import (
+    IResource,
+    IResourceCapturedProps,
+    IResourceClientApi,
+    IResourceInfraApi,
+)
 from pluto_base.platform import PlatformType
 from pluto_base import utils
 from .clients import aws
 
 
-class CloudEvent:
-    def __init__(self, timestamp: float, data: str):
-        self.timestamp = timestamp
-        self.data = data
+class CloudEvent(BaseModel):
+    timestamp: float
+    data: str
 
 
 EventHandler = Callable[[CloudEvent], None]
