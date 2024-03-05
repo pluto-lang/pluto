@@ -37,7 +37,7 @@ export class LambdaFunction<T extends AnyFunction> implements IFunctionClient<T>
       FunctionName: this.lambdaName,
       InvocationType: "RequestResponse",
       LogType: "None",
-      Payload: JSON.stringify(args), // 可选
+      Payload: JSON.stringify(args),
     };
     try {
       const command = new InvokeCommand(params);
