@@ -1,0 +1,37 @@
+{
+  "name": "@plutolang/pyright-deducer",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pluto-lang/pluto.git",
+    "directory": "components/deducers/pyright"
+  },
+  "author": "plutolang",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bash scripts/prepare-pyright-pkg.sh && tsc",
+    "watch": "npm run build -- --watch",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest --coverage",
+    "lint": "eslint .",
+    "clean": "tsc --build --clean"
+  },
+  "dependencies": {
+    "@plutolang/base": "workspace:^",
+    "pyright-internal": "file:libs/pyright-internal"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "@types/node": "^17.0.45",
+    "@vitest/coverage-v8": "^0.34.6",
+    "vite": "4",
+    "vitest": "^0.34.6"
+  },
+  "bundleDependencies": [
+    "pyright-internal"
+  ]
+}
