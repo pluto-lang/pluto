@@ -45,3 +45,4 @@ devapps/
 # python
 **/__pycache__/
 **/*.pyc
+venv/
