@@ -16,8 +16,8 @@
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["src"],
-  "exclude": ["node_modules", "libs", "**/*.test.ts"]
+  "exclude": ["node_modules", "libs"]
 }
