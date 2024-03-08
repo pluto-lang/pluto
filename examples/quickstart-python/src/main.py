@@ -1,6 +1,14 @@
 import json
 from datetime import datetime
-from pluto_client import KVStore, Queue, Router, HttpRequest, HttpResponse, Function, FunctionOptions
+from pluto_client import (
+    KVStore,
+    Queue,
+    Router,
+    HttpRequest,
+    HttpResponse,
+    Function,
+    FunctionOptions,
+)
 
 
 router = Router("router")
@@ -14,7 +22,7 @@ def hello_handler(req: HttpRequest) -> HttpResponse:
         name = ",".join(name)
     message = f"{name} access at {int(datetime.now().timestamp() * 1000)}"
     queue.push(json.dumps({"name": name, "message": message}))
-    return HttpResponse(200, f"Publish a message: {message}.")
+    return HttpResponse(status_code=200, body=f"Publish a message: {message}.")
 
 
 def store_handler(req: HttpRequest) -> HttpResponse:
@@ -22,7 +30,9 @@ def store_handler(req: HttpRequest) -> HttpResponse:
     if isinstance(name, list):
         name = ",".join(name)
     message = kvstore.get(str(name))
-    return HttpResponse(200, f"Fetch {name} access message: {message}.")
+    return HttpResponse(
+        status_code=200, body=f"Fetch {name} access message: {message}."
+    )
 
 
 def handle_queue_event(event_data):

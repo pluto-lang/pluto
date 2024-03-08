@@ -7,7 +7,7 @@ const SAMPLES_ROOT = path.join(__dirname, "samples");
 
 test("TypeSearcher should correctly identify special types in the parse tree", () => {
   // Set up
-  const samplePath = path.join(SAMPLES_ROOT, "special-type.valid.py");
+  const samplePath = path.join(SAMPLES_ROOT, "special_type_valid.py");
   const { program, sourceFiles } = TestUtils.parseFiles([samplePath]);
 
   // Ensure there is only one source file

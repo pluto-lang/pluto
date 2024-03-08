@@ -105,3 +105,28 @@ function containsMethod(classNode: ClassNode, methodName: string): boolean {
   walker.walk(classNode);
   return walker.found;
 }
+
+export function getTypeName(type: Type): string {
+  switch (type.category) {
+    case TypeCategory.Class:
+      return `class ${type.details.fullName}`;
+    case TypeCategory.Function:
+      return "function";
+    case TypeCategory.Module:
+      return "module";
+    case TypeCategory.OverloadedFunction:
+      return "overloaded function";
+    case TypeCategory.Union:
+      return "union";
+    case TypeCategory.Unknown:
+      return "unknown";
+    case TypeCategory.Never:
+      return "never";
+    case TypeCategory.Any:
+      return "any";
+    case TypeCategory.TypeVar:
+      return "type var";
+    case TypeCategory.Unbound:
+      return "unbound";
+  }
+}

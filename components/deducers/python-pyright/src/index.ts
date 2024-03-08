@@ -7,7 +7,12 @@ import { LogLevel } from "pyright-internal/dist/common/console";
 
 import * as TextUtils from "./text-utils";
 import * as ProgramUtils from "./program-utils";
+import * as TypeConsts from "./type-consts";
 import { TypeSearcher } from "./type-searcher";
+import { ArgumentCategory, CallNode } from "pyright-internal/dist/parser/parseNodes";
+import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
+import { TypeCategory } from "pyright-internal/dist/analyzer/types";
+import { Value, ValueEvaluator } from "./value-evaluator";
 
 export default class PyrightDeducer extends Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -52,7 +57,39 @@ function doTypeSearch(program: Program, sourceFile: SourceFile) {
   walker.specialNodeMap.forEach((nodes, key) => {
     console.log("Special Node:", key);
     nodes.forEach((node) => {
-      console.log("  ", TextUtils.getTextOfNode(node, sourceFile));
+      console.log("/--------------------\\");
+      console.log("|", TextUtils.getTextOfNode(node, sourceFile));
+      if (
+        key === TypeConsts.IRESOURCE_FULL_NAME ||
+        key === TypeConsts.IRESOURCE_INFRA_API_FULL_NAME
+      ) {
+        getArgumentValue(node, sourceFile, program.evaluator!);
+      }
+      console.log("\\--------------------/\n\n");
     });
+  });
+}
+
+function getArgumentValue(
+  callNode: CallNode,
+  sourceFile: SourceFile,
+  typeEvaluator: TypeEvaluator
+) {
+  callNode.arguments.forEach((arg) => {
+    console.log("| Argument:");
+    console.log("|   Text: ", TextUtils.getTextOfNode(arg, sourceFile));
+
+    const valueNodeType = typeEvaluator.getType(arg.valueExpression);
+    if (valueNodeType?.category === TypeCategory.Function) {
+      console.log("|   Value is a function, we need to encapsulate it into closures afterward.");
+      return;
+    }
+
+    if (arg.argumentCategory === ArgumentCategory.Simple) {
+      const valueEvaluator = new ValueEvaluator(typeEvaluator);
+      const value = valueEvaluator.getValue(arg.valueExpression);
+      console.log("|   Value: ", value);
+      console.log("|   Stringified: ", Value.toString(value));
+    }
   });
 }
