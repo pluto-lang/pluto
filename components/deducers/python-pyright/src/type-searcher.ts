@@ -2,7 +2,7 @@ import assert from "assert";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
-import { CallNode, ParseNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
+import { CallNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
 import { ClassType, FunctionType, TypeCategory } from "pyright-internal/dist/analyzer/types";
 
 import * as TypeUtils from "./type-utils";
@@ -15,7 +15,7 @@ import * as TextUtils from "./text-utils";
  * special method of a resource object.
  */
 export class TypeSearcher extends ParseTreeWalker {
-  private readonly _specialNodeMap: Map<string, ParseNode[]> = new Map();
+  private readonly _specialNodeMap: Map<string, CallNode[]> = new Map();
 
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
@@ -24,7 +24,7 @@ export class TypeSearcher extends ParseTreeWalker {
     super();
   }
 
-  get specialNodeMap(): Map<string, ParseNode[]> {
+  get specialNodeMap(): Map<string, CallNode[]> {
     return this._specialNodeMap;
   }
 
