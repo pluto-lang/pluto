@@ -1,13 +1,12 @@
-import assert from "assert";
+import { CallNode } from "pyright-internal/dist/parser/parseNodes";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
-import { CallNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
 import { ClassType, FunctionType, TypeCategory } from "pyright-internal/dist/analyzer/types";
-
+import * as TextUtils from "./text-utils";
 import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
-import * as TextUtils from "./text-utils";
+import { SpecialNodeMap } from "./special-node-map";
 
 /**
  * This class is responsible for searching for special types usage in the parse tree of one source
@@ -15,7 +14,7 @@ import * as TextUtils from "./text-utils";
  * special method of a resource object.
  */
 export class TypeSearcher extends ParseTreeWalker {
-  private readonly _specialNodeMap: Map<string, CallNode[]> = new Map();
+  private readonly _specialNodeMap: SpecialNodeMap<CallNode> = new SpecialNodeMap();
 
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
@@ -24,7 +23,7 @@ export class TypeSearcher extends ParseTreeWalker {
     super();
   }
 
-  get specialNodeMap(): Map<string, CallNode[]> {
+  get specialNodeMap() {
     return this._specialNodeMap;
   }
 
@@ -77,8 +76,10 @@ export class TypeSearcher extends ParseTreeWalker {
 
   private validateFunctionCall(node: CallNode, type: FunctionType): void {
     if (!type.boundToType) {
-      // If the function is not bound to any type, it represents the final function call type is a
-      // regular function. We skip it.
+      // If the function is not bound to any type, it just means it's a regular function call. We'll
+      // skip it. But if it's bound to a type, it's a method call, and `type.boundToType` indicates
+      // the type of object the method works on. For special methods, `type.boundToType` ought to be
+      // a subclass of `pluto_base.IResource`.
       return;
     }
 
@@ -88,9 +89,7 @@ export class TypeSearcher extends ParseTreeWalker {
     }
 
     // Get the method name.
-    assert(node.leftExpression.nodeType === ParseNodeType.MemberAccess);
-    const memberName = node.leftExpression.memberName.value;
-
+    const memberName = type.details.name;
     // Check if the method belongs to any special type.
     for (const specialType of [
       TypeConsts.IRESOURCE_INFRA_API_FULL_NAME,
@@ -98,10 +97,7 @@ export class TypeSearcher extends ParseTreeWalker {
       TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME,
     ]) {
       if (TypeUtils.doesMethodBelongTo(memberName, type.boundToType, specialType)) {
-        if (!this._specialNodeMap.has(specialType)) {
-          this._specialNodeMap.set(specialType, []);
-        }
-        this._specialNodeMap.get(specialType)!.push(node);
+        this._specialNodeMap.addNode(specialType, node);
       }
     }
   }
@@ -110,10 +106,7 @@ export class TypeSearcher extends ParseTreeWalker {
     // This is a constructor call. We need to check if the class is a subclass of
     // pluto_base.IResource.
     if (TypeUtils.isSubclassOf(type, TypeConsts.IRESOURCE_FULL_NAME)) {
-      if (!this._specialNodeMap.has(TypeConsts.IRESOURCE_FULL_NAME)) {
-        this._specialNodeMap.set(TypeConsts.IRESOURCE_FULL_NAME, []);
-      }
-      this._specialNodeMap.get(TypeConsts.IRESOURCE_FULL_NAME)!.push(node);
+      this._specialNodeMap.addNode(TypeConsts.IRESOURCE_FULL_NAME, node);
     }
   }
 }
