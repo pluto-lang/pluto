@@ -1,8 +1,9 @@
-from pluto_client import Queue
+from pluto_client import Queue, Router
 
 
 # Directly instantiate the resource object.
 queue = Queue("queue")
+router = Router("router")
 
 
 # Indirectly instantiate the resource object.
@@ -28,4 +29,9 @@ AliasQueue("queue5").subscribe(lambda x: print(x))
 
 
 # Invoke the resource method on a factory function's return value.
-createQueue("queue4").subscribe(lambda x: print(x))
+def subscribe_handler(x):
+    queue3.push("client call")  # client api call
+    print(router.url())  # captured property access
+
+
+createQueue("queue4").subscribe(subscribe_handler)
