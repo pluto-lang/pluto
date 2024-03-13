@@ -6,7 +6,12 @@ import { Program } from "pyright-internal/dist/analyzer/program";
 import { TypeCategory } from "pyright-internal/dist/analyzer/types";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
-import { ArgumentCategory, CallNode } from "pyright-internal/dist/parser/parseNodes";
+import {
+  ArgumentCategory,
+  ArgumentNode,
+  CallNode,
+  ParseNodeType,
+} from "pyright-internal/dist/parser/parseNodes";
 import { DeduceResult, Deducer } from "@plutolang/base/core";
 import * as TextUtils from "./text-utils";
 import * as TypeConsts from "./type-consts";
@@ -16,6 +21,7 @@ import { TypeSearcher } from "./type-searcher";
 import { SpecialNodeMap } from "./special-node-map";
 import { Value, ValueEvaluator } from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
+import { Closure, ClosureExtractor } from "./closure-extractor";
 
 export default class PyrightDeducer extends Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -99,7 +105,8 @@ export default class PyrightDeducer extends Deducer {
           specialType === TypeConsts.IRESOURCE_FULL_NAME ||
           specialType === TypeConsts.IRESOURCE_INFRA_API_FULL_NAME
         ) {
-          getArgumentValue(node, sourceFile, program.evaluator!);
+          const valueEvaluator = new ValueEvaluator(program.evaluator!);
+          getArgumentValue(node, sourceFile, program.evaluator!, tracker, valueEvaluator);
           // console.log(inGlobalScope(node, sourceFile));
         }
         console.log("\\--------------------/\n\n");
@@ -129,20 +136,41 @@ export default class PyrightDeducer extends Deducer {
 function getArgumentValue(
   callNode: CallNode,
   sourceFile: SourceFile,
-  typeEvaluator: TypeEvaluator
+  typeEvaluator: TypeEvaluator,
+  resourceObjectTracker: ResourceObjectTracker,
+  valueEvaluator: ValueEvaluator
 ) {
+  function isFunctionArgument(arg: ArgumentNode, typeEvaluator: TypeEvaluator) {
+    if (arg.valueExpression.nodeType === ParseNodeType.Lambda) {
+      return true;
+    }
+    const valueNodeType = typeEvaluator.getType(arg.valueExpression);
+    return valueNodeType?.category === TypeCategory.Function;
+  }
+
   callNode.arguments.forEach((arg) => {
     console.log("| Argument:");
     console.log("|   Text: ", TextUtils.getTextOfNode(arg, sourceFile));
 
-    const valueNodeType = typeEvaluator.getType(arg.valueExpression);
-    if (valueNodeType?.category === TypeCategory.Function) {
-      console.log("|   Value is a function, we need to encapsulate it into closures afterward.");
+    if (isFunctionArgument(arg, typeEvaluator)) {
+      const closureExtractor = new ClosureExtractor(
+        typeEvaluator,
+        resourceObjectTracker,
+        valueEvaluator
+      );
+      const closure = closureExtractor.extractClosure(arg.valueExpression, sourceFile);
+      console.log("| ================= Closure Begin ================== ");
+      console.log(
+        Closure.toString(closure)
+          .split("\n")
+          .map((s) => "| " + s)
+          .join("\n")
+      );
+      console.log("| ================= Closure End ================== ");
       return;
     }
 
     if (arg.argumentCategory === ArgumentCategory.Simple) {
-      const valueEvaluator = new ValueEvaluator(typeEvaluator);
       const value = valueEvaluator.getValue(arg.valueExpression);
       console.log("|   Value: ", value);
       console.log("|   Stringified: ", Value.toString(value));

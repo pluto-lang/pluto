@@ -7,6 +7,7 @@ import { LogLevel } from "pyright-internal/dist/common/console";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 
 import * as ProgramUtils from "../program-utils";
+import { TypeSearcher } from "../type-searcher";
 
 export interface ParseResult {
   program: Program;
@@ -59,4 +60,14 @@ export function parseCode(code: string, filename: string = "tmp.py") {
       fs.rmSync(path.dirname(sourceFile.getUri().key), { recursive: true });
     },
   };
+}
+
+export function getSpecialNodeMap(program: Program, sourceFile: SourceFile) {
+  const parseResult = sourceFile.getParseResults();
+  expect(parseResult).toBeDefined();
+  const parseTree = parseResult!.parseTree;
+
+  const walker = new TypeSearcher(program.evaluator!, sourceFile);
+  walker.walk(parseTree);
+  return walker.specialNodeMap;
 }

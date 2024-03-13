@@ -1,7 +1,4 @@
-import { Program } from "pyright-internal/dist/analyzer/program";
-import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { ResourceObjectTracker } from "../resource-object-tracker";
-import { TypeSearcher } from "../type-searcher";
 import * as TypeConsts from "../type-consts";
 import * as TestUtils from "./test-utils";
 
@@ -26,7 +23,7 @@ aliasQueue.subscribe(subscribe_handler)  # infra api call
 
   const { program, sourceFile, clean } = TestUtils.parseCode(code);
 
-  const specialNodeMap = getSpecialNodeMap(program, sourceFile);
+  const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
 
   const infraApiCalls = specialNodeMap.getNodesByType(TypeConsts.IRESOURCE_INFRA_API_FULL_NAME);
@@ -63,7 +60,7 @@ indirectFn("/path", lambda x: x)
 `;
 
   const { program, sourceFile, clean } = TestUtils.parseCode(code);
-  const specialNodeMap = getSpecialNodeMap(program, sourceFile);
+  const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
 
   const infraApiCalls = specialNodeMap.getNodesByType(TypeConsts.IRESOURCE_INFRA_API_FULL_NAME);
@@ -89,7 +86,7 @@ router.get("/path", lambda x: x)
 `;
 
   const { program, sourceFile, clean } = TestUtils.parseCode(code);
-  const specialNodeMap = getSpecialNodeMap(program, sourceFile);
+  const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
 
   const infraApiCalls = specialNodeMap.getNodesByType(TypeConsts.IRESOURCE_INFRA_API_FULL_NAME);
@@ -116,7 +113,7 @@ router.get("/path", lambda x: x)
 `;
 
   const { program, sourceFile, clean } = TestUtils.parseCode(code);
-  const specialNodeMap = getSpecialNodeMap(program, sourceFile);
+  const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
 
   const infraApiCalls = specialNodeMap.getNodesByType(TypeConsts.IRESOURCE_INFRA_API_FULL_NAME);
@@ -130,13 +127,3 @@ router.get("/path", lambda x: x)
 
   clean();
 });
-
-function getSpecialNodeMap(program: Program, sourceFile: SourceFile) {
-  const parseResult = sourceFile.getParseResults();
-  expect(parseResult).toBeDefined();
-  const parseTree = parseResult!.parseTree;
-
-  const walker = new TypeSearcher(program.evaluator!, sourceFile);
-  walker.walk(parseTree);
-  return walker.specialNodeMap;
-}

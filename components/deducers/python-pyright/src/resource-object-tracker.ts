@@ -70,14 +70,14 @@ export class ResourceObjectTracker {
   }
 
   /**
-   * The caller variable refers to a resource object. We're attempting to locate the calling node
-   * that creates this resource object.
+   * The variable refers to a resource object. We're attempting to locate the calling node that
+   * creates this resource object.
    * @param node - The name node refering to the resource object.
    * @param sourceFile - The source file that the node is in.
    * @returns - The node that constructs the resource object. If the node is not found, return
    * undefined.
    */
-  private getConstructNodeByNameNode(node: NameNode, sourceFile: SourceFile): CallNode | undefined {
+  public getConstructNodeByNameNode(node: NameNode, sourceFile: SourceFile): CallNode | undefined {
     if (this.cache.has(node.id)) {
       return this.cache.get(node.id);
     }

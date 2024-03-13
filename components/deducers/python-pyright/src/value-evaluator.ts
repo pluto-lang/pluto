@@ -15,7 +15,7 @@ export interface Value {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Value {
-  export function toString(value: Value): string {
+  export function toString(value: Value, containModuleName: boolean = true): string {
     if (value.type === undefined) {
       // This is a primitive. We can directly return the JSON stringified value.
       return JSON.stringify(value.value);
@@ -32,13 +32,36 @@ export namespace Value {
       }
       default: {
         // This is a data class object.
+        const type = containModuleName ? value.type : value.type.split(".").pop()!;
         const values = value.value! as Record<string, Value>;
         const params = Object.entries(values)
           .map(([k, v]) => `${k}=${Value.toString(v)}`)
           .join(", ");
-        return `${value.type}(${params})`;
+        return `${type}(${params})`;
       }
     }
+  }
+
+  /**
+   * Get all the types contained in the value.
+   */
+  export function getTypes(value: Value): string[] {
+    const types: string[] = [];
+    if (value.type) {
+      types.push(value.type);
+    }
+    if (value.value) {
+      if (Array.isArray(value.value)) {
+        value.value.forEach((v) => {
+          types.push(...getTypes(v));
+        });
+      } else {
+        Object.values(value.value).forEach((v) => {
+          types.push(...getTypes(v));
+        });
+      }
+    }
+    return types;
   }
 }
 
