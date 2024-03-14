@@ -42,6 +42,32 @@ export namespace Value {
     }
   }
 
+  export function toJson(value: Value): string {
+    if (value.type === undefined) {
+      // This is a primitive. We can directly return the JSON stringified value.
+      return JSON.stringify(value.value);
+    }
+
+    if (value.type === "types.NoneType") {
+      return "null";
+    }
+
+    switch (value.type) {
+      case "builtins.tuple": {
+        const values = value.value! as Value[];
+        return `[${values.map((v) => Value.toJson(v)).join(", ")}]`;
+      }
+      default: {
+        // This is a data class object.
+        const values = value.value! as Record<string, Value>;
+        const params = Object.entries(values)
+          .map(([k, v]) => `"${k}": ${Value.toJson(v)}`)
+          .join(", ");
+        return `{${params}}`;
+      }
+    }
+  }
+
   /**
    * Get all the types contained in the value.
    */
