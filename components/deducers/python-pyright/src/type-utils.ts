@@ -1,7 +1,15 @@
 import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
+import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import { ClassType, Type, TypeCategory } from "pyright-internal/dist/analyzer/types";
-import { ClassNode, FunctionNode } from "pyright-internal/dist/parser/parseNodes";
+import {
+  ClassNode,
+  ExpressionNode,
+  FunctionNode,
+  LambdaNode,
+  ParseNode,
+  ParseNodeType,
+} from "pyright-internal/dist/parser/parseNodes";
 
 /**
  * Check if the type is a subclass of the target type.
@@ -9,7 +17,7 @@ import { ClassNode, FunctionNode } from "pyright-internal/dist/parser/parseNodes
  * @param targetTypeFullName - The full name of the target type.
  * @returns True if the type is a subclass of the target type, otherwise false.
  */
-export function isSubclassOf(type: Type, targetTypeFullName: string): boolean {
+export function isSubclassOf(type: Type, targetTypeFullName: string): type is ClassType {
   // If the type is unknown, we cannot determine if it is a subclass of the target class. So, we
   // print a warning and return false.
   if (type.category === TypeCategory.Unknown) {
@@ -104,6 +112,15 @@ function containsMethod(classNode: ClassNode, methodName: string): boolean {
   const walker = new TreeWalker(methodName);
   walker.walk(classNode);
   return walker.found;
+}
+
+export function isFunctionVar(node: ExpressionNode, typeEvaluator: TypeEvaluator) {
+  const valueNodeType = typeEvaluator.getType(node);
+  return valueNodeType?.category === TypeCategory.Function;
+}
+
+export function isLambdaNode(node: ParseNode): node is LambdaNode {
+  return node.nodeType === ParseNodeType.Lambda;
 }
 
 export function getTypeName(type: Type): string {
