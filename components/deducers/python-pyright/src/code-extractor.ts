@@ -330,6 +330,8 @@ export class CodeExtractor {
     sourceFile: SourceFile,
     extractFunctionArg: boolean
   ): CodeSegment {
+    const codePrefix = arg.name ? `${arg.name.value}=` : "";
+
     if (
       TypeUtils.isLambdaNode(arg.valueExpression) ||
       TypeUtils.isFunctionVar(arg.valueExpression, this.typeEvaluator)
@@ -341,7 +343,7 @@ export class CodeExtractor {
         // placeholder.
         return {
           node: arg,
-          code: "lambda _: _",
+          code: `${codePrefix}lambda _: _`,
           dependencies: [],
         };
       }
@@ -354,13 +356,17 @@ export class CodeExtractor {
       // the named node as the text for the argument expression.
       return {
         node: arg,
-        code: arg.valueExpression.value,
+        code: `${codePrefix}${arg.valueExpression.value}`,
         dependencies: [segment],
       };
     } else {
       // Otherwise, we use the code of the expression as the text for the argument expression, so we
       // just directly return the segment of the expression.
-      return segment;
+      return {
+        node: arg,
+        code: `${codePrefix}${segment.code}`,
+        dependencies: segment.dependencies,
+      };
     }
   }
 
