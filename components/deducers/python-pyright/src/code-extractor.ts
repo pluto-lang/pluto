@@ -2,6 +2,7 @@ import assert from "node:assert";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import {
+  ArgumentNode,
   CallNode,
   ClassNode,
   ExpressionNode,
@@ -15,7 +16,6 @@ import {
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
 import { Scope } from "pyright-internal/dist/analyzer/scope";
-import { TypeBase } from "pyright-internal/dist/analyzer/types";
 import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import * as AnalyzerNodeInfo from "pyright-internal/dist/analyzer/analyzerNodeInfo";
@@ -24,71 +24,102 @@ import * as TextUtils from "./text-utils";
 import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ScopeUtils from "./scope-utils";
+import { SpecialNodeMap } from "./special-node-map";
 import { Value, ValueEvaluator } from "./value-evaluator";
-import { ResourceObjectTracker } from "./resource-object-tracker";
 
-export interface Closure {
+export interface CodeSegment {
   readonly node: ParseNode;
   /**
-   * If a closure hasn't an exportable name, it means the closure is a lambda function or a function
-   * call.
+   * If a code segment hasn't an exportable name, it means the segment is not a direct exportable
+   * expression, such as a lambda function or a function call. If we want to export the code
+   * segment, we need to assign it to a variable, and then export the variable.
    */
   readonly exportableName?: string;
   /**
    * The code after being transformed from a node expression, including constant folding, etc. It
-   * contains only one expression or statement, with its dependencies specified in the
-   * `dependencies`.
+   * contains only one code segment related to the `node`, such as a variable assignment, a function
+   * call, a class definition, etc. And it dependencies are specified in the `dependencies`.
    */
   readonly code: string;
-  readonly dependencies: Closure[];
+  /**
+   * The `dependencies` includes the variables, functions, classes, etc., that are accessed in the
+   * current node.
+   */
+  readonly dependencies: CodeSegment[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Closure {
-  export function toString(closure: Closure, extractedNodeIds: Set<number> = new Set()): string {
-    const deps = closure.dependencies
-      .map((dep) => Closure.toString(dep, extractedNodeIds))
-      .join("\n");
+export namespace CodeSegment {
+  export function toString(segment: CodeSegment): string {
+    const extractedNodeIds: Set<number> = new Set();
+    function concatCodeRecursively(segment: CodeSegment): string {
+      const depsCode = segment.dependencies.map((dep) => concatCodeRecursively(dep)).join("\n");
 
-    if (extractedNodeIds.has(closure.node.id)) {
-      // Avoid extracting the same node multiple times.
-      return deps;
+      if (extractedNodeIds.has(segment.node.id)) {
+        // Avoid extracting the same node multiple times.
+        return depsCode;
+      }
+
+      extractedNodeIds.add(segment.node.id);
+      return `${depsCode}\n${segment.code}`;
     }
 
-    extractedNodeIds.add(closure.node.id);
-    return `${deps}\n${closure.code}`;
+    return concatCodeRecursively(segment);
   }
 }
 
-export class ClosureExtractor {
+/**
+ * Extract the code and its dependencies of one expression.
+ */
+export class CodeExtractor {
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
-    private readonly resourceObjTracker: ResourceObjectTracker,
+    private readonly specialNodeMap: SpecialNodeMap<CallNode>,
     private readonly valueEvaluator: ValueEvaluator
   ) {}
 
-  public extractClosure(node: ExpressionNode, sourceFile: SourceFile): Closure {
-    let closure: Closure | undefined;
+  /**
+   * Extract the code and its dependencies of one expression, such as a variable, a function call,
+   * etc.
+   * @param node - The expression node.
+   * @param sourceFile - The source file where the expression node is located.
+   */
+  public extractExpressionWithDependencies(
+    node: ExpressionNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
+    let segment: CodeSegment | undefined;
     switch (node.nodeType) {
       case ParseNodeType.Lambda:
-        closure = this.extractClosureForLambda(node, sourceFile);
+        segment = this.extractLambdaWithDependencies(node, sourceFile);
         break;
       case ParseNodeType.Name:
-        closure = this.extractClosureForNameNode(node, sourceFile);
+        segment = this.extractNameNodeWithDependencies(node, sourceFile);
         break;
       case ParseNodeType.Call:
-        closure = this.extractClosureForCall(node, sourceFile);
+        segment = this.extractCallWithDependencies(node, sourceFile);
         break;
       case ParseNodeType.MemberAccess:
-        closure = this.extractClosureForMemberAccess(node, sourceFile);
+        segment = this.extractMemberAccessWithDependencies(node, sourceFile);
+        break;
+      case ParseNodeType.Number:
+      case ParseNodeType.StringList:
+        segment = {
+          node,
+          code: TextUtils.getTextOfNode(node, sourceFile)!,
+          dependencies: [],
+        };
         break;
       default:
         throw new Error(`Unsupported node type: ${node.nodeType}`);
     }
-    return closure;
+    return segment;
   }
 
-  private extractClosureForLambda(lambdaNode: LambdaNode, sourceFile: SourceFile): Closure {
+  private extractLambdaWithDependencies(
+    lambdaNode: LambdaNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
     const nodeText = TextUtils.getTextOfNode(lambdaNode, sourceFile);
 
     const lambdaScope = getScopeForNode(lambdaNode.expression);
@@ -101,9 +132,9 @@ export class ClosureExtractor {
     walker.walk(lambdaNode);
 
     // Get the dependencies of the lambda function.
-    const dependencies: Closure[] = [];
+    const dependencies: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const dep = this.extractClosureForNameNode(nameNode, sourceFile);
+      const dep = this.extractNameNodeWithDependencies(nameNode, sourceFile);
       dependencies.push(dep);
     }
 
@@ -116,11 +147,11 @@ export class ClosureExtractor {
 
   /**
    * The name node can represent various types of nodes, like variables, functions, classes, etc.
-   * When dealing with the name node, we extract what it refers to—the declaration—rather than the
-   * node itself, and return the closure for that declaration. Therefore, the function's return
-   * value is the closure of the declaration associated with the name node.
+   * When dealing with the name node, we extract what it refers to — the declaration — rather than the
+   * node itself, and return the code segment for that declaration. Therefore, the function's return
+   * value is the code segment of the declaration associated with the name node.
    */
-  private extractClosureForNameNode(nameNode: NameNode, sourceFile: SourceFile): Closure {
+  private extractNameNodeWithDependencies(nameNode: NameNode, sourceFile: SourceFile): CodeSegment {
     const lookUpResult = this.typeEvaluator.lookUpSymbolRecursive(nameNode, nameNode.value, false);
     if (!lookUpResult) {
       throw new Error(`No symbol found for node '${nameNode.value}'.`);
@@ -153,7 +184,7 @@ export class ClosureExtractor {
           }
           case ParseNodeType.Name: {
             // The name node is a variable.
-            return this.extractClosureForVariable(declaration.node, sourceFile);
+            return this.extractVariableWithDependencies(declaration.node, sourceFile);
           }
           default:
             throw new Error(`Unable to reach here.`);
@@ -161,19 +192,19 @@ export class ClosureExtractor {
       }
 
       case DeclarationType.Function: {
-        return this.extractClosureForFunction(declaration.node, sourceFile);
+        return this.extractFunctionWithDependencies(declaration.node, sourceFile);
       }
 
       case DeclarationType.Class: {
-        return this.extractClosureForClass(declaration.node, sourceFile);
+        return this.extractClassWithDependencies(declaration.node, sourceFile);
       }
 
       case DeclarationType.Alias: {
         switch (declaration.node.nodeType) {
           case ParseNodeType.ImportFromAs:
-            return this.extractClosureForImportFromAs(declaration.node);
+            return this.extractImportFromAsWithDependencies(declaration.node);
           case ParseNodeType.ImportAs:
-            return this.extractClosureForImportAs(declaration.node);
+            return this.extractImportAsWithDependencies(declaration.node);
           default:
             throw new Error(`Unsupported node type: ${declaration.node.nodeType}`);
         }
@@ -191,51 +222,30 @@ export class ClosureExtractor {
     throw new Error("Unable to reach here.");
   }
 
-  private extractClosureForVariable(node: NameNode, sourceFile: SourceFile): Closure {
+  private extractVariableWithDependencies(node: NameNode, sourceFile: SourceFile): CodeSegment {
     if (node.parent?.nodeType !== ParseNodeType.Assignment) {
       throw new Error(
         `We only support the simplest assignment statement, the tuple assignment or other statements are not supported yet.`
       );
     }
 
-    const dependencies: Closure[] = [];
+    const dependencies: CodeSegment[] = [];
     let rightExpressionText = "";
-    const rightExpression = node.parent.rightExpression;
 
-    const type = this.typeEvaluator.getType(node);
-    if (
-      type &&
-      TypeBase.isInstance(type) &&
-      TypeUtils.isSubclassOf(type, TypeConsts.IRESOURCE_FULL_NAME)
-    ) {
-      // If the type of this node is a resource object, we directly construct the statement that
-      // builds the client object for this resource object.
-      const constructNode = this.resourceObjTracker.getConstructNodeByNameNode(node, sourceFile);
-      if (!constructNode) {
-        throw new Error(`No construct node found for the resource object '${node.value}'.`);
-      }
-      const closure = this.extractClosureForCall(
-        constructNode,
-        sourceFile,
-        /* extractFunctionArg */ false
-      );
-      dependencies.push(...closure.dependencies);
-      rightExpressionText = closure.code;
-    } else if (rightExpression.nodeType === ParseNodeType.Call) {
-      // If the right expression is a function call, we extract the closure for the call.
-      const closure = this.extractClosureForCall(
-        rightExpression,
-        sourceFile,
-        /* extractFunctionArg */ true
-      );
-      dependencies.push(...closure.dependencies);
-      rightExpressionText = closure.code;
+    const rightExpression = node.parent.rightExpression;
+    const segment = this.extractExpressionWithDependencies(rightExpression, sourceFile);
+    if (rightExpression.nodeType === ParseNodeType.Name) {
+      // If the expression on the right is a named node, then the code segment includes the
+      // declaration of this named node. We should add this declaration segment to the dependencies
+      // and use the value of the named node as the text for the right expression.
+      dependencies.push(segment);
+      rightExpressionText = rightExpression.value;
     } else {
-      // Otherwise, this variable should be a literal type. Currently we only support the literal
-      // type. So, we use the ValueEvaluator to get the value of the variable. If this variable is
-      // not a literal type, the ValueEvaluator will throw an error.
-      const value = this.valueEvaluator.getValue(node.parent.rightExpression);
-      rightExpressionText = Value.toString(value);
+      // Otherwise, the code segment includes the expression itself, and we should add the
+      // dependencies of the expression to the current segment's dependencies. And use the code of
+      // the expression as the text for the right expression.
+      dependencies.push(...segment.dependencies);
+      rightExpressionText = segment.code;
     }
 
     const statement = `${node.value} = ${rightExpressionText}`;
@@ -247,7 +257,10 @@ export class ClosureExtractor {
     };
   }
 
-  private extractClosureForFunction(funcNode: FunctionNode, sourceFile: SourceFile): Closure {
+  private extractFunctionWithDependencies(
+    funcNode: FunctionNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
     const functionScope = getScopeForNode(funcNode.suite);
     if (!functionScope) {
       throw new Error(`No scope found for this function '${funcNode.name.value}'.`);
@@ -256,9 +269,9 @@ export class ClosureExtractor {
     const walker = new OutsideSymbolFinder(this.typeEvaluator, functionScope, funcNode.name);
     walker.walk(funcNode);
 
-    const dependencies: Closure[] = [];
+    const dependencies: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const dep = this.extractClosureForNameNode(nameNode, sourceFile);
+      const dep = this.extractNameNodeWithDependencies(nameNode, sourceFile);
       dependencies.push(dep);
     }
 
@@ -270,80 +283,41 @@ export class ClosureExtractor {
     };
   }
 
-  private extractClosureForCall(
-    node: CallNode,
-    sourceFile: SourceFile,
-    extractFunctionArg: boolean = true
-  ): Closure {
-    const dependencies: Closure[] = [];
-    // The types that are used in the construct statement.
-    const usedTypes = new Set<string>();
+  private extractCallWithDependencies(node: CallNode, sourceFile: SourceFile): CodeSegment {
+    // If this call node is for constructing a resource object, we don't need to extract the
+    // function type argument from it. The function type argument will be sent to the cloud and
+    // accessed via RPC.
+    const extractFunctionArg = !this.specialNodeMap.getNodeById(
+      node.id,
+      TypeConsts.IRESOURCE_FULL_NAME
+    );
+
+    const dependencies: CodeSegment[] = [];
     // The code for building each argument of the construct statement.
     const argumentCodes: string[] = [];
     node.arguments.forEach((arg) => {
-      if (
-        TypeUtils.isLambdaNode(arg.valueExpression) ||
-        TypeUtils.isFunctionVar(arg.valueExpression, this.typeEvaluator)
-      ) {
-        // The argument is either a lambda function or a function variable.
-        if (!extractFunctionArg) {
-          // If we don't need to extract the function argument, we just use a lambda function as a
-          // placeholder.
-          argumentCodes.push("lambda _: _");
-          return;
-        }
-
-        if (arg.valueExpression.nodeType === ParseNodeType.Lambda) {
-          // Lambda expression
-          const closure = this.extractClosureForLambda(arg.valueExpression, sourceFile);
-          dependencies.push(...closure.dependencies);
-          // Use the lambda expression itself as the argument text.
-          argumentCodes.push(closure.code);
-        } else {
-          // Function variable
-          const closure = this.extractClosure(arg.valueExpression, sourceFile);
-          dependencies.push(closure);
-          // Use the variable name as the argument text.
-          argumentCodes.push(TextUtils.getTextOfNode(arg.valueExpression, sourceFile)!);
-        }
-        return;
-      }
-
-      // The argument should be a regular expression, but currently, we're only set up to handle the
-      // literal type. If it's anything else, the ValueEvaluator will toss out an error.
-      const value = this.valueEvaluator.getValue(arg.valueExpression);
-      const text = Value.toString(value, /* containModuleName */ false);
-      argumentCodes.push(text);
-      const classes = Value.getTypes(value);
-      classes.forEach((cls) => usedTypes.add(cls));
+      const segment = this.extractArgumentWithDependencies(arg, sourceFile, extractFunctionArg);
+      dependencies.push(...segment.dependencies);
+      argumentCodes.push(segment.code);
     });
 
-    Array.from(usedTypes).forEach((imp) => {
-      const lastDot = imp.lastIndexOf(".");
-      const moduleName = imp.slice(0, lastDot);
-      const className = imp.slice(lastDot + 1);
-      dependencies.push({
-        node: node,
-        code: `from ${moduleName} import ${className}`,
-        dependencies: [],
-      });
-    });
-
-    const closure = this.extractClosure(node.leftExpression, sourceFile);
+    let methodCode = "";
+    const segment = this.extractExpressionWithDependencies(node.leftExpression, sourceFile);
     if (node.leftExpression.nodeType === ParseNodeType.Name) {
-      // If this left expression is a name node, then the closure encapsulates the declaration
+      // If this left expression is a name node, then the code segment encapsulates the declaration
       // corresponding to this node.
-      dependencies.push(closure);
+      dependencies.push(segment);
+      methodCode = node.leftExpression.value;
     } else {
-      // If the left expression if not a name node, it may be a member access node, the closure
-      // encapsulates the caller expression itself. We don't need to encapsulate the caller's
-      // expression, because the caller's expression will be encapsulated in current closure.
-      dependencies.push(...closure.dependencies);
+      // If the left expression if not a name node, it may be a member access node, the segment
+      // encapsulates the caller expression itself. So, we add the dependencies of the caller's
+      // expression to the current segment's dependencies. And use the code of the caller's
+      // expression as the text for the left expression.
+      dependencies.push(...segment.dependencies);
+      methodCode = segment.code;
     }
 
-    // The statement that constructs the resource object.
-    const method = TextUtils.getTextOfNode(node.leftExpression, sourceFile);
-    const statement = `${method}(${argumentCodes.join(", ")})`;
+    const statement = `${methodCode}(${argumentCodes.join(", ")})`;
     return {
       node: node,
       code: statement,
@@ -351,7 +325,51 @@ export class ClosureExtractor {
     };
   }
 
-  private extractClosureForClass(classNode: ClassNode, sourceFile: SourceFile): Closure {
+  private extractArgumentWithDependencies(
+    arg: ArgumentNode,
+    sourceFile: SourceFile,
+    extractFunctionArg: boolean
+  ): CodeSegment {
+    if (
+      TypeUtils.isLambdaNode(arg.valueExpression) ||
+      TypeUtils.isFunctionVar(arg.valueExpression, this.typeEvaluator)
+    ) {
+      // The argument is either a lambda function, a function variable, or a function call which
+      // returns a function.
+      if (!extractFunctionArg) {
+        // If we don't need to extract the function argument, we just use a lambda function as a
+        // placeholder.
+        return {
+          node: arg,
+          code: "lambda _: _",
+          dependencies: [],
+        };
+      }
+    }
+
+    const segment = this.extractExpressionWithDependencies(arg.valueExpression, sourceFile);
+    if (arg.valueExpression.nodeType === ParseNodeType.Name) {
+      // If the expression is a name node, then the code segment encapsulates the declaration of
+      // this node. We should add this declaration segment to the dependencies. And use the value of
+      // the named node as the text for the argument expression.
+      return {
+        node: arg,
+        code: arg.valueExpression.value,
+        dependencies: [segment],
+      };
+    } else {
+      // Otherwise, we use the code of the expression as the text for the argument expression, so we
+      // just directly return the segment of the expression.
+      return segment;
+    }
+  }
+
+  /**
+   * Extract the class definition and its dependencies.
+   * @param classNode - The class node.
+   * @param sourceFile - The source file where the class node is located.
+   */
+  private extractClassWithDependencies(classNode: ClassNode, sourceFile: SourceFile): CodeSegment {
     const nodeText = TextUtils.getTextOfNode(classNode, sourceFile);
 
     const classScope = getScopeForNode(classNode.suite);
@@ -362,9 +380,9 @@ export class ClosureExtractor {
     const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name);
     walker.walk(classNode);
 
-    const dependencies: Closure[] = [];
+    const dependencies: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const dep = this.extractClosureForNameNode(nameNode, sourceFile);
+      const dep = this.extractNameNodeWithDependencies(nameNode, sourceFile);
       dependencies.push(dep);
     }
 
@@ -376,29 +394,45 @@ export class ClosureExtractor {
     };
   }
 
-  private extractClosureForMemberAccess(node: MemberAccessNode, sourceFile: SourceFile): Closure {
-    const callerClosure = this.extractClosure(node.leftExpression, sourceFile);
+  /**
+   * Extract the member access expression, like `obj.method`, `func().method`, `module.method`, etc.
+   * Only the left expression needs to be extracted, as the right expression is the method name,
+   * which isn't a dependency.
+   * @param node - The member access node.
+   * @param sourceFile - The source file where the member access node is located.
+   */
+  private extractMemberAccessWithDependencies(
+    node: MemberAccessNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
+    const callerSegment = this.extractExpressionWithDependencies(node.leftExpression, sourceFile);
 
-    const dependencies: Closure[] = [];
+    let code = "";
+    const dependencies: CodeSegment[] = [];
     if (node.leftExpression.nodeType === ParseNodeType.Name) {
-      dependencies.push(callerClosure);
+      // Like `obj.method`, `module.method`, etc.
+      dependencies.push(callerSegment);
+      code = `${node.leftExpression.value}.${node.memberName.value}`;
     } else {
-      dependencies.push(...callerClosure.dependencies);
+      // Like `func().method`, `func().attr.method`, etc.
+      dependencies.push(...callerSegment.dependencies);
+      code = `${callerSegment.code}.${node.memberName.value}`;
     }
 
     return {
       node: node,
-      code: TextUtils.getTextOfNode(node, sourceFile)!,
+      code: code,
       dependencies: dependencies,
     };
   }
 
   /**
-   * from module import name as alias
+   * Extract the import-from statement, such as `from module import name`, `from module import name
+   * as alias`.
    * @param node
    * @returns
    */
-  private extractClosureForImportFromAs(node: ImportFromAsNode): Closure {
+  private extractImportFromAsWithDependencies(node: ImportFromAsNode): CodeSegment {
     assert(node.parent?.nodeType === ParseNodeType.ImportFrom);
     const moduleNameNode = node.parent.module;
     const moduleName = AnalyzerNodeInfo.getImportInfo(moduleNameNode)?.importName;
@@ -415,11 +449,10 @@ export class ClosureExtractor {
   }
 
   /**
-   * import module as alias
-   * @param node
-   * @returns
+   * Extract the import statement, such as `import module`, `import module as alias`.
+   * @param node - The import-as node.
    */
-  private extractClosureForImportAs(node: ImportAsNode): Closure {
+  private extractImportAsWithDependencies(node: ImportAsNode): CodeSegment {
     const moduleNameNode = node.module;
     const moduleName = AnalyzerNodeInfo.getImportInfo(moduleNameNode)?.importName;
     assert(moduleName);
@@ -469,7 +502,7 @@ class OutsideSymbolFinder extends ParseTreeWalker {
     }
 
     if (this.scope.lookUpSymbol(node.value)) {
-      // Ignore the local variables. We don't need to package the local variables to the closure.
+      // Ignore the local variables. We don't need to package the local variables.
       return true;
     }
 

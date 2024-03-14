@@ -7,13 +7,13 @@ import * as TestUtils from "./test-utils";
 import * as TypeUtils from "../type-utils";
 import * as TypeConsts from "../type-consts";
 import { ValueEvaluator } from "../value-evaluator";
-import { Closure, ClosureExtractor } from "../closure-extractor";
+import { CodeSegment, CodeExtractor } from "../code-extractor";
 import { ResourceObjectTracker } from "../resource-object-tracker";
 
 const SAMPLES_ROOT = path.join(__dirname, "samples");
 
-test("should correctly extract the closure for the most situations", () => {
-  const filepath = path.join(SAMPLES_ROOT, "closure_extractor_valid.py");
+test("should correctly extract the code segment for the most situations", () => {
+  const filepath = path.join(SAMPLES_ROOT, "code_extractor_valid.py");
   const { program, sourceFiles } = TestUtils.parseFiles([filepath]);
   expect(sourceFiles.length).toBe(1);
   const sourceFile = sourceFiles[0];
@@ -29,40 +29,14 @@ test("should correctly extract the closure for the most situations", () => {
         TypeUtils.isLambdaNode(arg.valueExpression) ||
         TypeUtils.isFunctionVar(arg.valueExpression, program.evaluator!)
       ) {
-        const closure = extractor.extractClosure(arg.valueExpression, sourceFile);
-        Closure.toString(closure);
+        const segment = extractor.extractExpressionWithDependencies(
+          arg.valueExpression,
+          sourceFile
+        );
+        CodeSegment.toString(segment);
       }
     });
   }
-});
-
-test("should throw an error when there is argument that cannot be evaluated", () => {
-  const code = `
-import random
-
-def foo(x):
-  pass
-
-rand = random.randint()
-foo(rand)
-`;
-  const { program, sourceFile, clean } = TestUtils.parseCode(code);
-  const { extractor } = createTools(program, sourceFile);
-
-  const walker = new NodeFetcher([ParseNodeType.Call]);
-  walker.walk(sourceFile.getParseResults()!.parseTree!);
-
-  walker.nodes.forEach((node) => {
-    if (
-      node.nodeType === ParseNodeType.Call &&
-      node.leftExpression.nodeType === ParseNodeType.Name &&
-      node.leftExpression.value === "foo"
-    ) {
-      expect(() => extractor.extractClosure(node, sourceFile)).toThrow();
-    }
-  });
-
-  clean();
 });
 
 test("should throw an error when the assignment statement is not a simple assignment", () => {
@@ -87,7 +61,7 @@ foo(a)
       node.leftExpression.nodeType === ParseNodeType.Name &&
       node.leftExpression.value === "foo"
     ) {
-      expect(() => extractor.extractClosure(node, sourceFile)).toThrow(
+      expect(() => extractor.extractExpressionWithDependencies(node, sourceFile)).toThrow(
         /We only support the simplest assignment statement/
       );
     }
@@ -100,7 +74,7 @@ function createTools(program: Program, sourceFile: SourceFile) {
   const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
   const valueEvaluator = new ValueEvaluator(program.evaluator!);
-  const extractor = new ClosureExtractor(program.evaluator!, tracker, valueEvaluator);
+  const extractor = new CodeExtractor(program.evaluator!, specialNodeMap, valueEvaluator);
   return { specialNodeMap, tracker, valueEvaluator, extractor };
 }
 

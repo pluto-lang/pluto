@@ -65,7 +65,14 @@ func_obj = PlutoFunction(
 )  # resource object construction with options
 
 
-def returnHandler(path: str):
+def add(a: int):
+    def inner(b: int):
+        return a + b
+
+    return inner
+
+
+def returnHandler(path: str, add: Callable):
     def handler(req: HttpRequest) -> pluto_client_alias.HttpResponse:
         func_obj.invoke(1)
         return pluto_client_alias.HttpResponse(status_code=200, body=f"Path: {path}")
@@ -78,4 +85,4 @@ router.get("/get", get_handler)  # function variable
 router.post(
     "/post", lambda x: HttpResponse(status_code=200, body="Post")  # lambda expression
 )
-router.put("/put", returnHandler("put"))  # function closure
+router.put("/put", returnHandler("put", add(1)))  # function closure

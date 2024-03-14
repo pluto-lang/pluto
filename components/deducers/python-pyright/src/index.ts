@@ -21,7 +21,7 @@ import { TypeSearcher } from "./type-searcher";
 import { SpecialNodeMap } from "./special-node-map";
 import { Value, ValueEvaluator } from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
-import { Closure, ClosureExtractor } from "./closure-extractor";
+import { CodeSegment, CodeExtractor } from "./code-extractor";
 
 export default class PyrightDeducer extends Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -106,7 +106,14 @@ export default class PyrightDeducer extends Deducer {
           specialType === TypeConsts.IRESOURCE_INFRA_API_FULL_NAME
         ) {
           const valueEvaluator = new ValueEvaluator(program.evaluator!);
-          getArgumentValue(node, sourceFile, program.evaluator!, tracker, valueEvaluator);
+          getArgumentValue(
+            node,
+            sourceFile,
+            program.evaluator!,
+            this.sepcialNodeMap!,
+            tracker,
+            valueEvaluator
+          );
           // console.log(inGlobalScope(node, sourceFile));
         }
         console.log("\\--------------------/\n\n");
@@ -137,6 +144,7 @@ function getArgumentValue(
   callNode: CallNode,
   sourceFile: SourceFile,
   typeEvaluator: TypeEvaluator,
+  specialNodeMap: SpecialNodeMap<CallNode>,
   resourceObjectTracker: ResourceObjectTracker,
   valueEvaluator: ValueEvaluator
 ) {
@@ -153,20 +161,19 @@ function getArgumentValue(
     console.log("|   Text: ", TextUtils.getTextOfNode(arg, sourceFile));
 
     if (isFunctionArgument(arg, typeEvaluator)) {
-      const closureExtractor = new ClosureExtractor(
-        typeEvaluator,
-        resourceObjectTracker,
-        valueEvaluator
+      const codeExtractor = new CodeExtractor(typeEvaluator, specialNodeMap, valueEvaluator);
+      const segment = codeExtractor.extractExpressionWithDependencies(
+        arg.valueExpression,
+        sourceFile
       );
-      const closure = closureExtractor.extractClosure(arg.valueExpression, sourceFile);
-      console.log("| ================= Closure Begin ================== ");
+      console.log("| ================= Segment Begin ================== ");
       console.log(
-        Closure.toString(closure)
+        CodeSegment.toString(segment)
           .split("\n")
           .map((s) => "| " + s)
           .join("\n")
       );
-      console.log("| ================= Closure End ================== ");
+      console.log("| ================= Segment End ================== ");
       return;
     }
 
