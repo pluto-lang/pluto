@@ -13,11 +13,8 @@ import {
   FunctionNode,
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
-import { core } from "@plutolang/base";
+import { core, arch } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
-import { DeduceResult, Deducer } from "@plutolang/base/core";
-import { IdWithType, RelatType } from "@plutolang/base/arch/relationship";
-import { Architecture, Closure, Parameter, Relationship, Resource } from "@plutolang/base/arch";
 import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ProgramUtils from "./program-utils";
@@ -28,7 +25,7 @@ import { Value, ValueEvaluator } from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
 import { CodeSegment, CodeExtractor } from "./code-extractor";
 
-export default class PyrightDeducer extends Deducer {
+export default class PyrightDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
   public readonly name = require(path.join(__dirname, "../package.json")).name;
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -42,17 +39,17 @@ export default class PyrightDeducer extends Deducer {
   private valueEvaluator?: ValueEvaluator;
   private extractor?: CodeExtractor;
 
-  private readonly nodeToResourceMap: Map<number, Resource> = new Map();
-  private readonly closures: Closure[] = [];
+  private readonly nodeToResourceMap: Map<number, arch.Resource> = new Map();
+  private readonly closures: arch.Closure[] = [];
   private readonly closureToSgementMap: Map<string, CodeSegment> = new Map();
-  private readonly relationships: Relationship[] = [];
+  private readonly relationships: arch.Relationship[] = [];
 
   constructor(args: core.NewDeducerArgs) {
     super(args);
     this.closureDir = args.closureDir;
   }
 
-  public async deduce(entrypoints: string[]): Promise<DeduceResult> {
+  public async deduce(entrypoints: string[]): Promise<core.DeduceResult> {
     this.valideArgumentsWithThrow(entrypoints);
 
     const { program, sourceFile } = this.pyrightAnalyze(entrypoints);
@@ -104,7 +101,7 @@ export default class PyrightDeducer extends Deducer {
 
     program.dispose();
 
-    const archRef = new Architecture();
+    const archRef = new arch.Architecture();
     this.nodeToResourceMap.forEach((value) => archRef.addResource(value));
     this.closures.forEach((value) => archRef.addClosure(value));
     this.relationships.forEach((value) => archRef.addRelationship(value));
@@ -171,7 +168,7 @@ export default class PyrightDeducer extends Deducer {
   private buildConstructedResources(constructNodes: CallNode[], sourceFile: SourceFile) {
     for (const node of constructNodes) {
       // Get the parameters of the resource object construction.
-      const parameters: Parameter[] = [];
+      const parameters: arch.Parameter[] = [];
       node.arguments.forEach((argNode, idx) => {
         const parameterName =
           argNode.name?.value ??
@@ -234,9 +231,9 @@ export default class PyrightDeducer extends Deducer {
         "default";
 
       // Generate the resource id.
-      const resourceId = genResourceId(typeFqn, resourceName);
+      const resourceId = genResourceId(this.project, this.stack.name, typeFqn, resourceName);
 
-      const resource = new Resource(resourceId, resourceName, typeFqn, parameters);
+      const resource = new arch.Resource(resourceId, resourceName, typeFqn, parameters);
       this.nodeToResourceMap.set(node.id, resource);
     }
   }
@@ -253,10 +250,10 @@ export default class PyrightDeducer extends Deducer {
         throw new Error("No resource object found for the infrastructure API call.");
       }
       const fromResource = this.nodeToResourceMap.get(constructNode.id);
-      const fromResourceId: IdWithType = { id: fromResource!.id, type: "resource" };
+      const fromResourceId: arch.IdWithType = { id: fromResource!.id, type: "resource" };
 
-      const toResourceIds: IdWithType[] = [];
-      const parameters: Parameter[] = [];
+      const toResourceIds: arch.IdWithType[] = [];
+      const parameters: arch.Parameter[] = [];
       node.arguments.forEach((argNode, idx) => {
         const parameterName =
           argNode.name?.value ??
@@ -299,10 +296,10 @@ export default class PyrightDeducer extends Deducer {
       });
 
       const operation = getMemberName(node, this.typeEvaluator!);
-      const relationship = new Relationship(
+      const relationship = new arch.Relationship(
         fromResourceId,
         toResourceIds,
-        RelatType.Create,
+        arch.RelatType.Create,
         operation,
         parameters
       );
@@ -315,9 +312,9 @@ export default class PyrightDeducer extends Deducer {
    * within it. Then we establish the relationships between the closure and the resource objects or
    * closures the client API calls and the accessed captured properties correspond to.
    */
-  private buildRelationshipsFromClosures(closures: Closure[], sourceFile: SourceFile) {
+  private buildRelationshipsFromClosures(closures: arch.Closure[], sourceFile: SourceFile) {
     for (const closure of closures) {
-      const fromResourceId: IdWithType = { id: closure.id, type: "closure" };
+      const fromResourceId: arch.IdWithType = { id: closure.id, type: "closure" };
 
       const codeSegment = this.closureToSgementMap.get(closure.id);
       if (!codeSegment) {
@@ -332,13 +329,13 @@ export default class PyrightDeducer extends Deducer {
           throw new Error("No resource object found for the client API call.");
         }
         const toResource = this.nodeToResourceMap.get(constructNode.id);
-        const toResourceId: IdWithType = { id: toResource!.id, type: "resource" };
+        const toResourceId: arch.IdWithType = { id: toResource!.id, type: "resource" };
 
         const operation = getMemberName(clientApi, this.typeEvaluator!);
-        const relationship = new Relationship(
+        const relationship = new arch.Relationship(
           fromResourceId,
           [toResourceId],
-          RelatType.MethodCall,
+          arch.RelatType.MethodCall,
           operation
         );
         this.relationships.push(relationship);
@@ -352,13 +349,13 @@ export default class PyrightDeducer extends Deducer {
           throw new Error("No resource object found for the client API call.");
         }
         const toResource = this.nodeToResourceMap.get(constructNode.id);
-        const toResourceId: IdWithType = { id: toResource!.id, type: "resource" };
+        const toResourceId: arch.IdWithType = { id: toResource!.id, type: "resource" };
 
         const operation = getMemberName(accessedProp, this.typeEvaluator!);
-        const relationship = new Relationship(
+        const relationship = new arch.Relationship(
           fromResourceId,
           [toResourceId],
-          RelatType.PropertyAccess,
+          arch.RelatType.PropertyAccess,
           operation
         );
         this.relationships.push(relationship);
@@ -460,7 +457,7 @@ function extractAndStoreClosure(
   fs.writeFileSync(closureFile, closureText);
 
   return {
-    closure: new Closure(closureName, path.dirname(closureFile)),
+    closure: new arch.Closure(closureName, path.dirname(closureFile)),
     codeSegment,
   };
 }
