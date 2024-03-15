@@ -17,7 +17,7 @@ import {
 } from "pyright-internal/dist/parser/parseNodes";
 import { Scope } from "pyright-internal/dist/analyzer/scope";
 import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
-import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
+import { ParseTreeWalker, getChildNodes } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import * as AnalyzerNodeInfo from "pyright-internal/dist/analyzer/analyzerNodeInfo";
 import { getBuiltInScope, getScopeForNode } from "pyright-internal/dist/analyzer/scopeUtils";
 import * as TextUtils from "./text-utils";
@@ -46,6 +46,14 @@ export interface CodeSegment {
    * current node.
    */
   readonly dependencies: CodeSegment[];
+  /**
+   * The client API calls that are used in the current node.
+   */
+  readonly calledClientApis?: CallNode[];
+  /**
+   * The captured properties that are accessed in the current node.
+   */
+  readonly accessedCapturedProps?: CallNode[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -66,17 +74,44 @@ export namespace CodeSegment {
 
     return concatCodeRecursively(segment);
   }
+
+  export function getCalledClientApis(segment: CodeSegment): CallNode[] {
+    const clientApiCalls: Set<CallNode> = new Set();
+    function getCalledClientApisRecursively(segment: CodeSegment) {
+      if (segment.calledClientApis) {
+        segment.calledClientApis.forEach((callNode) => clientApiCalls.add(callNode));
+      }
+      segment.dependencies.forEach(getCalledClientApisRecursively);
+    }
+    getCalledClientApisRecursively(segment);
+    return Array.from(clientApiCalls);
+  }
+
+  export function getAccessedCapturedProperties(segment: CodeSegment): CallNode[] {
+    const capturedProperties: Set<CallNode> = new Set();
+    function getAccessedCapturedPropertiesRecursively(segment: CodeSegment) {
+      if (segment.accessedCapturedProps) {
+        segment.accessedCapturedProps.forEach((callNode) => capturedProperties.add(callNode));
+      }
+      segment.dependencies.forEach(getAccessedCapturedPropertiesRecursively);
+    }
+    getAccessedCapturedPropertiesRecursively(segment);
+    return Array.from(capturedProperties);
+  }
 }
 
 /**
  * Extract the code and its dependencies of one expression.
  */
 export class CodeExtractor {
+  private readonly accessedSpecialNodeFinder: AccessedSpecialNodeFinder;
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
     private readonly specialNodeMap: SpecialNodeMap<CallNode>,
     private readonly valueEvaluator: ValueEvaluator
-  ) {}
+  ) {
+    this.accessedSpecialNodeFinder = new AccessedSpecialNodeFinder(specialNodeMap);
+  }
 
   /**
    * Extract the code and its dependencies of one expression, such as a variable, a function call,
@@ -142,6 +177,8 @@ export class CodeExtractor {
       node: lambdaNode,
       code: nodeText!,
       dependencies,
+      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(lambdaNode),
+      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(lambdaNode),
     };
   }
 
@@ -280,6 +317,8 @@ export class CodeExtractor {
       exportableName: funcNode.name.value,
       code: TextUtils.getTextOfNode(funcNode, sourceFile)!,
       dependencies,
+      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(funcNode),
+      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(funcNode),
     };
   }
 
@@ -322,6 +361,8 @@ export class CodeExtractor {
       node: node,
       code: statement,
       dependencies,
+      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(node),
+      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(node),
     };
   }
 
@@ -330,6 +371,8 @@ export class CodeExtractor {
     sourceFile: SourceFile,
     extractFunctionArg: boolean
   ): CodeSegment {
+    const codePrefix = arg.name ? `${arg.name.value}=` : "";
+
     if (
       TypeUtils.isLambdaNode(arg.valueExpression) ||
       TypeUtils.isFunctionVar(arg.valueExpression, this.typeEvaluator)
@@ -341,7 +384,7 @@ export class CodeExtractor {
         // placeholder.
         return {
           node: arg,
-          code: "lambda _: _",
+          code: `${codePrefix}lambda _: _`,
           dependencies: [],
         };
       }
@@ -354,13 +397,17 @@ export class CodeExtractor {
       // the named node as the text for the argument expression.
       return {
         node: arg,
-        code: arg.valueExpression.value,
+        code: `${codePrefix}${arg.valueExpression.value}`,
         dependencies: [segment],
       };
     } else {
       // Otherwise, we use the code of the expression as the text for the argument expression, so we
       // just directly return the segment of the expression.
-      return segment;
+      return {
+        node: arg,
+        code: `${codePrefix}${segment.code}`,
+        dependencies: segment.dependencies,
+      };
     }
   }
 
@@ -391,6 +438,8 @@ export class CodeExtractor {
       exportableName: classNode.name.value,
       code: nodeText!,
       dependencies,
+      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(classNode),
+      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(classNode),
     };
   }
 
@@ -540,5 +589,71 @@ class OutsideSymbolFinder extends ParseTreeWalker {
       return true;
     }
     return false;
+  }
+}
+
+interface AccessedSpecialNodeIds {
+  readonly constructorCalls: readonly number[];
+  readonly clientApiCalls: readonly number[];
+  readonly capturedProperties: readonly number[];
+}
+
+/**
+ * Find the special nodes that are accessed in the given parse node.
+ */
+class AccessedSpecialNodeFinder {
+  private readonly accessedSpecialNodesMap: Map<number, AccessedSpecialNodeIds> = new Map();
+
+  constructor(private readonly sepcialNodeMap: SpecialNodeMap<CallNode>) {}
+
+  public findClientApiCalls(node: ParseNode): CallNode[] {
+    const accessedSpecialNodes = this.visit(node);
+    return accessedSpecialNodes.clientApiCalls.map(
+      (id) => this.sepcialNodeMap.getNodeById(id, TypeConsts.IRESOURCE_CLIENT_API_FULL_NAME)!
+    );
+  }
+
+  public findCapturedProperties(node: ParseNode): CallNode[] {
+    const accessedSpecialNodes = this.visit(node);
+    return accessedSpecialNodes.capturedProperties.map(
+      (id) => this.sepcialNodeMap.getNodeById(id, TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME)!
+    );
+  }
+
+  private visit(node: ParseNode): AccessedSpecialNodeIds {
+    if (this.accessedSpecialNodesMap.has(node.id)) {
+      return this.accessedSpecialNodesMap.get(node.id)!;
+    }
+
+    const constructorCalls: number[] = [];
+    const clientApiCalls: number[] = [];
+    const capturedProperties: number[] = [];
+
+    if (node.nodeType === ParseNodeType.Call) {
+      if (this.sepcialNodeMap.getNodeById(node.id, TypeConsts.IRESOURCE_FULL_NAME)) {
+        constructorCalls.push(node.id);
+      }
+      if (this.sepcialNodeMap.getNodeById(node.id, TypeConsts.IRESOURCE_CLIENT_API_FULL_NAME)) {
+        clientApiCalls.push(node.id);
+      }
+      if (this.sepcialNodeMap.getNodeById(node.id, TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME)) {
+        capturedProperties.push(node.id);
+      }
+    }
+
+    getChildNodes(node).forEach((child) => {
+      if (!child) {
+        return;
+      }
+
+      const childAccessedNodes = this.visit(child);
+      constructorCalls.push(...childAccessedNodes.constructorCalls);
+      clientApiCalls.push(...childAccessedNodes.clientApiCalls);
+      capturedProperties.push(...childAccessedNodes.capturedProperties);
+    });
+
+    const accessedSpecialNodes = { constructorCalls, clientApiCalls, capturedProperties };
+    this.accessedSpecialNodesMap.set(node.id, accessedSpecialNodes);
+    return accessedSpecialNodes;
   }
 }
