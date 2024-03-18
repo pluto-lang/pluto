@@ -24,6 +24,7 @@ import { SpecialNodeMap } from "./special-node-map";
 import { Value, ValueEvaluator } from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
 import { CodeSegment, CodeExtractor } from "./code-extractor";
+import { DeepImportFinder } from "./deep-import-finder";
 
 export default class PyrightDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -38,6 +39,7 @@ export default class PyrightDeducer extends core.Deducer {
   private tracker?: ResourceObjectTracker;
   private valueEvaluator?: ValueEvaluator;
   private extractor?: CodeExtractor;
+  private importFinder?: DeepImportFinder;
 
   private readonly nodeToResourceMap: Map<number, arch.Resource> = new Map();
   private readonly closures: arch.Closure[] = [];
@@ -98,6 +100,16 @@ export default class PyrightDeducer extends core.Deducer {
     this.buildConstructedResources(constructNodes, sourceFile);
     this.buildRelationshipsFromInfraApis(infraApiNodes, sourceFile);
     this.buildRelationshipsFromClosures(this.closures, sourceFile);
+
+    const execEnv = program.importResolver
+      .getConfigOptions()
+      .findExecEnvironment(Uri.file(entrypoints[0]))!;
+    this.importFinder = new DeepImportFinder(
+      program.importResolver,
+      execEnv,
+      this.stack.platformType
+    );
+    this.prepareDependencies(this.closures);
 
     program.dispose();
 
@@ -359,6 +371,17 @@ export default class PyrightDeducer extends core.Deducer {
           operation
         );
         this.relationships.push(relationship);
+      });
+    }
+  }
+
+  private prepareDependencies(closures: arch.Closure[]) {
+    for (const closure of closures) {
+      const closureFile = path.resolve(closure.path, "__init__.py");
+      const pkgPaths = this.importFinder!.getDependentModules(closureFile);
+      pkgPaths.forEach((pkgPath) => {
+        const dest = path.resolve(closure.path, path.basename(pkgPath));
+        fs.copySync(pkgPath, dest);
       });
     }
   }
