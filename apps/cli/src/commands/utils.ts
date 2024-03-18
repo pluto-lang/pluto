@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import * as yaml from "js-yaml";
-import { ProvisionType } from "@plutolang/base";
+import { LanguageType, ProvisionType } from "@plutolang/base";
 import { Architecture } from "@plutolang/base/arch";
 import { Deducer, Generator, Adapter, BasicArgs, NewAdapterArgs } from "@plutolang/base/core";
 import { isPlutoProject, loadProject } from "../utils";
@@ -102,4 +102,24 @@ export function loadProjectAndStack(projectRoot: string, stackInCmd?: string) {
     throw new Error(`There is no stack named ${stackName}.`);
   }
   return { project, stack };
+}
+
+const deducerPkgMap: Record<LanguageType, string> = {
+  [LanguageType.Python]: "@plutolang/pyright-deducer",
+  [LanguageType.TypeScript]: "@plutolang/static-deducer",
+};
+
+export function getDefaultDeducerPkg(lang: LanguageType, deducerInCmd?: string): string {
+  return deducerInCmd ?? deducerPkgMap[lang];
+}
+
+export function getDefaultEntrypoint(lang: LanguageType): string {
+  switch (lang) {
+    case LanguageType.Python:
+      return "app/main.py";
+    case LanguageType.TypeScript:
+      return "src/index.ts";
+    default:
+      throw new Error(`Invalid language type: ${lang}`);
+  }
 }

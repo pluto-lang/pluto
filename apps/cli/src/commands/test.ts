@@ -8,6 +8,8 @@ import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import {
   buildAdapterByProvisionType,
+  getDefaultDeducerPkg,
+  getDefaultEntrypoint,
   loadProjectAndStack,
   loadProjectRoot,
   stackStateFile,
@@ -16,20 +18,21 @@ import {
 interface TestOptions {
   sim: boolean;
   stack?: string;
-  deducer: string;
+  deducer?: string;
   generator: string;
 }
 
 export async function test(entrypoint: string, opts: TestOptions) {
   try {
+    const projectRoot = loadProjectRoot();
+    const { project, stack: originalStack } = loadProjectAndStack(projectRoot);
+    let stack = originalStack;
+
     // Ensure the entrypoint exist.
+    entrypoint = entrypoint ?? getDefaultEntrypoint(project.language);
     if (!fs.existsSync(entrypoint)) {
       throw new Error(`No such file, ${entrypoint}`);
     }
-
-    const projectRoot = loadProjectRoot();
-    const { project, stack: initialStack } = loadProjectAndStack(projectRoot);
-    let stack = initialStack;
 
     // If in simulation mode, switch the platform and provisioning engine of the stack to simulator.
     if (opts.sim) {
@@ -41,7 +44,7 @@ export async function test(entrypoint: string, opts: TestOptions) {
     // construct the arch ref from user code
     logger.info("Generating reference architecture...");
     const { archRef } = await loadAndDeduce(
-      opts.deducer,
+      getDefaultDeducerPkg(project.language, opts.deducer),
       {
         project: project.name,
         stack: stack,

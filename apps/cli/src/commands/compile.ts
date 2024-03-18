@@ -2,23 +2,18 @@ import fs from "fs";
 import path, { resolve } from "path";
 import { arch, core } from "@plutolang/base";
 import logger from "../log";
-import { buildDeducer, buildGenerator } from "./utils";
+import { buildDeducer, buildGenerator, getDefaultDeducerPkg, getDefaultEntrypoint } from "./utils";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 
 const GRAPHVIZ_GENERATOR_PKG = "@plutolang/graphviz-generator";
 
 export interface CompileOptions {
   stack?: string;
-  deducer: string;
+  deducer?: string;
   generator: string;
 }
 
 export async function compile(entrypoint: string, opts: CompileOptions) {
-  // Ensure the entrypoint exist.
-  if (!fs.existsSync(entrypoint)) {
-    throw new Error(`No such file, ${entrypoint}`);
-  }
-
   // get current stack, and set the output directory
   const projectRoot = resolve("./");
   if (!isPlutoProject(projectRoot)) {
@@ -27,6 +22,12 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
     process.exit(1);
   }
   const project = loadProject(projectRoot);
+
+  // Ensure the entrypoint exist.
+  entrypoint = entrypoint ?? getDefaultEntrypoint(project.language);
+  if (!fs.existsSync(entrypoint)) {
+    throw new Error(`No such file, ${entrypoint}`);
+  }
 
   const stackName = opts.stack ?? project.current;
   if (!stackName) {
@@ -53,7 +54,7 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
 
   // construct the arch ref from user code
   const { archRef } = await loadAndDeduce(
-    opts.deducer,
+    getDefaultDeducerPkg(project.language, opts.deducer),
     {
       ...basicArgs,
       closureDir: closureBaseDir,
@@ -81,6 +82,7 @@ export async function loadAndDeduce(
   } catch (err) {
     if (err instanceof Error) {
       logger.error(err.message);
+      logger.debug(err.stack);
     } else {
       logger.error(err);
     }
