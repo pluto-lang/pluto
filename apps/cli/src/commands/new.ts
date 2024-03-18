@@ -1,6 +1,6 @@
 import path from "path";
 import fs from "fs";
-import { ProvisionType, PlatformType } from "@plutolang/base";
+import { ProvisionType, PlatformType, LanguageType } from "@plutolang/base";
 import { createProject } from "../builder";
 import logger from "../log";
 import { dumpProject } from "../utils";
@@ -11,6 +11,7 @@ const TEMPLATE_DIR = path.join(__dirname, "../../template");
 interface NewOptions {
   name?: string;
   stack?: string;
+  language?: LanguageType;
   platform?: PlatformType;
   provision?: ProvisionType;
 }
@@ -19,11 +20,12 @@ export async function create(opts: NewOptions) {
   const proj = await createProject({
     name: opts.name,
     stack: opts.stack,
+    language: opts.language,
     platformType: opts.platform,
     provisionType: opts.provision,
   });
 
-  genInitFiles(proj.name);
+  genInitFiles(proj.name, proj.language);
   const pkgJsonPath = path.join(proj.name, "package.json");
   const pkgJson = fs.readFileSync(pkgJsonPath).toString();
   fs.writeFileSync(pkgJsonPath, pkgJson.replaceAll("${project_name}", proj.name));
@@ -32,13 +34,13 @@ export async function create(opts: NewOptions) {
   logger.info("Created a project,", proj.name);
 }
 
-function genInitFiles(destdir: string) {
+function genInitFiles(destdir: string, language: string) {
   ensureDirSync(destdir);
 
   const queue: string[] = [""];
   while (queue.length) {
     const partProjDir = queue.shift()!;
-    const tmplCurDir = path.join(TEMPLATE_DIR, partProjDir);
+    const tmplCurDir = path.join(TEMPLATE_DIR, language, partProjDir);
     const projCurDir = path.join(destdir, partProjDir);
 
     const files = fs.readdirSync(tmplCurDir);

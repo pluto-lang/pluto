@@ -1,5 +1,6 @@
 import { load } from "js-yaml";
 import { Stack } from "./stack";
+import { LanguageType } from "../language";
 
 export class Project {
   public readonly stacks: Stack[] = [];
@@ -14,7 +15,9 @@ export class Project {
      * */
     public readonly name: string,
     /** The root directory of this project, which need to be automatically obtained during execution. */
-    public readonly rootpath: string
+    public readonly rootpath: string,
+    /* The programming language used in this project. */
+    public readonly language: LanguageType
   ) {}
 
   public addStack(stack: Stack) {
@@ -53,7 +56,7 @@ export class Project {
   }
 
   public deepCopy(): Project {
-    const clonedProject = new Project(this.name, this.rootpath);
+    const clonedProject = new Project(this.name, this.rootpath, this.language);
     this.stacks.forEach((stack) => clonedProject.addStack(stack.deepCopy()));
     clonedProject.current = this.current;
     return clonedProject;
@@ -61,7 +64,7 @@ export class Project {
 
   public static loadFromYaml(name: string, rootpath: string, yaml: string): Project {
     const obj = load(yaml) as Project;
-    const project = new Project(name, rootpath);
+    const project = new Project(name, rootpath, obj.language);
     Object.assign(project, obj);
     project.stacks.forEach((stack) => Object.setPrototypeOf(stack, Stack.prototype));
     return project;

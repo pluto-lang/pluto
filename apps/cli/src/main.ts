@@ -22,11 +22,13 @@ async function main() {
     .option("-n, --name <name>", "Project name")
     .option("-s, --stack <stack>", "Stack name")
     .addOption(
-      new Option("-p, --platform <platform>", "Target platform")
-        .choices(["aws", "k8s"])
-        .argParser((val: string) => {
-          return val.toUpperCase();
-        })
+      new Option("-l, --language <language>", "Programming language the project uses").choices([
+        "python",
+        "typescript",
+      ])
+    )
+    .addOption(
+      new Option("-p, --platform <platform>", "Target platform").choices(["AWS", "K8s", "AliCloud"])
     )
     .option("-e, --provision <provisioning engine>", "provisioning engine")
     .action(cmd.create);
