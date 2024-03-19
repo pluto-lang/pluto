@@ -32,6 +32,10 @@ export interface ComputeClosure<T extends AnyFunction> {
 
   readonly innerClosure?: ComputeClosure<AnyFunction>;
 
+  readonly exportName: string;
+
+  readonly placeholder?: string;
+
   // The client api and property dependencies of the compute closure.
   dependencies?: Dependency[];
 }

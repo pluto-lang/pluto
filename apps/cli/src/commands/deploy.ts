@@ -62,6 +62,7 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     const adapter = await buildAdapterByProvisionType(stack.provisionType, {
       project: project.name,
       rootpath: project.rootpath,
+      language: project.language,
       stack: stack,
       archRef: archRef,
       entrypoint: infraEntrypoint!,
@@ -130,7 +131,10 @@ async function buildArchRefAndInfraEntrypoint(
     logger.info("Generating the IaC Code and computing modules...");
     const generateResult = await loadAndGenerate(
       options.generator,
-      basicArgs,
+      {
+        ...basicArgs,
+        language: project.language,
+      },
       archRef,
       generatedDir
     );

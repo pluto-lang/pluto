@@ -64,20 +64,36 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
   fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), archRef.toYaml());
 
   // generate the graphviz file
-  await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, basicArgs, archRef, stackBaseDir);
+  await loadAndGenerate(
+    GRAPHVIZ_GENERATOR_PKG,
+    {
+      ...basicArgs,
+      language: project.language,
+    },
+    archRef,
+    stackBaseDir
+  );
 
   // generate the IR code based on the arch ref
-  await loadAndGenerate(opts.generator, basicArgs, archRef, generatedDir);
+  await loadAndGenerate(
+    opts.generator,
+    {
+      ...basicArgs,
+      language: project.language,
+    },
+    archRef,
+    generatedDir
+  );
 }
 
 export async function loadAndDeduce(
   deducerName: string,
-  basicArgs: core.NewDeducerArgs,
+  deducerArgs: core.NewDeducerArgs,
   files: string[]
 ): Promise<core.DeduceResult> {
   // try to construct the deducer, exit with error if failed to import
   try {
-    const deducer = await buildDeducer(deducerName, basicArgs);
+    const deducer = await buildDeducer(deducerName, deducerArgs);
     return await deducer.deduce(files);
   } catch (err) {
     if (err instanceof Error) {
@@ -92,13 +108,13 @@ export async function loadAndDeduce(
 
 export async function loadAndGenerate(
   generatorName: string,
-  basicArgs: core.BasicArgs,
+  generatorArgs: core.NewGeneratorArgs,
   archRef: arch.Architecture,
   outdir: string
 ): Promise<core.GenerateResult> {
   // try to construct the generator, exit with error if failed to import
   try {
-    const generator = await buildGenerator(generatorName, basicArgs);
+    const generator = await buildGenerator(generatorName, generatorArgs);
     return await generator.generate(archRef, outdir);
   } catch (err) {
     if (err instanceof Error) {

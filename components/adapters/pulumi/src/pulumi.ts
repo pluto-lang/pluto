@@ -202,6 +202,7 @@ export class PulumiAdapter extends core.Adapter {
     const envs: Record<string, string> = {
       PLUTO_PROJECT_NAME: this.project,
       PLUTO_STACK_NAME: this.stack.name,
+      PLUTO_LANGUAGE_TYPE: this.language,
       PLUTO_PLATFORM_TYPE: this.stack.platformType,
       PLUTO_PROVISION_TYPE: this.stack.provisionType,
       PULUMI_CONFIG_PASSPHRASE: this.passphrase,

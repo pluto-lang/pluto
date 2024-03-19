@@ -1,7 +1,10 @@
+import { LanguageType } from "../language";
 import { Architecture } from "../arch";
 import { BaseComponent, BasicArgs } from "./base-component";
 
-export interface NewGeneratorArgs extends BasicArgs {}
+export interface NewGeneratorArgs extends BasicArgs {
+  readonly language: LanguageType;
+}
 
 export interface GenerateResult {
   /** The entrypoint of generated files. */
@@ -9,8 +12,11 @@ export interface GenerateResult {
 }
 
 export abstract class Generator extends BaseComponent {
+  protected language: LanguageType;
+
   constructor(args: NewGeneratorArgs) {
     super(args);
+    this.language = args.language;
   }
 
   /**

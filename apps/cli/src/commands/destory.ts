@@ -28,6 +28,7 @@ export async function destroy(opts: DestoryOptions) {
     const adapter = await buildAdapterByProvisionType(stack.provisionType, {
       project: project.name,
       rootpath: project.rootpath,
+      language: project.language,
       stack: stack,
       archRef: loadArchRef(stack.archRefFile),
       entrypoint: stack.provisionFile,

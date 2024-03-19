@@ -112,13 +112,17 @@ async function testOneGroup(
     logger.info("Generating the IaC Code and computing modules...");
     const generateResult = await loadAndGenerate(
       opts.generator,
-      basicArgs,
+      {
+        ...basicArgs,
+        language: project.language,
+      },
       testGroupArch,
       generatedDir
     );
 
     adapter = await buildAdapterByProvisionType(stack.provisionType, {
       ...basicArgs,
+      language: project.language,
       archRef: testGroupArch,
       entrypoint: generateResult.entrypoint!,
       stateDir: stateDir,

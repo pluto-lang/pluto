@@ -1,3 +1,4 @@
+import { LanguageType } from "../language";
 import { Architecture } from "../arch";
 import { BaseComponent, BasicArgs } from "./base-component";
 
@@ -24,6 +25,8 @@ export interface NewAdapterArgs extends BasicArgs {
   readonly archRef: Architecture;
   /** The absolute path to the entry point. */
   readonly entrypoint: string;
+
+  readonly language: LanguageType;
 
   /**
    * The absolute path to the state directory, used for storing the private state generated while
@@ -66,6 +69,9 @@ export abstract class Adapter extends BaseComponent {
    * The absolute path to the infrastructure provisioning file.
    */
   protected readonly entrypoint: string;
+
+  protected readonly language: LanguageType;
+
   /**
    * The absolute path to the state directory of adapter, used for storing the private state
    * generated while the adapter is working. And this directory is unique for each stack. The
@@ -80,6 +86,7 @@ export abstract class Adapter extends BaseComponent {
     super(args);
     this.archRef = args.archRef;
     this.entrypoint = args.entrypoint;
+    this.language = args.language;
     this.stateDir = args.stateDir;
   }
 
