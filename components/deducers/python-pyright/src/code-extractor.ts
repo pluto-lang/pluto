@@ -323,10 +323,9 @@ export class CodeExtractor {
   }
 
   private extractCallWithDependencies(node: CallNode, sourceFile: SourceFile): CodeSegment {
-    // If this call node is for constructing a resource object, we don't need to extract the
-    // function type argument from it. The function type argument will be sent to the cloud and
-    // accessed via RPC.
-    const extractFunctionArg = !this.specialNodeMap.getNodeById(
+    // If the call node can be found in the special node map, it means the call node is for
+    // constructing a resource object.
+    const isConstructedNode = !!this.specialNodeMap.getNodeById(
       node.id,
       TypeConsts.IRESOURCE_FULL_NAME
     );
@@ -335,6 +334,10 @@ export class CodeExtractor {
     // The code for building each argument of the construct statement.
     const argumentCodes: string[] = [];
     node.arguments.forEach((arg) => {
+      // If the call node is for constructing a resource object, we don't need to extract the
+      // function type argument from it. The function type argument will be sent to the cloud and
+      // accessed via RPC.
+      const extractFunctionArg = !isConstructedNode;
       const segment = this.extractArgumentWithDependencies(arg, sourceFile, extractFunctionArg);
       dependencies.push(...segment.dependencies);
       argumentCodes.push(segment.code);
@@ -356,7 +359,13 @@ export class CodeExtractor {
       methodCode = segment.code;
     }
 
-    const statement = `${methodCode}(${argumentCodes.join(", ")})`;
+    // If the call node is for creating a resource object, we should add the `.build_client` suffix
+    // to the method (the constructor for the resource type). This is because this code will be sent
+    // to the cloud and executed there. During execution, the client of the resource type is
+    // required. The `build_client` method is utilized to create the client of the resource type
+    // based on the platform type.
+    const middle = isConstructedNode ? ".build_client" : "";
+    const statement = `${methodCode}${middle}(${argumentCodes.join(", ")})`;
     return {
       node: node,
       code: statement,

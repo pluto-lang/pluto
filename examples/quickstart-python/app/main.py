@@ -8,6 +8,7 @@ from pluto_client import (
     HttpResponse,
     Function,
     FunctionOptions,
+    CloudEvent,
 )
 
 
@@ -35,8 +36,8 @@ def store_handler(req: HttpRequest) -> HttpResponse:
     )
 
 
-def handle_queue_event(event_data):
-    data = json.loads(event_data)
+def handle_queue_event(evt: CloudEvent):
+    data = json.loads(evt.data)
     print(data)
     kvstore.set(data["name"], data["message"])
 

@@ -3,7 +3,7 @@
   "version": "0.3.3",
   "description": "",
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/copy-assets.js && tsc",
     "watch": "npm run build -- --watch",
     "lint": "eslint .",
     "test": "npx vitest run --coverage --reporter=verbose",

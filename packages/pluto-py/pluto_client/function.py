@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 from pluto_base.resource import (
     IResource,
@@ -8,7 +8,6 @@ from pluto_base.resource import (
 )
 from pluto_base.platform import PlatformType
 from pluto_base import utils
-from .clients import aws
 
 
 DEFAULT_FUNCTION_NAME = "default"
@@ -16,12 +15,14 @@ DEFAULT_FUNCTION_NAME = "default"
 FnHandler = TypeVar("FnHandler", bound=Callable[..., Any])
 
 
-class DirectCallResponse(BaseModel):
+@dataclass
+class DirectCallResponse:
     code: int
     body: Any
 
 
-class FunctionOptions(BaseModel):
+@dataclass
+class FunctionOptions:
     name: str | None = None
     envs: Dict[str, Any] | None = None
 
@@ -62,6 +63,8 @@ class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
     ) -> IFunctionClient[FnHandler]:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
+            from .clients import aws
+
             return aws.LambdaFunction(func, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

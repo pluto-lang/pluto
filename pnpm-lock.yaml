@@ -50,6 +50,9 @@ importers:
       '@plutolang/pulumi-adapter':
         specifier: workspace:^
         version: link:../../components/adapters/pulumi
+      '@plutolang/pyright-deducer':
+        specifier: workspace:^
+        version: link:../../components/deducers/python-pyright
       '@plutolang/simulator-adapter':
         specifier: workspace:^
         version: link:../../components/adapters/simulator
@@ -358,6 +361,34 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
 
+  examples/langchain-llama2-chatbot-sagemaker:
+    dependencies:
+      '@langchain/community':
+        specifier: ^0.0.33
+        version: 0.0.33
+      '@plutolang/pluto':
+        specifier: latest
+        version: link:../../packages/pluto
+      langchain:
+        specifier: ^0.1.23
+        version: 0.1.23
+    devDependencies:
+      '@plutolang/base':
+        specifier: latest
+        version: link:../../packages/base
+      '@plutolang/pluto-infra':
+        specifier: latest
+        version: link:../../packages/pluto-infra
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
+      '@types/node':
+        specifier: ^20
+        version: 20.10.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
   examples/langchain-llama2-sagemaker:
     dependencies:
       '@langchain/community':
@@ -386,11 +417,65 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
 
+  examples/langchain-py:
+    devDependencies:
+      '@plutolang/base':
+        specifier: latest
+        version: link:../../packages/base
+      '@plutolang/pluto-infra':
+        specifier: latest
+        version: link:../../packages/pluto-infra
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
+      '@types/node':
+        specifier: ^20
+        version: 20.10.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
+  examples/pure-func:
+    devDependencies:
+      '@plutolang/base':
+        specifier: latest
+        version: link:../../packages/base
+      '@plutolang/pluto-infra':
+        specifier: latest
+        version: link:../../packages/pluto-infra
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
+      '@types/node':
+        specifier: ^20
+        version: 20.10.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
   examples/quickstart:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
         version: link:../../packages/pluto
+    devDependencies:
+      '@plutolang/base':
+        specifier: latest
+        version: link:../../packages/base
+      '@plutolang/pluto-infra':
+        specifier: latest
+        version: link:../../packages/pluto-infra
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
+      '@types/node':
+        specifier: ^20
+        version: 20.10.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
+  examples/quickstart-python:
     devDependencies:
       '@plutolang/base':
         specifier: latest

@@ -1,3 +1,4 @@
+import re
 import hashlib
 from .configuration import current_project_name, current_stack_name
 
@@ -29,7 +30,7 @@ def gen_resource_id(
         resource_type,
         provided_name,
     )
-    resource_full_id = "_".join(args).replace(r"[^_0-9a-zA-Z]+", "_")
+    resource_full_id = re.sub(r"[^_0-9a-zA-Z]+", "_", "_".join(args))
 
     if len(resource_full_id) <= RESOURCE_ID_MAX_LENGTH:
         return resource_full_id
