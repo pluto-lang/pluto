@@ -2,23 +2,18 @@ import fs from "fs";
 import path, { resolve } from "path";
 import { arch, core } from "@plutolang/base";
 import logger from "../log";
-import { buildDeducer, buildGenerator } from "./utils";
+import { buildDeducer, buildGenerator, getDefaultDeducerPkg, getDefaultEntrypoint } from "./utils";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
 
 const GRAPHVIZ_GENERATOR_PKG = "@plutolang/graphviz-generator";
 
 export interface CompileOptions {
   stack?: string;
-  deducer: string;
+  deducer?: string;
   generator: string;
 }
 
 export async function compile(entrypoint: string, opts: CompileOptions) {
-  // Ensure the entrypoint exist.
-  if (!fs.existsSync(entrypoint)) {
-    throw new Error(`No such file, ${entrypoint}`);
-  }
-
   // get current stack, and set the output directory
   const projectRoot = resolve("./");
   if (!isPlutoProject(projectRoot)) {
@@ -27,6 +22,12 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
     process.exit(1);
   }
   const project = loadProject(projectRoot);
+
+  // Ensure the entrypoint exist.
+  entrypoint = entrypoint ?? getDefaultEntrypoint(project.language);
+  if (!fs.existsSync(entrypoint)) {
+    throw new Error(`No such file, ${entrypoint}`);
+  }
 
   const stackName = opts.stack ?? project.current;
   if (!stackName) {
@@ -53,7 +54,7 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
 
   // construct the arch ref from user code
   const { archRef } = await loadAndDeduce(
-    opts.deducer,
+    getDefaultDeducerPkg(project.language, opts.deducer),
     {
       ...basicArgs,
       closureDir: closureBaseDir,
@@ -63,24 +64,41 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
   fs.writeFileSync(path.join(stackBaseDir, "arch.yml"), archRef.toYaml());
 
   // generate the graphviz file
-  await loadAndGenerate(GRAPHVIZ_GENERATOR_PKG, basicArgs, archRef, stackBaseDir);
+  await loadAndGenerate(
+    GRAPHVIZ_GENERATOR_PKG,
+    {
+      ...basicArgs,
+      language: project.language,
+    },
+    archRef,
+    stackBaseDir
+  );
 
   // generate the IR code based on the arch ref
-  await loadAndGenerate(opts.generator, basicArgs, archRef, generatedDir);
+  await loadAndGenerate(
+    opts.generator,
+    {
+      ...basicArgs,
+      language: project.language,
+    },
+    archRef,
+    generatedDir
+  );
 }
 
 export async function loadAndDeduce(
   deducerName: string,
-  basicArgs: core.NewDeducerArgs,
+  deducerArgs: core.NewDeducerArgs,
   files: string[]
 ): Promise<core.DeduceResult> {
   // try to construct the deducer, exit with error if failed to import
   try {
-    const deducer = await buildDeducer(deducerName, basicArgs);
+    const deducer = await buildDeducer(deducerName, deducerArgs);
     return await deducer.deduce(files);
   } catch (err) {
     if (err instanceof Error) {
       logger.error(err.message);
+      logger.debug(err.stack);
     } else {
       logger.error(err);
     }
@@ -90,13 +108,13 @@ export async function loadAndDeduce(
 
 export async function loadAndGenerate(
   generatorName: string,
-  basicArgs: core.BasicArgs,
+  generatorArgs: core.NewGeneratorArgs,
   archRef: arch.Architecture,
   outdir: string
 ): Promise<core.GenerateResult> {
   // try to construct the generator, exit with error if failed to import
   try {
-    const generator = await buildGenerator(generatorName, basicArgs);
+    const generator = await buildGenerator(generatorName, generatorArgs);
     return await generator.generate(archRef, outdir);
   } catch (err) {
     if (err instanceof Error) {

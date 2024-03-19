@@ -6,8 +6,6 @@ from pluto_client import (
     Router,
     HttpRequest,
     HttpResponse,
-    Function,
-    FunctionOptions,
 )
 
 
@@ -44,10 +42,3 @@ def handle_queue_event(event_data):
 router.get("/hello", hello_handler)
 router.get("/store", store_handler)
 queue.subscribe(handle_queue_event)
-
-
-def add(a: int, b: int) -> int:
-    return a + b
-
-
-Function(add, FunctionOptions(name="add"))

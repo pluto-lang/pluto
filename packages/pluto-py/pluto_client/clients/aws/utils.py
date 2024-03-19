@@ -1,3 +1,4 @@
+import re
 import hashlib
 import json
 
@@ -5,7 +6,7 @@ RESOURCE_NAME_MAX_LENGTH = 50
 
 
 def gen_aws_resource_name(*parts: str) -> str:
-    resource_full_id = "_".join(parts).replace(r"[^-0-9a-zA-Z]+", "-")
+    resource_full_id = re.sub(r"[^-0-9a-zA-Z]+", "-", "_".join(parts))
     if len(resource_full_id) <= RESOURCE_NAME_MAX_LENGTH:
         return resource_full_id.strip("-")
     else:

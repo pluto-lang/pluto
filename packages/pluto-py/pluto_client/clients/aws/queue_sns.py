@@ -16,7 +16,7 @@ class SNSQueue(IQueueClient):
         self.__client = boto3.client("sns")
 
     def push(self, msg: str) -> None:
-        event = CloudEvent(time.time(), msg)
+        event = CloudEvent(timestamp=time.time(), data=msg)
         self.__client.publish(
             TopicArn=self.__topic_arn, Message=json.dumps(event.__dict__)
         )

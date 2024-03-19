@@ -52,6 +52,11 @@ export default class PyrightDeducer extends core.Deducer {
   }
 
   public async deduce(entrypoints: string[]): Promise<core.DeduceResult> {
+    entrypoints.forEach((entrypoint, idx) => {
+      if (!path.isAbsolute(entrypoint)) {
+        entrypoints[idx] = path.resolve(this.rootpath, entrypoint);
+      }
+    });
     this.valideArgumentsWithThrow(entrypoints);
 
     const { program, sourceFile } = this.pyrightAnalyze(entrypoints);

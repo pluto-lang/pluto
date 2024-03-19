@@ -13,7 +13,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "bash scripts/prepare-pyright-pkg.sh && tsc",
+    "build": "bash scripts/prepare-pyright-pkg.sh && node scripts/copy-assets.js && tsc",
     "watch": "npm run build -- --watch",
     "test": "jest --verbose --coverage",
     "test:watch": "jest --verbose --coverage --watch",

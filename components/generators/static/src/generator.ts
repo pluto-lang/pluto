@@ -1,6 +1,6 @@
 import path from "path";
 import * as ts from "typescript";
-import { arch, core } from "@plutolang/base";
+import { LanguageType, arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
 
 // The name of the compiled entrypoint
@@ -12,7 +12,7 @@ export class StaticGenerator extends core.Generator {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
   public readonly version = require(path.join(__dirname, "../package.json")).version;
 
-  constructor(args: core.BasicArgs) {
+  constructor(args: core.NewGeneratorArgs) {
     super(args);
   }
 
@@ -127,6 +127,18 @@ const ${resource.id} = await (
       )
       .join(",");
 
+    let exportName: string;
+    switch (this.language) {
+      case LanguageType.TypeScript:
+        exportName = "default";
+        break;
+      case LanguageType.Python:
+        exportName = "_default";
+        break;
+      default:
+        throw new Error(`Unsupported language: ${this.language}`);
+    }
+
     const dirpath = path.resolve(this.rootpath, closure.path);
     // We encapsulate the closure within a function because the statements in the closure's global
     // scope are executed upon import. However, these statements are likely intended to run on the
@@ -138,6 +150,7 @@ const ${closure.id}_func = async (...args: any[]) => {
 }
 const ${closure.id} = createClosure(${closure.id}_func, {
   dirpath: "${dirpath}",
+  exportName: "${exportName}",
   dependencies: [${dependenciesString}],
 });
 `;

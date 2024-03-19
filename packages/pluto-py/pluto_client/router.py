@@ -1,11 +1,11 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 from typing import Callable, Dict, Optional
 from pluto_base.platform import PlatformType
 from pluto_base import utils, resource
-from .clients import shared
 
 
-class HttpRequest(BaseModel):
+@dataclass
+class HttpRequest:
     path: str
     method: str
     headers: Dict[str, str]
@@ -13,7 +13,8 @@ class HttpRequest(BaseModel):
     body: Optional[str]
 
 
-class HttpResponse(BaseModel):
+@dataclass
+class HttpResponse:
     status_code: int
     body: str
 
@@ -21,7 +22,8 @@ class HttpResponse(BaseModel):
 RequestHandler = Callable[[HttpRequest], HttpResponse]
 
 
-class RouterOptions(BaseModel):
+@dataclass
+class RouterOptions:
     pass
 
 
@@ -68,6 +70,8 @@ class Router(resource.IResource, IRouterClient, IRouterInfra):
     def build_client(name: str, opts: Optional[RouterOptions] = None) -> IRouterClient:
         platform_type = utils.current_platform_type()
         if platform_type in [PlatformType.AWS, PlatformType.K8s, PlatformType.AliCloud]:
+            from .clients import shared
+
             return shared.RouterClient(name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

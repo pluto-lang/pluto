@@ -1,5 +1,5 @@
+from dataclasses import dataclass
 from enum import Enum
-from pydantic import BaseModel
 from typing import Any, Dict, Optional
 from pluto_base.resource import (
     IResource,
@@ -9,7 +9,6 @@ from pluto_base.resource import (
 )
 from pluto_base.platform import PlatformType
 from pluto_base import utils
-from clients import aws
 
 
 class HuggingFaceTaskType(Enum):
@@ -48,7 +47,8 @@ class HuggingFaceTaskType(Enum):
     ZERO_SHOT_OBJECT_DETECTION = "zero-shot-object-detection"
 
 
-class SageMakerOptions(BaseModel):
+@dataclass
+class SageMakerOptions:
     instance_type: str = "ml.m5.large"
     envs: Optional[Dict[str, Any]] = None
 
@@ -100,4 +100,6 @@ class SageMaker(IResource, ISageMakerClient, ISageMakerInfra):
         platform_type = utils.current_platform_type()
         if platform_type != PlatformType.AWS:
             raise NotImplementedError("SageMaker is only supported on AWS")
+        from .clients import aws
+
         return aws.SageMaker(name, image_uri, opts)

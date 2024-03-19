@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import * as yaml from "js-yaml";
-import { ProvisionType } from "@plutolang/base";
+import { LanguageType, ProvisionType } from "@plutolang/base";
 import { Architecture } from "@plutolang/base/arch";
-import { Deducer, Generator, Adapter, BasicArgs, NewAdapterArgs } from "@plutolang/base/core";
+import { core } from "@plutolang/base";
 import { isPlutoProject, loadProject } from "../utils";
 
 /**
@@ -23,9 +23,12 @@ async function loadPackage(pkgName: string): Promise<any> {
   return (await import(pkgName)).default;
 }
 
-export async function buildDeducer(deducerPkg: string, basicArgs: BasicArgs): Promise<Deducer> {
-  const deducer = new (await loadPackage(deducerPkg))(basicArgs);
-  if (deducer instanceof Deducer) {
+export async function buildDeducer(
+  deducerPkg: string,
+  deducerArgs: core.NewDeducerArgs
+): Promise<core.Deducer> {
+  const deducer = new (await loadPackage(deducerPkg))(deducerArgs);
+  if (deducer instanceof core.Deducer) {
     return deducer;
   }
   throw new Error(`The default export of '${deducerPkg}' package is not a valid Deducer.`);
@@ -33,10 +36,10 @@ export async function buildDeducer(deducerPkg: string, basicArgs: BasicArgs): Pr
 
 export async function buildGenerator(
   generatorPkg: string,
-  basicArgs: BasicArgs
-): Promise<Generator> {
-  const generator = new (await loadPackage(generatorPkg))(basicArgs);
-  if (generator instanceof Generator) {
+  generatorArgs: core.NewGeneratorArgs
+): Promise<core.Generator> {
+  const generator = new (await loadPackage(generatorPkg))(generatorArgs);
+  if (generator instanceof core.Generator) {
     return generator;
   }
   throw new Error(`The default export of '${generatorPkg}' package is not a valid Generator.`);
@@ -44,8 +47,8 @@ export async function buildGenerator(
 
 export async function buildAdapterByProvisionType(
   provisionType: ProvisionType,
-  adapterArgs: NewAdapterArgs
-): Promise<Adapter> {
+  adapterArgs: core.NewAdapterArgs
+): Promise<core.Adapter> {
   // build the adapter based on the provisioning engine type
   const adapterPkg = selectAdapterByEngine(provisionType);
   if (!adapterPkg) {
@@ -53,7 +56,7 @@ export async function buildAdapterByProvisionType(
   }
 
   const adapter = new (await loadPackage(adapterPkg))(adapterArgs);
-  if (adapter instanceof Adapter) {
+  if (adapter instanceof core.Adapter) {
     return adapter;
   }
   throw new Error(`The default export of '${adapterPkg}' package is not a valid Adapter.`);
@@ -102,4 +105,24 @@ export function loadProjectAndStack(projectRoot: string, stackInCmd?: string) {
     throw new Error(`There is no stack named ${stackName}.`);
   }
   return { project, stack };
+}
+
+const deducerPkgMap: Record<LanguageType, string> = {
+  [LanguageType.Python]: "@plutolang/pyright-deducer",
+  [LanguageType.TypeScript]: "@plutolang/static-deducer",
+};
+
+export function getDefaultDeducerPkg(lang: LanguageType, deducerInCmd?: string): string {
+  return deducerInCmd ?? deducerPkgMap[lang];
+}
+
+export function getDefaultEntrypoint(lang: LanguageType): string {
+  switch (lang) {
+    case LanguageType.Python:
+      return "app/main.py";
+    case LanguageType.TypeScript:
+      return "src/index.ts";
+    default:
+      throw new Error(`Invalid language type: ${lang}`);
+  }
 }

@@ -7,6 +7,8 @@ import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import {
   buildAdapterByProvisionType,
+  getDefaultDeducerPkg,
+  getDefaultEntrypoint,
   loadArchRef,
   loadProjectAndStack,
   loadProjectRoot,
@@ -16,7 +18,7 @@ import { dumpStackState, prepareStackDirs } from "../utils";
 
 export interface DeployOptions {
   stack?: string;
-  deducer: string;
+  deducer?: string;
   generator: string;
   apply: boolean;
   yes: boolean;
@@ -24,12 +26,6 @@ export interface DeployOptions {
 }
 
 export async function deploy(entrypoint: string, opts: DeployOptions) {
-  // Ensure the entrypoint exist.
-  if (!fs.existsSync(entrypoint)) {
-    logger.error(`The entry point file '${entrypoint}' does not exist.`);
-    process.exit(1);
-  }
-
   try {
     const projectRoot = loadProjectRoot();
     const { project, stack } = loadProjectAndStack(projectRoot, opts.stack);
@@ -39,6 +35,12 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
       projectRoot,
       stack.name
     );
+
+    // Ensure the entrypoint exist.
+    entrypoint = entrypoint ?? getDefaultEntrypoint(project.language);
+    if (!fs.existsSync(entrypoint)) {
+      throw new Error(`No such file, ${entrypoint}`);
+    }
 
     const { archRef, infraEntrypoint } = await buildArchRefAndInfraEntrypoint(
       project,
@@ -60,6 +62,7 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     const adapter = await buildAdapterByProvisionType(stack.provisionType, {
       project: project.name,
       rootpath: project.rootpath,
+      language: project.language,
       stack: stack,
       archRef: archRef,
       entrypoint: infraEntrypoint!,
@@ -109,7 +112,7 @@ async function buildArchRefAndInfraEntrypoint(
     // construct the arch ref from user code
     logger.info("Generating reference architecture...");
     const deduceResult = await loadAndDeduce(
-      options.deducer,
+      getDefaultDeducerPkg(project.language, options.deducer),
       {
         ...basicArgs,
         closureDir: closuresDir,
@@ -128,7 +131,10 @@ async function buildArchRefAndInfraEntrypoint(
     logger.info("Generating the IaC Code and computing modules...");
     const generateResult = await loadAndGenerate(
       options.generator,
-      basicArgs,
+      {
+        ...basicArgs,
+        language: project.language,
+      },
       archRef,
       generatedDir
     );

@@ -1,5 +1,6 @@
 export * from "./platform";
 export * from "./provision";
+export * from "./language";
 export * from "./resource";
 export { Registry } from "./registry";
 

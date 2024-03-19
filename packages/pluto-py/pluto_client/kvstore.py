@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 from typing import Optional
 from pluto_base.resource import (
     IResource,
@@ -8,10 +8,10 @@ from pluto_base.resource import (
 )
 from pluto_base.platform import PlatformType
 from pluto_base import utils
-from .clients import aws
 
 
-class KVStoreOptions(BaseModel):
+@dataclass
+class KVStoreOptions:
     pass
 
 
@@ -53,6 +53,8 @@ class KVStore(IResource, IKVStoreClient, IKVStoreInfra):
     ) -> IKVStoreClient:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
+            from .clients import aws
+
             return aws.DynamoKVStore(name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

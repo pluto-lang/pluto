@@ -1,6 +1,6 @@
 import { AnyFunction, ComputeClosure, isComputeClosure } from "./types";
 
-type CreateClosureOptions = Partial<Pick<ComputeClosure<AnyFunction>, "dirpath" | "dependencies">>;
+type CreateClosureOptions = Partial<Omit<ComputeClosure<AnyFunction>, "innerClosure">>;
 
 export function createClosure<T extends AnyFunction>(
   fn: T,
@@ -8,6 +8,8 @@ export function createClosure<T extends AnyFunction>(
 ): ComputeClosure<T> {
   const newClosure: ComputeClosure<T> = Object.assign(fn, {
     dirpath: options?.dirpath ?? "inline",
+    exportName: options?.exportName ?? "default",
+    placeholder: options?.placeholder,
     dependencies: options?.dependencies,
   });
 
@@ -24,6 +26,8 @@ export function wrapClosure<T extends AnyFunction, K extends AnyFunction>(
 ): ComputeClosure<T> {
   const wrappedClosure: ComputeClosure<T> = Object.assign(wrapper, {
     dirpath: options?.dirpath ?? "inline",
+    exportName: options?.exportName ?? "default",
+    placeholder: options?.placeholder,
     dependencies: closure.dependencies?.concat(options?.dependencies ?? []),
     innerClosure: closure,
   });
@@ -32,4 +36,14 @@ export function wrapClosure<T extends AnyFunction, K extends AnyFunction>(
     return wrappedClosure;
   }
   throw new Error(`Failed to wrap closure. The result is not a valid closure.`);
+}
+
+export function getDepth(closure: ComputeClosure<AnyFunction>): number {
+  let depth = 0;
+  let current: ComputeClosure<AnyFunction> | undefined = closure;
+  while (current) {
+    depth++;
+    current = current.innerClosure;
+  }
+  return depth;
 }

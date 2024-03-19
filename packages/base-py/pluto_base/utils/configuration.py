@@ -38,8 +38,8 @@ def _fetch_env_with_throw(name: str):
 
 
 def is_platform_type(value: str) -> bool:
-    return value in PlatformType.__members__.values()
+    return value in PlatformType.__members__
 
 
 def is_engine_type(value: str) -> bool:
-    return value in ProvisionType.__members__.values()
+    return value in ProvisionType.__members__

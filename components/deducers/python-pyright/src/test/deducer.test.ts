@@ -67,10 +67,11 @@ async function getArchRefForInline(code: string, filename: string = "tmp.py") {
   const tmpfile = path.join(tmpdir, filename);
   fs.writeFileSync(tmpfile, code);
 
+  const closureDir = path.join(tmpdir, `closures`);
   const deducer = new PyrightDeducer({
     project: "test",
     rootpath: __dirname,
-    closureDir: "./closures",
+    closureDir: closureDir,
     stack: {} as any,
   });
 

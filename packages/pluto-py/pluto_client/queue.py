@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 from typing import Any, Callable, Optional
 from pluto_base.resource import (
     IResource,
@@ -8,10 +8,10 @@ from pluto_base.resource import (
 )
 from pluto_base.platform import PlatformType
 from pluto_base import utils
-from .clients import aws
 
 
-class CloudEvent(BaseModel):
+@dataclass
+class CloudEvent:
     timestamp: float
     data: str
 
@@ -19,7 +19,8 @@ class CloudEvent(BaseModel):
 EventHandler = Callable[[CloudEvent], None]
 
 
-class QueueOptions(BaseModel):
+@dataclass
+class QueueOptions:
     pass
 
 
@@ -61,6 +62,8 @@ class Queue(IResource, IQueueClient, IQueueInfra):
     def build_client(name: str, opts: Optional[QueueOptions] = None) -> IQueueClient:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
+            from .clients import aws
+
             return aws.SNSQueue(name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

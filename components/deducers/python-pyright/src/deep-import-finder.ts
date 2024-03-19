@@ -62,8 +62,14 @@ export class DeepImportFinder {
     // Get the absolute paths of the dependent modules.
     const modulePaths: string[] = [];
     for (const moduleName of reachedModules) {
-      const importInfo = this.moduleNameToInfo.get(moduleName)!;
+      let importInfo = this.moduleNameToInfo.get(moduleName)!;
+      if (importInfo.nonStubImportResult) {
+        // The default import result is a stub file located in the typeshed directory. We should use
+        // the non-stub import result instead.
+        importInfo = importInfo.nonStubImportResult;
+      }
       const modulePath = getModulePath(importInfo);
+
       if (this.shouldIgnore(importInfo, modulePath)) {
         // Ignore the modules that are not needed.
         continue;

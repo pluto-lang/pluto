@@ -14,6 +14,7 @@
     "daily-joke-slack",
     "quickstart",
     "gpt2-hf-sagemaker",
-    "langchain-llama2-sagemaker"
+    "langchain-llama2-sagemaker",
+    "quickstart-python"
   ]
 }
