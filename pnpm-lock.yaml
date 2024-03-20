@@ -435,24 +435,6 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
 
-  examples/pure-func:
-    devDependencies:
-      '@plutolang/base':
-        specifier: latest
-        version: link:../../packages/base
-      '@plutolang/pluto-infra':
-        specifier: latest
-        version: link:../../packages/pluto-infra
-      '@pulumi/pulumi':
-        specifier: ^3.88.0
-        version: 3.88.0
-      '@types/node':
-        specifier: ^20
-        version: 20.10.4
-      typescript:
-        specifier: ^5.2.2
-        version: 5.2.2
-
   examples/quickstart:
     dependencies:
       '@plutolang/pluto':

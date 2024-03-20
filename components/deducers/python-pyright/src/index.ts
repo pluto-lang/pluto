@@ -161,11 +161,6 @@ export default class PyrightDeducer extends core.Deducer {
   private pyrightAnalyze(entrypoints: string[]) {
     const program = ProgramUtils.createProgram({
       logLevel: LogLevel.Warn,
-      // TODO: remove the extraPaths when the package is published.
-      extraPaths: [
-        path.resolve(__dirname, "../../../../packages/base-py"),
-        path.resolve(__dirname, "../../../../packages/pluto-py"),
-      ],
     });
 
     const fileUris = entrypoints.map((name) => Uri.file(name));

@@ -1,12 +1,6 @@
 import json
 from datetime import datetime
-from pluto_client import (
-    KVStore,
-    Queue,
-    Router,
-    HttpRequest,
-    HttpResponse,
-)
+from pluto_client import KVStore, Queue, Router, HttpRequest, HttpResponse, CloudEvent
 
 
 router = Router("router")
@@ -33,8 +27,8 @@ def store_handler(req: HttpRequest) -> HttpResponse:
     )
 
 
-def handle_queue_event(event_data):
-    data = json.loads(event_data)
+def handle_queue_event(evt: CloudEvent):
+    data = json.loads(evt.data)
     print(data)
     kvstore.set(data["name"], data["message"])
 
