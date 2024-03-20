@@ -27,6 +27,9 @@ export function createProgram(options: CreateProgramOptions = {}) {
   configOptions.typeCheckingMode = "strict";
   configOptions.pythonPath = options.pythonPath ? Uri.file(options.pythonPath) : undefined;
   configOptions.defaultExtraPaths = options.extraPaths?.map((p) => Uri.file(p));
+  // This is a workaround for a situation where pyright doesn't recognize the types if a library
+  // doesn't have a `py.typed` file.
+  configOptions.useLibraryCodeForTypes = true;
 
   const importResolver = new ImportResolver(
     serviceProvider,

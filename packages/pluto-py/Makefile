@@ -1,15 +1,12 @@
-.PHONY: all clean build package upload
+.PHONY: all clean build publish
 
-all: clean build package upload
+all: clean build publish
 
 clean:
 	rm -rf dist
 
 build:
-	python3 -m build
-
-check:
-	python3 -m twine check dist/*
+	poetry build
 
 publish:
-	python3 -m twine upload dist/*
+	poetry publish
