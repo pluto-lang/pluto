@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Dict, Literal
 
 
 @dataclass
@@ -56,3 +56,17 @@ instance, and the value evaluator can't deduce the data class instance, the test
 
 # data class value evaluation
 Model(base=Base("name", age=19), gender="male", nullable=null_1)
+
+# Dict
+{
+    "key1": 1,
+    "key2": "str13",
+    "key3": True,
+    "key4": None,
+    "key5": (1, 2, 3),
+    "key6": Base("name", 19),
+}
+{
+    "key1": {"key2": 1, "key3": "str14"},
+    "key4": {"key5": True},
+}

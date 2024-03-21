@@ -5,15 +5,18 @@ import {
   ArgumentNode,
   CallNode,
   ClassNode,
+  DictionaryNode,
   ExpressionNode,
   FunctionNode,
   ImportAsNode,
   ImportFromAsNode,
   LambdaNode,
+  ListNode,
   MemberAccessNode,
   NameNode,
   ParseNode,
   ParseNodeType,
+  TupleNode,
 } from "pyright-internal/dist/parser/parseNodes";
 import { SymbolTable } from "pyright-internal/dist/analyzer/symbol";
 import { TypeCategory } from "pyright-internal/dist/analyzer/types";
@@ -110,8 +113,7 @@ export class CodeExtractor {
   private readonly accessedSpecialNodeFinder: AccessedSpecialNodeFinder;
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
-    private readonly specialNodeMap: SpecialNodeMap<CallNode>,
-    private readonly valueEvaluator: ValueEvaluator
+    private readonly specialNodeMap: SpecialNodeMap<CallNode>
   ) {
     this.accessedSpecialNodeFinder = new AccessedSpecialNodeFinder(specialNodeMap);
   }
@@ -142,11 +144,19 @@ export class CodeExtractor {
         break;
       case ParseNodeType.Number:
       case ParseNodeType.StringList:
+      case ParseNodeType.Constant:
         segment = {
           node,
           code: TextUtils.getTextOfNode(node, sourceFile)!,
           dependencies: [],
         };
+        break;
+      case ParseNodeType.Dictionary:
+        segment = this.extractDictWithDependencies(node, sourceFile);
+        break;
+      case ParseNodeType.Tuple:
+      case ParseNodeType.List:
+        segment = this.extractTupleOrListWithDependencies(node, sourceFile);
         break;
       default:
         const nodeText = TextUtils.getTextOfNode(node, sourceFile);
@@ -215,11 +225,9 @@ export class CodeExtractor {
       case DeclarationType.Variable: {
         switch (declaration.node.nodeType) {
           case ParseNodeType.StringList: {
-            const value = this.valueEvaluator.getValue(declaration.node);
-            const text = Value.toString(value);
             return {
               node: declaration.node,
-              code: text,
+              code: TextUtils.getTextOfNode(declaration.node, sourceFile)!,
               dependencies: [],
             };
           }
@@ -501,6 +509,69 @@ export class CodeExtractor {
     return {
       node: node,
       code: code,
+      dependencies: dependencies,
+    };
+  }
+
+  /**
+   * Iterate through the dictionary node and extract the dependencies of each key-value pair.
+   */
+  private extractDictWithDependencies(node: DictionaryNode, sourceFile: SourceFile): CodeSegment {
+    const dependencies: CodeSegment[] = [];
+    node.entries.forEach((entry) => {
+      if (entry.nodeType !== ParseNodeType.DictionaryKeyEntry) {
+        throw new Error(`Unsupported dictionary entry type: ${entry.nodeType}`);
+      }
+
+      const keySegment = this.extractExpressionWithDependencies(entry.keyExpression, sourceFile);
+      if (entry.keyExpression.nodeType === ParseNodeType.Name) {
+        dependencies.push(keySegment);
+      } else {
+        dependencies.push(...keySegment.dependencies);
+      }
+
+      const valueSegment = this.extractExpressionWithDependencies(
+        entry.valueExpression,
+        sourceFile
+      );
+      if (entry.valueExpression.nodeType === ParseNodeType.Name) {
+        dependencies.push(valueSegment);
+      } else {
+        dependencies.push(...valueSegment.dependencies);
+      }
+    });
+
+    return {
+      node: node,
+      code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the dictionary node.
+      dependencies: dependencies,
+    };
+  }
+
+  /**
+   * Iterate through the tuple or list node and extract the dependencies of each item. If the item
+   * is a name node, we append the extracted result to the dependencies. Otherwise, we append the
+   * item's dependencies to the dependencies.
+   */
+  private extractTupleOrListWithDependencies(
+    node: TupleNode | ListNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
+    const items = node.nodeType === ParseNodeType.Tuple ? node.expressions : node.entries;
+
+    const dependencies: CodeSegment[] = [];
+    items.forEach((item) => {
+      const segment = this.extractExpressionWithDependencies(item, sourceFile);
+      if (item.nodeType === ParseNodeType.Name) {
+        dependencies.push(segment);
+      } else {
+        dependencies.push(...segment.dependencies);
+      }
+    });
+
+    return {
+      node: node,
+      code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the tuple or list node.
       dependencies: dependencies,
     };
   }

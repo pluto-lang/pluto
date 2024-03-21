@@ -11,6 +11,24 @@ from pluto_client import (
     FunctionOptions,
 )
 from pluto_client.router import HttpResponse
+from pluto_client.sagemaker import SageMaker, SageMakerOptions
+
+# test case for dict argument
+sagemaker = SageMaker(
+    "sagemaker",
+    "image_uri",
+    SageMakerOptions(
+        envs={
+            "key1": 1,
+            "key2": "str",
+            "key3": True,
+            "key4": None,
+            "key5": [1, 2, 3],
+            "key6": {"key": "value"},
+            "key7": (1, 2, 3),
+        }
+    ),
+)
 
 queueName = "test-queue"
 queue = pluto_client.Queue(queueName)  # resource object construction
@@ -48,6 +66,7 @@ var_from_call = func(1, lambda x: x, echo)
 
 
 def get_handler(req: HttpRequest) -> pluto_client_alias.HttpResponse:
+    sagemaker.endpoint_url()  # access captured property
     print(var_from_call)  # variable dependency
     func(1, echo, lambda x: x)  # nested function dependency
     name = req.query["name"] if "name" in req.query else "Anonym"

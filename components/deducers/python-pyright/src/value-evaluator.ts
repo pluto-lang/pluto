@@ -3,6 +3,8 @@ import { ExpressionNode, ParseNodeType } from "pyright-internal/dist/parser/pars
 import { ClassType, LiteralValue, TypeCategory } from "pyright-internal/dist/analyzer/types";
 import * as TypeUtils from "./type-utils";
 
+type ValuePair = [Value, Value];
+
 export interface Value {
   /**
    * If the type is undefined, it means the value is a primitive, including boolean, integer,
@@ -10,7 +12,11 @@ export interface Value {
    */
   type?: string;
 
-  value?: LiteralValue | Record<string, Value> | Array<Value>;
+  value?:
+    | LiteralValue
+    | Record<string, Value> /* dataclass */
+    | Array<Value> /* tuple */
+    | Array<ValuePair> /* dict */;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -29,6 +35,11 @@ export namespace Value {
       case "builtins.tuple": {
         const values = value.value! as Value[];
         return `(${values.map((v) => Value.toString(v)).join(", ")})`;
+      }
+      case "builtins.dict": {
+        const values = value.value! as ValuePair[];
+        const kvs = values.map(([k, v]) => `${Value.toString(k)}: ${Value.toString(v)}`);
+        return `{${kvs.join(", ")}}`;
       }
       default: {
         // This is a data class object.
@@ -57,6 +68,11 @@ export namespace Value {
         const values = value.value! as Value[];
         return `[${values.map((v) => Value.toJson(v)).join(", ")}]`;
       }
+      case "builtins.dict": {
+        const values = value.value! as ValuePair[];
+        const kvs = values.map(([k, v]) => `${Value.toJson(k)}: ${Value.toJson(v)}`);
+        return `{${kvs.join(", ")}}`;
+      }
       default: {
         // This is a data class object.
         const values = value.value! as Record<string, Value>;
@@ -78,10 +94,19 @@ export namespace Value {
     }
     if (value.value) {
       if (Array.isArray(value.value)) {
+        // Tuple / dict
         value.value.forEach((v) => {
-          types.push(...getTypes(v));
+          if (Array.isArray(v)) {
+            // Dict
+            types.push(...getTypes(v[0]));
+            types.push(...getTypes(v[1]));
+          } else {
+            // Tuple
+            types.push(...getTypes(v));
+          }
         });
       } else {
+        // Dataclass
         Object.values(value.value).forEach((v) => {
           types.push(...getTypes(v));
         });
@@ -182,10 +207,12 @@ export class ValueEvaluator {
       case "builtins.tuple":
         finalValue = this.evaluateValueForTuple(type, valueNode);
         break;
+      case "builtins.dict":
+        finalValue = this.evaluateValueForDict(type, valueNode);
+        break;
       case "builtins.float":
       case "builtins.bytearray":
       case "builtins.bytes":
-      case "builtins.dict":
       case "builtins.frozenset":
       case "builtins.list":
       case "builtins.set":
@@ -222,6 +249,37 @@ export class ValueEvaluator {
         values.push(this.evaluateValue(type.type));
       });
     }
+    return { type: type.details.fullName, value: values };
+  }
+
+  /**
+   * For the dict type, if the expression node is a dict construction expression, we'll evaluate the
+   * value of each key-value pair in the dict. If it's a dict variable, we'll throw an error.
+   */
+  private evaluateValueForDict(type: ClassType, valueNode?: ExpressionNode): Value {
+    if (valueNode === undefined) {
+      throw new Error(`Evaluation of the dict type without the expression node is not supported.`);
+    }
+
+    if (valueNode.nodeType !== ParseNodeType.Dictionary) {
+      throw new Error(
+        `We only support constructing dictionaries using the expression, not variables yet.`
+      );
+    }
+
+    const values: ValuePair[] = [];
+    valueNode.entries.forEach((entry) => {
+      if (entry.nodeType !== ParseNodeType.DictionaryKeyEntry) {
+        throw new Error(
+          `We don't support the type '${type.details.fullName}' as dictionary key yet.`
+        );
+      }
+
+      const key = this.getValue(entry.keyExpression);
+      const value = this.getValue(entry.valueExpression);
+      values.push([key, value]);
+    });
+
     return { type: type.details.fullName, value: values };
   }
 

@@ -96,11 +96,7 @@ export default class PyrightDeducer extends core.Deducer {
 
     this.tracker = new ResourceObjectTracker(this.typeEvaluator, this.sepcialNodeMap);
     this.valueEvaluator = new ValueEvaluator(this.typeEvaluator);
-    this.extractor = new CodeExtractor(
-      this.typeEvaluator,
-      this.sepcialNodeMap,
-      this.valueEvaluator
-    );
+    this.extractor = new CodeExtractor(this.typeEvaluator, this.sepcialNodeMap);
 
     this.buildConstructedResources(constructNodes, sourceFile);
     this.buildRelationshipsFromInfraApis(infraApiNodes, sourceFile);

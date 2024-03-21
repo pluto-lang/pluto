@@ -74,7 +74,7 @@ function createTools(program: Program, sourceFile: SourceFile) {
   const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
   const valueEvaluator = new ValueEvaluator(program.evaluator!);
-  const extractor = new CodeExtractor(program.evaluator!, specialNodeMap, valueEvaluator);
+  const extractor = new CodeExtractor(program.evaluator!, specialNodeMap);
   return { specialNodeMap, tracker, valueEvaluator, extractor };
 }
 
