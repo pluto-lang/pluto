@@ -5,18 +5,24 @@ import {
   ArgumentNode,
   CallNode,
   ClassNode,
+  DictionaryNode,
   ExpressionNode,
   FunctionNode,
   ImportAsNode,
   ImportFromAsNode,
   LambdaNode,
+  ListNode,
   MemberAccessNode,
   NameNode,
   ParseNode,
   ParseNodeType,
+  TupleNode,
 } from "pyright-internal/dist/parser/parseNodes";
-import { Scope } from "pyright-internal/dist/analyzer/scope";
+import { SymbolTable } from "pyright-internal/dist/analyzer/symbol";
+import { TypeCategory } from "pyright-internal/dist/analyzer/types";
+import { Scope, ScopeType } from "pyright-internal/dist/analyzer/scope";
 import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
+import * as PyrightTypeUtils from "pyright-internal/dist/analyzer/typeUtils";
 import { ParseTreeWalker, getChildNodes } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import * as AnalyzerNodeInfo from "pyright-internal/dist/analyzer/analyzerNodeInfo";
 import { getBuiltInScope, getScopeForNode } from "pyright-internal/dist/analyzer/scopeUtils";
@@ -25,7 +31,6 @@ import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ScopeUtils from "./scope-utils";
 import { SpecialNodeMap } from "./special-node-map";
-import { Value, ValueEvaluator } from "./value-evaluator";
 
 export interface CodeSegment {
   readonly node: ParseNode;
@@ -107,8 +112,7 @@ export class CodeExtractor {
   private readonly accessedSpecialNodeFinder: AccessedSpecialNodeFinder;
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
-    private readonly specialNodeMap: SpecialNodeMap<CallNode>,
-    private readonly valueEvaluator: ValueEvaluator
+    private readonly specialNodeMap: SpecialNodeMap<CallNode>
   ) {
     this.accessedSpecialNodeFinder = new AccessedSpecialNodeFinder(specialNodeMap);
   }
@@ -139,14 +143,24 @@ export class CodeExtractor {
         break;
       case ParseNodeType.Number:
       case ParseNodeType.StringList:
+      case ParseNodeType.Constant:
         segment = {
           node,
           code: TextUtils.getTextOfNode(node, sourceFile)!,
           dependencies: [],
         };
         break;
-      default:
-        throw new Error(`Unsupported node type: ${node.nodeType}`);
+      case ParseNodeType.Dictionary:
+        segment = this.extractDictWithDependencies(node, sourceFile);
+        break;
+      case ParseNodeType.Tuple:
+      case ParseNodeType.List:
+        segment = this.extractTupleOrListWithDependencies(node, sourceFile);
+        break;
+      default: {
+        const nodeText = TextUtils.getTextOfNode(node, sourceFile);
+        throw new Error(`Unsupported node type: ${node.nodeType}, text: \`${nodeText}\``);
+      }
     }
     return segment;
   }
@@ -211,11 +225,9 @@ export class CodeExtractor {
       case DeclarationType.Variable: {
         switch (declaration.node.nodeType) {
           case ParseNodeType.StringList: {
-            const value = this.valueEvaluator.getValue(declaration.node);
-            const text = Value.toString(value);
             return {
               node: declaration.node,
-              code: text,
+              code: TextUtils.getTextOfNode(declaration.node, sourceFile)!,
               dependencies: [],
             };
           }
@@ -433,7 +445,24 @@ export class CodeExtractor {
       throw new Error(`No scope found for this lambda function '${nodeText}'.`);
     }
 
-    const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name);
+    // The class node and its members are at the same scope level, which means that the scope of the
+    // members does not function as a child scope to that of the class node. Consequently, variables
+    // declared within the class members are confined to the scope of those members rather than to
+    // the class itself. Determining whether these variables need to be extracted as dependencies by
+    // assessing if their scope is encapsulated within the class's scope is not a clear-cut process.
+    // Therefore, we get all symbols that represent the class members. Subsequently, for each name
+    // node existing within the scope of the class node, we can ignore it if its corresponding
+    // symbol denotes a class member or if its scope is encompassed by that of the class members.
+    const classType = this.typeEvaluator.getType(classNode.name);
+    assert(classType, `No type found for class '${nodeText}'.`);
+    assert(
+      classType.category === TypeCategory.Class,
+      `The type of the class '${nodeText}' is not a class.`
+    );
+    const members: SymbolTable = new Map();
+    PyrightTypeUtils.getMembersForClass(classType, members, /* includeInstanceVars */ false);
+
+    const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name, members);
     walker.walk(classNode);
 
     const dependencies: CodeSegment[] = [];
@@ -480,6 +509,69 @@ export class CodeExtractor {
     return {
       node: node,
       code: code,
+      dependencies: dependencies,
+    };
+  }
+
+  /**
+   * Iterate through the dictionary node and extract the dependencies of each key-value pair.
+   */
+  private extractDictWithDependencies(node: DictionaryNode, sourceFile: SourceFile): CodeSegment {
+    const dependencies: CodeSegment[] = [];
+    node.entries.forEach((entry) => {
+      if (entry.nodeType !== ParseNodeType.DictionaryKeyEntry) {
+        throw new Error(`Unsupported dictionary entry type: ${entry.nodeType}`);
+      }
+
+      const keySegment = this.extractExpressionWithDependencies(entry.keyExpression, sourceFile);
+      if (entry.keyExpression.nodeType === ParseNodeType.Name) {
+        dependencies.push(keySegment);
+      } else {
+        dependencies.push(...keySegment.dependencies);
+      }
+
+      const valueSegment = this.extractExpressionWithDependencies(
+        entry.valueExpression,
+        sourceFile
+      );
+      if (entry.valueExpression.nodeType === ParseNodeType.Name) {
+        dependencies.push(valueSegment);
+      } else {
+        dependencies.push(...valueSegment.dependencies);
+      }
+    });
+
+    return {
+      node: node,
+      code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the dictionary node.
+      dependencies: dependencies,
+    };
+  }
+
+  /**
+   * Iterate through the tuple or list node and extract the dependencies of each item. If the item
+   * is a name node, we append the extracted result to the dependencies. Otherwise, we append the
+   * item's dependencies to the dependencies.
+   */
+  private extractTupleOrListWithDependencies(
+    node: TupleNode | ListNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
+    const items = node.nodeType === ParseNodeType.Tuple ? node.expressions : node.entries;
+
+    const dependencies: CodeSegment[] = [];
+    items.forEach((item) => {
+      const segment = this.extractExpressionWithDependencies(item, sourceFile);
+      if (item.nodeType === ParseNodeType.Name) {
+        dependencies.push(segment);
+      } else {
+        dependencies.push(...segment.dependencies);
+      }
+    });
+
+    return {
+      node: node,
+      code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the tuple or list node.
       dependencies: dependencies,
     };
   }
@@ -538,7 +630,8 @@ class OutsideSymbolFinder extends ParseTreeWalker {
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
     private readonly scope: Scope,
-    private readonly rootNode?: ParseNode
+    private readonly rootNode?: ParseNode,
+    private readonly members?: SymbolTable // Only used for class members.
   ) {
     super();
   }
@@ -554,6 +647,26 @@ class OutsideSymbolFinder extends ParseTreeWalker {
 
   private shouldIgnore(node: NameNode): boolean {
     const symbolWithScope = this.typeEvaluator.lookUpSymbolRecursive(node, node.value, false);
+
+    if (this.scope.type === ScopeType.Class && this.members) {
+      for (const memberSymbol of this.members.values()) {
+        if (memberSymbol === symbolWithScope?.symbol) {
+          // The symbol is a class member, so we should ignore it.
+          return true;
+        }
+
+        const memberScope = ScopeUtils.getScopeForSymbol(memberSymbol);
+        if (
+          symbolWithScope &&
+          memberScope &&
+          ScopeUtils.isScopeContainedWithin(symbolWithScope.scope, memberScope)
+        ) {
+          // The symbol is defined in the scope of the class members, so we should ignore it.
+          return true;
+        }
+      }
+    }
+
     if (symbolWithScope && ScopeUtils.isScopeContainedWithin(symbolWithScope.scope, this.scope)) {
       // The symbol is defined in the function's scope.
       return true;

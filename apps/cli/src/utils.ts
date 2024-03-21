@@ -80,10 +80,17 @@ export function dumpStackState(stateFilepath: string, stackState: StackState) {
 export function dumpProject(project: config.Project) {
   const rootpath = project.rootpath;
 
-  const obj = project.deepCopy() as any;
-  delete obj.name;
-  delete obj.rootpath;
-  const content = yaml.dump(obj, { sortKeys: true });
+  // Remove the state field from the project before dumping it.
+  const proj = project.deepCopy();
+  proj.stacks.forEach((stack) => {
+    delete (stack as any).state;
+  });
+  // Remove the `name` and `rootpath` fields from the project before dumping it. They're loaded
+  // automatically when running the `pluto` command.
+  delete (proj as any).name;
+  delete (proj as any).rootpath;
+
+  const content = yaml.dump(proj, { sortKeys: true });
 
   const configFile = path.join(rootpath, PLUTO_PROJECT_CONFIG_PATH);
   fs.ensureFileSync(configFile);

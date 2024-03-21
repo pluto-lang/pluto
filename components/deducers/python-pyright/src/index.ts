@@ -96,11 +96,7 @@ export default class PyrightDeducer extends core.Deducer {
 
     this.tracker = new ResourceObjectTracker(this.typeEvaluator, this.sepcialNodeMap);
     this.valueEvaluator = new ValueEvaluator(this.typeEvaluator);
-    this.extractor = new CodeExtractor(
-      this.typeEvaluator,
-      this.sepcialNodeMap,
-      this.valueEvaluator
-    );
+    this.extractor = new CodeExtractor(this.typeEvaluator, this.sepcialNodeMap);
 
     this.buildConstructedResources(constructNodes, sourceFile);
     this.buildRelationshipsFromInfraApis(infraApiNodes, sourceFile);
@@ -377,11 +373,26 @@ export default class PyrightDeducer extends core.Deducer {
 
   private prepareDependencies(closures: arch.Closure[]) {
     for (const closure of closures) {
+      const destBaseDir = path.resolve(closure.path, "site-packages");
+      fs.ensureDirSync(destBaseDir);
+
       const closureFile = path.resolve(closure.path, "__init__.py");
       const pkgPaths = this.importFinder!.getDependentModules(closureFile);
       pkgPaths.forEach((pkgPath) => {
-        const dest = path.resolve(closure.path, path.basename(pkgPath));
+        const pkgName = path.basename(pkgPath);
+        const dest = path.resolve(destBaseDir, pkgName);
         fs.copySync(pkgPath, dest);
+
+        // Copy the .dist-info directory if it exists.
+        const prefix = pkgName.replace(/\.py$/g, ""); // The python module may just be a python file.
+        const distInforDirnames = fs.readdirSync(path.dirname(pkgPath)).filter((dirname) => {
+          return new RegExp(`^${prefix}-(\\d+(\\.\\d+)*?)\\.dist-info$`).test(dirname);
+        });
+        distInforDirnames.forEach((distInfoDirname) => {
+          const distInfoDir = path.resolve(path.dirname(pkgPath), distInfoDirname);
+          const dest = path.resolve(destBaseDir, distInfoDirname);
+          fs.copySync(distInfoDir, dest);
+        });
       });
     }
   }
