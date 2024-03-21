@@ -1,4 +1,3 @@
-import * as os from "os";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { Context } from "aws-lambda";
@@ -6,10 +5,11 @@ import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Role } from "@pulumi/aws/iam";
 import { Function as AwsLambda } from "@pulumi/aws/lambda";
-import { IResourceInfra, PlatformType } from "@plutolang/base";
-import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import { IResourceInfra, LanguageType, PlatformType } from "@plutolang/base";
+import { ComputeClosure, getDepth, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import {
   createEnvNameForProperty,
+  currentLanguage,
   currentProjectName,
   currentStackName,
   genResourceId,
@@ -23,7 +23,7 @@ import {
   Function as PlutoFunction,
 } from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
-import { serializeClosureToDir } from "../utils";
+import { dumpClosureToDir_python, serializeClosureToDir } from "../utils";
 import { currentAwsRegion } from "./utils";
 
 export enum Ops {
@@ -56,12 +56,18 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
     // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
     // platform adaption function.
-    //
-    // TODO: The closure that meets the below condition might not necessarily be one created by the
-    // user themselves. It could also potentially be created by a SDK developer. We need to find a
-    // more better method to verify this.
-    if (closure.dirpath !== "inline" && closure.innerClosure === undefined) {
-      closure = wrapClosure(adaptAwsRuntime(closure), closure);
+    if (getDepth(closure) === 1) {
+      closure = adaptPlatformNorm(closure);
+    }
+
+    if (currentLanguage() === LanguageType.Python) {
+      // There's a common top adapter for Python functions. It's used to add a child directory to
+      // the system path, helping the Python interpreter locate dependencies accurately.
+      closure = wrapClosure(() => {}, closure, {
+        dirpath: path.join(__dirname, "common_top_adapter.py"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
     }
 
     // Extract the environment variables from the closure.
@@ -79,15 +85,33 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       });
 
     // Serialize the closure with its dependencies to a directory.
-    const workdir = path.join(os.tmpdir(), `pluto`, `${this.id}_${Date.now()}`);
+    const workdir = path.join(process.env.WORK_DIR!, "assets", `${this.id}}`);
+    fs.rmSync(workdir, { recursive: true, force: true });
     fs.ensureDirSync(workdir);
-    const exportName = "handler";
-    const entrypointFilePathP = serializeClosureToDir(workdir, closure, { exportName: exportName });
+    let entrypointFilePathP: Promise<string>;
+    let runtime: string;
+    if (currentLanguage() === LanguageType.TypeScript) {
+      entrypointFilePathP = serializeClosureToDir(workdir, closure, {
+        exportName: closure.exportName,
+      });
+      runtime = "nodejs18.x";
+    } else if (currentLanguage() === LanguageType.Python) {
+      entrypointFilePathP = dumpClosureToDir_python(workdir, closure);
+      runtime = "python3.10";
+    } else {
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+    }
 
     // Create the IAM role and lambda function.
     this.iam = this.createIAM();
     this.lambdaName = genAwsResourceName(this.id);
-    this.lambda = this.createLambda(workdir, entrypointFilePathP, exportName, envs);
+    this.lambda = this.createLambda(
+      workdir,
+      entrypointFilePathP,
+      runtime,
+      closure.exportName,
+      envs
+    );
     this.lambdaUrl = this.createLambdaUrl();
     this.lambdaArn = this.lambda.arn;
     this.lambdaInvokeArn = this.lambda.invokeArn;
@@ -143,6 +167,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   private createLambda(
     workdir: string,
     entrypointFilePathP: Promise<string>,
+    runtime: string,
     exportName: string,
     envs: Record<string, any>
   ) {
@@ -159,7 +184,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         code: entrypointFilePathP.then(() => new pulumi.asset.FileArchive(workdir)),
         role: this.iam.arn,
         handler: handlerName,
-        runtime: "nodejs18.x",
+        runtime: runtime,
         environment: {
           variables: envs,
         },
@@ -300,4 +325,23 @@ function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
       };
     }
   };
+}
+
+function adaptPlatformNorm(closure: ComputeClosure<AnyFunction>): ComputeClosure<AnyFunction> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(adaptAwsRuntime(closure), closure, {
+        dirpath: "inline",
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+      return wrapClosure(() => {}, closure, {
+        dirpath: path.join(__dirname, "lambda_adapter.py"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
 }

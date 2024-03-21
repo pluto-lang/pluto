@@ -1,0 +1,27 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "pluto-base"
+version = "0.0.2"
+description = "The Base Library for Pluto Programming Language."
+authors = ["Jade Zheng <zheng.shoujian@outlook.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+classifiers = [
+    'Development Status :: 1 - Planning',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Topic :: Software Development',
+    'License :: OSI Approved :: Apache Software License',
+]
+
+[tool.poetry.urls]
+Homepage = "https://github.com/pluto-lang/pluto"
+Issues = "https://github.com/pluto-lang/pluto/issues"
+
+[tool.poetry.dependencies]
+python = "^3.10"

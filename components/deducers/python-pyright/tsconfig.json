@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "outDir": "dist",
+    "target": "es2022",
+    "module": "commonjs",
+    "lib": ["es2022"],
+    "moduleResolution": "node",
+    "declaration": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "stripInternal": true,
+    "experimentalDecorators": true,
+    "pretty": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "types": ["jest"],
+    "skipLibCheck": true // TODO: This is a temporary solution for the issue with different versions of Node used between `pyright-deducer` and `pyright-internal`.
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "libs"]
+}

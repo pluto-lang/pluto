@@ -22,11 +22,13 @@ async function main() {
     .option("-n, --name <name>", "Project name")
     .option("-s, --stack <stack>", "Stack name")
     .addOption(
-      new Option("-p, --platform <platform>", "Target platform")
-        .choices(["aws", "k8s"])
-        .argParser((val: string) => {
-          return val.toUpperCase();
-        })
+      new Option("-l, --language <language>", "Programming language the project uses").choices([
+        "python",
+        "typescript",
+      ])
+    )
+    .addOption(
+      new Option("-p, --platform <platform>", "Target platform").choices(["AWS", "K8s", "AliCloud"])
     )
     .option("-e, --provision <provisioning engine>", "provisioning engine")
     .action(cmd.create);
@@ -36,16 +38,14 @@ async function main() {
     .description(
       "Execute tests in the simulator environment or on the platform specified in the stack"
     )
-    .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
+    .argument("[entrypoint]", "The files need to be compiled.")
     .option("-s, --stack <stack>", "Specified stack")
     .option("--sim", "Run tests in the simulator environment.", false)
     .addOption(
       new Option(
         "-d, --deducer <deducer>",
         "Specify a deducer by setting the package name. Make sure that the package is already installed."
-      )
-        .default("@plutolang/static-deducer")
-        .hideHelp()
+      ).hideHelp()
     )
     .addOption(
       new Option("-g, --generator <generator>", "Specify a generator by setting the package name.")
@@ -57,7 +57,7 @@ async function main() {
   program
     .command("deploy")
     .description("Deploy this project to the platform specified in the stack")
-    .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
+    .argument("[entrypoint]", "The files need to be compiled.")
     .option("-s, --stack <stack>", "Specified stack")
     .option("-y, --yes", "Automatically approve and perform the deployment", false)
     .option("-f, --force", "Force the deployment", false)
@@ -65,9 +65,7 @@ async function main() {
       new Option(
         "-d, --deducer <deducer>",
         "Specify a deducer by setting the package name. Make sure that the package is already installed."
-      )
-        .default("@plutolang/static-deducer")
-        .hideHelp()
+      ).hideHelp()
     )
     .addOption(
       new Option("-g, --generator <generator>", "Specify a generator by setting the package name.")
@@ -94,14 +92,12 @@ async function main() {
     program
       .command("compile")
       .description("Compile the source code to IR")
-      .argument("[entrypoint]", "The files need to be compiled.", "src/index.ts")
+      .argument("[entrypoint]", "The files need to be compiled.")
       .addOption(
         new Option(
           "-d, --deducer <deducer>",
           "Specify a deducer by setting the package name. Make sure that the package is already installed."
-        )
-          .default("@plutolang/static-deducer")
-          .hideHelp()
+        ).hideHelp()
       )
       .addOption(
         new Option(

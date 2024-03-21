@@ -1,0 +1,4 @@
+boto3==1.34.54
+pydantic==2.6.3
+pluto_client
+pluto_base

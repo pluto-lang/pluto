@@ -34,6 +34,7 @@
     "@plutolang/base": "workspace:^",
     "@plutolang/graphviz-generator": "workspace:^",
     "@plutolang/pulumi-adapter": "workspace:^",
+    "@plutolang/pyright-deducer": "workspace:^",
     "@plutolang/simulator-adapter": "workspace:^",
     "@plutolang/static-deducer": "workspace:^",
     "@plutolang/static-generator": "workspace:^",

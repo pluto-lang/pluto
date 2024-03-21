@@ -9,7 +9,7 @@ export class GraphvizGenerator extends core.Generator {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
   public readonly version = require(path.join(__dirname, "../package.json")).version;
 
-  constructor(args: core.BasicArgs) {
+  constructor(args: core.NewGeneratorArgs) {
     super(args);
   }
 

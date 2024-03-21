@@ -195,3 +195,44 @@ var __handler_ = async (...args) => {
     .replace(/__handler_: undefined/g, "__handler_: __handler_");
   fs.writeFileSync(entrypointFilePath, userClosureImportStat + entrypointFileContent);
 }
+
+export async function dumpClosureToDir_python(
+  workdir: string,
+  closure: ComputeClosure<AnyFunction>,
+  depth: number = 0
+): Promise<string> {
+  const child = closure.innerClosure;
+  const childWorkdir = child ? path.join(workdir, `child_${depth}`) : undefined;
+  if (child) {
+    await dumpClosureToDir_python(childWorkdir!, child, depth + 1);
+  }
+
+  if (closure.dirpath === "inline") {
+    throw new Error("Python does not support inline closure.");
+  }
+
+  fs.ensureDirSync(workdir);
+  const entrypoint = path.join(workdir, `__init__.py`);
+  const stat = fs.statSync(closure.dirpath);
+  if (stat.isDirectory()) {
+    fs.copySync(closure.dirpath, workdir);
+  } else {
+    fs.copySync(closure.dirpath, entrypoint);
+  }
+
+  if (closure.placeholder) {
+    if (!child) {
+      throw new Error(`This closure has a placeholder but no child closure.`);
+    }
+
+    const closureImportStat = `
+def ${closure.placeholder}(*args, **kwargs):
+    from child_${depth} import ${child.exportName}
+    return ${child.exportName}(*args, **kwargs)
+`;
+    const content = fs.readFileSync(entrypoint, "utf-8");
+    fs.writeFileSync(entrypoint, closureImportStat + content);
+  }
+
+  return entrypoint;
+}

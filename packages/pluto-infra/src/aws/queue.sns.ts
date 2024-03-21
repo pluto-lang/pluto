@@ -1,8 +1,9 @@
+import { join } from "path";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { SNSHandler } from "aws-lambda";
-import { IResourceInfra } from "@plutolang/base";
-import { genResourceId } from "@plutolang/base/utils";
+import { IResourceInfra, LanguageType } from "@plutolang/base";
+import { currentLanguage, genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import { CloudEvent, EventHandler, IQueueInfra, Queue, QueueOptions } from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
@@ -36,7 +37,7 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
       throw new Error("This closure is invalid.");
     }
 
-    const awsHandler = wrapClosure(adaptAwsRuntime(closure), closure);
+    const awsHandler = adaptPlatformNorm(closure);
     const lambda = new Lambda(awsHandler, { name: `${this.id}-func` });
 
     // create topic subscription
@@ -109,4 +110,23 @@ function adaptAwsRuntime(__handler_: EventHandler): SNSHandler {
       });
     }
   };
+}
+
+function adaptPlatformNorm(closure: ComputeClosure<EventHandler>): ComputeClosure<SNSHandler> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(adaptAwsRuntime(closure), closure, {
+        dirpath: "inline",
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+      return wrapClosure(() => {}, closure, {
+        dirpath: join(__dirname, "sns_subscriber_adapter.py"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
 }

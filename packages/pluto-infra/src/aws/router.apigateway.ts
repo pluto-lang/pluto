@@ -1,9 +1,10 @@
+import { join } from "path";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 import { Api, Route } from "@pulumi/aws/apigatewayv2";
 import { APIGatewayProxyHandler } from "aws-lambda";
-import { IResourceInfra } from "@plutolang/base";
-import { genResourceId } from "@plutolang/base/utils";
+import { IResourceInfra, LanguageType } from "@plutolang/base";
+import { currentLanguage, genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import { HttpRequest, IRouterInfra, RequestHandler, Router, RouterOptions } from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
@@ -75,7 +76,7 @@ export class ApiGatewayRouter
     }
     const resourceNamePrefix = `${this.id}-${path.replace("/", "_")}-${op}`;
 
-    const runtimeHandler = wrapClosure(adaptAwsRuntime(closure), closure);
+    const runtimeHandler = adaptPlatformNorm(closure);
     const lambda = new Lambda(runtimeHandler, {
       name: `${resourceNamePrefix}-func`,
     });
@@ -191,4 +192,25 @@ function adaptAwsRuntime(__handler_: RequestHandler): APIGatewayProxyHandler {
       };
     }
   };
+}
+
+function adaptPlatformNorm(
+  closure: ComputeClosure<RequestHandler>
+): ComputeClosure<APIGatewayProxyHandler> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(adaptAwsRuntime(closure), closure, {
+        dirpath: "inline",
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+      return wrapClosure(() => {}, closure, {
+        dirpath: join(__dirname, "apigateway_adapter.py"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
 }

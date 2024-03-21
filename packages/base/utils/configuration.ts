@@ -4,6 +4,8 @@ import { PlatformType } from "../platform";
 import { isPlatformType } from "./platform";
 import { ProvisionType } from "../provision";
 import { isEngineType } from "./provision";
+import { LanguageType } from "../language";
+import { isLanguageType } from "./language";
 
 /**
  * Returns the path to the global configuration directory.
@@ -29,6 +31,14 @@ export function currentEngineType(): ProvisionType {
     return val;
   }
   throw new Error(`The '${val}' is not a valid provisioning engine type.`);
+}
+
+export function currentLanguage(): LanguageType {
+  const val = fetchEnvWithThrow("PLUTO_LANGUAGE_TYPE");
+  if (isLanguageType(val)) {
+    return val;
+  }
+  throw new Error(`The '${val}' is not a valid programming language type.`);
 }
 
 function fetchEnvWithThrow(name: string): string {

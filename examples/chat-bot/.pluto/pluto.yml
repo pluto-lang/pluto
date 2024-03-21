@@ -1,4 +1,5 @@
 current: aws
+language: typescript
 stacks:
   - configs: {}
     provisionType: Pulumi
