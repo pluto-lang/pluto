@@ -15,8 +15,11 @@ import {
   ParseNode,
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
-import { Scope } from "pyright-internal/dist/analyzer/scope";
+import { SymbolTable } from "pyright-internal/dist/analyzer/symbol";
+import { TypeCategory } from "pyright-internal/dist/analyzer/types";
+import { Scope, ScopeType } from "pyright-internal/dist/analyzer/scope";
 import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
+import * as PyrightTypeUtils from "pyright-internal/dist/analyzer/typeUtils";
 import { ParseTreeWalker, getChildNodes } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import * as AnalyzerNodeInfo from "pyright-internal/dist/analyzer/analyzerNodeInfo";
 import { getBuiltInScope, getScopeForNode } from "pyright-internal/dist/analyzer/scopeUtils";
@@ -146,7 +149,8 @@ export class CodeExtractor {
         };
         break;
       default:
-        throw new Error(`Unsupported node type: ${node.nodeType}`);
+        const nodeText = TextUtils.getTextOfNode(node, sourceFile);
+        throw new Error(`Unsupported node type: ${node.nodeType}, text: \`${nodeText}\``);
     }
     return segment;
   }
@@ -433,7 +437,24 @@ export class CodeExtractor {
       throw new Error(`No scope found for this lambda function '${nodeText}'.`);
     }
 
-    const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name);
+    // The class node and its members are at the same scope level, which means that the scope of the
+    // members does not function as a child scope to that of the class node. Consequently, variables
+    // declared within the class members are confined to the scope of those members rather than to
+    // the class itself. Determining whether these variables need to be extracted as dependencies by
+    // assessing if their scope is encapsulated within the class's scope is not a clear-cut process.
+    // Therefore, we get all symbols that represent the class members. Subsequently, for each name
+    // node existing within the scope of the class node, we can ignore it if its corresponding
+    // symbol denotes a class member or if its scope is encompassed by that of the class members.
+    const classType = this.typeEvaluator.getType(classNode.name);
+    assert(classType, `No type found for class '${nodeText}'.`);
+    assert(
+      classType.category === TypeCategory.Class,
+      `The type of the class '${nodeText}' is not a class.`
+    );
+    const members: SymbolTable = new Map();
+    PyrightTypeUtils.getMembersForClass(classType, members, /* includeInstanceVars */ false);
+
+    const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name, members);
     walker.walk(classNode);
 
     const dependencies: CodeSegment[] = [];
@@ -538,7 +559,8 @@ class OutsideSymbolFinder extends ParseTreeWalker {
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
     private readonly scope: Scope,
-    private readonly rootNode?: ParseNode
+    private readonly rootNode?: ParseNode,
+    private readonly members?: SymbolTable // Only used for class members.
   ) {
     super();
   }
@@ -554,6 +576,26 @@ class OutsideSymbolFinder extends ParseTreeWalker {
 
   private shouldIgnore(node: NameNode): boolean {
     const symbolWithScope = this.typeEvaluator.lookUpSymbolRecursive(node, node.value, false);
+
+    if (this.scope.type === ScopeType.Class && this.members) {
+      for (const memberSymbol of this.members.values()) {
+        if (memberSymbol === symbolWithScope?.symbol) {
+          // The symbol is a class member, so we should ignore it.
+          return true;
+        }
+
+        const memberScope = ScopeUtils.getScopeForSymbol(memberSymbol);
+        if (
+          symbolWithScope &&
+          memberScope &&
+          ScopeUtils.isScopeContainedWithin(symbolWithScope.scope, memberScope)
+        ) {
+          // The symbol is defined in the scope of the class members, so we should ignore it.
+          return true;
+        }
+      }
+    }
+
     if (symbolWithScope && ScopeUtils.isScopeContainedWithin(symbolWithScope.scope, this.scope)) {
       // The symbol is defined in the function's scope.
       return true;
