@@ -31,7 +31,6 @@ import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ScopeUtils from "./scope-utils";
 import { SpecialNodeMap } from "./special-node-map";
-import { Value, ValueEvaluator } from "./value-evaluator";
 
 export interface CodeSegment {
   readonly node: ParseNode;
@@ -158,9 +157,10 @@ export class CodeExtractor {
       case ParseNodeType.List:
         segment = this.extractTupleOrListWithDependencies(node, sourceFile);
         break;
-      default:
+      default: {
         const nodeText = TextUtils.getTextOfNode(node, sourceFile);
         throw new Error(`Unsupported node type: ${node.nodeType}, text: \`${nodeText}\``);
+      }
     }
     return segment;
   }

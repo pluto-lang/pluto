@@ -13,6 +13,7 @@ export function inGlobalScope(node: CallNode, sourceFile: SourceFile): boolean {
   return scope === globalScope;
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function getScopeForSymbol(symbol: Symbol): Scope | undefined {
   const decls = symbol.getDeclarations();
   if (decls.length === 0) {
