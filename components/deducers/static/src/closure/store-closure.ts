@@ -47,8 +47,14 @@ function generateSourceCode(
 ): string {
   let cirCode = imports + "\n";
 
+  const resources = new Set<string>();
   // Find the dependencies of this CIR and build corresponding instances.
   for (const dependentRes of dependentResources) {
+    if (resources.has(dependentRes.name)) {
+      continue;
+    }
+    resources.add(dependentRes.name);
+
     // TODO: verify if the buildClient function exists. If it does not, use the original statement.
     cirCode += dependentRes.imports + "\n";
     cirCode += `const ${dependentRes.name} = ${dependentRes.type}.buildClient(${dependentRes.parameters});\n`;
