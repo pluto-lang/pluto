@@ -15,6 +15,11 @@ import { aws, k8s } from "./clients";
  */
 export interface KVStoreOptions {}
 
+export interface IKVStoreRegularApi {
+  readonly awsTableName?: string;
+  readonly awsPartitionKey?: string;
+}
+
 /**
  * Define the access methods for KVStore that operate during runtime.
  */
@@ -34,7 +39,7 @@ export interface IKVStoreCapturedProps extends IResourceCapturedProps {}
  * Construct a type that includes all the necessary methods required to be implemented within the
  * client implementation class of a resource type.
  */
-export type IKVStoreClient = IKVStoreClientApi & IKVStoreCapturedProps;
+export type IKVStoreClient = IKVStoreClientApi & IKVStoreCapturedProps & IKVStoreRegularApi;
 
 /**
  * Construct a type that includes all the necessary methods required to be implemented within the

@@ -15,6 +15,16 @@ class KVStoreOptions:
     pass
 
 
+class IKVStoreRegularApi:
+    @property
+    def aws_table_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def aws_partition_key(self) -> str:
+        raise NotImplementedError
+
+
 class IKVStoreClientApi(IResourceClientApi):
     def get(self, key: str) -> str:
         raise NotImplementedError
@@ -31,7 +41,7 @@ class IKVStoreCapturedProps(IResourceCapturedProps):
     pass
 
 
-class IKVStoreClient(IKVStoreClientApi, IKVStoreCapturedProps):
+class IKVStoreClient(IKVStoreClientApi, IKVStoreCapturedProps, IKVStoreRegularApi):
     pass
 
 

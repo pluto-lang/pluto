@@ -61,11 +61,11 @@ export interface SageMakerOptions {
 /**
  * The methods of this interface can be used at runtime, but it doesn't belong to Client API or Captured Props.
  */
-export interface ISageMakerNormalApi {
+export interface ISageMakerRegularApi {
   /**
    * TODO: There are two bug within current deducer. One is that the deducer doesn't reduce the
    * repeated dependencies when the closure accesses same resource object multiple times. The other
-   * is that if the closure only accesses the normal api (not client api, infra api or capatured
+   * is that if the closure only accesses the regular api (not client api, infra api or capatured
    * property), the deducer doesn't add the resource object to the dependencies. After the bugs are
    * fixed, the `endpointUrl` method should be moved from `ISageMakerCapturedProps` to this
    * interface.
@@ -84,7 +84,7 @@ export interface ISageMakerCapturedProps extends IResourceCapturedProps {
   endpointUrl(): string;
 }
 
-export type ISageMakerClient = ISageMakerClientApi & ISageMakerCapturedProps & ISageMakerNormalApi;
+export type ISageMakerClient = ISageMakerClientApi & ISageMakerCapturedProps & ISageMakerRegularApi;
 
 export type ISageMakerInfra = ISageMakerInfraApi & ISageMakerCapturedProps;
 
