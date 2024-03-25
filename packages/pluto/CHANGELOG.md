@@ -1,5 +1,11 @@
 # @plutolang/pluto
 
+## 0.4.1
+
+### Patch Changes
+
+- daa6ef9: feat(sdk): export the table name and partition key of the created dynamodb instance to users
+
 ## 0.4.0
 
 ### Minor Changes

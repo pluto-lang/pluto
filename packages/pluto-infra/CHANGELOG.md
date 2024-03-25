@@ -1,5 +1,13 @@
 # @plutolang/pluto-infra
 
+## 0.4.1
+
+### Patch Changes
+
+- daa6ef9: enhance(sdk): remove the fuzzyArn, instead use the lazy value from pulumi.
+- Updated dependencies [daa6ef9]
+  - @plutolang/pluto@0.4.1
+
 ## 0.4.0
 
 ### Minor Changes
