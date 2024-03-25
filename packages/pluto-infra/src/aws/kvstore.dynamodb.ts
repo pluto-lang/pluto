@@ -59,13 +59,9 @@ export class DynamoKVStore
     return {
       effect: "Allow",
       actions: actions,
-      resources: [this.fuzzyArn()],
+      resources: [this.arn],
     };
   }
 
   public postProcess(): void {}
-
-  private fuzzyArn() {
-    return `arn:aws:dynamodb:*:*:table/${genAwsResourceName(this.id)}`;
-  }
 }

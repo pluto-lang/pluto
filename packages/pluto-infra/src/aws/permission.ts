@@ -1,5 +1,3 @@
-export interface Permission {
-  effect: string;
-  actions: string[];
-  resources: string[];
-}
+import * as aws from "@pulumi/aws";
+
+export type Permission = aws.types.input.iam.GetPolicyDocumentStatementArgs;

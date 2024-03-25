@@ -1,0 +1,137 @@
+# Not working. The following error is thrown during deployment:
+# CREATE_FAILED: SageMakerEndpoint (AWS::SageMaker::Endpoint)
+# The role 'arn:aws:iam::<account_id>:role/serverless-chatbot-dev-SageMakerRole-z6bsYWR34Qax' does not have BatchGetImage permission for the image: '763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-tgi-inference@sha256:2c57392f2788a6d21d2fbdae920826d1354eda7e89e2016b4409ef003a6a14af'.
+
+service: serverless-chatbot
+frameworkVersion: "3"
+
+custom:
+  tableName: "conversations"
+  endpointName: "llama2-chatbot"
+  sagemakerInstanceType: "ml.g5.2xlarge"
+  huggingFaceModelId: "meta-llama/Llama-2-7b-chat-hf"
+  huggingFaceTask: "text-classification"
+  huggingFaceToken: "hf_EmXPwpnyHoNrxxxxxxxxx"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    HUGGING_FACE_TOKEN: ${self:custom.huggingFaceToken}
+    TABLE_NAME: ${self:custom.tableName}
+    ENDPOINT_NAME: ${self:custom.endpointName}
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:GetItem"
+            - "dynamodb:PutItem"
+            - "dynamodb:UpdateItem"
+            - "sagemaker:InvokeEndpoint"
+          Resource: "*"
+
+functions:
+  api:
+    handler: dist/index.handler
+    events:
+      - httpApi:
+          path: /chat
+          method: get
+
+resources:
+  Resources:
+    DynamoDBTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        TableName: ${self:custom.tableName}
+        BillingMode: "PAY_PER_REQUEST"
+        AttributeDefinitions:
+          - AttributeName: "Id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "Id"
+            KeyType: "HASH"
+
+    SageMakerRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "sagemaker.amazonaws.com"
+              Action: "sts:AssumeRole"
+        Policies:
+          - PolicyName: "AmazonSageMakerFullAccess"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action: "sagemaker:*"
+                  Resource: "*"
+          - PolicyName: "AmazonEC2ContainerRegistryReadOnly"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "ecr:BatchCheckLayerAvailability"
+                    - "ecr:GetDownloadUrlForLayer"
+                    - "ecr:BatchGetImage"
+                  Resource: "*"
+
+    SageMakerModel:
+      Type: "AWS::SageMaker::Model"
+      Properties:
+        ModelName: ${self:custom.endpointName}
+        ExecutionRoleArn: !GetAtt SageMakerRole.Arn
+        PrimaryContainer:
+          Image: "763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-tgi-inference:2.1.1-tgi1.4.0-gpu-py310-cu121-ubuntu20.04"
+          Environment:
+            HF_MODEL_ID: ${self:custom.huggingFaceModelId}
+            HF_TASK: ${self:custom.huggingFaceTask}
+            HUGGING_FACE_HUB_TOKEN: ${self:custom.huggingFaceToken}
+
+    SageMakerEndpointConfig:
+      Type: "AWS::SageMaker::EndpointConfig"
+      Properties:
+        EndpointConfigName: ${self:custom.endpointName}
+        ProductionVariants:
+          - InitialInstanceCount: 1
+            InstanceType: ${self:custom.sagemakerInstanceType}
+            ModelName: !GetAtt SageMakerModel.ModelName
+            VariantName: "AllTraffic"
+
+    SageMakerEndpoint:
+      Type: "AWS::SageMaker::Endpoint"
+      Properties:
+        EndpointName: ${self:custom.endpointName}
+        EndpointConfigName: !GetAtt SageMakerEndpointConfig.EndpointConfigName
+
+    ApiLogGroup:
+      Type: "AWS::Logs::LogGroup"
+      Properties:
+        LogGroupName: "/aws/vendedlogs/apis/api-loggroup"
+        RetentionInDays: 7
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-plugin-resource-tagging
+
+outputs:
+  ApiUrl:
+    Description: "The URL of the API Gateway endpoint."
+    Value: !Sub "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}/chat"
+
+  DynamoDBTableName:
+    Description: "The name of the DynamoDB table."
+    Value: !GetAtt DynamoDBTable.TableName
+
+  SagemakerEndpointName:
+    Description: "The name of the SageMaker endpoint."
+    Value: !GetAtt SageMakerEndpoint.EndpointName

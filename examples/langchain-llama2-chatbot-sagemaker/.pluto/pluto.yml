@@ -1,0 +1,7 @@
+current: dev
+language: typescript
+stacks:
+  - configs: {}
+    name: dev
+    platformType: AWS
+    provisionType: Pulumi

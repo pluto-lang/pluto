@@ -1,0 +1,23 @@
+{
+  "name": "langchain-llama2-chatbot-sagemaker",
+  "version": "0.0.0",
+  "scripts": {
+    "test:dev": "pluto test --sim",
+    "test:prod": "pluto test",
+    "deploy": "pluto deploy",
+    "destroy": "pluto destroy"
+  },
+  "dependencies": {
+    "@langchain/community": "^0.0.33",
+    "@plutolang/pluto": "latest",
+    "langchain": "^0.1.23"
+  },
+  "devDependencies": {
+    "@plutolang/base": "latest",
+    "@plutolang/pluto-infra": "latest",
+    "@pulumi/pulumi": "^3.88.0",
+    "@types/node": "^20",
+    "typescript": "^5.2.2"
+  },
+  "main": "dist/index.js"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "wing-chatbot-ts",
+  "version": "0.0.0",
+  "description": "A description of my Wing application",
+  "author": "Your Name",
+  "license": "MIT",
+  "scripts": {
+    "compile": "wing compile main.ts",
+    "test": "wing test main.ts"
+  },
+  "dependencies": {
+    "@langchain/community": "^0.0.42",
+    "@wingcloud/framework": "^0.63.2",
+    "@winglibs/dynamodb": "^0.0.3",
+    "@winglibs/sagemaker": "^0.0.3",
+    "langchain": "^0.1.28"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "winglang": "^0.63.2"
+  }
+}

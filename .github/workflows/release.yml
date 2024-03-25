@@ -29,6 +29,10 @@ jobs:
         with:
           node-version: 20.x
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
         with:
@@ -38,7 +42,7 @@ jobs:
         run: bash scripts/prepare.sh
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install && pip install -r requirements.txt
 
       - name: Creating .npmrc
         run: |

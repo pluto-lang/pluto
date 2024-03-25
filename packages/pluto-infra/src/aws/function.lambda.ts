@@ -1,5 +1,6 @@
-import * as fs from "fs-extra";
 import * as path from "path";
+import * as fs from "fs-extra";
+import assert from "node:assert";
 import { Context } from "aws-lambda";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
@@ -24,7 +25,7 @@ import {
 } from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 import { dumpClosureToDir_python, serializeClosureToDir } from "../utils";
-import { currentAwsRegion } from "./utils";
+import { Permission } from "./permission";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
@@ -37,7 +38,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   private readonly lambda: AwsLambda;
   private readonly lambdaUrl: aws.lambda.FunctionUrl;
   private readonly iam: Role;
-  private readonly statements: aws.types.input.iam.GetPolicyDocumentStatement[];
+  private readonly statements: aws.types.input.iam.GetPolicyDocumentStatementArgs[];
 
   public readonly lambdaName: string;
   public readonly lambdaArn: pulumi.Output<string>;
@@ -85,6 +86,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       });
 
     // Serialize the closure with its dependencies to a directory.
+    assert(process.env.WORK_DIR, "WORK_DIR is not set.");
     const workdir = path.join(process.env.WORK_DIR!, "assets", `${this.id}}`);
     fs.rmSync(workdir, { recursive: true, force: true });
     fs.ensureDirSync(workdir);
@@ -123,7 +125,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
     entrypointFilePathP.then(() => {
       const dependentStatements = closure.dependencies
         ?.filter((dep) => dep.type === "method")
-        .map((dep) => dep.resourceObject.grantPermission(dep.operation, this));
+        .map((dep) => dep.resourceObject.grantPermission(dep.operation, this) as Permission);
       if (dependentStatements !== undefined) {
         this.statements.push(...dependentStatements);
       }
@@ -137,7 +139,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
     return this.lambdaUrl.functionUrl as any;
   }
 
-  public grantPermission(op: string): aws.types.input.iam.GetPolicyDocumentStatement {
+  public grantPermission(op: string): Permission {
     const WATCH_LOG_ARN = "arn:aws:logs:*:*:*";
     switch (op.toUpperCase()) {
       case Ops.WATCH_LOG:
@@ -147,11 +149,10 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
           resources: [WATCH_LOG_ARN],
         };
       case Ops.INVOKE: {
-        const fuzzyArn = `arn:aws:lambda:${currentAwsRegion()}:*:function:${this.lambdaName}`;
         return {
           effect: "Allow",
           actions: ["lambda:InvokeFunction"],
-          resources: [fuzzyArn],
+          resources: [this.lambda.arn],
         };
       }
       default:
@@ -238,7 +239,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
   }
 
   private grantIAMPermission(): void {
-    const policyDocument = aws.iam.getPolicyDocument(
+    const policyDocument = aws.iam.getPolicyDocumentOutput(
       {
         statements: this.statements,
       },
@@ -251,7 +252,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         name: genAwsResourceName(this.id, "policy"),
         path: "/",
         description: "IAM policy",
-        policy: policyDocument.then((policyDocument) => policyDocument.json),
+        policy: policyDocument.json,
       },
       { parent: this }
     );

@@ -23,12 +23,20 @@ export class DynamoKVStore implements IKVStoreClient {
     opts;
   }
 
+  public get awsTableName(): string {
+    return this.tableName;
+  }
+
+  public get awsPartitionKey(): string {
+    return "Id";
+  }
+
   public async get(key: string): Promise<string> {
     const result = await this.docClient.send(
       new GetCommand({
         TableName: this.tableName,
         Key: {
-          Id: key,
+          [this.awsPartitionKey]: key,
         },
       })
     );

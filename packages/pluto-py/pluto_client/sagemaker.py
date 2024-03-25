@@ -49,11 +49,12 @@ class HuggingFaceTaskType(Enum):
 
 @dataclass
 class SageMakerOptions:
-    instance_type: str = "ml.m5.large"
+    # The member name must be camelCase to match the name in the infrastructure SDK.
+    instanceType: str = "ml.m5.large"
     envs: Optional[Dict[str, Any]] = None
 
 
-class ISageMakerNormalApi:
+class ISageMakerRegularApi:
     @property
     def endpoint_name(self) -> str:
         raise NotImplementedError
@@ -69,12 +70,14 @@ class ISageMakerInfraApi(IResourceInfraApi):
 
 
 class ISageMakerCapturedProps(IResourceCapturedProps):
+    # The method name doesn't have to be CamelCase since it can correctly match environment variable
+    # names in the implementation.
     def endpoint_url(self) -> str:
         raise NotImplementedError
 
 
 class ISageMakerClient(
-    ISageMakerClientApi, ISageMakerCapturedProps, ISageMakerNormalApi
+    ISageMakerClientApi, ISageMakerCapturedProps, ISageMakerRegularApi
 ):
     pass
 

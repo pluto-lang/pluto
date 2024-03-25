@@ -15,6 +15,8 @@ export enum SageMakerOps {
 export class SageMaker extends pulumi.ComponentResource implements IResourceInfra, ISageMakerInfra {
   public readonly id: string;
 
+  private readonly endpoint: aws.sagemaker.Endpoint;
+
   public readonly endpointName: string;
 
   constructor(name: string, imageUri: string, options?: SageMakerOptions) {
@@ -55,7 +57,7 @@ export class SageMaker extends pulumi.ComponentResource implements IResourceInfr
 
     // Define the SageMaker endpoint
     this.endpointName = genAwsResourceName(this.id, "endpoint");
-    new aws.sagemaker.Endpoint(
+    this.endpoint = new aws.sagemaker.Endpoint(
       this.endpointName,
       {
         name: this.endpointName,
@@ -119,15 +121,9 @@ export class SageMaker extends pulumi.ComponentResource implements IResourceInfr
     return {
       effect: "Allow",
       actions: actions,
-      resources: [this.fuzzyArn()],
+      resources: [this.endpoint.arn],
     };
   }
 
   public postProcess(): void {}
-
-  private fuzzyArn() {
-    return `arn:aws:sagemaker:${currentAwsRegion()}:*:endpoint/${
-      this.endpointName
-    }`.toLocaleLowerCase();
-  }
 }
