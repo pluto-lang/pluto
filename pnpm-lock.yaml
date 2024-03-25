@@ -389,17 +389,7 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
 
-  examples/langchain-llama2-sagemaker:
-    dependencies:
-      '@langchain/community':
-        specifier: ^0.0.33
-        version: 0.0.33
-      '@plutolang/pluto':
-        specifier: latest
-        version: link:../../packages/pluto
-      langchain:
-        specifier: ^0.1.23
-        version: 0.1.23
+  examples/langchain-llama2-chatbot-sagemaker-python:
     devDependencies:
       '@plutolang/base':
         specifier: latest
@@ -417,7 +407,17 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
 
-  examples/langchain-py:
+  examples/langchain-llama2-sagemaker:
+    dependencies:
+      '@langchain/community':
+        specifier: ^0.0.33
+        version: 0.0.33
+      '@plutolang/pluto':
+        specifier: latest
+        version: link:../../packages/pluto
+      langchain:
+        specifier: ^0.1.23
+        version: 0.1.23
     devDependencies:
       '@plutolang/base':
         specifier: latest

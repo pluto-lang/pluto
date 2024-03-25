@@ -10,8 +10,8 @@ import { DynamoDBChatMessageHistory } from "@langchain/community/stores/message/
 
 /**
  * Deploy the Llama2 model on AWS SageMaker using the Hugging Face Text Generation Inference (TGI)
- * container. Here will deploy the TinyLlama-1.1B-Chat-v1.0 model, which can be run on the
- * ml.m5.xlarge instance.
+ * container. If you're unable to deploy the model because of the instance type, consider using the
+ * TinyLlama-1.1B-Chat-v1.0 model, which is compatible with the ml.m5.xlarge instance.
  *
  * Below is a set up minimum requirements for each model size of Llama2 model:
  * ```
@@ -32,7 +32,6 @@ const sagemaker = new SageMaker(
     instanceType: "ml.g5.2xlarge",
     envs: {
       HF_MODEL_ID: "meta-llama/Llama-2-7b-chat-hf",
-      // HF_MODEL_ID: "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
       HF_TASK: "text-generation",
       // If you want to deploy the Meta Llama2 model, you need to request a permission and prepare the
       // token. You can get the token from https://huggingface.co/settings/tokens

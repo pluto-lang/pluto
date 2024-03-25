@@ -2,6 +2,6 @@ current: aws
 language: python
 stacks:
   - configs: {}
-    provisionType: Pulumi
     name: aws
     platformType: AWS
+    provisionType: Pulumi

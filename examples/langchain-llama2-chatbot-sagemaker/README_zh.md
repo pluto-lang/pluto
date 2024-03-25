@@ -21,19 +21,21 @@
 
 我们尝试使用其他工具构建相同的示例应用，以下表格展示了 Pluto 与其他工具在代码量和类型上的对比：
 
-|                                                         | 代码类型            | 代码量/行            | 代码地址                         |
-| ------------------------------------------------------- | ------------------- | -------------------- | -------------------------------- |
-| 应用程序                                                | 业务逻辑            | 83(.ts)              | [源码](./comparison/application) |
-| [Terraform](https://www.terraform.io/)                  | 基础设施配置        | 201(.tf)             | [源码](./comparison/terraform)   |
-| [Pulumi](https://www.pulumi.com/)                       | 基础设施配置        | 157(.ts)             | [源码](./comparison/pulumi)      |
-| [Pulumi Serverless](https://www.pulumi.com/serverless/) | 业务逻辑 + 配置     | 256(.ts)             | [源码](./comparison/pulumi-app)  |
-| [Winglang - TS](https://github.com/winglang/wing)       | 业务逻辑 + 配置     | 100(.ts)             | [源码](./comparison/wing-ts)     |
-| [Winglang - Wing](https://github.com/winglang/wing)     | 业务逻辑 + 配置     | 71(.w) + 47(.ts)     | [源码](./comparison/wing-wing)   |
-| [Lepton](https://www.lepton.ai/)                        | 业务逻辑 + 配置     | 116(.py)             | [源码](./comparison/lepton)      |
-| [Serverless](https://github.com/serverless/serverless)  | 业务逻辑 + 配置     | 79(.ts) + 120(.yaml) | [源码](./comparison/serverless)  |
-| **Pluto**                                               | **业务逻辑 + 配置** | **100(.ts)**         | [源码](./src)                    |
+|                                                           | 代码类型            | 代码量/行            | 代码地址                                             |
+| --------------------------------------------------------- | ------------------- | -------------------- | ---------------------------------------------------- |
+| 应用程序 - TypeScript                                     | 业务逻辑            | 83(.ts)              | [源码](./comparison/application)                     |
+| [Terraform](https://www.terraform.io/)                    | 基础设施配置        | 201(.tf)             | [源码](./comparison/terraform)                       |
+| [Pulumi](https://www.pulumi.com/)                         | 基础设施配置        | 157(.ts)             | [源码](./comparison/pulumi)                          |
+| [Pulumi Serverless](https://www.pulumi.com/serverless/)   | 业务逻辑 + 配置     | 256(.ts)             | [源码](./comparison/pulumi-app)                      |
+| [Winglang - TypeScript](https://github.com/winglang/wing) | 业务逻辑 + 配置     | 100(.ts)             | [源码](./comparison/wing-ts)                         |
+| [Winglang - Wing](https://github.com/winglang/wing)       | 业务逻辑 + 配置     | 71(.w) + 47(.ts)     | [源码](./comparison/wing-wing)                       |
+| [Serverless](https://github.com/serverless/serverless)    | 业务逻辑 + 配置     | 79(.ts) + 120(.yaml) | [源码](./comparison/serverless)                      |
+| **Pluto - TypeScript**                                    | **业务逻辑 + 配置** | **100(.ts) **        | [源码](./src)                                        |
+| 应用程序 - Python                                         | 业务逻辑            | 60(.py)              | [源码](./comparison/application-python)              |
+| [Lepton](https://www.lepton.ai/)                          | 业务逻辑 + 配置     | 116(.py)             | [源码](./comparison/lepton)                          |
+| **Pluto - Python**                                        | **业务逻辑 + 配置** | **74(.py) **         | [源码](../langchain-llama2-chatbot-sagemaker-python) |
 
-通过对比表格数据可以看到，Pluto 与纯业务逻辑代码相比，增加了 17 行代码，包含了云资源创建与权限配置相关代码。如果采用 Pulumi 或 Terraform 等 IaC 工具进行基础设施配置，业务逻辑加基础设施配置的整体代码量均在 Pluto 代码量的两倍以上。与 Pulumi 的 Serverless 功能、Winglang、Lepton、Serverless 等简化云使用的工具相比，Pluto 对云、AI 背景知识的要求更低，所需代码量也更少。
+通过对比表格数据可以看到，TypeScript 版本与 Python 版本的 Pluto 应用与纯业务逻辑代码相比，增加了 17 行、14 行代码，包含了云资源创建与权限配置相关代码。如果采用 Pulumi 或 Terraform 等 IaC 工具进行基础设施配置，业务逻辑加基础设施配置的整体代码量均在 Pluto 代码量的两倍以上。与 Pulumi 的 Serverless 功能、Winglang、Lepton、Serverless 等简化云使用的工具相比，Pluto 对云、AI 背景知识的要求更低，所需代码量也更少。
 
 我们在使用其他工具构建的过程中，遇到了许多问题，导致这些代码最终并没有部署成功，例如，Winglang 没有提供 SageMaker Model、EndpointConfig 资源类型，Pulumi 运行时报错，繁琐的资源项配置等，如果你有兴趣欢迎进行修复。
 
@@ -58,7 +60,7 @@
    pluto deploy
    ```
 
-这个过程需要耐心等待一会，因为 SageMaker 部署模型需要一定时间。一旦部署完成，控制台会显示出 ApiGateway 的 URL，你可以通过浏览器或 curl 命令来访问它。以下是一个简单的测试命令：
+**这个过程需要耐心等待一会，因为 SageMaker 部署模型需要一定时间。** 一旦部署完成，控制台会显示出 ApiGateway 的 URL，你可以通过浏览器或 curl 命令来访问它。以下是一个简单的测试命令：
 
 ```bash
 CHATBOT_API_URL=你的 ApiGateway URL

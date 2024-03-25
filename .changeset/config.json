@@ -16,6 +16,7 @@
     "gpt2-hf-sagemaker",
     "langchain-llama2-sagemaker",
     "quickstart-python",
-    "langchain-llama2-chatbot-sagemaker"
+    "langchain-llama2-chatbot-sagemaker",
+    "langchain-llama2-chatbot-sagemaker-python"
   ]
 }

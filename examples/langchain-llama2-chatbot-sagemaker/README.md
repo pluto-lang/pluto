@@ -21,19 +21,21 @@ As illustrated above, our example application relies on the following AWS servic
 
 The table below shows a comparison between Pluto and other tools regarding the amount and type of code:
 
-|                                                         | Code Type                          | Lines of Code        | Code Location                    |
-| ------------------------------------------------------- | ---------------------------------- | -------------------- | -------------------------------- |
-| Application                                             | Business Logic                     | 83(.ts)              | [Code](./comparison/application) |
-| [Terraform](https://www.terraform.io/)                  | Infrastructure Configuration       | 201(.tf)             | [Code](./comparison/terraform)   |
-| [Pulumi](https://www.pulumi.com/)                       | Infrastructure Configuration       | 157(.ts)             | [Code](./comparison/pulumi)      |
-| [Pulumi Serverless](https://www.pulumi.com/serverless/) | Business Logic + Configuration     | 256(.ts)             | [Code](./comparison/pulumi-app)  |
-| [Winglang - TS](https://github.com/winglang/wing)       | Business Logic + Configuration     | 100(.ts)             | [Code](./comparison/wing-ts)     |
-| [Winglang - Wing](https://github.com/winglang/wing)     | Business Logic + Configuration     | 71(.w) + 47(.ts)     | [Code](./comparison/wing-wing)   |
-| [Lepton](https://www.lepton.ai/)                        | Business Logic + Configuration     | 116(.py)             | [Code](./comparison/lepton)      |
-| [Serverless](https://github.com/serverless/serverless)  | Business Logic + Configuration     | 79(.ts) + 120(.yaml) | [Code](./comparison/serverless)  |
-| **Pluto**                                               | **Business Logic + Configuration** | **100(.ts)**         | [Code](./src)                    |
+|                                                         | Code Type                          | Lines of Code        | Code Location                                        |
+| ------------------------------------------------------- | ---------------------------------- | -------------------- | ---------------------------------------------------- |
+| Application - TypeScript                                | Business Logic                     | 83(.ts)              | [Code](./comparison/application)                     |
+| [Terraform](https://www.terraform.io/)                  | Infrastructure Configuration       | 201(.tf)             | [Code](./comparison/terraform)                       |
+| [Pulumi](https://www.pulumi.com/)                       | Infrastructure Configuration       | 157(.ts)             | [Code](./comparison/pulumi)                          |
+| [Pulumi Serverless](https://www.pulumi.com/serverless/) | Business Logic + Configuration     | 256(.ts)             | [Code](./comparison/pulumi-app)                      |
+| [Winglang - TS](https://github.com/winglang/wing)       | Business Logic + Configuration     | 100(.ts)             | [Code](./comparison/wing-ts)                         |
+| [Winglang - Wing](https://github.com/winglang/wing)     | Business Logic + Configuration     | 71(.w) + 47(.ts)     | [Code](./comparison/wing-wing)                       |
+| [Serverless](https://github.com/serverless/serverless)  | Business Logic + Configuration     | 79(.ts) + 120(.yaml) | [Code](./comparison/serverless)                      |
+| **Pluto - TypeScript**                                  | **Business Logic + Configuration** | **100(.ts)**         | [Code](./src)                                        |
+| Application - Python                                    | Business Logic                     | 60(.py)              | [Code](./comparison/application-python)              |
+| [Lepton](https://www.lepton.ai/)                        | Business Logic + Configuration     | 116(.py)             | [Code](./comparison/lepton)                          |
+| **Pluto - Python**                                      | **Business Logic + Configuration** | **74(.py) **         | [Code](../langchain-llama2-chatbot-sagemaker-python) |
 
-By examining the table data, it's evident that Pluto adds 17 lines of code in contrast to pure business logic code. This includes code related to cloud resource creation and permission configuration. When infrastructure setup is handled using provisioning tools like Pulumi or Terraform, the combined code for business logic and infrastructure configuration exceeds twice the size of Pluto's code. Compared to tools such as Pulumi's Serverless feature, Winglang, Lepton, and Serverless, which streamline cloud usage, Pluto demands lower cloud and AI background knowledge and entails less code.
+By examining the table data, the TypeScript and Python versions of the Pluto application add 17 and 14 lines of code, respectively, in contrast to pure business logic code. This includes code related to cloud resource creation and permission configuration. When infrastructure setup is handled using provisioning tools like Pulumi or Terraform, the combined code for business logic and infrastructure configuration exceeds twice the size of Pluto's code. Compared to tools such as Pulumi's Serverless feature, Winglang, Lepton, and Serverless, which streamline cloud usage, Pluto demands lower cloud and AI background knowledge and entails less code.
 
 While using other tools, we faced several issues that ultimately hindered the deployment of this code. For instance, Winglang lacks support for SageMaker Model and EndpointConfig resource types, Pulumi runtime errors, and intricate resource configuration. If you're interested, feel free to lend a hand with the fixes.
 
@@ -58,7 +60,7 @@ To deploy this chatbot, please follow the steps below:
    pluto deploy
    ```
 
-Be patient, as deploying the model in SageMaker can take some time. Once the deployment is complete, the console will display the URL for ApiGateway, which you can access via a browser or a curl command. Here is a simple test command:
+**Be patient, as deploying the model in SageMaker can take some time.** Once the deployment is complete, the console will display the URL for ApiGateway, which you can access via a browser or a curl command. Here is a simple test command:
 
 ```bash
 CHATBOT_API_URL=your ApiGateway URL
