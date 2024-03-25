@@ -1,5 +1,11 @@
 # @plutolang/static-deducer
 
+## 0.4.1
+
+### Patch Changes
+
+- daa6ef9: fix(deducer): incorrectly generate duplicate client statements when one code section accesses a single resource multiple times
+
 ## 0.4.0
 
 ### Minor Changes
