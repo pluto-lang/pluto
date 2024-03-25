@@ -1,0 +1,14 @@
+{
+  "name": "serverless-chatbot",
+  "version": "1.0.0",
+  "description": "",
+  "devDependencies": {
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "serverless-plugin-resource-tagging": "^1.2.0",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@langchain/community": "^0.0.33",
+    "langchain": "^0.1.23"
+  }
+}

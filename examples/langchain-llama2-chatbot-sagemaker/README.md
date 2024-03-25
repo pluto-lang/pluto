@@ -21,14 +21,21 @@ As illustrated above, our example application relies on the following AWS servic
 
 The table below shows a comparison between Pluto and other tools regarding the amount and type of code:
 
-|             | Code Type                          | Lines of Code |
-| ----------- | ---------------------------------- | ------------- |
-| Application | Business Logic                     | 79            |
-| Pulumi      | Infrastructure Configuration       | 159           |
-| Terraform   | Infrastructure Configuration       | 201           |
-| **Pluto**   | **Business Logic + Configuration** | **87**        |
+|                                                         | Code Type                          | Lines of Code        | Code Location                    |
+| ------------------------------------------------------- | ---------------------------------- | -------------------- | -------------------------------- |
+| Application                                             | Business Logic                     | 83(.ts)              | [Code](./comparison/application) |
+| [Terraform](https://www.terraform.io/)                  | Infrastructure Configuration       | 201(.tf)             | [Code](./comparison/terraform)   |
+| [Pulumi](https://www.pulumi.com/)                       | Infrastructure Configuration       | 157(.ts)             | [Code](./comparison/pulumi)      |
+| [Pulumi Serverless](https://www.pulumi.com/serverless/) | Business Logic + Configuration     | 256(.ts)             | [Code](./comparison/pulumi-app)  |
+| [Winglang - TS](https://github.com/winglang/wing)       | Business Logic + Configuration     | 100(.ts)             | [Code](./comparison/wing-ts)     |
+| [Winglang - Wing](https://github.com/winglang/wing)     | Business Logic + Configuration     | 71(.w) + 47(.ts)     | [Code](./comparison/wing-wing)   |
+| [Lepton](https://www.lepton.ai/)                        | Business Logic + Configuration     | 116(.py)             | [Code](./comparison/lepton)      |
+| [Serverless](https://github.com/serverless/serverless)  | Business Logic + Configuration     | 79(.ts) + 120(.yaml) | [Code](./comparison/serverless)  |
+| **Pluto**                                               | **Business Logic + Configuration** | **100(.ts)**         | [Code](./src)                    |
 
-Using Pluto, you can integrate business logic and infrastructure configuration with only an 8-line increase compared to pure business logic code, significantly reducing the amount of code. When building with Pulumi or Terraform, the total lines of code for business logic plus infrastructure configuration reach 238 and 280 lines, respectively, with Pluto's code amounting to only about a third of that.
+By examining the table data, it's evident that Pluto adds 17 lines of code in contrast to pure business logic code. This includes code related to cloud resource creation and permission configuration. When infrastructure setup is handled using provisioning tools like Pulumi or Terraform, the combined code for business logic and infrastructure configuration exceeds twice the size of Pluto's code. Compared to tools such as Pulumi's Serverless feature, Winglang, Lepton, and Serverless, which streamline cloud usage, Pluto demands lower cloud and AI background knowledge and entails less code.
+
+While using other tools, we faced several issues that ultimately hindered the deployment of this code. For instance, Winglang lacks support for SageMaker Model and EndpointConfig resource types, Pulumi runtime errors, and intricate resource configuration. If you're interested, feel free to lend a hand with the fixes.
 
 ## Deployment Steps
 

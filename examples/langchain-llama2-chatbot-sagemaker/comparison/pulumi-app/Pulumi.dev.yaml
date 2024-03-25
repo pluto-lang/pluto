@@ -1,0 +1,5 @@
+project: pulumi-chatbot-app
+config:
+  aws:region: us-east-1
+  stageName: dev
+  huggingFaceToken: hf_EmXPwpnyHoNrxxxxxxxxx

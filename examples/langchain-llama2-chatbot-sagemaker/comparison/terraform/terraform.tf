@@ -1,3 +1,4 @@
+# Not verified if it'll work.
 terraform {
   required_version = ">= 0.12"
 
@@ -168,7 +169,7 @@ resource "aws_sagemaker_model" "sagemaker_model" {
   execution_role_arn = aws_iam_role.sagemaker_role.arn
 
   primary_container {
-    image = "763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:pytorch-1.7.1-transformers-4.6.1-gpu-py36-cu110-ubuntu18.04"
+    image = "763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-tgi-inference:2.1.1-tgi1.4.0-gpu-py310-cu121-ubuntu20.04"
     environment = {
       HF_MODEL_ID = "meta-llama/Llama-2-7b-chat-hf"
       HF_TASK     = "text-classification"

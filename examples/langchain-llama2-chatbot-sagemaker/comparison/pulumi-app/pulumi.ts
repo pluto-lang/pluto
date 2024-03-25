@@ -1,12 +1,28 @@
-// Not verified if it'll work.
+/**
+ * Not working. The following error is thrown during runtime:
+ * ```
+ * {
+ *     "errorType": "Runtime.UserCodeSyntaxError",
+ *     "errorMessage": "SyntaxError: Identifier 'exports' has already been declared",
+ *     "stack": [
+ *         "Runtime.UserCodeSyntaxError: SyntaxError: Identifier 'exports' has already been declared",
+ *         "    at _loadUserApp (file:///var/runtime/index.mjs:1084:17)",
+ *         "    at async UserFunction.js.module.exports.load (file:///var/runtime/index.mjs:1119:21)",
+ *         "    at async start (file:///var/runtime/index.mjs:1282:23)",
+ *         "    at async file:///var/runtime/index.mjs:1288:1"
+ *     ]
+ * }
+ * ```
+ */
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
 // Initialize Pulumi configuration
 const config = new pulumi.Config();
 const stageName = config.require("stageName");
-const codeDir = config.require("codeDir");
 const huggingFaceToken = config.requireSecret("huggingFaceToken"); // Use Pulumi's secrets for sensitive data
+
+const PARTITION_KEY = "Id";
 
 // Lambda IAM role policy document
 const lambdaPolicyDoc = aws.iam.getPolicyDocumentOutput({
@@ -29,16 +45,33 @@ const lambdaRole = new aws.iam.Role("lambda-role", {
   assumeRolePolicy: lambdaPolicyDoc.json,
 });
 
-// Lambda function
-const lambdaFunction = new aws.lambda.Function("lambda-function", {
-  code: new pulumi.asset.FileArchive(codeDir),
-  role: lambdaRole.arn,
-  handler: "main.handler",
-  runtime: aws.lambda.Runtime.NodeJS18dX,
-  environment: {
-    variables: {},
+const lambdaFunction = new aws.lambda.CallbackFunction("lambda-function", {
+  callback: async (event: any) => {
+    const queries = event.queryStringParameters ?? {};
+    const sessionId = Array.isArray(queries["sessionid"])
+      ? queries["sessionid"][0]
+      : queries["sessionid"];
+    const query = Array.isArray(queries["query"]) ? queries["query"][0] : queries["query"];
+    if (!sessionId || !query) {
+      return {
+        statusCode: 400,
+        body: "Both sessionid and query are required.",
+      };
+    }
+
+    const combinedArgs = pulumi.all([sagemakerEndpoint.name, dynamoDbTable.name]);
+    return combinedArgs.apply(async ([endpointName, tableName]) => {
+      const chat = (await import("./app")).chat;
+      const result = chat(endpointName, tableName, PARTITION_KEY, sessionId, query);
+      return {
+        statusCode: 200,
+        body: result,
+      };
+    });
   },
-  timeout: 600, // 10 minutes
+  role: lambdaRole.arn,
+  runtime: aws.lambda.Runtime.NodeJS18dX,
+  timeout: 600,
 });
 
 // API Gateway
@@ -58,12 +91,12 @@ const integration = new aws.apigatewayv2.Integration("integration", {
 // API Gateway route
 const route = new aws.apigatewayv2.Route("route", {
   apiId: api.id,
-  routeKey: "POST /hello",
+  routeKey: "GET /chat",
   target: pulumi.interpolate`integrations/${integration.id}`,
 });
 
 // API Gateway permissions for Lambda
-const permission = new aws.lambda.Permission("api-lambda-permission", {
+new aws.lambda.Permission("api-lambda-permission", {
   action: "lambda:InvokeFunction",
   function: lambdaFunction.name,
   principal: "apigateway.amazonaws.com",
@@ -80,12 +113,13 @@ const deployment = new aws.apigatewayv2.Deployment(
 );
 
 // API Gateway stage
-const stage = new aws.apigatewayv2.Stage(
+new aws.apigatewayv2.Stage(
   "api-stage",
   {
     apiId: api.id,
     deploymentId: deployment.id,
     name: stageName,
+    autoDeploy: true,
     accessLogSettings: {
       destinationArn: pulumi.interpolate`${
         new aws.cloudwatch.LogGroup("api-loggroup", {
@@ -155,7 +189,7 @@ const sagemakerEndpoint = new aws.sagemaker.Endpoint("sagemaker-endpoint", {
 const dynamoDbTable = new aws.dynamodb.Table("dynamodb-table", {
   attributes: [
     {
-      name: "Id",
+      name: PARTITION_KEY,
       type: "S",
     },
   ],
@@ -190,6 +224,11 @@ const lambdaAccessPolicy = new aws.iam.Policy("lambda-access-policy", {
 new aws.iam.RolePolicyAttachment("lambda-policy-attachment", {
   role: lambdaRole.name,
   policyArn: lambdaAccessPolicy.arn,
+});
+
+new aws.iam.RolePolicyAttachment("cloudwatch-policy-attachment", {
+  role: lambdaRole.name,
+  policyArn: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
 });
 
 // Export the API endpoint URL

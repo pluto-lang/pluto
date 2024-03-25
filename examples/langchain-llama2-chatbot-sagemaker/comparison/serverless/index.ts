@@ -7,10 +7,9 @@ import {
 } from "@langchain/community/llms/sagemaker_endpoint";
 import { DynamoDBChatMessageHistory } from "@langchain/community/stores/message/dynamodb";
 
-// Replace the following constants with your own values from AWS Console or AWS CLI output.
-const SAGEMAKER_ENDPONIT_NAME = "llama-2-7b";
-const DYNAMODB_TABLE_NAME = "chatbot";
 const DYNAMODB_PARTITION_KEY = "Id";
+const DYNAMODB_TABLE_NAME = process.env.USERS_TABLE!;
+const SAGEMAKER_ENDPONIT_NAME = process.env.ENDPOINT_NAME!;
 
 class LLama27BHandler implements SageMakerLLMContentHandler {
   contentType = "application/json";
@@ -59,7 +58,19 @@ const model = new SageMakerEndpoint({
   },
 });
 
-async function chat(sessionId: string, query: string) {
+export async function handler(event: any) {
+  const queries = event.queryStringParameters ?? {};
+  const sessionId = Array.isArray(queries["sessionid"])
+    ? queries["sessionid"][0]
+    : queries["sessionid"];
+  const query = Array.isArray(queries["query"]) ? queries["query"][0] : queries["query"];
+  if (!sessionId || !query) {
+    return {
+      statusCode: 400,
+      body: "Both sessionid and query are required.",
+    };
+  }
+
   const memory = new BufferMemory({
     chatHistory: new DynamoDBChatMessageHistory({
       tableName: DYNAMODB_TABLE_NAME,
@@ -80,25 +91,8 @@ Context:
   const llmChain = new ConversationChain({ llm: model, memory: memory, prompt: promptTemplate });
 
   const result = await llmChain.invoke({ query });
-  return result["response"];
-}
-
-async function handler(event, context) {
-  const queries = event.queryStringParameters ?? {};
-  const sessionId = Array.isArray(queries["sessionid"])
-    ? queries["sessionid"][0]
-    : queries["sessionid"];
-  const query = Array.isArray(queries["query"]) ? queries["query"][0] : queries["query"];
-  if (!sessionId || !query) {
-    return {
-      statusCode: 400,
-      body: "Both sessionid and query are required.",
-    };
-  }
-
-  const result = await chat(sessionId, query);
   return {
     statusCode: 200,
-    body: result,
+    body: result["response"],
   };
 }

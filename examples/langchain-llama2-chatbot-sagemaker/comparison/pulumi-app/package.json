@@ -1,0 +1,17 @@
+{
+  "name": "pulumi-chatbot-app",
+  "version": "0.0.1",
+  "description": "",
+  "main": "pulumi.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/community": "^0.0.33",
+    "@pulumi/aws": "^6.4.1",
+    "@pulumi/pulumi": "^3.88.0",
+    "langchain": "^0.1.23"
+  }
+}

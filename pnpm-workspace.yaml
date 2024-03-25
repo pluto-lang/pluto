@@ -5,4 +5,5 @@ packages:
   # - "devapps/*"
   - "testapps/*"
   - "examples/*"
+  - "!examples/langchain-llama2-chatbot-sagemaker/comparison/*"
   - "!components/deducers/python-pyright/libs/*"

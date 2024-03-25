@@ -19,16 +19,23 @@
 
 ## 比较
 
-以下表格展示了 Pluto 与其他工具在代码量和类型上的对比：
+我们尝试使用其他工具构建相同的示例应用，以下表格展示了 Pluto 与其他工具在代码量和类型上的对比：
 
-|           | 代码类型            | 代码量/行 |
-| --------- | ------------------- | --------- |
-| 应用程序  | 业务逻辑            | 79        |
-| Pulumi    | 基础设施配置        | 159       |
-| Terraform | 基础设施配置        | 201       |
-| **Pluto** | **业务逻辑 + 配置** | **87**    |
+|                                                         | 代码类型            | 代码量/行            | 代码地址                         |
+| ------------------------------------------------------- | ------------------- | -------------------- | -------------------------------- |
+| 应用程序                                                | 业务逻辑            | 83(.ts)              | [源码](./comparison/application) |
+| [Terraform](https://www.terraform.io/)                  | 基础设施配置        | 201(.tf)             | [源码](./comparison/terraform)   |
+| [Pulumi](https://www.pulumi.com/)                       | 基础设施配置        | 157(.ts)             | [源码](./comparison/pulumi)      |
+| [Pulumi Serverless](https://www.pulumi.com/serverless/) | 业务逻辑 + 配置     | 256(.ts)             | [源码](./comparison/pulumi-app)  |
+| [Winglang - TS](https://github.com/winglang/wing)       | 业务逻辑 + 配置     | 100(.ts)             | [源码](./comparison/wing-ts)     |
+| [Winglang - Wing](https://github.com/winglang/wing)     | 业务逻辑 + 配置     | 71(.w) + 47(.ts)     | [源码](./comparison/wing-wing)   |
+| [Lepton](https://www.lepton.ai/)                        | 业务逻辑 + 配置     | 116(.py)             | [源码](./comparison/lepton)      |
+| [Serverless](https://github.com/serverless/serverless)  | 业务逻辑 + 配置     | 79(.ts) + 120(.yaml) | [源码](./comparison/serverless)  |
+| **Pluto**                                               | **业务逻辑 + 配置** | **100(.ts)**         | [源码](./src)                    |
 
-使用 Pluto 可以整合业务逻辑和基础设施配置，与纯业务逻辑代码相比，仅增加了 8 行代码，显著减少代码量。而采用 Pulumi 或 Terraform 构建时，业务逻辑加基础设施配置的整体代码量分别达到 238 行和 280 行，Pluto 的代码量仅为其约三分之一。
+通过对比表格数据可以看到，Pluto 与纯业务逻辑代码相比，增加了 17 行代码，包含了云资源创建与权限配置相关代码。如果采用 Pulumi 或 Terraform 等 IaC 工具进行基础设施配置，业务逻辑加基础设施配置的整体代码量均在 Pluto 代码量的两倍以上。与 Pulumi 的 Serverless 功能、Winglang、Lepton、Serverless 等简化云使用的工具相比，Pluto 对云、AI 背景知识的要求更低，所需代码量也更少。
+
+我们在使用其他工具构建的过程中，遇到了许多问题，导致这些代码最终并没有部署成功，例如，Winglang 没有提供 SageMaker Model、EndpointConfig 资源类型，Pulumi 运行时报错，繁琐的资源项配置等，如果你有兴趣欢迎进行修复。
 
 ## 部署步骤
 
@@ -70,5 +77,4 @@ time curl --get "$CHATBOT_API_URL/chat" \
 
 - **增加自定义业务逻辑**：根据特定的业务需求，你可以编写更多的 Lambda 函数，实现更复杂的业务逻辑。
 - **整合更多 AWS 服务**：你可以利用 AWS 提供的丰富服务，例如 Amazon SNS 作为消息队列，实现异步消息处理。
-
 - **增强用户体验**：你可以开发一个前端用户界面，让用户能够通过网页或移动应用与聊天机器人互动，而不仅仅是通过 API 请求。
