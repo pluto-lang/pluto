@@ -5,6 +5,7 @@ from typing import Dict
 from pluto_client.sagemaker import SageMaker, SageMakerOptions
 from pluto_client import Router, HttpRequest, HttpResponse, KVStore
 
+# TODO: The initial import of langchain will take about 50 seconds.
 from langchain.prompts import PromptTemplate
 from langchain.memory.buffer import ConversationBufferMemory
 from langchain.chains.conversation.base import ConversationChain
@@ -61,8 +62,12 @@ class ContentHandler(LLMContentHandler):
         return input_str.encode("utf-8")
 
     def transform_output(self, output: bytes) -> str:
-        response_json = json.loads(output.decode("utf-8"))
-        return response_json[0]["generated_text"]
+        raw = output.read()  # type: ignore
+        response_json = json.loads(raw.decode("utf-8"))
+        content = response_json[0]["generated_text"]
+        answerStartPos = content.index("<|assistant|>") + len("<|assistant|>")
+        answer = content[answerStartPos:].strip()
+        return answer
 
 
 def get_aws_region() -> str:
@@ -79,17 +84,12 @@ llm = SagemakerEndpoint(
 )
 
 
-def chat_handler(req: HttpRequest) -> HttpResponse:
-    query = req.query["query"]
-    sessionid = req.query["sessionid"]
-    if isinstance(sessionid, list):
-        sessionid = sessionid[0]
-
+def chat(session_id: str, query: str):
     memory = ConversationBufferMemory(
         chat_memory=DynamoDBChatMessageHistory(
             table_name=conversations.aws_table_name,  # DynamoDB table name
             primary_key_name=conversations.aws_partition_key,  # DynamoDB partition key
-            session_id=sessionid,
+            session_id=session_id,
         )
     )
 
@@ -100,7 +100,7 @@ You are a cool and aloof robot, answering questions very briefly and directly.
 Context:
 {history}</s>
 <|user|>
-{query}</s>
+{input}</s>
 <|assistant|>"""
     )
 
@@ -110,10 +110,8 @@ Context:
         prompt=promptTemplate,
     )
 
-    result = chain({"query": query})
-    print(result)
-
-    return HttpResponse(status_code=200, body="hello world")
+    result = chain.predict(input=query)
+    return result
 
     # TODO: Use the following statement to help the deducer identify the right relationship between
     # Lambda and other resources. This will be used to grant permission for the Lambda instance to
@@ -122,6 +120,21 @@ Context:
     conversations.get("")
     conversations.set("", "")
     sagemaker.invoke("")
+
+
+def chat_handler(req: HttpRequest) -> HttpResponse:
+    query = req.query["query"]
+    sessionid = req.query["sessionid"]
+    if isinstance(sessionid, list):
+        sessionid = sessionid[0]
+    if isinstance(query, list):
+        query = query[0]
+
+    if (sessionid is None) or (query is None):
+        return HttpResponse(status_code=400, body="sessionid and query are required")
+
+    result = chat(sessionid, query)
+    return HttpResponse(status_code=200, body=result)
 
 
 router.get("/chatbot", chat_handler)

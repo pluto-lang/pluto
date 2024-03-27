@@ -27,8 +27,12 @@ class ContentHandler(LLMContentHandler):
         return input_str.encode("utf-8")
 
     def transform_output(self, output: bytes) -> str:
-        response_json = json.loads(output.decode("utf-8"))
-        return response_json[0]["generated_text"]
+        raw = output.read()  # type: ignore
+        response_json = json.loads(raw.decode("utf-8"))
+        content = response_json[0]["generated_text"]
+        answerStartPos = content.index("<|assistant|>") + len("<|assistant|>")
+        answer = content[answerStartPos:].strip()
+        return answer
 
 
 def get_aws_region() -> str:
@@ -45,17 +49,12 @@ llm = SagemakerEndpoint(
 )
 
 
-def handler(event):
-    query = event.query["query"]
-    sessionid = event.query["sessionid"]
-    if isinstance(sessionid, list):
-        sessionid = sessionid[0]
-
+def chat(session_id: str, query: str):
     memory = ConversationBufferMemory(
         chat_memory=DynamoDBChatMessageHistory(
-            table_name=TABLE_NAME,
-            session_id=sessionid,
-            primary_key_name=PARTITION_KEY,
+            table_name=TABLE_NAME,  # DynamoDB table name
+            primary_key_name=PARTITION_KEY,  # DynamoDB partition key
+            session_id=session_id,
         )
     )
 
@@ -66,7 +65,7 @@ You are a cool and aloof robot, answering questions very briefly and directly.
 Context:
 {history}</s>
 <|user|>
-{query}</s>
+{input}</s>
 <|assistant|>"""
     )
 
@@ -76,10 +75,26 @@ Context:
         prompt=promptTemplate,
     )
 
-    result = chain.invoke({"query": query})
-    print(result)
+    result = chain.predict(input=query)
+    return result
 
+
+def handler(event):
+    query = event.query["query"]
+    sessionid = event.query["sessionid"]
+    if isinstance(sessionid, list):
+        sessionid = sessionid[0]
+    if isinstance(query, list):
+        query = query[0]
+
+    if (sessionid is None) or (query is None):
+        return {
+            "statusCode": 400,
+            "body": "sessionid and query are required parameters",
+        }
+
+    result = chat(sessionid, query)
     return {
         "statusCode": 200,
-        "body": json.dumps(result["generated_text"]),
+        "body": result,
     }
