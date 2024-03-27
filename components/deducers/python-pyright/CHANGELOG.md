@@ -1,5 +1,18 @@
 # @plutolang/pyright-deducer
 
+## 0.1.1
+
+### Patch Changes
+
+- 1ca8e3c: feat: using `pip install` to bundle dependencies instead of copying local packages
+
+  When creating the Lambda deployment package, it's essential to bundle dependencies. Previously, we built the dependency graph for a single closure, identified the directories containing the dependent packages, and copied them into the deployment package. However, this approach struggles with cross-architecture deployment and may include unnecessary files.
+
+  Now, we utilize `pip install` to install directly dependent packages for a closure. If the target runtime or architecture differs from the local environment, we employ Docker to handle dependency installation before packaging. While this method offers greater reliability, it's slower compared to the previous approach.
+
+- Updated dependencies [2a0a874]
+  - @plutolang/base@0.4.1
+
 ## 0.1.0
 
 ### Minor Changes

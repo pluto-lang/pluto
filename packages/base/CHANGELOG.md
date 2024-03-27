@@ -1,5 +1,11 @@
 # @plutolang/base
 
+## 0.4.1
+
+### Patch Changes
+
+- 2a0a874: fix(sdk): generating inconsistent resource id between python and typescript
+
 ## 0.4.0
 
 ### Minor Changes
