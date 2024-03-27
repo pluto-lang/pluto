@@ -31,11 +31,11 @@
 | [Winglang - Wing](https://github.com/winglang/wing)       | 业务逻辑 + 配置     | 71(.w) + 47(.ts)     | [源码](./comparison/wing-wing)                       |
 | [Serverless](https://github.com/serverless/serverless)    | 业务逻辑 + 配置     | 79(.ts) + 120(.yaml) | [源码](./comparison/serverless)                      |
 | **Pluto - TypeScript**                                    | **业务逻辑 + 配置** | **100(.ts) **        | [源码](./src)                                        |
-| 应用程序 - Python                                         | 业务逻辑            | 60(.py)              | [源码](./comparison/application-python)              |
+| 应用程序 - Python                                         | 业务逻辑            | 73(.py)              | [源码](./comparison/application-python)              |
 | [Lepton](https://www.lepton.ai/)                          | 业务逻辑 + 配置     | 116(.py)             | [源码](./comparison/lepton)                          |
-| **Pluto - Python**                                        | **业务逻辑 + 配置** | **74(.py) **         | [源码](../langchain-llama2-chatbot-sagemaker-python) |
+| **Pluto - Python**                                        | **业务逻辑 + 配置** | **84(.py) **         | [源码](../langchain-llama2-chatbot-sagemaker-python) |
 
-通过对比表格数据可以看到，TypeScript 版本与 Python 版本的 Pluto 应用与纯业务逻辑代码相比，增加了 17 行、14 行代码，包含了云资源创建与权限配置相关代码。如果采用 Pulumi 或 Terraform 等 IaC 工具进行基础设施配置，业务逻辑加基础设施配置的整体代码量均在 Pluto 代码量的两倍以上。与 Pulumi 的 Serverless 功能、Winglang、Lepton、Serverless 等简化云使用的工具相比，Pluto 对云、AI 背景知识的要求更低，所需代码量也更少。
+通过对比表格数据可以看到，TypeScript 版本与 Python 版本的 Pluto 应用与纯业务逻辑代码相比，增加了 17 行、11 行代码，包含了云资源创建与权限配置相关代码。如果采用 Pulumi 或 Terraform 等 IaC 工具进行基础设施配置，业务逻辑加基础设施配置的整体代码量均在 Pluto 代码量的两倍以上。与 Pulumi 的 Serverless 功能、Winglang、Lepton、Serverless 等简化云使用的工具相比，Pluto 对云、AI 背景知识的要求更低，所需代码量也更少。
 
 我们在使用其他工具构建的过程中，遇到了许多问题，导致这些代码最终并没有部署成功，例如，Winglang 没有提供 SageMaker Model、EndpointConfig 资源类型，Pulumi 运行时报错，繁琐的资源项配置等，如果你有兴趣欢迎进行修复。
 
