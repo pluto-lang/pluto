@@ -31,8 +31,9 @@ export class ApiGatewayRouter
     this.id = genResourceId(Router.fqn, name);
 
     this.apiGateway = new aws.apigatewayv2.Api(
-      `${name}-apigateway`,
+      genAwsResourceName(this.id, "api"),
       {
+        name: genAwsResourceName(this.id, "api"),
         protocolType: "HTTP",
       },
       { parent: this }
@@ -135,25 +136,12 @@ export class ApiGatewayRouter
       { dependsOn: this.routes, parent: this }
     );
 
-    // Create a CloudWatch Log Group
-    const logGroup = new aws.cloudwatch.LogGroup(
-      genAwsResourceName(this.id, "loggroup"),
-      {
-        retentionInDays: 7, // Log retention period
-      },
-      { parent: this }
-    );
-
     new aws.apigatewayv2.Stage(
       genAwsResourceName(this.id, "stage"),
       {
         apiId: this.apiGateway.id,
         deploymentId: deployment.id,
         name: DEFAULT_STAGE_NAME, // TODO: modifiable
-        accessLogSettings: {
-          destinationArn: logGroup.arn,
-          format: `$context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.routeKey $context.protocol" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage $context.error.messageString $context.error.responseType`,
-        },
       },
       { parent: this }
     );

@@ -39,10 +39,7 @@ export function genResourceId(...args: readonly string[]): string {
   if (resourceFullId.length <= RESOURCE_ID_MAX_LENGTH) {
     return resourceFullId;
   } else {
-    const hash = createHash("md5")
-      .update(JSON.stringify(resourceFullId))
-      .digest("hex")
-      .substring(0, 8);
+    const hash = createHash("md5").update(resourceFullId).digest("hex").substring(0, 8);
     // Preserve the final segment of content, its length equals (RESOURCE_ID_MAX_LENGTH -
     // hash.length), then append the hash to it.
     const start = resourceFullId.length - (RESOURCE_ID_MAX_LENGTH - hash.length);

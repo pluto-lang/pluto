@@ -1,6 +1,7 @@
 import os
 import json
 import base64
+import traceback
 
 
 def is_http_payload(payload):
@@ -39,7 +40,8 @@ def handler(payload, context):
                 "body": result,
             }
         except Exception as e:
-            print("Function execution failed:", str(e))
+            print("Function execution failed")
+            print(traceback.print_exception(type(e), e, e.__traceback__))
             response = {
                 "code": 400,
                 "body": "Function execution failed: " + str(e),
@@ -47,8 +49,9 @@ def handler(payload, context):
         return response
 
     except Exception as e:
-        print("Something wrong:", str(e))
+        print("Internal Server Error")
+        print(traceback.print_exception(type(e), e, e.__traceback__))
         return {
             "code": 500,
-            "body": "Something wrong. Please contact the administrator.",
+            "body": "Internal Server Error. Please Contact the Administrator.",
         }
