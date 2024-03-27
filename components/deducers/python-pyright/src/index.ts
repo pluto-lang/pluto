@@ -24,7 +24,8 @@ import { SpecialNodeMap } from "./special-node-map";
 import { Value, ValueEvaluator } from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
 import { CodeSegment, CodeExtractor } from "./code-extractor";
-import { DeepImportFinder } from "./deep-import-finder";
+import { ImportFinder } from "./import-finder";
+import { bundleModules } from "./module-bundler";
 
 export default class PyrightDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -39,7 +40,7 @@ export default class PyrightDeducer extends core.Deducer {
   private tracker?: ResourceObjectTracker;
   private valueEvaluator?: ValueEvaluator;
   private extractor?: CodeExtractor;
-  private importFinder?: DeepImportFinder;
+  private importFinder?: ImportFinder;
 
   private readonly nodeToResourceMap: Map<number, arch.Resource> = new Map();
   private readonly closures: arch.Closure[] = [];
@@ -105,12 +106,8 @@ export default class PyrightDeducer extends core.Deducer {
     const execEnv = program.importResolver
       .getConfigOptions()
       .findExecEnvironment(Uri.file(entrypoints[0]))!;
-    this.importFinder = new DeepImportFinder(
-      program.importResolver,
-      execEnv,
-      this.stack.platformType
-    );
-    this.prepareDependencies(this.closures);
+    this.importFinder = new ImportFinder(program.importResolver, execEnv, this.stack.platformType);
+    await this.prepareDependencies(this.closures);
 
     program.dispose();
 
@@ -371,28 +368,22 @@ export default class PyrightDeducer extends core.Deducer {
     }
   }
 
-  private prepareDependencies(closures: arch.Closure[]) {
+  private async prepareDependencies(closures: arch.Closure[]) {
+    console.log(`Bundling dependencies, this may take a while...`);
     for (const closure of closures) {
       const destBaseDir = path.resolve(closure.path, "site-packages");
-      fs.ensureDirSync(destBaseDir);
 
       const closureFile = path.resolve(closure.path, "__init__.py");
-      const pkgPaths = this.importFinder!.getDependentModules(closureFile);
-      pkgPaths.forEach((pkgPath) => {
-        const pkgName = path.basename(pkgPath);
-        const dest = path.resolve(destBaseDir, pkgName);
-        fs.copySync(pkgPath, dest);
+      const modules = this.importFinder!.getImportedModulesForSingleFile(closureFile);
 
-        // Copy the .dist-info directory if it exists.
-        const prefix = pkgName.replace(/\.py$/g, ""); // The python module may just be a python file.
-        const distInforDirnames = fs.readdirSync(path.dirname(pkgPath)).filter((dirname) => {
-          return new RegExp(`^${prefix}-(\\d+(\\.\\d+)*?)\\.dist-info$`).test(dirname);
-        });
-        distInforDirnames.forEach((distInfoDirname) => {
-          const distInfoDir = path.resolve(path.dirname(pkgPath), distInfoDirname);
-          const dest = path.resolve(destBaseDir, distInfoDirname);
-          fs.copySync(distInfoDir, dest);
-        });
+      // TODO: Make the Python version and architecture configurable. These values will be used in
+      // multiple places, including the Deducer and the infrastructure SDK. The former determines
+      // the Python version and architecture for bundling dependencies, while the latter sets the
+      // cloud runtime environment.
+      await bundleModules("python3.10", "x86_64", modules, destBaseDir, {
+        slim: true,
+        cache: true,
+        platform: this.stack.platformType,
       });
     }
   }

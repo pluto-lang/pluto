@@ -22,13 +22,18 @@
   },
   "dependencies": {
     "@plutolang/base": "workspace:^",
+    "cross-spawn": "^7.0.3",
     "fs-extra": "^11.1.1",
-    "pyright-internal": "file:./libs/pyright-internal"
+    "glob": "^10.3.10",
+    "pyright-internal": "file:./libs/pyright-internal",
+    "shell-quote": "^1.8.1"
   },
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
     "@types/fs-extra": "^11.0.4",
     "@types/jest": "^29.5.12",
     "@types/node": "^20",
+    "@types/shell-quote": "^1.7.5",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
     "ts-jest": "^29.1.2",
