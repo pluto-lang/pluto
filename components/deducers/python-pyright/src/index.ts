@@ -26,12 +26,13 @@ import { ResourceObjectTracker } from "./resource-object-tracker";
 import { CodeSegment, CodeExtractor } from "./code-extractor";
 import { ImportFinder } from "./import-finder";
 import { bundleModules } from "./module-bundler";
+import packageJson from "../package.json";
 
 export default class PyrightDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
-  public readonly name = require(path.join(__dirname, "../package.json")).name;
+  public readonly name = packageJson.name;
   //eslint-disable-next-line @typescript-eslint/no-var-requires
-  public readonly version = require(path.join(__dirname, "../package.json")).version;
+  public readonly version = packageJson.version;
 
   private readonly closureDir: string;
 

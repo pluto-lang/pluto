@@ -14,23 +14,27 @@ import { ImportResult, ImportType } from "pyright-internal/dist/analyzer/importR
 import { PlatformType } from "@plutolang/base";
 import { Module } from "./module-bundler";
 
-const awsLambdaContainedModulesTxt = {
-  "3.10": path.join(__dirname, "all_aws_lambda_modules_python3.10.txt"),
-};
+import allAwsLambdaModulesPython310 from "./all_aws_lambda_modules_python3.10.txt";
 
-export class ImportFinder {
+function extractRawAwsModules(raw: string) {
   // List of modules that are already included in AWS Lambda environment and should be ignored when
   // packaging the code for AWS Lambda.
-  private static readonly awsLambdaContainedModules: string[] = fs
-    .readFileSync(awsLambdaContainedModulesTxt["3.10"], "utf-8")
+  return raw
     .split("\n")
     .filter((line) => !line.startsWith("#"))
     .map((line) => line.replace(/\.__init__$/g, ""));
+}
+
+export class ImportFinder {
+  private static readonly awsLambdaContainedModules: Map<string, string[]> = new Map([
+    ["python3.10", extractRawAwsModules(allAwsLambdaModulesPython310)],
+  ]);
 
   constructor(
     private readonly importResolver: ImportResolver,
     private readonly execEnv: ExecutionEnvironment,
-    private readonly platform?: PlatformType
+    private readonly platform?: PlatformType,
+    private readonly runtime: string = "python3.10"
   ) {}
 
   public getImportedModulesForSingleFile(sourceFilepath: string): Module[] {
@@ -74,9 +78,10 @@ export class ImportFinder {
 
   private shouldIgnoreForAWS(importInfo: ImportResult) {
     const moduleName = importInfo.importName;
+    const containedModules = ImportFinder.awsLambdaContainedModules.get(this.runtime);
     return (
-      ImportFinder.awsLambdaContainedModules.includes(moduleName) ||
-      ImportFinder.awsLambdaContainedModules.includes(moduleName + ".__init__")
+      containedModules &&
+      (containedModules.includes(moduleName) || containedModules.includes(moduleName + ".__init__"))
     );
   }
 

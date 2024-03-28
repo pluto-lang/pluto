@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
-    "outDir": "dist",
+    "outDir": "out",
     "target": "es2022",
     "module": "commonjs",
     "lib": ["es2022"],
