@@ -42,12 +42,24 @@ export function createProgram(options: CreateProgramOptions = {}) {
 }
 
 function resolvePyrightRoot(): string {
-  const modulePath = require.resolve("pyright-internal/dist/analyzer/program");
-  let currentDir = path.dirname(modulePath);
-  while (!fs.existsSync(path.join(currentDir, "package.json"))) {
+  const resolveResult = require.resolve("pyright-internal/dist/analyzer/program");
+  if (typeof resolveResult === "number") {
+    // The result is a number that represents the current process running a production webpack
+    // bundle. The typeshed-fallback directory is copied to the root of the bundle. So we use the
+    // root of the bundle as the the root of pyright-internal.
+    return __dirname;
+  }
+
+  // There are two situations where the result is a string:
+  // 1. In a Jest test environment, the filepath below is an absolute path to the `program.js` file.
+  // 2. In a development webpack environment, the filepath is a relative path to the `program.js`
+  //    file from the root of this package.
+  const filepath = path.resolve(__dirname, "..", resolveResult);
+  let currentDir = path.dirname(filepath);
+  while (!fs.existsSync(path.join(currentDir, "typeshed-fallback"))) {
     const parentDir = path.dirname(currentDir);
     if (parentDir === currentDir) {
-      throw new Error("Cannot find pyright root directory.");
+      throw new Error("Cannot find the root directory of typeshed-fallback.");
     }
     currentDir = parentDir;
   }

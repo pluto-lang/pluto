@@ -7,18 +7,17 @@
     "directory": "components/deducers/python-pyright"
   },
   "author": "plutolang",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/bundle.js",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "bash scripts/prepare-pyright-pkg.sh && node scripts/copy-assets.js && tsc",
-    "watch": "npm run build -- --watch",
+    "build": "bash scripts/prepare-pyright-pkg.sh && webpack --mode=production",
+    "watch": "bash scripts/prepare-pyright-pkg.sh && webpack --mode=development --watch",
     "test": "jest --verbose --coverage",
     "test:watch": "jest --verbose --coverage --watch",
     "lint": "eslint .",
-    "clean": "tsc --build --clean"
+    "prepublishOnly": "node scripts/prepublish.js"
   },
   "dependencies": {
     "@plutolang/base": "workspace:^",
@@ -34,12 +33,14 @@
     "@types/jest": "^29.5.12",
     "@types/node": "^20",
     "@types/shell-quote": "^1.7.5",
+    "copy-webpack-plugin": "^12.0.2",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
+    "raw-loader": "^4.0.2",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.2.2"
-  },
-  "bundleDependencies": [
-    "pyright-internal"
-  ]
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.2.2",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  }
 }

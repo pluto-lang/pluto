@@ -1,2 +1,3 @@
-**/dist/
+dist/
 libs/pyright-internal/
+out/

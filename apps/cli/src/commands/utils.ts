@@ -28,10 +28,17 @@ export async function buildDeducer(
   deducerArgs: core.NewDeducerArgs
 ): Promise<core.Deducer> {
   const deducer = new (await loadPackage(deducerPkg))(deducerArgs);
-  if (deducer instanceof core.Deducer) {
+  if (isDeducer(deducer)) {
     return deducer;
   }
   throw new Error(`The default export of '${deducerPkg}' package is not a valid Deducer.`);
+}
+
+function isDeducer(obj: any): obj is core.Deducer {
+  // Because the deducer package could be bundled by webpack, when trying to confirm if an object is
+  // an instance of core.Deducer, we might get a false. Hence, we simply verify the presence of the
+  // `deduce` method instead.
+  return typeof obj.deduce === "function";
 }
 
 export async function buildGenerator(

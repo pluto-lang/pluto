@@ -20,6 +20,7 @@ module.exports = {
         },
       },
     ],
+    "\\.txt$": "<rootDir>/__mocks__/txtMock.js",
   },
   testRegex: "(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$",
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
