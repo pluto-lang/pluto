@@ -34,3 +34,22 @@ export class Relationship {
     return this.parameters.map((item) => item.value).join(", ");
   }
 }
+
+export function isRelationship(obj: any): obj is Relationship {
+  const fakeIdWithType: IdWithType = { id: "", type: "resource" };
+  const fakeRelationship = new Relationship(
+    fakeIdWithType,
+    [fakeIdWithType],
+    RelatType.Create,
+    "",
+    []
+  );
+  const props = Object.getOwnPropertyNames(fakeRelationship);
+  for (const prop of props) {
+    if (!(prop in obj) || typeof (fakeRelationship as any)[prop] !== typeof obj[prop]) {
+      // If the property is not in the object or the type is different, return false.
+      return false;
+    }
+  }
+  return true;
+}
