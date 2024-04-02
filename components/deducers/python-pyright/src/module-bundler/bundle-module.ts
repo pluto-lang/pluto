@@ -12,6 +12,7 @@ export interface BundleModulesOptions {
   dockerPip?: boolean;
   platform?: PlatformType;
   slim?: boolean;
+  uselessFilesPatterns?: string[];
   cache?: boolean;
 }
 
@@ -73,7 +74,7 @@ export async function bundleModules(
 
   if (options.slim) {
     // If slimming is enabled, strip the ".so" files to reduce the size.
-    commands.push(getStripCommand(workDir));
+    commands.push(SlimUtils.getStripCommand(workDir));
   }
 
   if (options.dockerPip) {
@@ -96,7 +97,7 @@ export async function bundleModules(
   if (options.slim) {
     // If slimming is enabled, remove the useless files, including the *.pyc, dist-info,
     // __pycache__, and etc.
-    SlimUtils.removeUselessFiles(targetFolder);
+    SlimUtils.removeUselessFiles(targetFolder, options.uselessFilesPatterns);
   }
 
   // Mark the installation as done. This is used to skip the installation if the metadata hasn't
@@ -176,10 +177,6 @@ function getPipInstallCommand(
     pipCmd.push(...["-i", "https://pypi.tuna.tsinghua.edu.cn/simple"]);
   }
   return pipCmd;
-}
-
-function getStripCommand(targetFolder: string): string[] {
-  return ["find", targetFolder, "-name", "*.so", "-exec", "strip", "{}", ";"];
 }
 
 /**

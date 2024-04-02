@@ -383,6 +383,9 @@ export default class PyrightDeducer extends core.Deducer {
       // cloud runtime environment.
       await bundleModules("python3.10", "x86_64", modules, destBaseDir, {
         slim: true,
+        // By default, we'll delete the `dist-info` directory, but LangChain needs it, so we'll just
+        // delete the `.pyc` and `__pycache__` files.
+        uselessFilesPatterns: ["**/*.pyc", "**/__pycache__"],
         cache: true,
         platform: this.stack.platformType,
       });
@@ -465,10 +468,7 @@ function extractAndStoreClosure(
   closureBaseDir: string,
   extractor: CodeExtractor
 ) {
-  const codeSegment = extractor!.extractExpressionWithDependencies(
-    argNode.valueExpression,
-    sourceFile
-  );
+  const codeSegment = extractor!.extractExpressionRecursively(argNode.valueExpression, sourceFile);
 
   let closureText = CodeSegment.toString(codeSegment);
   if (codeSegment.exportableName) {
