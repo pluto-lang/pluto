@@ -1,5 +1,13 @@
 # @plutolang/static-generator
 
+## 0.4.2
+
+### Patch Changes
+
+- 8819258: fix(generator): failed to generate iac code due to missing type information in webpack
+- Updated dependencies [8819258]
+  - @plutolang/base@0.4.2
+
 ## 0.4.1
 
 ### Patch Changes
