@@ -31,18 +31,20 @@ export class StaticGenerator extends core.Generator {
     const globalImports = `import { createClosure } from "@plutolang/base/closure";`;
     let infraCode = ``;
     for (const entity of entities) {
-      if (entity instanceof arch.Resource) {
+      if (arch.isResource(entity)) {
         infraCode += this.generateInfraCode_Resource(entity);
-      } else if (entity instanceof arch.Closure) {
+      } else if (arch.isClosure(entity)) {
         infraCode += this.generateInfraCode_Closure(entity, archRef);
-      } else if (entity instanceof arch.Relationship) {
+      } else if (arch.isRelationship(entity)) {
         infraCode += this.generateInfraCode_Relationship(entity);
+      } else {
+        throw new Error(`Unsupported entity type ` + JSON.stringify(entity));
       }
     }
 
     // Append the postProcess calling for each resource.
     entities
-      .filter((entity) => entity instanceof arch.Resource)
+      .filter((entity) => arch.isResource(entity))
       .forEach((entity) => {
         const resource = entity as arch.Resource;
         infraCode += `${resource.id}.postProcess();\n`;
@@ -53,7 +55,7 @@ export class StaticGenerator extends core.Generator {
     // necessity, as this approach requires the SDK developer to specifically write outputs for
     // certain resources, which may not be developer-friendly.
     const outputItems = entities
-      .filter((entity) => entity instanceof arch.Resource)
+      .filter((entity) => arch.isResource(entity))
       .map((entity) => {
         const resource = entity as arch.Resource;
         return `${resource.id}: ${resource.id}.outputs`;
