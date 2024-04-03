@@ -3,7 +3,14 @@ import * as alicloud from "@pulumi/alicloud";
 import { IResourceInfra } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
-import { RequestHandler, RouterOptions, IRouterInfra, Router, HttpRequest } from "@plutolang/pluto";
+import {
+  RequestHandler,
+  RouterOptions,
+  IRouterInfra,
+  Router,
+  HttpRequest,
+  parseUrl,
+} from "@plutolang/pluto";
 import { genAliResourceName } from "@plutolang/pluto/dist/clients/alicloud";
 import { FCInstance } from "./function.fc";
 import { currentAliCloudRegion } from "./utils";
@@ -124,13 +131,22 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfra,
     this.addHandler("DELETE", path, closure);
   }
 
-  private addHandler(method: string, path: string, closure: ComputeClosure<RequestHandler>) {
+  public all(path: string, closure: ComputeClosure<RequestHandler>, raw?: boolean): void {
+    this.addHandler("ANY", path, closure, raw);
+  }
+
+  private addHandler(
+    method: string,
+    path: string,
+    closure: ComputeClosure<RequestHandler>,
+    raw?: boolean
+  ) {
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
     }
     const resourceNamePrefix = `${this.id}-${path.replace("/", "_")}-${method}`;
 
-    const runtimeHandler = wrapClosure(adaptAliCloudRuntime(closure), closure);
+    const runtimeHandler = wrapClosure(adaptAliCloudRuntime(closure, raw), closure);
     const fnResource = new FCInstance(runtimeHandler, {
       name: `${resourceNamePrefix}-func`,
     });
@@ -146,7 +162,7 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfra,
         requestConfig: {
           method: method,
           mode: "PASSTHROUGH",
-          path: path,
+          path: convertToAliPath(path),
           protocol: "HTTPS",
         },
         serviceType: "FunctionCompute",
@@ -186,7 +202,15 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfra,
 
 type CallbackFn = (error: Error | null, data?: object) => Promise<void>;
 
-function adaptAliCloudRuntime(__handler_: RequestHandler) {
+function adaptAliCloudRuntime(__handler_: RequestHandler, raw?: boolean) {
+  if (raw) {
+    return async (inData: Buffer, context: any, ...args: any[]) => {
+      const accountId = context.accountId;
+      process.env["ALICLOUD_ACCOUNT_ID"] = accountId;
+      return await (__handler_ as any)(...[inData, context, ...args]);
+    };
+  }
+
   return async (inData: Buffer, context: any, callback: CallbackFn) => {
     const accountId = context.accountId;
     process.env["ALICLOUD_ACCOUNT_ID"] = accountId;
@@ -218,4 +242,22 @@ function adaptAliCloudRuntime(__handler_: RequestHandler) {
       callback(new Error("Internal Server Error"));
     }
   };
+}
+
+function convertToAliPath(url: string): string {
+  const parts = parseUrl(url);
+  return (
+    "/" +
+    parts
+      .map((part) => {
+        if (part.isParam) {
+          return `[${part.content}]`;
+        }
+        if (part.isWildcard) {
+          return "*";
+        }
+        return part.content;
+      })
+      .join("/")
+  );
 }

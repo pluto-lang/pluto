@@ -3,7 +3,14 @@ import * as k8s from "@pulumi/kubernetes";
 import { IResourceInfra } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
-import { IRouterInfra, RequestHandler, Router, RouterOptions, HttpRequest } from "@plutolang/pluto";
+import {
+  IRouterInfra,
+  RequestHandler,
+  Router,
+  RouterOptions,
+  HttpRequest,
+  parseUrl,
+} from "@plutolang/pluto";
 import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 import { KnativeService } from "./function.service";
 import { responseAndClose, runtimeBase } from "./utils";
@@ -48,12 +55,21 @@ export class IngressRouter
     this.routes.push({ path, handler: this.createService("DELETE", path, closure) });
   }
 
-  private createService(method: string, path: string, closure: ComputeClosure<RequestHandler>) {
+  public all(path: string, closure: ComputeClosure<RequestHandler>, raw?: boolean): void {
+    this.routes.push({ path, handler: this.createService("ALL", path, closure, raw) });
+  }
+
+  private createService(
+    method: string,
+    path: string,
+    closure: ComputeClosure<RequestHandler>,
+    raw?: boolean
+  ) {
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
     }
 
-    const adaptHandler = wrapClosure(adaptK8sRuntime(closure), closure);
+    const adaptHandler = wrapClosure(adaptK8sRuntime(closure, raw), closure);
     const func = new KnativeService(adaptHandler, {
       name: `${this.id}-${method}-${path.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`,
     });
@@ -68,7 +84,7 @@ export class IngressRouter
     const paths: pulumi.Input<k8s.types.input.networking.v1.HTTPIngressPath>[] = [];
     this.routes.forEach((item) => {
       paths.push({
-        path: item.path,
+        path: convertToExpressPath(item.path),
         pathType: "ImplementationSpecific",
         backend: {
           service: {
@@ -105,7 +121,13 @@ export class IngressRouter
   }
 }
 
-function adaptK8sRuntime(__handler_: RequestHandler) {
+function adaptK8sRuntime(__handler_: RequestHandler, raw?: boolean) {
+  if (raw) {
+    runtimeBase(async (req, res) => {
+      await (__handler_ as any)(req, res);
+    });
+  }
+
   return async () => {
     runtimeBase(async (req, res, parsed) => {
       const plutoRequest: HttpRequest = {
@@ -128,4 +150,22 @@ function adaptK8sRuntime(__handler_: RequestHandler) {
       }
     });
   };
+}
+
+function convertToExpressPath(url: string): string {
+  const parts = parseUrl(url);
+  return (
+    "/" +
+    parts
+      .map((part) => {
+        if (part.isParam) {
+          return `:${part.content}`;
+        }
+        if (part.isWildcard) {
+          return "*";
+        }
+        return part.content;
+      })
+      .join("/")
+  );
 }

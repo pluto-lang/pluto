@@ -6,7 +6,14 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import { IResourceInfra, LanguageType } from "@plutolang/base";
 import { currentLanguage, genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
-import { HttpRequest, IRouterInfra, RequestHandler, Router, RouterOptions } from "@plutolang/pluto";
+import {
+  HttpRequest,
+  IRouterInfra,
+  RequestHandler,
+  Router,
+  RouterOptions,
+  parseUrl,
+} from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 import { Lambda } from "./function.lambda";
 import { currentAwsRegion } from "./utils";
@@ -71,13 +78,22 @@ export class ApiGatewayRouter
     this.addHandler("DELETE", path, closure);
   }
 
-  private addHandler(op: string, path: string, closure: ComputeClosure<RequestHandler>) {
+  public all(path: string, closure: ComputeClosure<RequestHandler>, raw?: boolean): void {
+    this.addHandler("ANY", path, closure, raw);
+  }
+
+  private addHandler(
+    op: string,
+    path: string,
+    closure: ComputeClosure<RequestHandler>,
+    raw: boolean = false
+  ) {
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
     }
     const resourceNamePrefix = `${this.id}-${path.replace("/", "_")}-${op}`;
 
-    const runtimeHandler = adaptPlatformNorm(closure);
+    const runtimeHandler = adaptPlatformNorm(closure, raw);
     const lambda = new Lambda(runtimeHandler, {
       name: `${resourceNamePrefix}-func`,
     });
@@ -100,7 +116,7 @@ export class ApiGatewayRouter
       genAwsResourceName(resourceNamePrefix, "route"),
       {
         apiId: this.apiGateway.id,
-        routeKey: `${op.toUpperCase()} ${path}`,
+        routeKey: `${op.toUpperCase()} ${convertToAwsPath(path)}`,
         target: pulumi.interpolate`integrations/${integration.id}`,
         authorizationType: "NONE",
       },
@@ -182,23 +198,54 @@ function adaptAwsRuntime(__handler_: RequestHandler): APIGatewayProxyHandler {
   };
 }
 
+function adaptAwsRuntimeRaw(__handler_: any): APIGatewayProxyHandler {
+  return async (event, context, ...args: any[]) => {
+    const accountId = context.invokedFunctionArn.split(":")[4];
+    process.env["AWS_ACCOUNT_ID"] = accountId;
+    return await __handler_(...[event, context, ...args]);
+  };
+}
+
 function adaptPlatformNorm(
-  closure: ComputeClosure<RequestHandler>
+  closure: ComputeClosure<RequestHandler>,
+  raw: boolean = false
 ): ComputeClosure<APIGatewayProxyHandler> {
   switch (currentLanguage()) {
-    case LanguageType.TypeScript:
-      return wrapClosure(adaptAwsRuntime(closure), closure, {
+    case LanguageType.TypeScript: {
+      const adaptFunc = raw ? adaptAwsRuntimeRaw : adaptAwsRuntime;
+      return wrapClosure(adaptFunc(closure), closure, {
         dirpath: "inline",
         exportName: "handler",
         placeholder: "__handler_",
       });
-    case LanguageType.Python:
+    }
+    case LanguageType.Python: {
+      const adaptFile = raw ? "apigateway_adapter_raw.py" : "apigateway_adapter.py";
       return wrapClosure(() => {}, closure, {
-        dirpath: join(__dirname, "apigateway_adapter.py"),
+        dirpath: join(__dirname, adaptFile),
         exportName: "handler",
         placeholder: "__handler_",
       });
+    }
     default:
       throw new Error(`Unsupported language: ${currentLanguage()}`);
   }
+}
+
+function convertToAwsPath(url: string): string {
+  const parts = parseUrl(url);
+  return (
+    "/" +
+    parts
+      .map((part) => {
+        if (part.isParam) {
+          return `{${part.content}}`;
+        }
+        if (part.isWildcard) {
+          return `{proxy+}`;
+        }
+        return part.content;
+      })
+      .join("/")
+  );
 }
