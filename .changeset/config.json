@@ -17,6 +17,8 @@
     "langchain-llama2-sagemaker",
     "quickstart-python",
     "langchain-llama2-chatbot-sagemaker",
-    "langchain-llama2-chatbot-sagemaker-python"
+    "langchain-llama2-chatbot-sagemaker-python",
+    "fastapi",
+    "langserve-agent-with-history"
   ]
 }

@@ -3,6 +3,7 @@ import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import {
   ArgumentNode,
+  BinaryOperationNode,
   CallNode,
   ClassNode,
   DictionaryNode,
@@ -11,12 +12,15 @@ import {
   ImportAsNode,
   ImportFromAsNode,
   LambdaNode,
+  ListComprehensionForIfNode,
+  ListComprehensionNode,
   ListNode,
   MemberAccessNode,
   NameNode,
   ParseNode,
   ParseNodeType,
   TupleNode,
+  isExpressionNode,
 } from "pyright-internal/dist/parser/parseNodes";
 import { SymbolTable } from "pyright-internal/dist/analyzer/symbol";
 import { TypeCategory } from "pyright-internal/dist/analyzer/types";
@@ -47,10 +51,10 @@ export interface CodeSegment {
    */
   readonly code: string;
   /**
-   * The `dependencies` includes the variables, functions, classes, etc., that are accessed in the
-   * current node.
+   * The `dependentDeclarations` includes the variables, functions, classes, etc., that are accessed
+   * in the current node.
    */
-  readonly dependencies: CodeSegment[];
+  readonly dependentDeclarations?: CodeSegment[];
   /**
    * The client API calls that are used in the current node.
    */
@@ -66,10 +70,16 @@ export namespace CodeSegment {
   export function toString(segment: CodeSegment): string {
     const extractedNodeIds: Set<number> = new Set();
     function concatCodeRecursively(segment: CodeSegment): string {
-      const depsCode = segment.dependencies.map((dep) => concatCodeRecursively(dep)).join("\n");
+      const depsCode =
+        segment.dependentDeclarations?.map((dep) => concatCodeRecursively(dep)).join("\n") ?? "";
 
-      if (extractedNodeIds.has(segment.node.id)) {
+      if (
         // Avoid extracting the same node multiple times.
+        extractedNodeIds.has(segment.node.id) ||
+        // The name node is used as a right value, argument, a member access, etc, we don't need to
+        // extract it.
+        segment.node.nodeType === ParseNodeType.Name
+      ) {
         return depsCode;
       }
 
@@ -86,7 +96,7 @@ export namespace CodeSegment {
       if (segment.calledClientApis) {
         segment.calledClientApis.forEach((callNode) => clientApiCalls.add(callNode));
       }
-      segment.dependencies.forEach(getCalledClientApisRecursively);
+      segment.dependentDeclarations?.forEach(getCalledClientApisRecursively);
     }
     getCalledClientApisRecursively(segment);
     return Array.from(clientApiCalls);
@@ -98,15 +108,42 @@ export namespace CodeSegment {
       if (segment.accessedCapturedProps) {
         segment.accessedCapturedProps.forEach((callNode) => capturedProperties.add(callNode));
       }
-      segment.dependencies.forEach(getAccessedCapturedPropertiesRecursively);
+      segment.dependentDeclarations?.forEach(getAccessedCapturedPropertiesRecursively);
     }
     getAccessedCapturedPropertiesRecursively(segment);
     return Array.from(capturedProperties);
   }
+
+  /**
+   * Construct a code segment for a single node using the code segments from its child expressions.
+   * @param parentInfo - The information of the parent node.
+   * @param children - The code segments of the child expressions.
+   * @returns - The code segment of the parent node.
+   */
+  export function buildWithChildren(
+    parentInfo: CodeSegment,
+    children?: CodeSegment[]
+  ): CodeSegment {
+    const result: CodeSegment = {
+      node: parentInfo.node,
+      exportableName: parentInfo.exportableName,
+      code: parentInfo.code,
+      dependentDeclarations: parentInfo.dependentDeclarations ?? [],
+      calledClientApis: parentInfo.calledClientApis ?? [],
+      accessedCapturedProps: parentInfo.accessedCapturedProps ?? [],
+    };
+
+    children?.forEach((child) => {
+      result.dependentDeclarations!.push(...(child.dependentDeclarations ?? []));
+      result.calledClientApis!.push(...(child.calledClientApis ?? []));
+      result.accessedCapturedProps!.push(...(child.accessedCapturedProps ?? []));
+    });
+    return result;
+  }
 }
 
 /**
- * Extract the code and its dependencies of one expression.
+ * Extract the code and its dependent declarations of one expression.
  */
 export class CodeExtractor {
   private readonly accessedSpecialNodeFinder: AccessedSpecialNodeFinder;
@@ -118,44 +155,46 @@ export class CodeExtractor {
   }
 
   /**
-   * Extract the code and its dependencies of one expression, such as a variable, a function call,
-   * etc.
+   * Extract the code and its dependent declarations of one expression, such as a variable, a
+   * function call, etc.
    * @param node - The expression node.
    * @param sourceFile - The source file where the expression node is located.
    */
-  public extractExpressionWithDependencies(
-    node: ExpressionNode,
-    sourceFile: SourceFile
-  ): CodeSegment {
+  public extractExpressionRecursively(node: ExpressionNode, sourceFile: SourceFile): CodeSegment {
     let segment: CodeSegment | undefined;
     switch (node.nodeType) {
       case ParseNodeType.Lambda:
-        segment = this.extractLambdaWithDependencies(node, sourceFile);
+        segment = this.extractLambdaRecursively(node, sourceFile);
         break;
       case ParseNodeType.Name:
-        segment = this.extractNameNodeWithDependencies(node, sourceFile);
+        segment = this.extractNameNodeRecursively(node, sourceFile);
         break;
       case ParseNodeType.Call:
-        segment = this.extractCallWithDependencies(node, sourceFile);
+        segment = this.extractCallRecursively(node, sourceFile);
         break;
       case ParseNodeType.MemberAccess:
-        segment = this.extractMemberAccessWithDependencies(node, sourceFile);
+        segment = this.extractMemberAccessRecursively(node, sourceFile);
         break;
       case ParseNodeType.Number:
       case ParseNodeType.StringList:
       case ParseNodeType.Constant:
-        segment = {
+        segment = CodeSegment.buildWithChildren({
           node,
           code: TextUtils.getTextOfNode(node, sourceFile)!,
-          dependencies: [],
-        };
+        });
+        break;
+      case ParseNodeType.BinaryOperation:
+        segment = this.extractBinaryOperationRecursively(node, sourceFile);
+        break;
+      case ParseNodeType.ListComprehension:
+        segment = this.extractListComprehensionRecursively(node, sourceFile);
         break;
       case ParseNodeType.Dictionary:
-        segment = this.extractDictWithDependencies(node, sourceFile);
+        segment = this.extractDictRecursively(node, sourceFile);
         break;
       case ParseNodeType.Tuple:
       case ParseNodeType.List:
-        segment = this.extractTupleOrListWithDependencies(node, sourceFile);
+        segment = this.extractTupleOrListRecursively(node, sourceFile);
         break;
       default: {
         const nodeText = TextUtils.getTextOfNode(node, sourceFile);
@@ -165,10 +204,7 @@ export class CodeExtractor {
     return segment;
   }
 
-  private extractLambdaWithDependencies(
-    lambdaNode: LambdaNode,
-    sourceFile: SourceFile
-  ): CodeSegment {
+  private extractLambdaRecursively(lambdaNode: LambdaNode, sourceFile: SourceFile): CodeSegment {
     const nodeText = TextUtils.getTextOfNode(lambdaNode, sourceFile);
 
     const lambdaScope = getScopeForNode(lambdaNode.expression);
@@ -180,20 +216,23 @@ export class CodeExtractor {
     const walker = new OutsideSymbolFinder(this.typeEvaluator, lambdaScope);
     walker.walk(lambdaNode);
 
-    // Get the dependencies of the lambda function.
-    const dependencies: CodeSegment[] = [];
+    // Extract each symbol that is used in the lambda function but defined outside of it. We will
+    // append the delarations of these symbols to the lambda function.
+    const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const dep = this.extractNameNodeWithDependencies(nameNode, sourceFile);
-      dependencies.push(dep);
+      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
+      children.push(childSegment);
     }
 
-    return {
-      node: lambdaNode,
-      code: nodeText!,
-      dependencies,
-      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(lambdaNode),
-      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(lambdaNode),
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: lambdaNode,
+        code: nodeText!,
+        calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(lambdaNode),
+        accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(lambdaNode),
+      },
+      children
+    );
   }
 
   /**
@@ -202,7 +241,7 @@ export class CodeExtractor {
    * node itself, and return the code segment for that declaration. Therefore, the function's return
    * value is the code segment of the declaration associated with the name node.
    */
-  private extractNameNodeWithDependencies(nameNode: NameNode, sourceFile: SourceFile): CodeSegment {
+  private extractNameNodeRecursively(nameNode: NameNode, sourceFile: SourceFile): CodeSegment {
     const lookUpResult = this.typeEvaluator.lookUpSymbolRecursive(nameNode, nameNode.value, false);
     if (!lookUpResult) {
       throw new Error(`No symbol found for node '${nameNode.value}'.`);
@@ -221,42 +260,50 @@ export class CodeExtractor {
     }
     const declaration = declarations[0];
 
+    let declSegment: CodeSegment;
     switch (declaration.type) {
       case DeclarationType.Variable: {
         switch (declaration.node.nodeType) {
           case ParseNodeType.StringList: {
-            return {
+            declSegment = CodeSegment.buildWithChildren({
               node: declaration.node,
               code: TextUtils.getTextOfNode(declaration.node, sourceFile)!,
-              dependencies: [],
-            };
+            });
+            break;
           }
           case ParseNodeType.Name: {
             // The name node is a variable.
-            return this.extractVariableWithDependencies(declaration.node, sourceFile);
+            declSegment = this.extractVariableRecursively(declaration.node, sourceFile);
+            break;
           }
           default:
             throw new Error(`Unable to reach here.`);
         }
+        break;
       }
 
       case DeclarationType.Function: {
-        return this.extractFunctionWithDependencies(declaration.node, sourceFile);
+        declSegment = this.extractFunctionRecursively(declaration.node, sourceFile);
+        break;
       }
 
       case DeclarationType.Class: {
-        return this.extractClassWithDependencies(declaration.node, sourceFile);
+        declSegment = this.extractClassRecursively(declaration.node, sourceFile);
+        break;
       }
 
       case DeclarationType.Alias: {
         switch (declaration.node.nodeType) {
           case ParseNodeType.ImportFromAs:
-            return this.extractImportFromAsWithDependencies(declaration.node);
+            declSegment = this.extractImportFromAs(declaration.node);
+            break;
           case ParseNodeType.ImportAs:
-            return this.extractImportAsWithDependencies(declaration.node);
+            declSegment = this.extractImportAs(declaration.node);
+            break;
           default:
             throw new Error(`Unsupported node type: ${declaration.node.nodeType}`);
         }
+        break;
       }
 
       default:
@@ -268,48 +315,44 @@ export class CodeExtractor {
         }
         throw new Error(`Unsupported declaration type: ${declaration.type}`);
     }
-    throw new Error("Unable to reach here.");
+
+    return CodeSegment.buildWithChildren({
+      node: nameNode,
+      exportableName: nameNode.value,
+      code: nameNode.value,
+      dependentDeclarations: [declSegment],
+    });
   }
 
-  private extractVariableWithDependencies(node: NameNode, sourceFile: SourceFile): CodeSegment {
+  private extractVariableRecursively(node: NameNode, sourceFile: SourceFile): CodeSegment {
+    if (node.parent?.nodeType === ParseNodeType.ListComprehensionFor) {
+      // This variable is defined in a list comprehension for loop, we don't need to extract it.
+      return CodeSegment.buildWithChildren({
+        node: node,
+        code: node.value,
+      });
+    }
+
     if (node.parent?.nodeType !== ParseNodeType.Assignment) {
       throw new Error(
         `We only support the simplest assignment statement, the tuple assignment or other statements are not supported yet.`
       );
     }
 
-    const dependencies: CodeSegment[] = [];
-    let rightExpressionText = "";
-
     const rightExpression = node.parent.rightExpression;
-    const segment = this.extractExpressionWithDependencies(rightExpression, sourceFile);
-    if (rightExpression.nodeType === ParseNodeType.Name) {
-      // If the expression on the right is a named node, then the code segment includes the
-      // declaration of this named node. We should add this declaration segment to the dependencies
-      // and use the value of the named node as the text for the right expression.
-      dependencies.push(segment);
-      rightExpressionText = rightExpression.value;
-    } else {
-      // Otherwise, the code segment includes the expression itself, and we should add the
-      // dependencies of the expression to the current segment's dependencies. And use the code of
-      // the expression as the text for the right expression.
-      dependencies.push(...segment.dependencies);
-      rightExpressionText = segment.code;
-    }
+    const segment = this.extractExpressionRecursively(rightExpression, sourceFile);
 
-    const statement = `${node.value} = ${rightExpressionText}`;
-    return {
-      node: node,
-      exportableName: node.value,
-      code: statement,
-      dependencies: dependencies,
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: node.parent,
+        exportableName: node.value,
+        code: TextUtils.getTextOfNode(node.parent, sourceFile)!,
+      },
+      [segment]
+    );
   }
 
-  private extractFunctionWithDependencies(
-    funcNode: FunctionNode,
-    sourceFile: SourceFile
-  ): CodeSegment {
+  private extractFunctionRecursively(funcNode: FunctionNode, sourceFile: SourceFile): CodeSegment {
     const functionScope = getScopeForNode(funcNode.suite);
     if (!functionScope) {
       throw new Error(`No scope found for this function '${funcNode.name.value}'.`);
@@ -318,23 +361,25 @@ export class CodeExtractor {
     const walker = new OutsideSymbolFinder(this.typeEvaluator, functionScope, funcNode.name);
     walker.walk(funcNode);
 
-    const dependencies: CodeSegment[] = [];
+    const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const dep = this.extractNameNodeWithDependencies(nameNode, sourceFile);
-      dependencies.push(dep);
+      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
+      children.push(childSegment);
     }
 
-    return {
-      node: funcNode,
-      exportableName: funcNode.name.value,
-      code: TextUtils.getTextOfNode(funcNode, sourceFile)!,
-      dependencies,
-      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(funcNode),
-      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(funcNode),
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: funcNode,
+        exportableName: funcNode.name.value,
+        code: TextUtils.getTextOfNode(funcNode, sourceFile)!,
+        calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(funcNode),
+        accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(funcNode),
+      },
+      children
+    );
   }
 
-  private extractCallWithDependencies(node: CallNode, sourceFile: SourceFile): CodeSegment {
+  private extractCallRecursively(node: CallNode, sourceFile: SourceFile): CodeSegment {
     // If the call node can be found in the special node map, it means the call node is for
     // constructing a resource object.
     const isConstructedNode = !!this.specialNodeMap.getNodeById(
@@ -342,7 +387,7 @@ export class CodeExtractor {
       TypeConsts.IRESOURCE_FULL_NAME
     );
 
-    const dependencies: CodeSegment[] = [];
+    const children: CodeSegment[] = [];
     // The code for building each argument of the construct statement.
     const argumentCodes: string[] = [];
     node.arguments.forEach((arg) => {
@@ -350,26 +395,14 @@ export class CodeExtractor {
       // function type argument from it. The function type argument will be sent to the cloud and
       // accessed via RPC.
       const extractFunctionArg = !isConstructedNode;
-      const segment = this.extractArgumentWithDependencies(arg, sourceFile, extractFunctionArg);
-      dependencies.push(...segment.dependencies);
+      const segment = this.extractArgumentRecursively(arg, sourceFile, extractFunctionArg);
+      children.push(segment);
       argumentCodes.push(segment.code);
     });
 
-    let methodCode = "";
-    const segment = this.extractExpressionWithDependencies(node.leftExpression, sourceFile);
-    if (node.leftExpression.nodeType === ParseNodeType.Name) {
-      // If this left expression is a name node, then the code segment encapsulates the declaration
-      // corresponding to this node.
-      dependencies.push(segment);
-      methodCode = node.leftExpression.value;
-    } else {
-      // If the left expression if not a name node, it may be a member access node, the segment
-      // encapsulates the caller expression itself. So, we add the dependencies of the caller's
-      // expression to the current segment's dependencies. And use the code of the caller's
-      // expression as the text for the left expression.
-      dependencies.push(...segment.dependencies);
-      methodCode = segment.code;
-    }
+    const methodSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
+    const methodCode = methodSegment.code;
+    children.push(methodSegment);
 
     // If the call node is for creating a resource object, we should add the `.build_client` suffix
     // to the method (the constructor for the resource type). This is because this code will be sent
@@ -378,16 +411,24 @@ export class CodeExtractor {
     // based on the platform type.
     const middle = isConstructedNode ? ".build_client" : "";
     const statement = `${methodCode}${middle}(${argumentCodes.join(", ")})`;
-    return {
-      node: node,
-      code: statement,
-      dependencies,
-      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(node),
-      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(node),
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: statement,
+        // If the call node is used to build a resource object, we don't have to extract them, as
+        // we'll communicate with this resource object through RPC.
+        calledClientApis: !isConstructedNode
+          ? this.accessedSpecialNodeFinder.findClientApiCalls(node)
+          : [],
+        accessedCapturedProps: !isConstructedNode
+          ? this.accessedSpecialNodeFinder.findCapturedProperties(node)
+          : [],
+      },
+      children
+    );
   }
 
-  private extractArgumentWithDependencies(
+  private extractArgumentRecursively(
     arg: ArgumentNode,
     sourceFile: SourceFile,
     extractFunctionArg: boolean
@@ -403,41 +444,29 @@ export class CodeExtractor {
       if (!extractFunctionArg) {
         // If we don't need to extract the function argument, we just use a lambda function as a
         // placeholder.
-        return {
+        return CodeSegment.buildWithChildren({
           node: arg,
           code: `${codePrefix}lambda _: _`,
-          dependencies: [],
-        };
+        });
       }
     }
 
-    const segment = this.extractExpressionWithDependencies(arg.valueExpression, sourceFile);
-    if (arg.valueExpression.nodeType === ParseNodeType.Name) {
-      // If the expression is a name node, then the code segment encapsulates the declaration of
-      // this node. We should add this declaration segment to the dependencies. And use the value of
-      // the named node as the text for the argument expression.
-      return {
+    const valueSegment = this.extractExpressionRecursively(arg.valueExpression, sourceFile);
+    return CodeSegment.buildWithChildren(
+      {
         node: arg,
-        code: `${codePrefix}${arg.valueExpression.value}`,
-        dependencies: [segment],
-      };
-    } else {
-      // Otherwise, we use the code of the expression as the text for the argument expression, so we
-      // just directly return the segment of the expression.
-      return {
-        node: arg,
-        code: `${codePrefix}${segment.code}`,
-        dependencies: segment.dependencies,
-      };
-    }
+        code: `${codePrefix}${valueSegment.code}`,
+      },
+      [valueSegment]
+    );
   }
 
   /**
-   * Extract the class definition and its dependencies.
+   * Extract the class definition and its dependent declarations.
    * @param classNode - The class node.
    * @param sourceFile - The source file where the class node is located.
    */
-  private extractClassWithDependencies(classNode: ClassNode, sourceFile: SourceFile): CodeSegment {
+  private extractClassRecursively(classNode: ClassNode, sourceFile: SourceFile): CodeSegment {
     const nodeText = TextUtils.getTextOfNode(classNode, sourceFile);
 
     const classScope = getScopeForNode(classNode.suite);
@@ -465,20 +494,22 @@ export class CodeExtractor {
     const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name, members);
     walker.walk(classNode);
 
-    const dependencies: CodeSegment[] = [];
+    const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const dep = this.extractNameNodeWithDependencies(nameNode, sourceFile);
-      dependencies.push(dep);
+      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
+      children.push(childSegment);
     }
 
-    return {
-      node: classNode,
-      exportableName: classNode.name.value,
-      code: nodeText!,
-      dependencies,
-      calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(classNode),
-      accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(classNode),
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: classNode,
+        exportableName: classNode.name.value,
+        code: nodeText!,
+        calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(classNode),
+        accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(classNode),
+      },
+      children
+    );
   }
 
   /**
@@ -488,92 +519,133 @@ export class CodeExtractor {
    * @param node - The member access node.
    * @param sourceFile - The source file where the member access node is located.
    */
-  private extractMemberAccessWithDependencies(
+  private extractMemberAccessRecursively(
     node: MemberAccessNode,
     sourceFile: SourceFile
   ): CodeSegment {
-    const callerSegment = this.extractExpressionWithDependencies(node.leftExpression, sourceFile);
+    const callerSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
+    const code = `${callerSegment.code}.${node.memberName.value}`;
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: code,
+      },
+      [callerSegment]
+    );
+  }
 
-    let code = "";
-    const dependencies: CodeSegment[] = [];
-    if (node.leftExpression.nodeType === ParseNodeType.Name) {
-      // Like `obj.method`, `module.method`, etc.
-      dependencies.push(callerSegment);
-      code = `${node.leftExpression.value}.${node.memberName.value}`;
-    } else {
-      // Like `func().method`, `func().attr.method`, etc.
-      dependencies.push(...callerSegment.dependencies);
-      code = `${callerSegment.code}.${node.memberName.value}`;
+  private extractBinaryOperationRecursively(
+    node: BinaryOperationNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
+    const leftSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
+    const rightSegment = this.extractExpressionRecursively(node.rightExpression, sourceFile);
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: TextUtils.getTextOfNode(node, sourceFile)!,
+      },
+      [leftSegment, rightSegment]
+    );
+  }
+
+  private extractListComprehensionRecursively(
+    node: ListComprehensionNode,
+    sourceFile: SourceFile
+  ): CodeSegment {
+    if (!isExpressionNode(node.expression)) {
+      throw new Error(`Unsupported node type ${node.expression.nodeType} in list comprehension.`);
     }
 
-    return {
-      node: node,
-      code: code,
-      dependencies: dependencies,
-    };
+    const children: CodeSegment[] = [];
+
+    const segment = this.extractExpressionRecursively(node.expression, sourceFile);
+    children.push(segment);
+
+    node.forIfNodes.forEach((forIfNode: ListComprehensionForIfNode) => {
+      switch (forIfNode.nodeType) {
+        case ParseNodeType.ListComprehensionFor: {
+          const forSegment = this.extractExpressionRecursively(
+            forIfNode.iterableExpression,
+            sourceFile
+          );
+          children.push(forSegment);
+
+          const targetSegment = this.extractExpressionRecursively(
+            forIfNode.targetExpression,
+            sourceFile
+          );
+          children.push(targetSegment);
+          break;
+        }
+        case ParseNodeType.ListComprehensionIf: {
+          const ifSegment = this.extractExpressionRecursively(forIfNode.testExpression, sourceFile);
+          children.push(ifSegment);
+          break;
+        }
+        default:
+          throw new Error(`Unable to reach here.`);
+      }
+    });
+
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: TextUtils.getTextOfNode(node, sourceFile)!,
+      },
+      children
+    );
   }
 
   /**
-   * Iterate through the dictionary node and extract the dependencies of each key-value pair.
+   * Iterate through the dictionary node and extract the dependent declarations of each key-value
+   * pair.
    */
-  private extractDictWithDependencies(node: DictionaryNode, sourceFile: SourceFile): CodeSegment {
-    const dependencies: CodeSegment[] = [];
+  private extractDictRecursively(node: DictionaryNode, sourceFile: SourceFile): CodeSegment {
+    const children: CodeSegment[] = [];
     node.entries.forEach((entry) => {
       if (entry.nodeType !== ParseNodeType.DictionaryKeyEntry) {
         throw new Error(`Unsupported dictionary entry type: ${entry.nodeType}`);
       }
 
-      const keySegment = this.extractExpressionWithDependencies(entry.keyExpression, sourceFile);
-      if (entry.keyExpression.nodeType === ParseNodeType.Name) {
-        dependencies.push(keySegment);
-      } else {
-        dependencies.push(...keySegment.dependencies);
-      }
+      const keySegment = this.extractExpressionRecursively(entry.keyExpression, sourceFile);
+      children.push(keySegment);
 
-      const valueSegment = this.extractExpressionWithDependencies(
-        entry.valueExpression,
-        sourceFile
-      );
-      if (entry.valueExpression.nodeType === ParseNodeType.Name) {
-        dependencies.push(valueSegment);
-      } else {
-        dependencies.push(...valueSegment.dependencies);
-      }
+      const valueSegment = this.extractExpressionRecursively(entry.valueExpression, sourceFile);
+      children.push(valueSegment);
     });
 
-    return {
-      node: node,
-      code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the dictionary node.
-      dependencies: dependencies,
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the dictionary node.
+      },
+      children
+    );
   }
 
   /**
-   * Iterate through the tuple or list node and extract the dependencies of each item. If the item
-   * is a name node, we append the extracted result to the dependencies. Otherwise, we append the
-   * item's dependencies to the dependencies.
+   * Iterate through the tuple or list node and extract the dependent declarations of each item.
    */
-  private extractTupleOrListWithDependencies(
+  private extractTupleOrListRecursively(
     node: TupleNode | ListNode,
     sourceFile: SourceFile
   ): CodeSegment {
     const items = node.nodeType === ParseNodeType.Tuple ? node.expressions : node.entries;
 
-    const dependencies: CodeSegment[] = [];
+    const children: CodeSegment[] = [];
     items.forEach((item) => {
-      const segment = this.extractExpressionWithDependencies(item, sourceFile);
-      if (item.nodeType === ParseNodeType.Name) {
-        dependencies.push(segment);
-      } else {
-        dependencies.push(...segment.dependencies);
-      }
+      const segment = this.extractExpressionRecursively(item, sourceFile);
+      children.push(segment);
     });
 
-    return {
-      node: node,
-      code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the tuple or list node.
-      dependencies: dependencies,
-    };
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: TextUtils.getTextOfNode(node, sourceFile)!, // The text of the tuple or list node.
+      },
+      children
+    );
   }
 
   /**
@@ -582,7 +654,7 @@ export class CodeExtractor {
    * @param node
    * @returns
    */
-  private extractImportFromAsWithDependencies(node: ImportFromAsNode): CodeSegment {
+  private extractImportFromAs(node: ImportFromAsNode): CodeSegment {
     assert(node.parent?.nodeType === ParseNodeType.ImportFrom);
     const moduleNameNode = node.parent.module;
     const moduleName = AnalyzerNodeInfo.getImportInfo(moduleNameNode)?.importName;
@@ -591,29 +663,27 @@ export class CodeExtractor {
     const name = node.name.value;
     const alias = node.alias?.value;
     const statement = `from ${moduleName} import ${name}` + (alias ? ` as ${alias}` : "");
-    return {
+    return CodeSegment.buildWithChildren({
       node: node,
       code: statement,
-      dependencies: [],
-    };
+    });
   }
 
   /**
    * Extract the import statement, such as `import module`, `import module as alias`.
    * @param node - The import-as node.
    */
-  private extractImportAsWithDependencies(node: ImportAsNode): CodeSegment {
+  private extractImportAs(node: ImportAsNode): CodeSegment {
     const moduleNameNode = node.module;
     const moduleName = AnalyzerNodeInfo.getImportInfo(moduleNameNode)?.importName;
     assert(moduleName);
 
     const alias = node.alias?.value;
     const statement = `import ${moduleName}` + (alias ? ` as ${alias}` : "");
-    return {
+    return CodeSegment.buildWithChildren({
       node: node,
       code: statement,
-      dependencies: [],
-    };
+    });
   }
 }
 

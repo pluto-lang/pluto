@@ -1,8 +1,8 @@
 import * as path from "path";
 import { Program } from "pyright-internal/dist/analyzer/program";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
-import { ParseNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
+import { ExpressionNode, ParseNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
 import * as TestUtils from "./test-utils";
 import * as TypeUtils from "../type-utils";
 import * as TypeConsts from "../type-consts";
@@ -29,14 +29,163 @@ test("should correctly extract the code segment for the most situations", () => 
         TypeUtils.isLambdaNode(arg.valueExpression) ||
         TypeUtils.isFunctionVar(arg.valueExpression, program.evaluator!)
       ) {
-        const segment = extractor.extractExpressionWithDependencies(
-          arg.valueExpression,
-          sourceFile
-        );
+        const segment = extractor.extractExpressionRecursively(arg.valueExpression, sourceFile);
         CodeSegment.toString(segment);
       }
     });
   }
+});
+
+test("should correctly extract the code segment for the list comprehension", () => {
+  const code = `
+number_list = [x for x in range(10)]
+nested_number_list = [[x for x in range(10)] for _ in range(10)]
+multiple_for_list = [x for x in range(10) for _ in range(10)]
+multiple_for_list_with_condition = [
+    x for x in range(10) if x % 2 == 0 for _ in range(10)
+]
+
+def foo():
+    number_list
+    nested_number_list
+    multiple_for_list
+    multiple_for_list_with_condition
+
+foo()
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return (
+      node.nodeType === ParseNodeType.Call &&
+      node.leftExpression.nodeType === ParseNodeType.Name &&
+      node.leftExpression.value === "foo"
+    );
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
+
+  const text = CodeSegment.toString(segment);
+  code.split("\n").forEach((line) => {
+    expect(text).toContain(line.trim());
+  });
+
+  clean();
+});
+
+test("should correctly extract the code segment for the binary operation", () => {
+  const code = `
+def format_to_openai_tool_messages(intermediate_steps):
+    pass
+
+
+prompt = "What is the sum of 1 and 2?"
+
+llm_with_tools = None
+
+OpenAIToolsAgentOutputParser = None
+
+binary_op = 1 + 2
+nested_binary_op = (1 + 2) * 3
+multiple_binary_op = 1 + 2 * 3
+
+# Copied from the langchain example.
+complex_binary_op = (
+    {
+        "input": lambda x: x["input"],
+        "agent_scratchpad": lambda x: format_to_openai_tool_messages(
+            x["intermediate_steps"]
+        ),
+        "chat_history": lambda x: x["chat_history"],
+    }
+    | prompt
+    # | prompt_trimmer # See comment above.
+    | llm_with_tools
+    | OpenAIToolsAgentOutputParser()
+)
+
+
+def foo():
+    binary_op
+    nested_binary_op
+    multiple_binary_op
+    complex_binary_op
+
+
+foo()  
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return (
+      node.nodeType === ParseNodeType.Call &&
+      node.leftExpression.nodeType === ParseNodeType.Name &&
+      node.leftExpression.value === "foo"
+    );
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
+
+  const text = CodeSegment.toString(segment);
+  code.split("\n").forEach((line) => {
+    if (line.trim().startsWith("#")) {
+      return;
+    }
+    expect(text).toContain(line.trim());
+  });
+
+  clean();
+});
+
+test("should correctly extract the dependent accessed properties when the access method is located on the right side of the assignment statement", () => {
+  const code = `
+from pluto_client import Router
+
+router = Router("router")
+
+tuple_var = (router.url(),) # The method for accessing the url is located in a tuple.
+
+def func(*args, **kwargs):
+    pass
+
+func_result = func(router.url()) # The method for accessing the url is located in a function argument.
+
+def foo(*args, **kwargs):
+    func_result
+    tuple_var
+
+foo()
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return (
+      node.nodeType === ParseNodeType.Call &&
+      node.leftExpression.nodeType === ParseNodeType.Name &&
+      node.leftExpression.value === "foo"
+    );
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
+
+  expect(CodeSegment.getAccessedCapturedProperties(segment)).toHaveLength(2);
+
+  clean();
 });
 
 test("should throw an error when the assignment statement is not a simple assignment", () => {
@@ -52,20 +201,20 @@ foo(a)
   const { program, sourceFile, clean } = TestUtils.parseCode(code);
   const { extractor } = createTools(program, sourceFile);
 
-  const walker = new NodeFetcher([ParseNodeType.Call]);
-  walker.walk(sourceFile.getParseResults()!.parseTree!);
-
-  walker.nodes.forEach((node) => {
-    if (
+  const walker = new NodeFetcher((node) => {
+    return (
       node.nodeType === ParseNodeType.Call &&
       node.leftExpression.nodeType === ParseNodeType.Name &&
       node.leftExpression.value === "foo"
-    ) {
-      expect(() => extractor.extractExpressionWithDependencies(node, sourceFile)).toThrow(
-        /We only support the simplest assignment statement/
-      );
-    }
+    );
   });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  expect(() => extractor.extractExpressionRecursively(callNode, sourceFile)).toThrow(
+    /We only support the simplest assignment statement/
+  );
 
   clean();
 });
@@ -81,12 +230,12 @@ function createTools(program: Program, sourceFile: SourceFile) {
 class NodeFetcher extends ParseTreeWalker {
   public readonly nodes: ParseNode[] = [];
 
-  constructor(private readonly expectedNodeTypes: ParseNodeType[]) {
+  constructor(private readonly validator: (node: ParseNode) => boolean) {
     super();
   }
 
   visit(node: ParseNode): boolean {
-    if (this.expectedNodeTypes.includes(node.nodeType)) {
+    if (this.validator(node)) {
       this.nodes.push(node);
     }
     return true;

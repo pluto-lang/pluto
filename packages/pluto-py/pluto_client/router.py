@@ -44,6 +44,9 @@ class IRouterInfraApi(resource.IResourceInfraApi):
     def delete(self, path: str, fn: RequestHandler):
         raise NotImplementedError
 
+    def all(self, path: str, fn: Callable, raw: bool = False):
+        raise NotImplementedError
+
 
 class IRouterCapturedProps(resource.IResourceCapturedProps):
     def url(self) -> str:

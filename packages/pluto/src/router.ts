@@ -9,6 +9,7 @@ import {
   utils,
 } from "@plutolang/base";
 import { shared } from "./clients";
+import { AnyFunction } from "./function";
 
 export interface HttpRequest {
   path: string;
@@ -46,6 +47,7 @@ export interface IRouterInfraApi extends IResourceInfraApi {
   post(path: string, fn: RequestHandler): void;
   put(path: string, fn: RequestHandler): void;
   delete(path: string, fn: RequestHandler): void;
+  all(path: string, fn: AnyFunction, raw?: boolean): void;
 }
 
 /**
@@ -98,3 +100,40 @@ export class Router implements IResource {
 }
 
 export interface Router extends IResource, IRouterClient, IRouterInfra {}
+
+export interface UrlPart {
+  readonly content: string;
+  readonly isParam?: boolean;
+  readonly isWildcard?: boolean;
+}
+
+/**
+ * Parse a URL into its parts. The parts are separated by slashes, and can be either static parts,
+ * parameters, or wildcards. The rules are:
+ * 1. Static parts are just strings, like "foo" or "bar".
+ * 2. Parameters are strings that start with a colon, like ":id".
+ * 3. Wildcards are strings that are just "*". There can only be one wildcard, and it must be at the
+ *    end of the URL.
+ * @param url - The URL to parse.
+ * @returns - An array of URL parts.
+ */
+export function parseUrl(url: string): UrlPart[] {
+  if (!url.startsWith("/")) {
+    throw new Error("URL must start with a slash.");
+  }
+  if (url.split("*").length > 2 || (url.split("*").length === 2 && !url.endsWith("*"))) {
+    // There can only be one wildcard, and it must be at the end of the URL.
+    throw new Error("URL can only contain one wildcard, and it must be at the end of the URL.");
+  }
+
+  const parts = url.split("/").filter((part) => part !== "");
+  return parts.map((part) => {
+    if (part.startsWith(":")) {
+      return { content: part.slice(1), isParam: true };
+    }
+    if (part === "*") {
+      return { content: part, isWildcard: true };
+    }
+    return { content: part };
+  });
+}

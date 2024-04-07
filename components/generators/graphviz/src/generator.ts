@@ -28,7 +28,7 @@ function archToGraphviz(archRef: arch.Architecture): string {
   let dotSource = "strict digraph {\n";
   for (const resName in archRef.resources) {
     const res = archRef.resources[resName];
-    dotSource += `  ${res.name} [label="<<${res.type}>>\\n${res.name}"];\n`;
+    dotSource += `  ${res.id} [label="<<${res.type}>>\\n${res.name}"];\n`;
   }
   for (const relat of archRef.relationships) {
     let label =
