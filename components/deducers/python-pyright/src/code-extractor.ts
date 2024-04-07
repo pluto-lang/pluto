@@ -51,8 +51,8 @@ export interface CodeSegment {
    */
   readonly code: string;
   /**
-   * The `dependencies` includes the variables, functions, classes, etc., that are accessed in the
-   * current node.
+   * The `dependentDeclarations` includes the variables, functions, classes, etc., that are accessed
+   * in the current node.
    */
   readonly dependentDeclarations?: CodeSegment[];
   /**
@@ -143,7 +143,7 @@ export namespace CodeSegment {
 }
 
 /**
- * Extract the code and its dependencies of one expression.
+ * Extract the code and its dependent declarations of one expression.
  */
 export class CodeExtractor {
   private readonly accessedSpecialNodeFinder: AccessedSpecialNodeFinder;
@@ -155,8 +155,8 @@ export class CodeExtractor {
   }
 
   /**
-   * Extract the code and its dependencies of one expression, such as a variable, a function call,
-   * etc.
+   * Extract the code and its dependent declarations of one expression, such as a variable, a
+   * function call, etc.
    * @param node - The expression node.
    * @param sourceFile - The source file where the expression node is located.
    */
@@ -216,7 +216,8 @@ export class CodeExtractor {
     const walker = new OutsideSymbolFinder(this.typeEvaluator, lambdaScope);
     walker.walk(lambdaNode);
 
-    // Get the dependencies of the lambda function.
+    // Extract each symbol that is used in the lambda function but defined outside of it. We will
+    // append the delarations of these symbols to the lambda function.
     const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
       const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
@@ -461,7 +462,7 @@ export class CodeExtractor {
   }
 
   /**
-   * Extract the class definition and its dependencies.
+   * Extract the class definition and its dependent declarations.
    * @param classNode - The class node.
    * @param sourceFile - The source file where the class node is located.
    */
@@ -597,7 +598,8 @@ export class CodeExtractor {
   }
 
   /**
-   * Iterate through the dictionary node and extract the dependencies of each key-value pair.
+   * Iterate through the dictionary node and extract the dependent declarations of each key-value
+   * pair.
    */
   private extractDictRecursively(node: DictionaryNode, sourceFile: SourceFile): CodeSegment {
     const children: CodeSegment[] = [];
@@ -623,9 +625,7 @@ export class CodeExtractor {
   }
 
   /**
-   * Iterate through the tuple or list node and extract the dependencies of each item. If the item
-   * is a name node, we append the extracted result to the dependencies. Otherwise, we append the
-   * item's dependencies to the dependencies.
+   * Iterate through the tuple or list node and extract the dependent declarations of each item.
    */
   private extractTupleOrListRecursively(
     node: TupleNode | ListNode,

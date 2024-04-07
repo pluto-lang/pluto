@@ -147,6 +147,47 @@ foo()
   clean();
 });
 
+test("should correctly extract the dependent accessed properties when the access method is located on the right side of the assignment statement", () => {
+  const code = `
+from pluto_client import Router
+
+router = Router("router")
+
+tuple_var = (router.url(),) # The method for accessing the url is located in a tuple.
+
+def func(*args, **kwargs):
+    pass
+
+func_result = func(router.url()) # The method for accessing the url is located in a function argument.
+
+def foo(*args, **kwargs):
+    func_result
+    tuple_var
+
+foo()
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return (
+      node.nodeType === ParseNodeType.Call &&
+      node.leftExpression.nodeType === ParseNodeType.Name &&
+      node.leftExpression.value === "foo"
+    );
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
+
+  expect(CodeSegment.getAccessedCapturedProperties(segment)).toHaveLength(2);
+
+  clean();
+});
+
 test("should throw an error when the assignment statement is not a simple assignment", () => {
   const code = `
 a, b = 1, 2
