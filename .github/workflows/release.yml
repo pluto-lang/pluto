@@ -79,6 +79,19 @@ jobs:
           # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
           channel-id: "C061XR86079"
           # For posting a simple plain text message
-          slack-message: "A new version of ${GITHUB_REPOSITORY} was published: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+          slack-message: >
+            A new version of ${GITHUB_REPOSITORY} was published: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}. 
+            Published packages: ${{ steps.changesets.outputs.publishedPackages }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Send an bump pluto version event to codesandbox repository
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          curl -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/pluto-lang/codesandbox/dispatches" \
+              -d '{ "event_type": "trigger-bump-pluto", "client_payload": { "packages": '${{ steps.changesets.outputs.publishedPackages }}' } }'
+        env:
+          GITHUB_TOKEN: ${{ secrets.PLUTO_CODESANDBOX_WORKFLOW_GITHUB_TOKEN }}

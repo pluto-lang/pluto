@@ -134,6 +134,10 @@ export class PulumiAdapter extends core.Adapter {
 
       return { outputs: result.outputs["default"]?.value ?? {} };
     } catch (e) {
+      if (process.env.DEBUG) {
+        console.error(e);
+      }
+
       if (e instanceof CommandError) {
         throw extractError(e);
       } else {
