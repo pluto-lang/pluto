@@ -9,7 +9,7 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "release": "RELEASE=1 turbo run build lint test && changeset version && changeset publish --no-git-tag",
+    "release": "RELEASE=1 turbo run build lint test && changeset version && changeset publish",
     "prepare": "husky install"
   },
   "devDependencies": {

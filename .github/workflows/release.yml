@@ -79,6 +79,8 @@ jobs:
           # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
           channel-id: "C061XR86079"
           # For posting a simple plain text message
-          slack-message: "A new version of ${GITHUB_REPOSITORY} was published: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+          slack-message: >
+            A new version of ${GITHUB_REPOSITORY} was published: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}. 
+            Published packages: ${{ steps.changesets.outputs.publishedPackages }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
