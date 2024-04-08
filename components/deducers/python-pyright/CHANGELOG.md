@@ -1,5 +1,11 @@
 # @plutolang/pyright-deducer
 
+## 0.1.5
+
+### Patch Changes
+
+- f77412f: fix(deducer): refactor code extraction to handle resource object creation
+
 ## 0.1.4
 
 ### Patch Changes
