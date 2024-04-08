@@ -1,5 +1,11 @@
 # @plutolang/graphviz-generator
 
+## 0.4.3
+
+### Patch Changes
+
+- f351c5f: fix(generator): update to use resource id in graphviz generator, instead of resource name
+
 ## 0.4.2
 
 ### Patch Changes
