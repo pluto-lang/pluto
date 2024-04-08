@@ -1,5 +1,11 @@
 # @plutolang/pluto-infra
 
+## 0.4.5
+
+### Patch Changes
+
+- ea28a84: feat(sdk): get aws region from pulumi stack configuration
+
 ## 0.4.4
 
 ### Patch Changes

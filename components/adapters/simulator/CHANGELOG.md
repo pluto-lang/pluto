@@ -1,5 +1,12 @@
 # @plutolang/simulator-adapter
 
+## 0.3.9
+
+### Patch Changes
+
+- Updated dependencies [ea28a84]
+  - @plutolang/pluto-infra@0.4.5
+
 ## 0.3.8
 
 ### Patch Changes
