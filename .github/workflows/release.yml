@@ -64,6 +64,11 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Get Changeset Output
+        run: |
+          echo "Published Status is ${{ steps.changesets.outputs.published }}"
+          echo "Published Packages are ${{ steps.changesets.outputs.publishedPackages }}"
+
       - name: Send a Slack notification if a publish happens
         if: steps.changesets.outputs.published == 'true'
         id: slack

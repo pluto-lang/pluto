@@ -342,11 +342,15 @@ export class CodeExtractor {
     const rightExpression = node.parent.rightExpression;
     const segment = this.extractExpressionRecursively(rightExpression, sourceFile);
 
+    // We cannot use the source code of the assignment statement directly, as it may contain the
+    // creation of a resource object, which the constructor call should be replaced with the
+    // `build_client` method.
+    const statement = `${node.value} = ${segment.code}`;
     return CodeSegment.buildWithChildren(
       {
         node: node.parent,
         exportableName: node.value,
-        code: TextUtils.getTextOfNode(node.parent, sourceFile)!,
+        code: statement,
       },
       [segment]
     );

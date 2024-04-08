@@ -219,6 +219,40 @@ foo(a)
   clean();
 });
 
+test("should correctly extract the code segment for the resource object creation", () => {
+  const code = `
+from pluto_client import Queue
+
+queue = Queue("queue")
+
+def foo(*args, **kwargs):
+    queue.push("message")
+
+foo()
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return (
+      node.nodeType === ParseNodeType.Call &&
+      node.leftExpression.nodeType === ParseNodeType.Name &&
+      node.leftExpression.value === "foo"
+    );
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
+
+  expect(CodeSegment.getCalledClientApis(segment)).toHaveLength(1);
+  expect(CodeSegment.toString(segment)).toContain("Queue.build_client");
+
+  clean();
+});
+
 function createTools(program: Program, sourceFile: SourceFile) {
   const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
