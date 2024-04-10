@@ -34,6 +34,23 @@ async function main() {
     .action(cmd.create);
 
   program
+    .command("init")
+    .description("Initialize a Pluto project in the current directory")
+    .option("-n, --name <name>", "Project name")
+    .option("-s, --stack <stack>", "Stack name")
+    .addOption(
+      new Option("-l, --language <language>", "Programming language the project uses").choices([
+        "python",
+        "typescript",
+      ])
+    )
+    .addOption(
+      new Option("-p, --platform <platform>", "Target platform").choices(["AWS", "K8s", "AliCloud"])
+    )
+    .option("-e, --provision <provisioning engine>", "provisioning engine")
+    .action(cmd.init);
+
+  program
     .command("test")
     .description(
       "Execute tests in the simulator environment or on the platform specified in the stack"
