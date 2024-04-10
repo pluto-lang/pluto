@@ -11,6 +11,12 @@
   "documentation": {
     "title": "Documentation"
   },
+  "cookbook": {
+    "title": "Cookbook",
+    "theme": {
+      "typesetting": "article"
+    }
+  },
   "blogs": {
     "title": "Blog",
     "theme": {
