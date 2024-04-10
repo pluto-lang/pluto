@@ -17,6 +17,10 @@ jobs:
       pull-requests: write # to create pull request (changesets/action)
     name: Release
     runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      publishedPackages: ${{ steps.changesets.outputs.publishedPackages }}
+      cliPublished: ${{ steps.check-cli-publish.outputs.published }}
     steps:
       - name: Install Graphviz
         run: sudo apt-get install -y graphviz
@@ -64,11 +68,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Get Changeset Output
-        run: |
-          echo "Published Status is ${{ steps.changesets.outputs.published }}"
-          echo "Published Packages are ${{ steps.changesets.outputs.publishedPackages }}"
-
       - name: Send a Slack notification if a publish happens
         if: steps.changesets.outputs.published == 'true'
         id: slack
@@ -85,13 +84,64 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
+      - name: Check if @plutolang/cli is published
+        id: check-cli-publish
+        run: |
+          if [[ "${RELEASE_PACKAGES}" == *"@plutolang/cli"* ]]; then
+            echo "@plutolang/cli is published!"
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "@plutolang/cli is not published!"
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          RELEASE_PACKAGES: ${{ toJSON(release.outputs.publishedPackages) }}
+
+  build-docker-images:
+    name: Build Docker Images
+    needs: release
+    if: release.outputs.cliPublished == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: plutolang
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Run Build Script
+        run: |
+          version=$(echo "${RELEASE_PACKAGES}" | jq -r '.[] | select(.name == "@plutolang/cli") | .version')
+          bash ./scripts/build-docker-images.sh --pluto $version
+        env:
+          RELEASE_PACKAGES: ${{ toJSON(release.outputs.publishedPackages) }}
+
+  bump-pluto-codesandbox:
+    name: Bump Pluto Version in CodeSandbox
+    needs: release
+    if: release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
       - name: Send an bump pluto version event to codesandbox repository
-        if: steps.changesets.outputs.published == 'true'
         run: |
           curl -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/pluto-lang/codesandbox/dispatches" \
-              -d '{ "event_type": "trigger-bump-pluto", "client_payload": { "packages": '${{ steps.changesets.outputs.publishedPackages }}' } }'
+              -d '{ "event_type": "trigger-bump-pluto", "client_payload": { "packages": '${RELEASE_PACKAGES}' } }'
         env:
           GITHUB_TOKEN: ${{ secrets.PLUTO_CODESANDBOX_WORKFLOW_GITHUB_TOKEN }}
+          RELEASE_PACKAGES: ${{ toJSON(release.outputs.publishedPackages) }}
