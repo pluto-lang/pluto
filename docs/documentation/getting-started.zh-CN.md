@@ -1,121 +1,106 @@
-# Pluto 轻松构建云应用：开发指南
+# 快速开始
 
-开发者只需在代码中定义一些变量，[Pluto](https://github.com/pluto-lang/pluto) 就能基于这些变量自动创建与管理必要的云资源组件，达到简化部署和管理云基础设施的目的，让开发者更容易使用云。
+让我们通过快速开发一个简单的 Web 应用来了解 Pluto 应用开发流程。如果你不想在本地配置研发环境，可以使用我们提供的[在线沙盒或容器](#其他使用方式)体验，环境中已经配置了第 0、1 步安装的软件。
 
-这里的云资源并非指 IaaS，而是指 BaaS、FaaS 等托管资源组件。这类托管组件相较于自建实例通常具有更高的可靠性与更低的成本。
-
-这篇文章将介绍 Pluto 的安装步骤与示例，帮助开发者熟悉 Pluto 的特性。
-
-## 安装
-
-### 前置条件
-
-- [Node.js](https://nodejs.org/en/): Pluto 支持使用 TypeScript 编写云应用程序。
-- [Pulumi](https://www.pulumi.com/docs/install/): Pluto 使用 Pulumi 与云平台（AWS 或 K8s）进行交互，部署云资源。
-
-### Pluto CLI
-
-Pluto 命令行工具利用 [npm](https://www.npmjs.com/) 进行安装:
-
-```shell
-npm install -g @plutolang/cli
-```
-
-验证是否安装成功:
-
-```shell
-pluto --version
-```
-
-## Hello, Pluto
-
-接下来，开始创建并部署一个 Pluto 项目。
-
-### 创建 Pluto 项目
-
-通过运行以下命令，使用 Pluto CLI 创建 Pluto 项目:
-
-```shell
-pluto new
-```
-
-该命令将交互式地创建一个项目，并使用提供的项目名称创建一个目录。下面是一个输出示例：
-
-```
-$ pluto new
-? Project name hello-pluto
-? Stack name dev
-? Select a platform AWS
-? Select an provisioning engine Pulumi
-Info:  Created a project, hello-pluto
-```
-
-### 编写业务代码
-
-使用你习惯的编辑器，在 `<project_root>/src/index.ts` 编写如下代码：
-
-```typescript
-import { Router, Queue, KVStore, CloudEvent, HttpRequest, HttpResponse } from "@plutolang/pluto";
-
-const router = new Router("router");
-const queue = new Queue("queue");
-const kvstore = new KVStore("kvstore");
-
-// Publish the access time to the queue, and respond with the last access time.
-router.get("/access", async (req: HttpRequest): Promise<HttpResponse> => {
-  const name = req.query["name"] ?? "Anonym";
-  await queue.push(JSON.stringify({ name, accessAt: `${Date.now()}` }));
-  const lastAccess = await kvstore.get(name).catch(() => undefined);
-  const respMsg = lastAccess
-    ? `Hello, ${name}! The last access was at ${lastAccess}`
-    : `Hello, ${name}!`;
-  return { statusCode: 200, body: respMsg };
-});
-
-// Subscribe to messages in the queue and store them in the KV database.
-queue.subscribe(async (evt: CloudEvent): Promise<void> => {
-  const data = JSON.parse(evt.data);
-  await kvstore.set(data["name"], data["accessAt"]);
-  return;
-});
-```
+我们要开发的应用叫做 Timestamp Store，整体架构如下图，主要有 2 个路由：1）`/hello`，产生一个时间戳，并将这个时间戳发布到消息队列；2）`/store`，从 KV 数据库中获取上次访问 `/hello` 的时间戳，并返回。消息队列会有一个订阅者，将消息保存到 KV 数据库中。我们可以将这个应用部署在 AWS 或 Kubernetes 上。
 
 <p align="center">
   <img src="../../assets/getting-started-case-arch.png" alt="case arch" width="450">
 </p>
 
-这段代码包含 3 个资源变量和 2 个处理过程：
+完成这个示例后，你将了解 Pluto 开发的基本流程，并可以开始使用 Pluto 开发自己的云应用程序。
 
-- 一个 HTTP 服务 router，接受 `/access` HTTP 请求，请求中将本次的访问时间发布到消息队列 queue，然后从 KV 数据库 kvstore 中获取上一次访问时间，并返回。
-- 一个消息队列 queue，有一个订阅者，将消息队列中的消息保存到 KV 数据库 kvstore 中。
-- 一个 KV 数据库 kvstore，用来保存用户的上一次访问时间。
+## 0 前置
 
-### 部署应用
+- [Node.js](https://nodejs.org/): Pluto 运行在 Node.js 环境中，最好使用 20 版本以上。
+- [Pulumi](https://www.pulumi.com/docs/install/): Pluto 使用 Pulumi 与云平台（AWS 或 K8s）进行交互，部署云资源，请参照 Pulumi 安装文档进行安装。
+- [Python](https://www.python.org/): 如果你想开发 Python 应用，需要安装 Python 环境，最好是 3.10 版本以上。
 
-执行下面这条命令就能将应用发布到最初配置的云平台上：
+## 1 安装
+
+Pluto 命令行工具可以使用 [npm](https://www.npmjs.com/) 进行安装:
+
+```shell
+npm install -g @plutolang/cli
+```
+
+Pluto 的命令是 `pluto`，可以通过以下命令验证是否安装成功:
+
+```shell
+pluto --help
+```
+
+## 2 编写
+
+首先，我们运行以下命令创建一个 Pluto 工程项目:
+
+```shell
+pluto new
+```
+
+这条命令将交互式地创建一个项目，根据你的需要选择编程语言、目标平台、项目信息等，Pluto 会使用提供的项目名称创建一个目录。进入刚创建的项目目录，首先需要安装依赖：
+
+```shell
+cd <project_dir>
+npm install # 国内安装 @pulumi/aws 时可能会遇到网络问题，容器镜像体已缓存该包，欢迎体验
+
+# 如果是 Python 项目，除了 npm install，还需要安装 Python 依赖
+pip install -r requirements.txt
+```
+
+在 `src/index.ts` 或 `app/main.py` 中已经有了一个简单的示例代码，你可以根据自己的需求修改，也可以直接部署体验。
+
+## 3 部署
+
+在正式部署之前，我们需要配置目标平台的凭证信息。
+
+如果你选择的目标平台为 AWS，可以使用 `aws configure` 配置用户凭证，或自行创建 `~/.aws/credentials` 文件并配置，格式如下：
+
+```ini
+[default]
+aws_access_key_id = <your_access_key_id>
+aws_secret_access_key = <your_secret_access_key>
+```
+
+此外，Pluto 会尝试读取你的 AWS 配置文件 `~/.aws/config` 以获取默认的 AWS Region，如果没有配置，会尝试从环境变量 `AWS_REGION` 获取。**如果两者都没有配置，Pluto 在部署时将会报错。**
+
+如果你选择的目标平台为 Kubernetes，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](../dev_guide/setup-k8s-dev-env.en.md)配置所需的 Kubernetes 环境。
+
+配置完成后，只需要执行下面这一条命令就能将应用发布到最初配置的云平台上：
 
 ```shell
 pluto deploy
 ```
 
-如果你指定的云平台是 AWS，请确保 `AWS_REGION` 环境变量被正确配置，例如：
-
-```shell
-export AWS_REGION=us-east-1
-```
-
 <p align="center">
-  <img src="../../assets/getting-started-aws-arch.png" alt="aws arch" width="400">
+  <img src="../../assets/getting-started-aws-arch.png" alt="aws arch" width="450">
 </p>
 
-Pluto 将会在你指定的云平台上创建 3 个资源组件和 2 个函数对象，以 AWS 为例，将会创建：
+Pluto 将从应用代码中推导出需要 1 个路由、1 个消息队列、1 个 KV 数据库和 3 个函数对象，然后，Pluto 将自动地在你指定的云平台上创建相应的资源实例，并配置好它们之间的依赖关系。以 AWS 为例，将会创建 1 个 API Gateway、1 个 SNS、1 个 DynamoDB 和 3 个 Lambda 函数，同时配置好触发器、角色、权限等。
 
-- 1 个命名为 router 的 ApiGateway
-- 1 个命名为 queue 的 SNS
-- 1 个命名为 kvstore 的 DynamoDB
-- 2 个名字以 function 开头的 Lambda 函数
+## 4 测试
 
-#### 多平台部署
+恭喜！你已经成功部署了一个完整的 Web 应用程序。你应该会从终端中看到输出的 URL 地址，访问这个地址，就可以使用这个应用了。你可以使用 `curl` 或者浏览器访问这个地址，测试你的应用是否正常工作。如果使用 `curl`，可以按照以下方式测试：
+
+```shell
+curl <your_url>/hello?name=pluto
+# 上面这条 URL 会打印出发布了一条消息，消息中带有访问时间
+# 示例： Publish a message: pluto access at 1712654279444.
+
+curl <your_url>/store?name=pluto
+# 上面这条 URL 会打印出你上次访问 /hello 的时间
+# 示例： Fetch pluto access message: pluto access at 1712654279444.
+```
+
+## 5 清理
+
+如果你想从云平台上下线这个应用，可以使用以下命令：
+
+```shell
+pluto destroy
+```
+
+## 多平台部署
 
 如果你想部署到其他云平台可以通过创建新的 stack，并在部署时指定 stack 的方式进行：
 
@@ -131,9 +116,30 @@ pluto stack new
 pluto deploy --stack <new_stack>
 ```
 
-## 更多资源
+## 其他使用方式
 
-- 示例：[基于 OpenAI 的命令行终端聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
-- 示例：[每日一则计算机笑话](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
-- 实现：[Pluto | GitHub](https://github.com/pluto-lang/pluto)
-- 在线 IDE： [Pluto | CodeSandbox](https://codesandbox.io/s/github/pluto-lang/codesandbox/tree/main/)
+### 在线沙盒
+
+如果你不想在本地配置 Pluto 环境，可以使用 CodeSandbox 提供的在线 IDE 来体验 Pluto 的开发流程，我们提供了 TypeScript 和 Python 两个模板应用，沙盒环境中已经安装了 AWS CLI、Pulumi、Pluto 等基础依赖，你可以直接在浏览器中编辑代码，根据模板应用的 README 操作即可将应用部署到 AWS 云平台上。
+
+- [TypeScript 模板应用 | CodeSandbox](https://codesandbox.io/p/devbox/github/pluto-lang/codesandbox/tree/main/typescript?file=/README_zh.md)
+- [Python 模板应用 | CodeSandbox](https://codesandbox.io/p/devbox/github/pluto-lang/codesandbox/tree/main/python?file=/README_zh.md)
+
+### 容器
+
+我们提供了用于应用开发的容器镜像 `plutolang/pluto:latest`，镜像中包含了 AWS CLI、Pulumi、Pluto 等基础依赖，并配置了 Node.js 20.x 和 Python 3.10 环境。如果你只希望开发 TypeScript 应用，可以使用 `plutolang/pluto:latest-typescript` 镜像。拉取镜像后，通过以下命令就可以在容器中体验 Pluto 开发了：
+
+```shell
+docker run -it --name pluto-app plutolang/pluto:latest bash
+```
+
+## 更多示例
+
+- TypeScript 示例应用：
+  - [基于 LangChain、Llama2、DynamoDB、SageMaker 的会话聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/langchain-llama2-chatbot-sagemaker)
+  - [基于 OpenAI API 的聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
+  - [每日笑话 Slack 机器人](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
+- Python 示例应用：
+  - [部署 FastAPI 应用到 AWS](https://github.com/pluto-lang/pluto/tree/main/examples/fastapi)
+  - [部署 LangServe 示例应用到 AWS](https://github.com/pluto-lang/pluto/tree/main/examples/langserve-agent-with-history)
+  - [基于 LangChain、Llama2、DynamoDB、SageMaker 的会话聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/langchain-llama2-chatbot-sagemaker-python)
