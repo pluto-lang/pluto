@@ -85,6 +85,7 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Check if @plutolang/cli is published
+        if: steps.changesets.outputs.published == 'true'
         id: check-cli-publish
         run: |
           if [[ "${RELEASE_PACKAGES}" == *"@plutolang/cli"* ]]; then
@@ -95,16 +96,16 @@ jobs:
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
         env:
-          RELEASE_PACKAGES: ${{ toJSON(release.outputs.publishedPackages) }}
+          RELEASE_PACKAGES: ${{ toJSON(steps.changesets.outputs.publishedPackages) }}
 
   build-docker-images:
     name: Build Docker Images
     needs: release
-    if: release.outputs.cliPublished == 'true'
+    if: needs.release.outputs.cliPublished == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -124,16 +125,16 @@ jobs:
           version=$(echo "${RELEASE_PACKAGES}" | jq -r '.[] | select(.name == "@plutolang/cli") | .version')
           bash ./scripts/build-docker-images.sh --pluto $version
         env:
-          RELEASE_PACKAGES: ${{ toJSON(release.outputs.publishedPackages) }}
+          RELEASE_PACKAGES: ${{ toJSON(needs.release.outputs.publishedPackages) }}
 
   bump-pluto-codesandbox:
     name: Bump Pluto Version in CodeSandbox
     needs: release
-    if: release.outputs.published == 'true'
+    if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Send an bump pluto version event to codesandbox repository
         run: |
@@ -144,4 +145,4 @@ jobs:
               -d '{ "event_type": "trigger-bump-pluto", "client_payload": { "packages": '${RELEASE_PACKAGES}' } }'
         env:
           GITHUB_TOKEN: ${{ secrets.PLUTO_CODESANDBOX_WORKFLOW_GITHUB_TOKEN }}
-          RELEASE_PACKAGES: ${{ toJSON(release.outputs.publishedPackages) }}
+          RELEASE_PACKAGES: ${{ toJSON(needs.release.outputs.publishedPackages) }}

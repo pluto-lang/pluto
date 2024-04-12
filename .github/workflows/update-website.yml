@@ -7,6 +7,8 @@ on:
 
 jobs:
   update-website:
+    # prevent this action from running on forks
+    if: github.repository == 'pluto-lang/pluto'
     runs-on: ubuntu-latest
     steps:
       - name: Send an update docs event to website repository

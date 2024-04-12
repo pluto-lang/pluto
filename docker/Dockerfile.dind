@@ -1,0 +1,13 @@
+ARG BASE_IMAGE
+
+FROM --platform=$TARGETPLATFORM $BASE_IMAGE
+
+# Install Docker in Docker
+RUN DEB_ARCH=$(dpkg --print-architecture) && \
+    apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates curl software-properties-common lsb-release && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
+    add-apt-repository -y "deb [arch=${DEB_ARCH}] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*

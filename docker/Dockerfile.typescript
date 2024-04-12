@@ -1,16 +1,16 @@
-FROM --platform=$TARGETPLATFORM ubuntu:22.04
+ARG BASE_IMAGE
+
+FROM --platform=$TARGETPLATFORM ${BASE_IMAGE}
 
 ARG TARGETPLATFORM
 ARG NODEJS_VERSION
 ARG PLUTO_VERSION
 
 ARG PULUMI_BIN_VERSION=v3.112.0
-ARG PULUMI_SDK_VERSION=3.88.0
-ARG PULUMI_AWS_SDK_VERSION=6.4.1
 
-# Install AWS CLI, Pulumi, Node.js, Pluto
+# Install AWS CLI, Pulumi, Node.js
 RUN apt-get update && \
-    apt-get install -y curl unzip && \
+    apt-get install -y curl unzip git vim && \
     case "$TARGETPLATFORM" in \
     "linux/amd64") \
     AWS_CLI_ARCH=x86_64 \
@@ -40,8 +40,12 @@ RUN apt-get update && \
     curl -fsSL https://deb.nodesource.com/setup_${NODEJS_VERSION} | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    npm install -g @plutolang/cli@${PLUTO_VERSION} @pulumi/pulumi@${PULUMI_SDK_VERSION} @pulumi/aws@${PULUMI_AWS_SDK_VERSION}
+    rm -rf /var/lib/apt/lists/*
+
+# Install Pluto
+RUN npm install -g @plutolang/cli@${PLUTO_VERSION} && \
+    pulumi plugin rm -a -y && \
+    pulumi plugin install resource aws
 
 WORKDIR /apps
 
