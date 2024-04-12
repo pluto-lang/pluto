@@ -39,7 +39,7 @@ export async function bundleModules(
     options.dockerPip = true;
   }
 
-  if (!options.dockerPip && !(await CmdUtils.existCommand(runtime))) {
+  if (!options.dockerPip && !CmdUtils.existCommand(runtime)) {
     // The Python runtime isn't installed, and the user hasn't enabled Docker. Throw an error.
     throw new Error(
       `${runtime} is not installed. Please install it first, or use Docker to bundle modules instead.`
@@ -172,10 +172,6 @@ function getPipInstallCommand(
     pipCmd.push("--no-cache-dir");
   }
 
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (timeZone === "Asia/Shanghai") {
-    pipCmd.push(...["-i", "https://pypi.tuna.tsinghua.edu.cn/simple"]);
-  }
   return pipCmd;
 }
 

@@ -27,6 +27,7 @@ import { CodeSegment, CodeExtractor } from "./code-extractor";
 import { ImportFinder } from "./import-finder";
 import { bundleModules } from "./module-bundler";
 import packageJson from "../package.json";
+import { getDefaultPythonRuntime } from "./module-bundler/command-utils";
 
 export default class PyrightDeducer extends core.Deducer {
   //eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -381,7 +382,8 @@ export default class PyrightDeducer extends core.Deducer {
       // multiple places, including the Deducer and the infrastructure SDK. The former determines
       // the Python version and architecture for bundling dependencies, while the latter sets the
       // cloud runtime environment.
-      await bundleModules("python3.10", "x86_64", modules, destBaseDir, {
+      const runtime = getDefaultPythonRuntime();
+      await bundleModules(runtime, "x86_64", modules, destBaseDir, {
         slim: true,
         // By default, we'll delete the `dist-info` directory, but LangChain needs it, so we'll just
         // delete the `.pyc` and `__pycache__` files.

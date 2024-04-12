@@ -1,8 +1,9 @@
 import * as os from "os";
-import * as fs from "fs-extra";
 import * as path from "path";
-import { bundleModules } from "../../module-bundler/bundle-module";
+import * as fs from "fs-extra";
 import { randomUUID } from "crypto";
+import { bundleModules } from "../../module-bundler/bundle-module";
+import { getDefaultPythonRuntime } from "../../module-bundler/command-utils";
 
 function getTmpDir() {
   const tmpdir = path.join(os.tmpdir(), "pluto-test-" + randomUUID());
@@ -14,7 +15,7 @@ describe("bundleModules", () => {
   test("should bundle modules and remove useless files", async () => {
     const { tmpdir, cleanup } = getTmpDir();
 
-    const runtime = "python3.10";
+    const runtime = getDefaultPythonRuntime();
     const architecture = "x86_64";
     const modules = [
       { name: "numpy", version: "1.26.4" },
@@ -47,7 +48,7 @@ describe("bundleModules", () => {
 
     const { tmpdir, cleanup } = getTmpDir();
 
-    const runtime = "python3.10";
+    const runtime = getDefaultPythonRuntime();
     const architecture = "x86_64";
     const modules = [
       { name: "numpy", version: "1.26.4" },
@@ -76,7 +77,8 @@ describe("bundleModules", () => {
 
     const { tmpdir, cleanup } = getTmpDir();
 
-    const runtime = "python3.11";
+    const defaultRuntime = getDefaultPythonRuntime();
+    const runtime = defaultRuntime === "python3.12" ? "python3.11" : "python3.12";
     const architecture = "x86_64";
     const modules = [
       { name: "numpy", version: "1.26.4" },
