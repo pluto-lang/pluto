@@ -141,5 +141,5 @@ docker run -it --name pluto-app plutolang/pluto:latest bash
   - [每日笑话 Slack 机器人](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
 - Python 示例应用：
   - [部署 FastAPI 应用到 AWS](https://github.com/pluto-lang/pluto/tree/main/examples/fastapi)
-  - [部署 LangServe 示例应用到 AWS](https://github.com/pluto-lang/pluto/tree/main/examples/langserve-agent-with-history)
+  - [部署 LangServe 示例应用到 AWS](https://github.com/pluto-lang/pluto/tree/main/examples/deploy-langserve-to-aws)
   - [基于 LangChain、Llama2、DynamoDB、SageMaker 的会话聊天机器人](https://github.com/pluto-lang/pluto/tree/main/examples/langchain-llama2-chatbot-sagemaker-python)
