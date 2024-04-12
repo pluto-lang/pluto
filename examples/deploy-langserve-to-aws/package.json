@@ -1,5 +1,5 @@
 {
-  "name": "langserve-agent-with-history",
+  "name": "deploy-langserve-to-aws",
   "private": true,
   "version": "0.0.0",
   "scripts": {

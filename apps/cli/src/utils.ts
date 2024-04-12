@@ -103,10 +103,10 @@ export function dumpProject(project: config.Project) {
  */
 export function isPlutoProject(rootpath: string): boolean {
   return (
-    fs.existsSync(path.join(rootpath, PLUTO_PROJECT_CONFIG_PATH)) &&
-    fs.existsSync(path.join(rootpath, "package.json")) &&
+    fs.existsSync(path.resolve(rootpath, PLUTO_PROJECT_CONFIG_PATH)) &&
+    fs.existsSync(path.resolve(rootpath, "package.json")) &&
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require(path.join(rootpath, "package.json")).name
+    require(path.resolve(rootpath, "package.json")).name
   );
 }
 

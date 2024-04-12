@@ -3,7 +3,7 @@
     <br/>
     <br/>
    <a href="./README.md"> English </a> 
-   ｜ 
+   | 
    <a href="./README_zh.md"> 简体中文 </a>
 </p>
 
@@ -14,105 +14,54 @@
   <a href="https://www.npmjs.com/package/@plutolang/cli"><img alt="npm download" src="https://img.shields.io/npm/dm/%40plutolang/cli?style=flat-square"></a>
 </p>
 
-Pluto is a new open-source programming language designed to help developers write cloud applications and **make it easier to use cloud services**.
+Pluto is a development tool dedicated to helping developers **build cloud and AI applications more conveniently**, resolving issues such as the challenging deployment of AI applications and open-source models.
 
-Developers can directly use the **required resources, such as KV databases and message queues**, in their code based on their business needs. Pluto performs **static analysis** on the code to determine the **infrastructure resources** required by the application and deploys corresponding resource instances and applications on the specified cloud platform.
+Developers are able to write applications in familiar programming languages like **Python and TypeScript**, **directly defining and utilizing the cloud resources necessary for the application within their code base**, such as AWS SageMaker, DynamoDB, and more. Pluto automatically deduces the infrastructure resource needs of the app through **static program analysis** and proceeds to create these resources on the specified cloud platform, **simplifying the resources creation and application deployment process**.
 
-**⚠️ Note: Pluto is still in the PoC stage and is not yet ready for production use.**
+**⚠️ Caution: Pluto is still in its early stages, please consider it for production environments with caution.**
 
-## 🌟 Examples
+## 🌟 Example
 
-Let's look at a simple example:
-
-[https://github.com/pluto-lang/pluto/assets/20160766/add7f29c-a8f4-406a-a1b5-75495882c809](https://github.com/pluto-lang/pluto/assets/20160766/add7f29c-a8f4-406a-a1b5-75495882c809)
+Let's develop a text generation application based on GPT2, where the user input is processed by the GPT2 model to generate and return text. Below is how the development process with Pluto looks:
 
 <p align="center">
-  <img src="./assets/demo-biz-logic.png" alt="business logic" width="400">
+  <img src="./assets/readme-gpt2-process.png" alt="GPT2 Process" width="90%">
 </p>
 
-The business logic of this example is illustrated in the above diagram, which primarily involves three types of resources and three processes. When deploying this application on AWS, it requires configuring multiple resources such as Lambda, IAM, ApiGateway, Route, Deployment, SNS, and Trigger. Manual configuration can be time-consuming and prone to errors.
+AWS SageMaker is utilized as the model deployment platform, and AWS Api Gateway and Lambda support the application's HTTP services. The deployed application architecture, as shown in the top right graphic ↗️, comprises two route handling functions: one to receive user input, invoke the SageMaker model, and return generated text, and another to provide the endpoint URL of the SageMaker model.
 
-In contrast, this example simplifies the process by defining three variables - KVStore, Queue, and Router - in a single code file. Additionally, two route handling functions and one message subscription handling function are defined. This approach can be seen as developing a monolithic application.
+The top left graphic ↖️ captures a fragment of the application code, with the complete code accessible [here](https://github.com/pluto-lang/pluto/tree/main/examples/gpt2-hf-sagemaker). In the TypeScript code development process using Pluto, by creating a new SageMaker instance using `new SageMaker()`, you can directly interact with the SageMaker model using methods like `sagemaker.invoke()` and obtain the model endpoint URL using `sagemaker.endpointUrl()`. Establishing an Api Gateway requires only creating a new variable `router` with `new Router()`, and the function arguments within the methods of `router`, such as `router.get()`, `router.post()`, etc., will automatically be converted into Lambda functions. The same application could be implemented in Python as well.
 
-With just one command, `pluto deploy`, all the infrastructure resources and business modules will be deployed onto the AWS cloud seamlessly. This includes resources like ApiGateway, DynamoDB, SNS, Lambda, and configurations for triggers, IAM roles, and permissions.
+Once the application code has been written, executing `pluto deploy` allows Pluto to deduce the application's infrastructure needs and **automatically provision around 30 cloud resources**, which includes instances such as SageMaker, Lambda, Api Gateway, along with setups like triggers, IAM roles, and policy permissions.
 
-Furthermore, by executing `pluto stack new`, developers can effortlessly publish the service to Kubernetes without making any modifications to the existing code. It will be deployed under a newly created environment configuration.
+Finally, Pluto hands back the URL of the Api Gateway, providing direct access to use the application.
 
-**Want to see more examples?**
+**Interested in exploring more examples?**
 
-- [Build your own chatbot based on the OpenAI API.](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
-- [Send a computer joke to the Slack channel every day.](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
-
-## 🤯 Pain Points
-
-You can learn why we created Pluto from here. In short, we want to solve several pain points that you may frequently encounter.
-
-- **High learning curve**: Developing a cloud application requires mastering both the business and infrastructure technology stacks, and it is also difficult to test and debug, resulting in developers spending a lot of effort outside of writing business logic.
-- **Difficult architecture selection**: Cloud service providers currently offer hundreds of capabilities, and Kubernetes has an infinite combination of capabilities. It is difficult for ordinary developers to determine a suitable architecture selection for their own business.
-- **Intrusion of infrastructure configuration into business programming**: Developers need to differentiate between infrastructure code and business code when programming, know the specific location of each statement and file, understand clearly which code will be executed locally, and where the code to be deployed to the cloud needs to be written. It is far from being as simple as writing a single machine program.
-- **Vendor lock-in**: Programming for specific service providers results in poor flexibility of the final code. When it is necessary to migrate to other cloud platforms due to cost and other factors, a lot of code modification is required to adapt to the new runtime environment.
-
-## 🌟 Features
-
-- **Zero learning curve**: The programming interface is fully compatible with TypeScript and supports the use of most dependency libraries directly.
-- **Focus on pure business logic**: Static deduction of source code dependencies on infrastructure at compile time, so developers do not need to distinguish between infrastructure code and business code when programming.
-- **One-click deployment**: The CLI provides basic capabilities such as compilation and deployment. Except for coding and basic configuration, everything is automatically completed by Pluto.
-- **Support for multiple runtime**: Unified abstraction of multiple runtime based on SDK, allowing developers to migrate between multiple runtime environments without modifying the source code.
-
-## 🔧 How Pluto Works?
-
-<p align="center">
-  <img src="./assets/pluto-arch.jpg" alt="Pluto Architecture" width="800">
-</p>
-
-Overall, Pluto first deduces the required cloud resources and the dependencies between resources from the user code, and builds the architecture reference for the cloud. Then, based on the architecture reference, it generates IaC code independent of the user code, and splits the user code into multiple business modules. Finally, the provisioning engine adapter calls the corresponding provisioning engine to execute the deployment based on the type of IaC code, and publishes the application to the specified cloud platform. Throughout the entire process, the deducer, generator, and adapter can be easily replaced. You have the flexibility to implement them using different deducing and generating techniques, and also support additional IaC engines.
-
-You can learn more about the workflow of Pluto [here](./docs/documentation/how-pluto-works.en.md).
-
-## 🤔️ Differences from Other Projects?
-
-The key difference between Pluto and other products is that it uses program analysis technology to directly infer resource dependencies from user code and generate IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code. This provides developers with an experience of not having to worry about infrastructure configuration when writing code.
-
-- Compared to BaaS products like Supabase and Appwrite, Pluto helps developers create their own infrastructure environment on the target cloud platform instead of providing self-managed components.
-- Compared to PaaS products like Fly.io, render, and Heroku, Pluto is not responsible for container hosting, but generates more fine-grained compute modules through compilation to leverage the capabilities provided by the cloud platform, such as FaaS.
-- Compared to scaffolding tools like Serverless Framework and Serverless Devs, Pluto does not provide an application programming framework for specific cloud vendors or frameworks, but provides a consistent programming interface for users.
-- Compared to pure annotation-based Infra from Code (IfC) products like Klotho, Pluto directly infers resource dependencies from user code without additional annotations.
-- Compared to SDK-based IfC products like Shuttle and Nitric, Pluto obtains resource dependencies of applications through static program analysis rather than executing user code.
-- Both Winglang and Pluto are IfC products based on programming languages, but compared to Winglang, Pluto generates IaC code independent of the user code, so that the code executed at compile time is not directly related to the user code.
-
-You can learn more about the differences with other project [here](./docs/documentation/whats-different.en.md).
+- TypeScript applications:
+  - [Conversation chatbot based on LangChain, Llama2, DynamoDB, SageMaker](https://github.com/pluto-lang/pluto/tree/main/examples/langchain-llama2-chatbot-sagemaker)
+  - [Chatbot leveraging the OpenAI API](https://github.com/pluto-lang/pluto/tree/main/examples/chat-bot)
+  - [Daily Joke Slack Bot](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
+- Python applications:
+  - [Deploy a FastAPI app to AWS](https://github.com/pluto-lang/pluto/tree/main/examples/fastapi)
+  - [Deploy a LangServe example agent to AWS](https://github.com/pluto-lang/pluto/tree/main/examples/langserve-agent-with-history)
+  - [Conversational chatbot based on LangChain, Llama2, DynamoDB, SageMaker](https://github.com/pluto-lang/pluto/tree/main/examples/langchain-llama2-chatbot-sagemaker-python)
 
 ## 🚀 Quick Start
 
-Pluto makes it easy to get started with a hands-on experience on CodeSandbox. Just open the [Pluto project template](https://codesandbox.io/p/sandbox/github/pluto-lang/codesandbox?file=%2FREADME.md) and click the Fork button in the top right corner to create your own development environment. The environment already has AWS CLI, Pulumi, and Pluto dependencies installed. Just follow the README to get started.
+<b style="color: green;">Online Experience</b>: [CodeSandbox](https://codesandbox.io) provides an online development environment. We have constructed Pluto templates in both [Python](https://codesandbox.io/p/devbox/github/pluto-lang/codesandbox/tree/main/python?file=/README.md) and [TypeScript](https://codesandbox.io/p/devbox/github/pluto-lang/codesandbox/tree/main/typescript?file=/README.md) languages on this platform, **allowing direct experience in the browser**. After opening the project template, creating your own project is as easy as clicking the Fork button in the top right corner. The environment is pre-equipped with AWS CLI, Pulumi, and Pluto's basic dependencies, adhering to the README for operations.
 
-If you'd rather use it locally, follow these steps for configuration:
-
-### 0. Prerequisites
-
-#### 0.1 Install Pulumi
-
-You can install it according to the [installation guide](https://www.pulumi.com/docs/install/).
-
-#### 0.2 Prepare the access credentials for AWS or Kubernetes.
-
-Choose either AWS or Kubernetes based on your specific requirements.
-
-**Prepare AWS access credentials**
-
-Pluto doesn't require you to set up AWS credentials on your local machine or install the AWS CLI. If you've already set up your AWS credentials using either the AWS CLI or environment variables, Pluto will automatically use those settings. However, if it can't find any credentials locally, Pluto will assist you in creating an administrator role for future use.
-
-⚠️Note: To determine which region to deploy to, Pluto depends on the `AWS_REGION` variable.
+<b style="color: green;">Container Experience</b>: We offer a container image `plutolang/pluto:latest` for application development, which contains essential dependencies like AWS CLI, Pulumi, and Pluto, along with Node.js 20.x and Python 3.10 environments pre-configured. If you are interested in developing only TypeScript applications, you can use the `plutolang/pluto:latest-typescript` image. You can partake in Pluto development within a container using the following command:
 
 ```shell
-export AWS_REGION="xx-xxxx-x" # replace it with your AWS Region
+docker run -it --name pluto-app plutolang/pluto:latest bash
 ```
 
-**Prepare Kubernetes access credentials**
+<b style="color: green;">Local Experience</b>: For local use, please follow these steps for setup:
 
-No additional configuration is necessary; you just need to know the location where the kubeconfig file is stored, typically at `~/.kube/config`.
+### 0. Install Pulumi
 
-> If you opt for Kubernetes as the runtime environment, it is necessary to install Knative in K8s beforehand and disable the scaling down to zero feature. This is because Pluto currently does not support Ingress forwarding to Knative serving. Welcome experts to contribute to the enhancement of this functionality. You can configure the required Kubernetes environment according to [this document](./docs/dev_guide/setup-k8s-dev-env.en.md).
+Pluto operates within a Node.js environment and uses Pulumi for interaction with cloud platforms (AWS or K8s). You can refer to the [Pulumi installation guide](https://www.pulumi.com/docs/install/).
 
 ### 1. Install Pluto
 
@@ -120,38 +69,120 @@ No additional configuration is necessary; you just need to know the location whe
 npm install -g @plutolang/cli
 ```
 
-### 2. Deploy your application using Pluto
+### 2. Deploy your application with Pluto
 
 ```shell
-pluto new        # create a new project interactively
-cd <project_dir> # change to the directory of the new project
-npm install      # install the depnedencies
-pluto deploy     # shoot!
+pluto new        # Interactively create a new project, allowing selection of TypeScript or Python
+cd <project_dir> # Enter your project directory
+npm install      # Download dependencies
+
+# If it's a Python project, in addition to npm install, Python dependencies must also be installed.
+pip install -r requirements.txt
+
+pluto deploy     # Deploy with one click!
 ```
 
-For detailed steps, please refer to the [Getting Started Guide](./docs/documentation/getting-started.en.md).
+⚠️ **Note:**
 
-> Currently, Pluto is limited to supporting single-file applications. Within each handler function, it is possible to access literal constants and regular functions that exist outside the scope of the handler function. However, accessing variables (except for resource variables), classes, interfaces is not currently supported.
+- If the target platform is AWS, Pluto attempts to read your AWS configuration file to acquire the default AWS Region, or alternatively, tries to fetch it from the environment variable `AWS_REGION`. **Deployment will fail if neither is set.**
+- If the target platform is Kubernetes, Knative must firstly be installed within K8s and the scale-to-zero feature should be deactivated (as Pluto doesn't yet support Ingress forwarding to Knative serving). You can configure the required Kubernetes environment following [this document](./docs/dev_guide/setup-k8s-dev-env.en.md).
+
+For detailed steps, refer to the [Getting Started Guide](./docs/documentation/getting-started.en.md).
+
+> Currently, Pluto only supports single-file configurations. Inside each handler function, access is provided to literal constants and plain functions outside of the handler's scope; however, Python allows direct access to classes, interfaces, etc., outside of the scope, whereas TypeScript requires encapsulating these within functions for access.
+
+## 🤯 Pain Points
+
+[Here you can find out why Pluto was created](./docs/documentation/what-problems-pluto-aims-to-address.en.md). To put it simply, we aim to address several pain points you might often encounter:
+
+- **High learning curve**: Developing a cloud application requires mastery of both the business and infrastructure skills, and it often demands significant efforts in testing and debugging. Thus, developers spend a considerable amount of energy on aspects beyond writing the core business logic.
+- **High cognitive load**: With cloud service providers offering hundreds of capabilities and Kubernetes offering nearly limitless possibilities, average developers often lack a deep understanding of cloud infrastructure, making it challenging to choose the proper architecture for their particular needs.
+- **Poor programming experience**: Developers must maintain separate codebases for infrastructure and business logic or intertwine infrastructure configuration within the business logic, leading to a sub-optimal programming experience that falls short of the simplicity of creating a local standalone program.
+- **Vendor lock-in**: Coding for a specific cloud provider can lead to poor flexibility in the resulting code. When it becomes necessary to migrate to another cloud platform due to cost or other factors, adapting the existing code to the new environment can require substantial changes.
+
+## 💡 Features
+
+- **No learning curve**: The programming interface is fully compatible with TypeScript, Python, and supports the majority of dependency libraries such as LangChain, LangServe, FastAPI, etc.
+- **Focus on pure business logic**: Developers only need to write the business logic. Pluto, via static analysis, automatically deduces the infrastructure requirements of the application.
+- **One-click cloud deployment**: The CLI provides basic capabilities such as compilation and deployment. Beyond coding and basic configuration, everything else is handled automatically by Pluto.
+- **Support for various runtime environments**: With a unified abstraction based on the SDK, it allows developers to migrate between different runtime environments without altering the source code.
+
+## 🔧 How Does Pluto Work?
+
+<p align="center">
+  <img src="./assets/pluto-arch.jpg" alt="Pluto Architecture" width="750">
+</p>
+
+Overall, the Pluto deployment process comprises three stages—deduction, generation, and deployment:
+
+1. **Deduction Phase**: The deducer analyzes the application code to derive the required cloud resources and their interdependencies, resulting in an architecture reference. It also splits user business code into business modules, which, along with the dependent SDK, form the business bundle.
+2. **Generation Phase**: The generator creates IaC code that is independent of user code, guided by the architecture reference.
+3. **Deployment Phase**: Depending on the IaC code type, Pluto invokes the corresponding adapter, which, in turn, works with the respective IaC engine to execute the IaC code, managing infrastructure configuration and application deployment.
+
+Components such as the deducer, generator, and adapter are extendable, which allows support for a broader range of programming languages and platform integration methods. Currently, Pluto provides deducers for [Python](https://github.com/pluto-lang/pluto/tree/main/components/deducers/python-pyright) and [TypeScript](https://github.com/pluto-lang/pluto/tree/main/components/deducers/static), and a [generator](https://github.com/pluto-lang/pluto/tree/main/components/generators/static) and [adapter](https://github.com/pluto-lang/pluto/tree/main/components/adapters/pulumi) for Pulumi. Learn more about Pluto's processes in detail in [this document](./docs/documentation/how-pluto-works.en.md).
+
+## 🤔️ Differences from Other Projects?
+
+Pluto distinguishes itself from other offerings by **leveraging static program analysis techniques to infer resource dependencies directly from application code** and generate infrastructure code that remains separate from business logic. This approach **ensures infrastructure configuration does not intrude into business logic**, providing developers with a **development experience free from infrastructure concerns**.
+
+- Compared to **BaaS** (Backend as a Service) products like Supabase or Appwrite, Pluto assists developers in creating the necessary infrastructure environment within their own cloud account, rather than offering managed components.
+- Differing from **PaaS** (Platform as a Service) offerings like Fly.io, Render, Heroku, or LeptonAI, Pluto does not handle application hosting. Instead, it compiles application into finely-grained compute modules, and integrates with rich cloud platform capabilities like FaaS, GPU instances, and message queues, enabling deployment to cloud platforms without requiring developers to write extra configurations.
+- In contrast to **scaffolding tools** such as the Serverless Framework or Serverless Devs, Pluto does not impose an application programming framework specific to particular cloud providers or frameworks, but instead offers a uniform programming interface.
+- Unlike **IfC (Infrastructure from Code) products based purely on annotations** like Klotho, Pluto infers resource dependencies directly from user code, eliminating the need for extra annotations.
+- Different from other **IfC products that rely on dynamic analysis**, like Shuttle, Nitric, and Winglang, Pluto employs static program analysis to identify application resource dependencies, generating independent infrastructure code without having to execute user code.
+
+You can learn more about the differences with other projects in [this document](./docs/documentation/whats-different.en.md).
 
 ## 👏 Contributing
 
-Pluto is currently in the PoC stage, and we welcome interested people to contribute. Whether it is suggestions or ideas about the problems Pluto aims to solve, the features it provides, or code implementation, you can participate in the community to build together. Check out the project [contribution guide](./docs/dev_guide/dev_guide.en.md).
+Pluto is still in its infancy, and we warmly welcome contributions from those who are interested. Any suggestions or ideas about the issues Pluto aims to solve, the features it offers, or its code implementation can be shared and contributed to the community. Please refer to our [project contribution guide](./docs/dev_guide/dev_guide.en.md) for more information.
 
 ## 🐎 Roadmap
 
-- [ ] Complete implementation of resource static deduction process
-  - [x] Resource type checking
-  - [ ] Conversion of local variables to cloud resources
-- [ ] SDK development
-  - [ ] API SDK development
-  - [ ] IaC SDK development
-  - [ ] Support for more resources and platforms
-- [ ] More engine support
-  - [ ] Terraform
-  - [ ] ...
+- Complete implementation of the resource static deduction process
+  - 🚧 Resource type checking
+  - ❌ Conversion of local variables into cloud resources
+- SDK development
+  - 🚧 Client SDK development
+  - 🚧 Infra SDK development
+  - ❌ Support for additional resources and more platforms
+- Engine extension support
+  - 🚧 Pulumi
+  - ❌ Terraform
+- 🚧 Local simulation and testing functionality
 
-See [Issues](https://github.com/pluto-lang/pluto/issues) for more details.
+Please see the [Issue list](https://github.com/pluto-lang/pluto/issues) for further details.
+
+## 📊 Capability Matrix
+
+✅: Indicates that all user-visible interfaces are available  
+🚧: Indicates that some of the user-visible interfaces are available  
+❌: Indicates not yet supported
+
+### TypeScript
+
+| Resource Type | AWS | Kubernetes | Alibaba Cloud | Simulation |
+| :-----------: | :-: | :--------: | :-----------: | :--------: |
+|    Router     | ✅  |     🚧     |      🚧       |     🚧     |
+|     Queue     | ✅  |     ✅     |      ❌       |     ✅     |
+|    KVStore    | ✅  |     ✅     |      ❌       |     ✅     |
+|   Function    | ✅  |     ✅     |      ✅       |     ✅     |
+|   Schedule    | ✅  |     ✅     |      ❌       |     ❌     |
+|    Tester     | ✅  |     ❌     |      ❌       |     ✅     |
+|   SageMaker   | ✅  |     ❌     |      ❌       |     ❌     |
+
+### Python
+
+| Resource Type | AWS | Kubernetes | Alibaba Cloud | Simulation |
+| :-----------: | :-: | :--------: | :-----------: | :--------: |
+|    Router     | ✅  |     ❌     |      ❌       |     ❌     |
+|     Queue     | ✅  |     ❌     |      ❌       |     ❌     |
+|    KVStore    | ✅  |     ❌     |      ❌       |     ❌     |
+|   Function    | ✅  |     ❌     |      ❌       |     ❌     |
+|   Schedule    | ✅  |     ❌     |      ❌       |     ❌     |
+|    Tester     | ❌  |     ❌     |      ❌       |     ❌     |
+|   SageMaker   | ✅  |     ❌     |      ❌       |     ❌     |
 
 ## 💬 Community
 
-Welcome to join our [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) community, or our DingTalk group at 40015003990 for communication.
+Join our [Slack](https://join.slack.com/t/plutolang/shared_invite/zt-25gztklfn-xOJ~Xvl4EjKJp1Zn1NNpiw) community to communicate and contribute ideas.

@@ -46,3 +46,6 @@ devapps/
 **/__pycache__/
 **/*.pyc
 venv/
+
+# tmp
+**/.pluto/**/

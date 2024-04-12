@@ -9,6 +9,7 @@ export interface CreateProjectArgs {
   language?: LanguageType;
   platformType?: PlatformType;
   provisionType?: ProvisionType;
+  rootpath?: string;
 }
 
 export async function createProject(args: CreateProjectArgs): Promise<config.Project> {
@@ -41,7 +42,7 @@ export async function createProject(args: CreateProjectArgs): Promise<config.Pro
     provisionType: args.provisionType,
   });
 
-  const projectRoot = resolve("./", args.name);
+  const projectRoot = resolve(args.rootpath ?? `./${args.name}`);
   const proj = new config.Project(args.name, projectRoot, args.language);
   proj.addStack(sta);
   proj.current = sta.name;

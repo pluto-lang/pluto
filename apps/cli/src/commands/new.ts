@@ -8,7 +8,7 @@ import { ensureDirSync } from "fs-extra";
 
 const TEMPLATE_DIR = path.join(__dirname, "../../template");
 
-interface NewOptions {
+export interface NewOptions {
   name?: string;
   stack?: string;
   language?: LanguageType;
@@ -34,7 +34,7 @@ export async function create(opts: NewOptions) {
   logger.info("Created a project,", proj.name);
 }
 
-function genInitFiles(destdir: string, language: string) {
+export function genInitFiles(destdir: string, language: string) {
   ensureDirSync(destdir);
 
   const queue: string[] = [""];
@@ -49,7 +49,9 @@ function genInitFiles(destdir: string, language: string) {
       const destPath = path.join(projCurDir, file);
 
       if (fs.lstatSync(srcPath).isFile()) {
-        fs.copyFileSync(srcPath, destPath);
+        if (!fs.existsSync(destPath)) {
+          fs.copyFileSync(srcPath, destPath);
+        }
       } else {
         fs.mkdirSync(destPath, { recursive: true });
         queue.push(path.join(partProjDir, file));
