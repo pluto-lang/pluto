@@ -18,7 +18,7 @@ You can get all the code for this example from [here](./). [This link](https://c
 
 ## Environment Preparation
 
-If you have not configured the Pluto development environment, please refer to steps 0 and 1 in [Getting Started](../../docs/documentation/getting-started.zh-CN.md) for configuration, or you can use the [online sandbox or container](../../docs/documentation/getting-started.zh-CN.md#other-usage-methods) provided by Pluto for experience.
+If you have not configured the Pluto development environment, please refer to steps 0 and 1 in [Getting Started](../../docs/documentation/getting-started.en.md) for configuration, or you can use the [online sandbox or container](../../docs/documentation/getting-started.en.md#alternative-usage-methods) provided by Pluto for experience.
 
 ## Developing LangServe Application
 

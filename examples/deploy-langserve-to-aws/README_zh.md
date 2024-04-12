@@ -415,7 +415,7 @@ add_routes(
 - Anthropic: `<your-api-gateway-url>/dev/anthropic/playground`
 - Joke: `<your-api-gateway-url>/dev/joke/playground`
 
-下面左右两幅图分别展示了通过浏览器访问 OpenAI 和 Joke 的 Playground 的结果：
+下面两幅图分别展示了通过浏览器访问 OpenAI 和 Joke 的 Playground 的结果：
 
 <p align="center">
    <img src="./assets/openai-playground.png" alt="OpenAI Playground" width="45%"/>
