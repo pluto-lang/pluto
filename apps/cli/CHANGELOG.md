@@ -1,5 +1,13 @@
 # @plutolang/cli
 
+## 0.4.8
+
+### Patch Changes
+
+- 7926d75: feat(cli): add 'init' subcommand
+
+  Users can now initialize a existing directory as a Pluto project by running `pluto init`.
+
 ## 0.4.7
 
 ### Patch Changes
