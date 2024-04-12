@@ -24,7 +24,7 @@ import {
   Function as PlutoFunction,
 } from "@plutolang/pluto";
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
-import { dumpClosureToDir_python, serializeClosureToDir } from "../utils";
+import { dumpClosureToDir_python, serializeClosureToDir, getDefaultPythonRuntime } from "../utils";
 import { Permission } from "./permission";
 
 export enum Ops {
@@ -99,7 +99,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       runtime = "nodejs18.x";
     } else if (currentLanguage() === LanguageType.Python) {
       entrypointFilePathP = dumpClosureToDir_python(workdir, closure);
-      runtime = "python3.10";
+      runtime = getDefaultPythonRuntime();
     } else {
       throw new Error(`Unsupported language: ${currentLanguage()}`);
     }

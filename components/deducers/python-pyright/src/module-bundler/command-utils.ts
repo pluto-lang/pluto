@@ -1,5 +1,6 @@
 import spawn from "cross-spawn";
 import { quote } from "shell-quote";
+import { Runtime } from "./types";
 
 /**
  * Merge multiple commands into a single command.
@@ -23,7 +24,7 @@ export function mergeCommands(commands: string[][]) {
  * @param args The arguments to pass to the command.
  * @returns The output of the command.
  */
-export async function runCommand(cmd: string, args: string[]) {
+export function runCommand(cmd: string, args: string[]) {
   try {
     const result = spawn.sync(cmd, args, { encoding: "utf-8" });
 
@@ -50,11 +51,29 @@ export async function runCommand(cmd: string, args: string[]) {
 /**
  * Check if a command exists.
  */
-export async function existCommand(cmd: string) {
+export function existCommand(cmd: string) {
   try {
-    await runCommand("which", [cmd]);
+    runCommand("which", [cmd]);
     return true;
   } catch (e) {
     return false;
   }
+}
+
+export function getDefaultPythonRuntime(): Runtime {
+  let output: string;
+  try {
+    output = runCommand("python3", ["--version"]);
+  } catch (error) {
+    throw new Error("Python 3 is not installed");
+  }
+
+  const version = output.toString().replace("Python ", "").trim();
+  const subVersion = version.split(".")[1];
+  if (parseInt(subVersion) < 8 || parseInt(subVersion) > 12) {
+    throw new Error("Python 3.8 - 3.12 is required");
+  }
+
+  const mainVersion = version.split(".").slice(0, 2).join(".");
+  return `python${mainVersion}` as Runtime;
 }

@@ -19,4 +19,4 @@ jobs:
                "https://api.github.com/repos/pluto-lang/website/dispatches" \
                -d '{"event_type": "trigger-update-docs"}'
         env:
-          GITHUB_TOKEN: ${{ secrets.PLUTO_WEBSITE_WORKFLOW_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PLUTO_WORKFLOW_GITHUB_TOKEN_JIANZS }}

@@ -45,7 +45,7 @@ RUN apt-get update && \
 # Install Pluto
 RUN npm install -g @plutolang/cli@${PLUTO_VERSION} && \
     pulumi plugin rm -a -y && \
-    pulumi plugin install resource aws
+    pulumi plugin install resource aws 6.4.1
 
 WORKDIR /apps
 

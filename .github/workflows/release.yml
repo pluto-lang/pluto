@@ -98,45 +98,21 @@ jobs:
         env:
           RELEASE_PACKAGES: ${{ toJSON(steps.changesets.outputs.publishedPackages) }}
 
-  build-docker-images:
-    name: Build Docker Images
-    needs: release
-    if: needs.release.outputs.cliPublished == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: plutolang
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Run Build Script
+      - name: Trigger to build docker images
+        if: steps.check-cli-publish.outputs.published == 'true'
         run: |
           version=$(echo "${RELEASE_PACKAGES}" | jq -r '.[] | select(.name == "@plutolang/cli") | .version')
-          bash ./scripts/build-docker-images.sh --pluto $version
+          curl -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/pluto-lang/pluto/dispatches" \
+              -d '{ "event_type": "trigger-build-docker-images", "client_payload": { "version": "'${version}'" } }'
         env:
-          RELEASE_PACKAGES: ${{ needs.release.outputs.publishedPackages }}
+          GITHUB_TOKEN: ${{ secrets.PLUTO_WORKFLOW_GITHUB_TOKEN_JIANZS }}
+          RELEASE_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
 
-  bump-pluto-codesandbox:
-    name: Bump Pluto Version in CodeSandbox
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Send an bump pluto version event to codesandbox repository
+      - name: Trigger to bump pluto version in codesandbox
+        if: steps.release.outputs.published == 'true'
         run: |
           curl -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
@@ -144,5 +120,5 @@ jobs:
               "https://api.github.com/repos/pluto-lang/codesandbox/dispatches" \
               -d '{ "event_type": "trigger-bump-pluto", "client_payload": { "packages": '${RELEASE_PACKAGES}' } }'
         env:
-          GITHUB_TOKEN: ${{ secrets.PLUTO_CODESANDBOX_WORKFLOW_GITHUB_TOKEN }}
-          RELEASE_PACKAGES: ${{ needs.release.outputs.publishedPackages }}
+          GITHUB_TOKEN: ${{ secrets.PLUTO_WORKFLOW_GITHUB_TOKEN_JIANZS }}
+          RELEASE_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}

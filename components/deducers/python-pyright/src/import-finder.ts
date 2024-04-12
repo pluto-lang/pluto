@@ -13,8 +13,13 @@ import { ExecutionEnvironment } from "pyright-internal/dist/common/configOptions
 import { ImportResult, ImportType } from "pyright-internal/dist/analyzer/importResult";
 import { PlatformType } from "@plutolang/base";
 import { Module } from "./module-bundler";
+import { getDefaultPythonRuntime } from "./module-bundler/command-utils";
 
+import allAwsLambdaModulesPython38 from "./all_aws_lambda_modules_python3.8.txt";
+import allAwsLambdaModulesPython39 from "./all_aws_lambda_modules_python3.9.txt";
 import allAwsLambdaModulesPython310 from "./all_aws_lambda_modules_python3.10.txt";
+import allAwsLambdaModulesPython311 from "./all_aws_lambda_modules_python3.11.txt";
+import allAwsLambdaModulesPython312 from "./all_aws_lambda_modules_python3.12.txt";
 
 function extractRawAwsModules(raw: string) {
   // List of modules that are already included in AWS Lambda environment and should be ignored when
@@ -27,15 +32,23 @@ function extractRawAwsModules(raw: string) {
 
 export class ImportFinder {
   private static readonly awsLambdaContainedModules: Map<string, string[]> = new Map([
+    ["python3.8", extractRawAwsModules(allAwsLambdaModulesPython38)],
+    ["python3.9", extractRawAwsModules(allAwsLambdaModulesPython39)],
     ["python3.10", extractRawAwsModules(allAwsLambdaModulesPython310)],
+    ["python3.11", extractRawAwsModules(allAwsLambdaModulesPython311)],
+    ["python3.12", extractRawAwsModules(allAwsLambdaModulesPython312)],
   ]);
+
+  private readonly runtime: string;
 
   constructor(
     private readonly importResolver: ImportResolver,
     private readonly execEnv: ExecutionEnvironment,
     private readonly platform?: PlatformType,
-    private readonly runtime: string = "python3.10"
-  ) {}
+    runtime?: string
+  ) {
+    this.runtime = runtime || getDefaultPythonRuntime();
+  }
 
   public getImportedModulesForSingleFile(sourceFilepath: string): Module[] {
     const imports = this.getImportsOfFile(sourceFilepath);
