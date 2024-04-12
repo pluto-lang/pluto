@@ -139,5 +139,5 @@ docker run -it --name pluto-app plutolang/pluto:latest bash
   - [Daily Joke Slack Bot](https://github.com/pluto-lang/pluto/tree/main/examples/daily-joke-slack)
 - Python example applications:
   - [Deploy a FastAPI app to AWS](https://github.com/pluto-lang/pluto/tree/main/examples/fastapi)
-  - [Deploy a LangServe example agent to AWS](https://github.com/pluto-lang/pluto/tree/main/examples/langserve-agent-with-history)
+  - [Deploy a LangServe example agent to AWS](https://github.com/pluto-lang/pluto/tree/main/examples/deploy-langserve-to-aws)
   - [Conversational chatbot based on LangChain, Llama2, DynamoDB, SageMaker](https://github.com/pluto-lang/pluto/tree/main/examples/langchain-llama2-chatbot-sagemaker-python)
