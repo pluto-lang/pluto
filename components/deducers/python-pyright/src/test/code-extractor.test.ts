@@ -2,7 +2,12 @@ import * as path from "path";
 import { Program } from "pyright-internal/dist/analyzer/program";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
-import { ExpressionNode, ParseNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
+import {
+  ExpressionNode,
+  LambdaNode,
+  ParseNode,
+  ParseNodeType,
+} from "pyright-internal/dist/parser/parseNodes";
 import * as TestUtils from "./test-utils";
 import * as TypeUtils from "../type-utils";
 import * as TypeConsts from "../type-consts";
@@ -249,6 +254,32 @@ foo()
 
   expect(CodeSegment.getCalledClientApis(segment)).toHaveLength(1);
   expect(CodeSegment.toString(segment)).toContain("Queue.build_client");
+
+  clean();
+});
+
+test("should correctly generate the export statement for multiline statements", () => {
+  const code = `
+def foo(*args, **kwargs):
+  pass
+
+lambda *args, **kwargs: foo("arg1", 
+                            arg2="arg2")(*args, **kwargs)
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return node.nodeType === ParseNodeType.Lambda;
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const lambdaNode = walker.nodes[0] as LambdaNode;
+  const segment = extractor.extractExpressionRecursively(lambdaNode, sourceFile);
+
+  expect(CodeSegment.toString(segment, /* exportName */ "_default")).toContain(`_default = lambda`);
 
   clean();
 });
