@@ -67,24 +67,35 @@ export interface CodeSegment {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace CodeSegment {
-  export function toString(segment: CodeSegment): string {
+  export function toString(segment: CodeSegment, exportName?: string): string {
     const extractedNodeIds: Set<number> = new Set();
-    function concatCodeRecursively(segment: CodeSegment): string {
+    function concatCodeRecursively(curSegment: CodeSegment): string {
       const depsCode =
-        segment.dependentDeclarations?.map((dep) => concatCodeRecursively(dep)).join("\n") ?? "";
+        curSegment.dependentDeclarations?.map((dep) => concatCodeRecursively(dep)).join("\n") ?? "";
 
-      if (
+      if (extractedNodeIds.has(curSegment.node.id)) {
         // Avoid extracting the same node multiple times.
-        extractedNodeIds.has(segment.node.id) ||
-        // The name node is used as a right value, argument, a member access, etc, we don't need to
-        // extract it.
-        segment.node.nodeType === ParseNodeType.Name
-      ) {
         return depsCode;
       }
+      extractedNodeIds.add(curSegment.node.id);
 
-      extractedNodeIds.add(segment.node.id);
-      return `${depsCode}\n${segment.code}`;
+      // The name node is used as a right value, argument, a member access, etc, we don't need to
+      // extract it.
+      let currentStatement = curSegment.node.nodeType === ParseNodeType.Name ? "" : curSegment.code;
+      if (curSegment === segment && exportName) {
+        // If the segment is the root segment, and the caller has given an export name, we should
+        // assign the segment to the export name.
+        if (curSegment.exportableName) {
+          // The corresponding node of this segment has a name, such as function or class node. So,
+          // we should assign the name to the export name.
+          currentStatement += `\n${exportName} = ${curSegment.exportableName}`;
+        } else {
+          // This segment is a lambda function, a function call, etc. We should assign itself to
+          // the export name.
+          currentStatement = `${exportName} = ${currentStatement}`;
+        }
+      }
+      return `${depsCode}\n${currentStatement}`;
     }
 
     return concatCodeRecursively(segment);

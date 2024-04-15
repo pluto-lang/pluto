@@ -395,15 +395,6 @@ export default class PyrightDeducer extends core.Deducer {
   }
 }
 
-function addToStringAtLastLine(originalString: string, stringToAdd: string): string {
-  const lines = originalString.split("\n");
-  if (lines.length === 0) {
-    return stringToAdd;
-  }
-  lines[lines.length - 1] = stringToAdd + lines[lines.length - 1];
-  return lines.join("\n");
-}
-
 /**
  * Try to get the name of the variable the call node is assigned to.
  * @param callNode - The call node.
@@ -471,14 +462,7 @@ function extractAndStoreClosure(
   extractor: CodeExtractor
 ) {
   const codeSegment = extractor!.extractExpressionRecursively(argNode.valueExpression, sourceFile);
-
-  let closureText = CodeSegment.toString(codeSegment);
-  if (codeSegment.exportableName) {
-    closureText += `\n_default = ${codeSegment.exportableName}`;
-  } else {
-    closureText = addToStringAtLastLine(closureText, "_default = ");
-  }
-
+  const closureText = CodeSegment.toString(codeSegment, /* exportName */ "_default");
   const closureName = "fn_" + argNode.start.toString();
   const closureFile = path.resolve(closureBaseDir, closureName, "__init__.py");
   fs.ensureFileSync(closureFile);
