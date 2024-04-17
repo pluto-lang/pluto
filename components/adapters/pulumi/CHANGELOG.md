@@ -1,5 +1,11 @@
 # @plutolang/pulumi-adapter
 
+## 0.4.3
+
+### Patch Changes
+
+- aa14b9c: feat(adapter,sdk): allow custom registry URL and platform for application deployment on K8s
+
 ## 0.4.2
 
 ### Patch Changes
