@@ -10,7 +10,7 @@ ARG PULUMI_BIN_VERSION=v3.112.0
 
 # Install AWS CLI, Pulumi, Node.js
 RUN apt-get update && \
-    apt-get install -y curl unzip git vim && \
+    apt-get install -y curl unzip git vim graphviz && \
     case "$TARGETPLATFORM" in \
     "linux/amd64") \
     AWS_CLI_ARCH=x86_64 \

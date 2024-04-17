@@ -8,25 +8,24 @@ PYTHON_VERSION=3.10
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --pluto)
-      PLUTO_VERSION="$2"
-      shift 2
-      ;;
-    --nodejs)
-      NODEJS_VERSION="$2"
-      shift 2
-      ;;
-    --python)
-      PYTHON_VERSION="$2"
-      shift 2
-      ;;
-    *)
-      echo "Invalid argument: $1"
-      exit 1
-      ;;
+  --pluto)
+    PLUTO_VERSION="$2"
+    shift 2
+    ;;
+  --nodejs)
+    NODEJS_VERSION="$2"
+    shift 2
+    ;;
+  --python)
+    PYTHON_VERSION="$2"
+    shift 2
+    ;;
+  *)
+    echo "Invalid argument: $1"
+    exit 1
+    ;;
   esac
 done
-
 
 # /==================================
 # The utility functions
@@ -51,12 +50,12 @@ function create_docker_manifest {
   local images=("$@")
   local amend=""
 
-  if docker manifest inspect "$manifest" > /dev/null 2>&1; then
+  if docker manifest inspect "$manifest" >/dev/null 2>&1; then
     amend="--amend"
   fi
 
   for i in "${!images[@]}"; do
-    if docker manifest inspect "${images[$i]}" > /dev/null 2>&1; then
+    if docker manifest inspect "${images[$i]}" >/dev/null 2>&1; then
       images[$i]=$(convert_to_digest "${images[$i]}")
     fi
   done
@@ -80,23 +79,6 @@ function create_docker_manifest {
 
 # Prepare the dind image
 DIND_IMAGE_NAME=plutolang/dind:latest
-
-# Check if the dind image exists, if not, build it
-if ! docker manifest inspect $DIND_IMAGE_NAME > /dev/null 2>&1; then
-  echo "DIND image does not exist, building it..."
-  docker buildx build \
-    --platform linux/amd64,linux/arm64 \
-    --build-arg BASE_IMAGE=ubuntu:22.04 \
-    -t ${DIND_IMAGE_NAME} \
-    -f docker/Dockerfile.dind \
-    --push \
-    .
-
-  if [ $? -ne 0 ]; then
-    echo "Failed to build dind image"
-    exit 1
-  fi
-fi
 
 # Start the build process for the Pluto images
 echo "Building images for Pluto version ${PLUTO_VERSION}, Node.js version ${NODEJS_VERSION}, and Python version ${PYTHON_VERSION}"
@@ -125,21 +107,19 @@ echo "  Python Latest: ${PYTHON_LATEST_IMAGE}"
 echo "  Pluto: ${PLUTO_VERSIONED_IMAGE}"
 echo "  Pluto Latest: ${PLUTO_LATEST_IMAGE}"
 
-
 # /==================================
 # The image hierarchy is as follows:
-# ubuntu:22.04                          DIND_IMAGE_NAME
+# ubuntu:22.04       ——————>          DIND_IMAGE_NAME
 #   |                                     |
 #   v                                     v
 # TYPESCRIPT_VERSIONED_AMD64_IMAGE  TYPESCRIPT_VERSIONED_ARM64_IMAGE
 #              \                       /
-#               v                     v 
+#               v                     v
 #              TYPESCRIPT_VERSIONED_IMAGE  ——>  TYPESCRIPT_LATEST_IMAGE
 #                |
 #                v
 # PYTHON_VERSIONED_IMAGE == PYTHON_LATEST_IMAGE == PLUTO_VERSIONED_IMAGE == PLUTO_LATEST_IMAGE
 # \==================================
-
 
 # /==================================
 # Build the TypeScript images
@@ -224,3 +204,15 @@ if [ $? -ne 0 ]; then
   echo "Failed to build python image"
   exit 1
 fi
+
+echo "Successfully built images for Pluto version ${PLUTO_VERSION}, Node.js version ${NODEJS_VERSION}, and Python version ${PYTHON_VERSION}"
+
+echo "Images are available at:"
+echo "  TypeScript AMD64: ${TYPESCRIPT_VERSIONED_AMD64_IMAGE}"
+echo "  TypeScript ARM64: ${TYPESCRIPT_VERSIONED_ARM64_IMAGE}"
+echo "  TypeScript: ${TYPESCRIPT_VERSIONED_IMAGE}"
+echo "  TypeScript Latest: ${TYPESCRIPT_LATEST_IMAGE}"
+echo "  Python: ${PYTHON_VERSIONED_IMAGE}"
+echo "  Python Latest: ${PYTHON_LATEST_IMAGE}"
+echo "  Pluto: ${PLUTO_VERSIONED_IMAGE}"
+echo "  Pluto Latest: ${PLUTO_LATEST_IMAGE}"

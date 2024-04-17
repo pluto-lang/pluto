@@ -109,7 +109,7 @@ export class KnativeService
     const dockerfilePath = path.join(workdir, dockerfileName);
 
     const createDockerfileP = entrypointFilePath.then((entrypointFilePath) => {
-      const dockerfileBody = `FROM node:18-slim
+      const dockerfileBody = `FROM node:20-slim
 WORKDIR /app
 COPY . ./
 CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
@@ -117,21 +117,27 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
     });
 
     // build the image
-    const imageName = `localhost:5001/pluto/${genK8sResourceName(
-      { maxLength: 20 },
-      this.id
-    )}:${Date.now()}`;
+    const k8sConfig = new pulumi.Config("kubernetes");
+    const registryUrl = k8sConfig.get("registry") ?? "docker.io";
+    const imageTag = `${genK8sResourceName({ maxLength: 20 }, this.id)}-${Date.now()}`;
+    const imageName = `${registryUrl}/${formatRepoName(currentProjectName())}:${imageTag}`;
+
+    let platform = k8sConfig.get("platform") ?? "linux/amd64";
+    if (platform === "auto") {
+      platform = `linux/${getCpuArch()}`;
+    }
+
     const image = new docker.Image(
       genK8sResourceName(this.id, "image"),
       {
         build: {
           dockerfile: createDockerfileP.then(() => dockerfilePath),
           context: workdir,
-          platform: "linux/arm64", // TODO: adapt the platform.
+          platform: platform,
         },
         imageName: imageName,
         registry: {
-          server: "localhost:5001",
+          server: registryUrl,
         },
       },
       { parent: this }
@@ -240,4 +246,22 @@ function adaptK8sRuntime(__handler_: AnyFunction) {
       }
     });
   };
+}
+
+function getCpuArch(): string {
+  switch (process.arch) {
+    case "arm64":
+      return "arm64";
+    case "x64":
+      return "amd64";
+    default:
+      throw new Error(`Unsupported architecture: ${process.arch}`);
+  }
+}
+
+function formatRepoName(repoName: string): string {
+  return repoName
+    .replace(/[^a-zA-Z0-9]/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
 }

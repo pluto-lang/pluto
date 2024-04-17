@@ -1,0 +1,23 @@
+ARG BASE_IMAGE
+
+FROM --platform=$TARGETPLATFORM $BASE_IMAGE
+
+ARG TARGETPLATFORM
+ARG KUBECTL_VERSION=v1.29.4
+ARG K3D_VERSION=v5.6.3
+ARG CREATE_CLUSTER_SCRIPT_PATH
+ARG INSTALL_KNATIVE_SCRIPT_PATH
+
+COPY ${CREATE_CLUSTER_SCRIPT_PATH} /scripts/create-cluster.sh
+COPY ${INSTALL_KNATIVE_SCRIPT_PATH} /scripts/install-knative.sh
+
+# Install kubectl and k3d
+RUN case "$TARGETPLATFORM" in \
+    "linux/amd64") KUBECTL_ARCH=amd64 ;; \
+    "linux/arm64") KUBECTL_ARCH=arm64 ;; \
+    *) echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
+    esac && \
+    curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl" && \
+    chmod +x ./kubectl && \
+    mv ./kubectl /usr/local/bin/kubectl && \
+    curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=${K3D_VERSION} bash

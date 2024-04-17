@@ -10,7 +10,7 @@ reg_name='kind-registry'
 reg_port='5001'
 if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
   docker run \
-    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
+    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --network bridge --name "${reg_name}" \
     registry:2
 fi
 
@@ -22,7 +22,7 @@ fi
 # https://github.com/kubernetes-sigs/kind/issues/2875
 # https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
 # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
-cat <<EOF | kind create cluster -n ${cluster_name} --config=-
+cat <<EOF | kind create cluster   -n ${cluster_name} --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 containerdConfigPatches:
@@ -67,3 +67,20 @@ data:
     host: "localhost:${reg_port}"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
+
+# Using The Registry
+# https://kind.sigs.k8s.io/docs/user/local-registry/#using-the-registry
+#
+# The registry can be used like this.
+#   1. First we’ll pull an image docker pull
+#      `gcr.io/google-samples/hello-app:1.0`
+#   2. Then we’ll tag the image to use the local registry `docker tag
+#      gcr.io/google-samples/hello-app:1.0 localhost:5001/hello-app:1.0`
+#   3. Then we’ll push it to the registry docker push
+#      `localhost:5001/hello-app:1.0`
+#   4. And now we can use the image `kubectl create deployment hello-server
+#      --image=localhost:5001/hello-app:1.0`
+#
+# If you build your own image and tag it like `localhost:5001/image:foo` and
+# then use it in kubernetes as `localhost:5001/image:foo`. And use it from
+# inside of your cluster application as `kind-registry:5000`.
