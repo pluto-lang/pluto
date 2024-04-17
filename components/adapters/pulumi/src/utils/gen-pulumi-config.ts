@@ -61,8 +61,10 @@ async function genPulumiConfigForAWS(): Promise<ConfigMap> {
 
 async function genPulumiConfigForK8s(sta: config.Stack): Promise<ConfigMap> {
   const configMap: ConfigMap = {};
-  if (sta.configs["kubernetes:kubeconfig"]) {
-    configMap["kubernetes:kubeconfig"] = { value: sta.configs["kubernetes:kubeconfig"] };
+  for (const [key, value] of Object.entries(sta.configs)) {
+    if (key.startsWith("kubernetes:")) {
+      configMap[key] = { value };
+    }
   }
   return configMap;
 }
