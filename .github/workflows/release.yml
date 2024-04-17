@@ -112,7 +112,7 @@ jobs:
           RELEASE_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
 
       - name: Trigger to bump pluto version in codesandbox
-        if: steps.release.outputs.published == 'true'
+        if: steps.changesets.outputs.published == 'true'
         run: |
           curl -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
