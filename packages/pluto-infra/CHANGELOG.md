@@ -1,5 +1,11 @@
 # @plutolang/pluto-infra
 
+## 0.4.7
+
+### Patch Changes
+
+- aa14b9c: feat(adapter,sdk): allow custom registry URL and platform for application deployment on K8s
+
 ## 0.4.6
 
 ### Patch Changes
