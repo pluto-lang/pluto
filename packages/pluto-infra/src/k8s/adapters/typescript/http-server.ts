@@ -1,18 +1,11 @@
 import http from "http";
 import url from "url";
 import qs from "querystring";
-interface ParsedItem {
-  readonly url: url.UrlWithParsedQuery;
-  readonly body?: string;
-}
+import { RuntimeHandler } from "../../types";
 
-type RuntimeHandler = (
-  req: http.IncomingMessage,
-  res: http.ServerResponse,
-  parsedItem: ParsedItem
-) => Promise<void>;
+declare const __handler_: RuntimeHandler;
 
-export function runtimeBase(handler: RuntimeHandler) {
+export function handler() {
   const port = process.env.PORT || "8080";
 
   const server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -43,7 +36,7 @@ export function runtimeBase(handler: RuntimeHandler) {
           console.warn("Unsupported content type: ", contentType);
         }
 
-        await handler(req, res, { url: parsedUrl, body: parsedBody }).catch((e) => {
+        await __handler_(req, res, { url: parsedUrl, body: parsedBody }).catch((e) => {
           console.error("Encountered an error when calling the runtime handler, ", e);
           responseAndClose(res, 500, "Internal Server Error");
         });
@@ -70,7 +63,7 @@ interface ResponseAndCloseOptions {
   readonly contentType?: string;
 }
 
-export function responseAndClose(
+function responseAndClose(
   res: http.ServerResponse,
   statusCode: number,
   message?: string,

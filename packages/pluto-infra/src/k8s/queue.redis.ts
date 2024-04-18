@@ -1,19 +1,11 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { IResourceInfra } from "@plutolang/base";
-import { genResourceId } from "@plutolang/base/utils";
+import { IResourceInfra, LanguageType } from "@plutolang/base";
+import { currentLanguage, genResourceId } from "@plutolang/base/utils";
 import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
-import {
-  AnyFunction,
-  CloudEvent,
-  EventHandler,
-  IQueueInfra,
-  Queue,
-  QueueOptions,
-} from "@plutolang/pluto";
+import { AnyFunction, IQueueInfra, Queue, QueueOptions } from "@plutolang/pluto";
 import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 import { KnativeService } from "./function.service";
-import { responseAndClose, runtimeBase } from "./utils";
 
 export class RedisQueue extends pulumi.ComponentResource implements IResourceInfra, IQueueInfra {
   public readonly id: string;
@@ -77,7 +69,7 @@ export class RedisQueue extends pulumi.ComponentResource implements IResourceInf
       throw new Error("This closure is invalid.");
     }
 
-    const adaptHandler = wrapClosure(adaptK8sRuntime(closure), closure);
+    const adaptHandler = adaptPlatformNorm(closure);
     const func = new KnativeService(adaptHandler, {
       name: `${this.id}-func`,
     });
@@ -113,29 +105,16 @@ export class RedisQueue extends pulumi.ComponentResource implements IResourceInf
   public postProcess(): void {}
 }
 
-function adaptK8sRuntime(__handler_: EventHandler) {
-  return async () => {
-    runtimeBase(async (_, res, parsed) => {
-      if (!parsed.body) {
-        res.writeHead(400);
-        res.end(`The body of the request is empty.`);
-        return;
-      }
-
-      const events = JSON.parse(parsed.body);
-      if (events.length < 2) {
-        res.writeHead(400);
-        res.end(`Event is invalid: ${parsed.body}`);
-        return;
-      }
-
-      const evt: CloudEvent = JSON.parse(events[1]);
-      try {
-        await __handler_(evt);
-        responseAndClose(res, 200, "");
-      } catch (e) {
-        responseAndClose(res, 500, `Event processing failed: ${e}`);
-      }
-    });
-  };
+function adaptPlatformNorm(closure: ComputeClosure<AnyFunction>): ComputeClosure<AnyFunction> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(() => {}, closure, {
+        dirpath: require.resolve("./adapters/typescript/redis.queue"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
 }

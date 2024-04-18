@@ -1,19 +1,16 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
-import { IResourceInfra } from "@plutolang/base";
-import { genResourceId } from "@plutolang/base/utils";
-import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import { IResourceInfra, LanguageType } from "@plutolang/base";
+import { currentLanguage, genResourceId } from "@plutolang/base/utils";
 import {
-  IRouterInfra,
-  RequestHandler,
-  Router,
-  RouterOptions,
-  HttpRequest,
-  parseUrl,
-} from "@plutolang/pluto";
+  AnyFunction,
+  ComputeClosure,
+  isComputeClosure,
+  wrapClosure,
+} from "@plutolang/base/closure";
+import { IRouterInfra, RequestHandler, Router, RouterOptions, parseUrl } from "@plutolang/pluto";
 import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 import { KnativeService } from "./function.service";
-import { responseAndClose, runtimeBase } from "./utils";
 
 export class IngressRouter
   extends pulumi.ComponentResource
@@ -69,7 +66,8 @@ export class IngressRouter
       throw new Error("This closure is invalid.");
     }
 
-    const adaptHandler = wrapClosure(adaptK8sRuntime(closure, raw), closure);
+    // const adaptHandler = wrapClosure(adaptK8sRuntime(closure, raw), closure);
+    const adaptHandler = adaptPlatformNorm(closure, raw);
     const func = new KnativeService(adaptHandler, {
       name: `${this.id}-${method}-${path.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`,
     });
@@ -121,37 +119,6 @@ export class IngressRouter
   }
 }
 
-function adaptK8sRuntime(__handler_: RequestHandler, raw?: boolean) {
-  if (raw) {
-    runtimeBase(async (req, res) => {
-      await (__handler_ as any)(req, res);
-    });
-  }
-
-  return async () => {
-    runtimeBase(async (req, res, parsed) => {
-      const plutoRequest: HttpRequest = {
-        path: parsed.url.pathname || "/",
-        method: req.method || "UNKNOWN",
-        headers: {},
-        query: parsed.url.query || {},
-        body: parsed.body ?? null,
-      };
-      console.log("Request:", plutoRequest);
-
-      try {
-        const respBody = await __handler_(plutoRequest);
-        responseAndClose(res, respBody.statusCode, JSON.stringify(respBody.body), {
-          contentType: "application/json",
-        });
-      } catch (e) {
-        console.log("Http processing failed:", e);
-        responseAndClose(res, 500, "Internal Server Error");
-      }
-    });
-  };
-}
-
 function convertToExpressPath(url: string): string {
   const parts = parseUrl(url);
   return (
@@ -168,4 +135,21 @@ function convertToExpressPath(url: string): string {
       })
       .join("/")
   );
+}
+
+function adaptPlatformNorm(
+  closure: ComputeClosure<RequestHandler>,
+  raw: boolean = false
+): ComputeClosure<AnyFunction> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(() => {}, closure, {
+        dirpath: require.resolve("./adapters/typescript/ingress" + (raw ? ".raw" : "")),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
 }

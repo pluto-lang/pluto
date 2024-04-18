@@ -87,7 +87,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
     // Serialize the closure with its dependencies to a directory.
     assert(process.env.WORK_DIR, "WORK_DIR is not set.");
-    const workdir = path.join(process.env.WORK_DIR!, "assets", `${this.id}`);
+    const workdir = path.join(process.env.WORK_DIR, "assets", `${this.id}`);
     fs.rmSync(workdir, { recursive: true, force: true });
     fs.ensureDirSync(workdir);
     let entrypointFilePathP: Promise<string>;

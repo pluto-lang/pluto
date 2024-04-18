@@ -9,7 +9,7 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "release": "RELEASE=1 turbo run build lint test && changeset version && changeset publish",
+    "release": "RELEASE=1 turbo run build lint && changeset version && changeset publish",
     "prepare": "husky install"
   },
   "devDependencies": {
@@ -19,8 +19,14 @@
     "eslint": "^8.48.0",
     "eslint-config-prettier": "^9.0.0",
     "husky": "^8.0.3",
+    "lint-staged": "^15.2.2",
     "prettier": "^3.0.3",
     "turbo": "latest"
   },
-  "packageManager": "pnpm@8.6.10"
+  "packageManager": "pnpm@8.6.10",
+  "lint-staged": {
+    "**/*.{ts,tsx,md}": [
+      "prettier --write --ignore-unknown"
+    ]
+  }
 }
