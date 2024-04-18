@@ -8,4 +8,4 @@ stacks:
   - configs: {}
     provisionType: Pulumi
     name: k8s
-    platformType: K8S
+    platformType: K8s

@@ -2,11 +2,10 @@ import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import { IResourceInfra } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
-import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
 import { IScheduleInfra, Schedule, ScheduleHandler, ScheduleOptions } from "@plutolang/pluto";
 import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 import { KnativeService } from "./function.service";
-import { responseAndClose, runtimeBase } from "./utils";
 
 export class PingSchedule
   extends pulumi.ComponentResource
@@ -24,8 +23,7 @@ export class PingSchedule
       throw new Error("This closure is invalid.");
     }
 
-    const adaptHandler = wrapClosure(adaptK8sRuntime(closure), closure);
-    const func = new KnativeService(adaptHandler, {
+    const func = new KnativeService(closure, {
       name: `${this.id}-${cron.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`,
     });
 
@@ -59,17 +57,4 @@ export class PingSchedule
   }
 
   public postProcess(): void {}
-}
-
-function adaptK8sRuntime(__handler_: ScheduleHandler) {
-  return async () => {
-    runtimeBase(async (_, res) => {
-      try {
-        await __handler_();
-        responseAndClose(res, 200);
-      } catch (e) {
-        responseAndClose(res, 500, `Schedule event processing failed: ${e}`);
-      }
-    });
-  };
 }

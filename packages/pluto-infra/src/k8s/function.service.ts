@@ -1,29 +1,28 @@
-import os from "os";
 import fs from "fs-extra";
 import path from "path";
 import * as pulumi from "@pulumi/pulumi";
 import * as k8s from "@pulumi/kubernetes";
 import * as docker from "@pulumi/docker";
-import { IResourceInfra, PlatformType } from "@plutolang/base";
+import { IResourceInfra, LanguageType, PlatformType } from "@plutolang/base";
 import {
   createEnvNameForProperty,
+  currentLanguage,
   currentProjectName,
   currentStackName,
   genResourceId,
 } from "@plutolang/base/utils";
-import { ComputeClosure, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
+import { ComputeClosure, getDepth, isComputeClosure, wrapClosure } from "@plutolang/base/closure";
 import {
   FunctionOptions,
   IFunctionInfra,
   Function,
   AnyFunction,
   DEFAULT_FUNCTION_NAME,
-  DirectCallResponse,
 } from "@plutolang/pluto";
 import { genK8sResourceName } from "@plutolang/pluto/dist/clients/k8s";
 import { Metadata } from "./types";
-import { serializeClosureToDir } from "../utils";
-import { responseAndClose, runtimeBase } from "./utils";
+import { dumpClosureToDir } from "../utils";
+import assert from "assert";
 
 export class KnativeService
   extends pulumi.ComponentResource
@@ -47,23 +46,31 @@ export class KnativeService
       throw new Error("This closure is invalid.");
     }
 
-    // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
-    // platform adaption function.
-    //
-    // TODO: The closure that meets the below condition might not necessarily be one created by the
-    // user themselves. It could also potentially be created by a SDK developer. We need to find a
-    // more better method to verify this.
-    if (closure.dirpath !== "inline" && closure.innerClosure === undefined) {
-      closure = wrapClosure(adaptK8sRuntime(closure), closure);
+    if (getDepth(closure) === 1) {
+      // If the depth of the closure is 1, it means there is only the business closure in the
+      // hierarchy of the closure. We need to wrap it with the platform adaption function.
+      closure = adaptPlatformNorm(closure);
     }
+    // We've established a standard for the Kubernetes runtime handler, which can be found in the
+    // `type.ts` file. Before wrapping the base runtime, it should be treated as a runtime handler.
+    // Currently, we're wrapping the base runtime for this closure, which will serve as the starting
+    // point for the container.
+    closure = wrapBaseRuntime(closure);
 
     // Serialize the closure with its dependencies to a directory.
-    const workdir = path.join(os.tmpdir(), `pluto`, `${this.id}_${Date.now()}`);
+    assert(process.env.WORK_DIR, "WORK_DIR is not set.");
+    const workdir = path.join(process.env.WORK_DIR, `assets`, this.id);
+    fs.removeSync(workdir);
     fs.ensureDirSync(workdir);
-    const entrypointFilePathP = serializeClosureToDir(workdir, closure, { exec: true });
+    const entrypointFilePath = dumpClosureToDir(
+      workdir,
+      closure,
+      currentLanguage(),
+      /* exec */ true
+    );
 
     // Build the image.
-    const image = this.buildImage(workdir, entrypointFilePathP);
+    const image = this.buildImage(workdir, entrypointFilePath);
 
     // Create the service.
     const service = this.createService();
@@ -104,17 +111,15 @@ export class KnativeService
 
   public postProcess(): void {}
 
-  private buildImage(workdir: string, entrypointFilePath: Promise<string>) {
+  private buildImage(workdir: string, entrypointFilePath: string) {
     const dockerfileName = `${this.id}.Dockerfile`;
     const dockerfilePath = path.join(workdir, dockerfileName);
 
-    const createDockerfileP = entrypointFilePath.then((entrypointFilePath) => {
-      const dockerfileBody = `FROM node:20-slim
+    const dockerfileBody = `FROM node:20-slim
 WORKDIR /app
 COPY . ./
 CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
-      fs.writeFileSync(dockerfilePath, dockerfileBody);
-    });
+    fs.writeFileSync(dockerfilePath, dockerfileBody);
 
     // build the image
     const k8sConfig = new pulumi.Config("kubernetes");
@@ -131,7 +136,7 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
       genK8sResourceName(this.id, "image"),
       {
         build: {
-          dockerfile: createDockerfileP.then(() => dockerfilePath),
+          dockerfile: dockerfilePath,
           context: workdir,
           platform: platform,
         },
@@ -210,44 +215,6 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
   }
 }
 
-function adaptK8sRuntime(__handler_: AnyFunction) {
-  return async () => {
-    runtimeBase(async (_, res, parsedBody) => {
-      try {
-        const payload = JSON.parse(parsedBody.body ?? "[]");
-        console.log("Payload:", payload);
-        if (!Array.isArray(payload)) {
-          responseAndClose(res, 500, `Payload should be an array.`);
-          return;
-        }
-
-        let response: DirectCallResponse;
-        try {
-          const respBody = await __handler_(...payload);
-          response = {
-            code: 200,
-            body: respBody,
-          };
-        } catch (e) {
-          // The error comes from inside the user function.
-          console.log("Function execution failed:", e);
-          response = {
-            code: 400,
-            body: `Function execution failed: ` + (e instanceof Error ? e.message : e),
-          };
-        }
-        responseAndClose(res, 200, JSON.stringify(response), {
-          contentType: "application/json",
-        });
-      } catch (e) {
-        // The error is caused by the HTTP processing, not the user function.
-        console.log("Http processing failed:", e);
-        responseAndClose(res, 500, "Internal Server Error");
-      }
-    });
-  };
-}
-
 function getCpuArch(): string {
   switch (process.arch) {
     case "arm64":
@@ -264,4 +231,32 @@ function formatRepoName(repoName: string): string {
     .replace(/[^a-zA-Z0-9]/g, "-")
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
+}
+
+function adaptPlatformNorm(closure: ComputeClosure<AnyFunction>): ComputeClosure<AnyFunction> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(() => {}, closure, {
+        dirpath: require.resolve("./adapters/typescript/knative"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
+}
+
+function wrapBaseRuntime(closure: ComputeClosure<AnyFunction>): ComputeClosure<AnyFunction> {
+  switch (currentLanguage()) {
+    case LanguageType.TypeScript:
+      return wrapClosure(() => {}, closure, {
+        dirpath: require.resolve("./adapters/typescript/http-server"),
+        exportName: "handler",
+        placeholder: "__handler_",
+      });
+    case LanguageType.Python:
+    default:
+      throw new Error(`Unsupported language: ${currentLanguage()}`);
+  }
 }
