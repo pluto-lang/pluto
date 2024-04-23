@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.7",
+    "@types/lodash": "^4.17.0",
     "@types/node": "^20.10.4",
     "@vitest/coverage-v8": "^0.34.6",
     "typescript": "^5.2.2",
@@ -28,6 +29,7 @@
   },
   "dependencies": {
     "fs-extra": "^11.1.1",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21"
   }
 }
