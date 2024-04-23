@@ -1,6 +1,6 @@
 import * as yaml from "js-yaml";
 import { Closure } from "./closure";
-import { IdWithType, Relationship } from "./relationship";
+import { IdWithType, Relationship, sameRelationship } from "./relationship";
 import { Resource } from "./resource";
 import { TopoSorter } from "./topo-sorter";
 import { Entity } from "./types";
@@ -60,7 +60,11 @@ export class Architecture {
   }
 
   public addRelationship(relat: Relationship) {
-    this._relationships.push(relat);
+    // Check if the relationship already exists
+    const existing = this._relationships.some((r) => sameRelationship(r, relat));
+    if (!existing) {
+      this._relationships.push(relat);
+    }
   }
 
   public topoSort(): Entity[] {
