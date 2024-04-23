@@ -3,7 +3,11 @@ import { createHash } from "crypto";
 const RESOURCE_NAME_MAX_LENGTH = 50;
 
 export function genAwsResourceName(...parts: string[]): string {
-  const resourceFullId = parts.join("_").replace(/[^-0-9a-zA-Z]+/g, "-");
+  const resourceFullId = parts
+    .join("_")
+    .replace(/[^-0-9a-zA-Z]+/g, "-")
+    .toLowerCase();
+
   if (resourceFullId.length <= RESOURCE_NAME_MAX_LENGTH) {
     return resourceFullId.replace(/^-+|-+$/g, "");
   } else {

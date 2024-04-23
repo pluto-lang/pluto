@@ -40,7 +40,7 @@ export class CloudWatchSchedule
       genAwsResourceName(this.id, "permission"),
       {
         action: "lambda:InvokeFunction",
-        function: lambda.id,
+        function: lambda.lambdaName,
         principal: "events.amazonaws.com",
         sourceArn: rule.arn,
       },

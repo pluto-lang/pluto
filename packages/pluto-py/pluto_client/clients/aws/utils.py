@@ -6,7 +6,8 @@ RESOURCE_NAME_MAX_LENGTH = 50
 
 
 def gen_aws_resource_name(*parts: str) -> str:
-    resource_full_id = re.sub(r"[^-0-9a-zA-Z]+", "-", "_".join(parts))
+    resource_full_id = re.sub(r"[^-0-9a-zA-Z]+", "-", "_".join(parts)).lower()
+
     if len(resource_full_id) <= RESOURCE_NAME_MAX_LENGTH:
         return resource_full_id.strip("-")
     else:

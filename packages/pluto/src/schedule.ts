@@ -20,7 +20,7 @@ export interface IScheduleClientApi extends IResourceClientApi {}
 
 export interface IScheduleInfraApi extends IResourceInfraApi {
   /**
-   * @param cron Cron expressions have six required fields, which are separated by white space.
+   * @param cron Cron expressions have five required fields, which are separated by white space.
    *
    * Format: Minutes(0-59) Hours(0-23) Day-of-month(1-31) Month(1-12) Day-of-week(0-6)
    */

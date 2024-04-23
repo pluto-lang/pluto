@@ -24,6 +24,7 @@ class DirectCallResponse:
 @dataclass
 class FunctionOptions:
     name: str | None = None
+    memory: int | None = 128  # The memory size in MB, default is 128.
     envs: Dict[str, Any] | None = None
 
 

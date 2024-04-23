@@ -18,12 +18,12 @@
   "dependencies": {
     "@plutolang/base": "workspace:^",
     "@plutolang/pluto": "workspace:^",
-    "@pulumi/alicloud": "^3.45.0",
-    "@pulumi/archive": "^0.0.2",
-    "@pulumi/aws": "^6.4.1",
-    "@pulumi/docker": "^4.4.3",
-    "@pulumi/kubernetes": "^4.3.0",
-    "@pulumi/pulumi": "^3.88.0",
+    "@pulumi/alicloud": "3.45.0",
+    "@pulumi/archive": "0.0.2",
+    "@pulumi/aws": "6.4.1",
+    "@pulumi/docker": "4.4.3",
+    "@pulumi/kubernetes": "4.3.0",
+    "@pulumi/pulumi": "3.88.0",
     "fs-extra": "^11.1.1"
   },
   "devDependencies": {
