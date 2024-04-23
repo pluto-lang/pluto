@@ -284,6 +284,44 @@ lambda *args, **kwargs: foo("arg1",
   clean();
 });
 
+test("should correctly extract the code segment for the StringList", () => {
+  const code = `
+plain_string = "Hello, world"
+
+def a_func():
+  return 1
+
+formated_string = f"Hello, {a_func()}, {plain_string}"
+
+def foo(*args, **kwargs):
+  formated_string
+
+foo()
+`;
+
+  const { program, sourceFile, clean } = TestUtils.parseCode(code);
+  const { extractor } = createTools(program, sourceFile);
+
+  const walker = new NodeFetcher((node) => {
+    return (
+      node.nodeType === ParseNodeType.Call &&
+      node.leftExpression.nodeType === ParseNodeType.Name &&
+      node.leftExpression.value === "foo"
+    );
+  });
+  walker.walk(sourceFile.getParseResults()!.parseTree!);
+  expect(walker.nodes).toHaveLength(1);
+
+  const callNode = walker.nodes[0] as ExpressionNode;
+  const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
+
+  const exported = CodeSegment.toString(segment);
+  expect(exported.match(/plain_string/g)).toHaveLength(2);
+  expect(exported.match(/a_func/g)).toHaveLength(2);
+
+  clean();
+});
+
 function createTools(program: Program, sourceFile: SourceFile) {
   const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);

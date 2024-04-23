@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { Parameter } from "./parameter";
 
 export enum RelatType {
@@ -52,4 +53,8 @@ export function isRelationship(obj: any): obj is Relationship {
     }
   }
   return true;
+}
+
+export function sameRelationship(relat1: Relationship, relat2: Relationship): boolean {
+  return _.isEqual(relat1, relat2);
 }

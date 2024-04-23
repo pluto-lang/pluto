@@ -8,6 +8,7 @@ import {
   ClassNode,
   DictionaryNode,
   ExpressionNode,
+  FormatStringNode,
   FunctionNode,
   ImportAsNode,
   ImportFromAsNode,
@@ -19,6 +20,7 @@ import {
   NameNode,
   ParseNode,
   ParseNodeType,
+  StringListNode,
   TupleNode,
   isExpressionNode,
 } from "pyright-internal/dist/parser/parseNodes";
@@ -187,12 +189,14 @@ export class CodeExtractor {
         segment = this.extractMemberAccessRecursively(node, sourceFile);
         break;
       case ParseNodeType.Number:
-      case ParseNodeType.StringList:
       case ParseNodeType.Constant:
         segment = CodeSegment.buildWithChildren({
           node,
           code: TextUtils.getTextOfNode(node, sourceFile)!,
         });
+        break;
+      case ParseNodeType.StringList:
+        segment = this.extractStringListRecursively(node, sourceFile);
         break;
       case ParseNodeType.BinaryOperation:
         segment = this.extractBinaryOperationRecursively(node, sourceFile);
@@ -546,6 +550,27 @@ export class CodeExtractor {
         code: code,
       },
       [callerSegment]
+    );
+  }
+
+  private extractStringListRecursively(node: StringListNode, sourceFile: SourceFile): CodeSegment {
+    const children: CodeSegment[] = [];
+    node.strings
+      .filter((node) => node.nodeType === ParseNodeType.FormatString)
+      .forEach((stringNode) => {
+        const formatStringNode = stringNode as FormatStringNode;
+        formatStringNode.fieldExpressions.forEach((expr) => {
+          const segment = this.extractExpressionRecursively(expr, sourceFile);
+          children.push(segment);
+        });
+      });
+
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: TextUtils.getTextOfNode(node, sourceFile)!,
+      },
+      children
     );
   }
 

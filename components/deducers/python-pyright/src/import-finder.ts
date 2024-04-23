@@ -30,6 +30,12 @@ function extractRawAwsModules(raw: string) {
     .map((line) => line.replace(/\.__init__$/g, ""));
 }
 
+function debugPrint(...args: any[]) {
+  if (process.env.DEBUG) {
+    console.log(...args);
+  }
+}
+
 export class ImportFinder {
   private static readonly awsLambdaContainedModules: Map<string, string[]> = new Map([
     ["python3.8", extractRawAwsModules(allAwsLambdaModulesPython38)],
@@ -57,10 +63,14 @@ export class ImportFinder {
     for (const imp of imports) {
       const moduleName = imp.importName;
       if (this.shouldIgnore(imp)) {
+        debugPrint("Ignoring import:", moduleName);
         continue;
       }
-      const version = getModuleVersion(imp);
-      importedModules.push({ name: moduleName, version });
+      const installedPkgs = getInstallableModule(imp);
+      importedModules.push(installedPkgs);
+      debugPrint(
+        `Found installable module ${installedPkgs.name}==${installedPkgs.version} for ${moduleName}`
+      );
     }
 
     return importedModules;
@@ -84,8 +94,7 @@ export class ImportFinder {
       modulePath?.endsWith(".so") || // native module
       !importInfo.isImportFound || // not found
       importInfo.importType === ImportType.BuiltIn || // built-in
-      importInfo.isStdlibTypeshedFile || // typeshed file
-      importInfo.isThirdPartyTypeshedFile // typeshed file
+      importInfo.isStdlibTypeshedFile // typeshed file
     );
   }
 
@@ -170,30 +179,96 @@ function getModulePath(module: ImportResult) {
 }
 
 /**
- * Try to get the version of the module by looking at the dist-info directory.
- * @param module - The module to get the version of.
- * @returns The version of the module if found, otherwise undefined.
+ * This function is used to get the installable module from a given import result.
+ *
+ * @param {ImportResult} module - The import result, which contains the import name and module path.
+ * @returns {Module} - The installable module.
  */
-function getModuleVersion(module: ImportResult) {
+function getInstallableModule(module: ImportResult): Module {
   const pkgName = module.importName;
   const pkgPath = getModulePath(module);
-  if (!pkgPath) {
-    return;
+
+  if (pkgPath) {
+    const distInfos = getAllDistInfos(path.dirname(pkgPath));
+    for (const distInfo of distInfos) {
+      if (distInfo.topLevel.includes(pkgName)) {
+        return distInfo;
+      }
+    }
   }
 
-  // Find the dist-info directory that matches the package name.
-  const reg = new RegExp(`^${pkgName}-(\\d+(\\.\\d+)*?)\\.dist-info$`);
-  const distInforDirnames = fs.readdirSync(path.dirname(pkgPath)).filter((dirname) => {
-    return reg.test(dirname);
+  return { name: pkgName };
+}
+
+interface DistInfo {
+  readonly name: string;
+  readonly version: string;
+  readonly topLevel: readonly string[];
+}
+
+/**
+ * This function is used to get all distribution information from a given package path.
+ *
+ * Each distribution information object contains:
+ * - name: The name of the distribution.
+ * - version: The version of the distribution.
+ * - topLevel: An array of top-level module names in the distribution.
+ *
+ * @param {string} pkgPath - The directory path that stores the dist-info directories.
+ * @returns {DistInfo[]} - An array of distribution information objects.
+ */
+function getAllDistInfos(pkgPath: string): DistInfo[] {
+  // Get all ".dist-info" directories in the package path.
+  const distInfoDirNames = fs.readdirSync(pkgPath).filter((p) => p.endsWith(".dist-info"));
+  // For each ".dist-info" directory, get the distribution information.
+  return distInfoDirNames.map((distInfoDirName) => {
+    let distName: string | undefined;
+    let distVersion: string | undefined;
+
+    // Read the "METADATA" file to get the distribution's name and version.
+    const metadataPath = path.join(pkgPath, distInfoDirName, "METADATA");
+    const metadata = fs.readFileSync(metadataPath);
+    const lines = metadata.toString().split("\n");
+    for (const line of lines) {
+      const [key, value] = line.split(":");
+      switch (key.trim()) {
+        case "Name":
+          distName = value.trim();
+          break;
+        case "Version":
+          distVersion = value.trim();
+          break;
+      }
+    }
+
+    if (!distName || !distVersion) {
+      // If the name or version is not found in the "METADATA" file, throw an error.
+      throw new Error(`Cannot find name or version in ${metadataPath}`);
+    }
+
+    // Read the "top_level.txt" file to get the top-level module names.
+    let topLevel: string[] = [];
+    const topLevelPath = path.join(pkgPath, distInfoDirName, "top_level.txt");
+    if (fs.existsSync(topLevelPath)) {
+      const content = fs.readFileSync(topLevelPath);
+      topLevel = content
+        .toString()
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line !== "");
+    } else {
+      // If the "top_level.txt" file does not exist, use the distribution name as the top-level
+      // module name.
+      topLevel.push(distName);
+    }
+    // Replace all hyphens in the top-level module names with underscores. Because the hyphens in
+    // the module names are replaced with underscores in the import statements.
+    topLevel = topLevel.map((name) => (name = name.replace(/-/g, "_")));
+
+    return {
+      name: distName,
+      version: distVersion,
+      topLevel,
+    };
   });
-
-  if (distInforDirnames.length !== 1) {
-    // No dist-info directory found or multiple dist-info directories found, we can't determine the
-    // version.
-    return;
-  }
-
-  // Extract the version from the dist-info directory name.
-  const match = reg.exec(distInforDirnames[0]);
-  return match ? match[1] : undefined;
 }
