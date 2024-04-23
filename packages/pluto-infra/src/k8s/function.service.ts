@@ -29,6 +29,7 @@ export class KnativeService
   implements IResourceInfra, IFunctionInfra
 {
   public readonly id: string;
+  private readonly options: FunctionOptions;
 
   private readonly appLabels: { app: string };
   private readonly namespace: string = "default";
@@ -36,10 +37,11 @@ export class KnativeService
   public readonly serviceMeta: Metadata;
   public readonly kserviceMeta: Metadata;
 
-  constructor(closure: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
-    const name = options?.name || DEFAULT_FUNCTION_NAME;
-    super("pluto:function:k8s/KnativeService", name, options);
-    this.id = genResourceId(Function.fqn, name);
+  constructor(closure: ComputeClosure<AnyFunction>, options: FunctionOptions = {}) {
+    options.name = options.name || DEFAULT_FUNCTION_NAME;
+    super("pluto:function:k8s/KnativeService", options.name, options);
+    this.id = genResourceId(Function.fqn, options.name);
+    this.options = options;
     this.appLabels = { app: genK8sResourceName(this.id) };
 
     if (!isComputeClosure(closure)) {
@@ -154,6 +156,8 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
     image: docker.Image,
     envs: { name: string; value: string | pulumi.Output<string> }[]
   ) {
+    const memory = this.options.memory ?? 128;
+
     const kservice = new k8s.apiextensions.CustomResource(
       genK8sResourceName(this.id, "kservice"),
       {
@@ -173,6 +177,11 @@ CMD [ "node", "${path.basename(entrypointFilePath)}" ]`;
             spec: {
               containers: [
                 {
+                  resources: {
+                    limits: {
+                      memory: `${memory}Mi`,
+                    },
+                  },
                   image: image.imageName,
                   env: envs,
                 },

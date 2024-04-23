@@ -31,6 +31,7 @@ interface FunctionHandler extends AnyFunction, FnResource {}
  */
 export interface FunctionOptions {
   name?: string;
+  memory?: number; // The memory size in MB, default is 128.
   envs?: Record<string, any>;
 }
 

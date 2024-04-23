@@ -5,3 +5,4 @@ export * from "./schedule";
 export * from "./tester";
 export * from "./function";
 export * from "./sagemaker.aws";
+export * from "./bucket";

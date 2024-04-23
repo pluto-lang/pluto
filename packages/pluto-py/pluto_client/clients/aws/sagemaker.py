@@ -1,6 +1,5 @@
 import boto3
 import json
-import base64
 from typing import Any, Optional
 from pluto_base.utils import gen_resource_id, get_env_val_for_property
 from .utils import gen_aws_resource_name
@@ -25,8 +24,7 @@ class SageMaker(ISageMakerClient):
             ContentType="application/json",
             Accept="application/json",
         )
-        response_body = base64.b64decode(response["Body"]).decode("utf-8")
-        return json.loads(response_body)
+        return json.loads(response["Body"].read())
 
     def endpoint_url(self) -> str:
         return get_env_val_for_property(self.__id, "endpointUrl")

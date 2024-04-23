@@ -26,6 +26,7 @@ import {
 import { genAwsResourceName } from "@plutolang/pluto/dist/clients/aws";
 import { dumpClosureToDir_python, serializeClosureToDir, getDefaultPythonRuntime } from "../utils";
 import { Permission } from "./permission";
+import { S3Bucket } from "./bucket.s3";
 
 export enum Ops {
   WATCH_LOG = "WATCH_LOG",
@@ -34,6 +35,7 @@ export enum Ops {
 
 export class Lambda extends pulumi.ComponentResource implements IResourceInfra, IFunctionInfra {
   public readonly id: string;
+  private readonly options: FunctionOptions;
 
   private readonly lambda: AwsLambda;
   private readonly lambdaUrl: aws.lambda.FunctionUrl;
@@ -46,14 +48,16 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
   public readonly outputs?: pulumi.Output<any> | string;
 
-  constructor(closure: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
-    const name = options?.name ?? DEFAULT_FUNCTION_NAME;
-    super("pluto:function:aws/Lambda", name, options);
-    this.id = genResourceId(PlutoFunction.fqn, name);
+  private static lambdaAssetsBucket?: S3Bucket;
 
+  constructor(closure: ComputeClosure<AnyFunction>, options: FunctionOptions = {}) {
+    options.name = options.name ?? DEFAULT_FUNCTION_NAME;
+    super("pluto:function:aws/Lambda", options.name, options);
+    this.id = genResourceId(PlutoFunction.fqn, options.name);
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
     }
+    this.options = options;
 
     // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
     // platform adaption function.
@@ -178,14 +182,31 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       return `${prefix}.${exportName}`;
     });
 
+    if (Lambda.lambdaAssetsBucket === undefined) {
+      Lambda.lambdaAssetsBucket = new S3Bucket("lambda-assets");
+    }
+
+    const lambdaAssetName = genAwsResourceName(this.id, Date.now().toString());
+    function upload(): pulumi.Output<string> {
+      const lambdaZip = new pulumi.asset.FileArchive(workdir);
+      const object = new aws.s3.BucketObject(lambdaAssetName, {
+        bucket: Lambda.lambdaAssetsBucket!.bucket,
+        source: lambdaZip,
+      });
+      return object.key;
+    }
+
     return new aws.lambda.Function(
       this.lambdaName,
       {
         name: this.lambdaName,
-        code: entrypointFilePathP.then(() => new pulumi.asset.FileArchive(workdir)),
+        // code: pulumi.output(entrypointFilePathP).apply(() => new pulumi.asset.FileArchive(workdir)),
+        s3Bucket: Lambda.lambdaAssetsBucket!.bucket.bucket,
+        s3Key: pulumi.output(entrypointFilePathP).apply(upload),
         role: this.iam.arn,
         handler: handlerName,
         runtime: runtime,
+        memorySize: this.options.memory ?? 128,
         environment: {
           variables: envs,
         },
