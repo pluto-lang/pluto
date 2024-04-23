@@ -1,5 +1,20 @@
 # @plutolang/cli
 
+## 0.4.13
+
+### Patch Changes
+
+- Updated dependencies [bc6b168]
+- Updated dependencies [a232931]
+- Updated dependencies [0a01098]
+  - @plutolang/pyright-deducer@0.1.8
+  - @plutolang/base@0.4.3
+  - @plutolang/simulator-adapter@0.3.13
+  - @plutolang/static-deducer@0.4.4
+  - @plutolang/pulumi-adapter@0.4.4
+  - @plutolang/graphviz-generator@0.4.4
+  - @plutolang/static-generator@0.4.3
+
 ## 0.4.12
 
 ### Patch Changes
