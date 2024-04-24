@@ -1,0 +1,33 @@
+---
+title: Multi-Platform Deployment
+---
+
+# Multi-Platform Deployment
+
+Pluto supports deploying applications to different platforms without modifying the code. Configuration information for different platforms is managed through the concept of Stacks. You can specify which stack to deploy to during the deployment process.
+
+Next, we'll briefly introduce how to use Pluto for multi-platform deployment.
+
+### Creating a New Stack
+
+By executing the following command, you will enter an interactive interface where you can customize the stack's name, target deployment platform, and other configuration information:
+
+```shell
+pluto stack new
+```
+
+### Deploying to a Specified Stack
+
+When deploying, you can specify which stack to deploy to:
+
+```shell
+pluto deploy --stack [STACK_NAME]
+```
+
+### Taking Down from a Specified Stack
+
+Executing the following command can take down a Pluto application from a specified stack:
+
+```shell
+pluto destroy --stack [STACK_NAME]
+```

@@ -1,0 +1,64 @@
+import { Callout, Tabs, Tab, Steps, Cards, Card } from "nextra/components";
+
+import { AiOutlineCloud } from "react-icons/ai";
+import { TbBrandDocker } from "react-icons/tb";
+import { MdComputer } from "react-icons/md";
+import { RiRobot2Line } from "react-icons/ri";
+import { SiGooglecloudspanner } from "react-icons/si";
+
+# 快速开始
+
+让我们通过快速开发一个简单的 Web 应用来了解 Pluto 应用开发流程。没有 Pluto 开发环境不用担心，我们提供了多种开发环境供你选择。
+
+我们要开发的应用叫做 Timestamp Store，整体架构如下图，主要有 2 个路由：1）`/hello`，产生一个时间戳，并将这个时间戳发布到消息队列；2）`/store`，从 KV 数据库中获取上次访问 `/hello` 的时间戳，并返回。消息队列会有一个订阅者，将消息保存到 KV 数据库中。我们可以将这个应用部署在 AWS 或 Kubernetes 上。
+
+<p align="center">
+  <img
+    src="/assets/getting-started-case-arch.png"
+    alt="case arch"
+    width="450"
+  />
+</p>
+
+完成这个示例后，你将了解 Pluto 开发的基本流程，并可以开始使用 Pluto 开发自己的云应用程序。
+
+为了帮助开发者更轻松地上手使用，我们提供了以下三种开发方式：
+
+<Cards>
+  <Card
+    icon={<AiOutlineCloud size="20" />}
+    title="在线开发"
+    href="getting-started/online-development"
+  />
+  <Card
+    icon={<TbBrandDocker size="20" />}
+    title="容器开发"
+    href="getting-started/container-development"
+  />
+  <Card
+    icon={<MdComputer size="20" />}
+    title="本地开发"
+    href="getting-started/local-development"
+  />
+</Cards>
+
+Pluto 支持在不修改代码的情况下，将应用部署到不同的平台上，你可以从下面这篇文档了解该能力如何使用：
+
+<Cards num="1">
+  <Card
+    icon={<SiGooglecloudspanner size="20" />}
+    title="多平台部署"
+    href="getting-started/multi-platform-deployment"
+  />
+</Cards>
+
+
+想要了解更多示例应用，请点击下方卡片进入 [案例](/cookbook) 目录。
+
+<Cards num="1">
+  <Card
+    icon={<RiRobot2Line size="20" />}
+    title="更多示例应用"
+    href="/cookbook"
+  />
+</Cards>

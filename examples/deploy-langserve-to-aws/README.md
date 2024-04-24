@@ -1,6 +1,8 @@
 ---
 title: Deploy LangServe application to AWS
 description: Deploy LangServe application to AWS using Pluto, expose LangServe application through Api Gateway, support RemoteRunnable invocation, and Playground.
+deployUrl: https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8w
+tags: ["AWS", "LangServe", "Python"]
 ---
 
 # Deploy LangServe Application to AWS
@@ -18,7 +20,7 @@ You can get all the code for this example from [here](./). [This link](https://c
 
 ## Environment Preparation
 
-If you have not configured the Pluto development environment, please refer to steps 0 and 1 in [Getting Started](../../docs/documentation/getting-started.en.md) for configuration, or you can use the [online sandbox or container](../../docs/documentation/getting-started.en.md#alternative-usage-methods) provided by Pluto for experience.
+If you have not configured the Pluto development environment, please refer to the local development in [Getting Started](../../docs/documentation/getting-started.en.mdx) for configuration, or you can use the online sandbox or container provided by Pluto for experience.
 
 ## Developing LangServe Application
 

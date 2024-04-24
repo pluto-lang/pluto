@@ -1,0 +1,62 @@
+import { Callout, Tabs, Tab, Steps, Cards, Card } from "nextra/components";
+import { AiOutlineCloud } from "react-icons/ai";
+import { TbBrandDocker } from "react-icons/tb";
+import { MdComputer } from "react-icons/md";
+import { RiRobot2Line } from "react-icons/ri";
+import { SiGooglecloudspanner } from "react-icons/si";
+
+# Quick Start
+
+Let's get to know the Pluto app development process by quickly developing a simple Web application. Don't worry if you don't have a Pluto development environment, as we offer a variety of development environments for you to choose from.
+
+The application we are going to develop is called Timestamp Store, with an architecture as shown in the figure below. It mainly has 2 routes: 1) `/hello`, which generates a timestamp and publishes it to the message queue; 2) `/store`, which retrieves the timestamp of the last visit to `/hello` from the KV database and returns it. There will be a subscriber in the message queue that saves the message to the KV database. We can deploy this application on AWS or Kubernetes.
+
+<p align="center">
+  <img
+    src="/assets/getting-started-case-arch.png"
+    alt="case arch"
+    width="450"
+  />
+</p>
+
+After completing this example, you will understand the basic process of Pluto development and can start using Pluto to develop your own cloud applications.
+
+To make it easier for developers to get started, we provide the following three development methods:
+
+<Cards>
+  <Card
+    icon={<AiOutlineCloud size="20" />}
+    title="Online Development"
+    href="getting-started/online-development"
+  />
+  <Card
+    icon={<TbBrandDocker size="20" />}
+    title="Container Development"
+    href="getting-started/container-development"
+  />
+  <Card
+    icon={<MdComputer size="20" />}
+    title="Local Development"
+    href="getting-started/local-development"
+  />
+</Cards>
+
+Pluto supports deploying applications to different platforms without modifying the code. You can learn how to use this capability from the following document:
+
+<Cards num="1">
+  <Card
+    icon={<SiGooglecloudspanner size="20" />}
+    title="Multi-Platform Deployment"
+    href="getting-started/multi-platform-deployment"
+  />
+</Cards>
+
+To explore more sample applications, click on the card below to enter the [Cookbook](/cookbook) directory.
+
+<Cards num="1">
+  <Card
+    icon={<RiRobot2Line size="20" />}
+    title="More Sample Applications"
+    href="/cookbook"
+  />
+</Cards>

@@ -1,3 +1,9 @@
+---
+title: A joke bot for slack
+description: Creates a simple joke bot on AWS using the Slack WebAPI. The bot will send a daily joke to a specified channel.
+tags: ["AWS", "TypeScript"]
+---
+
 # A Joke Bot for Slack
 
 This article presents a sample application using Pluto that creates a simple joke bot on AWS using the Slack WebAPI. The bot will send a daily joke to a specified channel.

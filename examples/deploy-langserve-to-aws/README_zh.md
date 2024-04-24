@@ -1,6 +1,8 @@
 ---
 title: 部署 LangServe 应用到 AWS
 description: 使用 Pluto 部署 LangServe 应用到 AWS 上，通过 Api Gateway 暴露 LangServe 应用，支持 RemoteRunnable 调用，支持 Playground。
+deployUrl: https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8w
+tags: ["AWS", "LangServe", "Python"]
 ---
 
 # 部署 LangServe 应用到 AWS
@@ -18,7 +20,7 @@ description: 使用 Pluto 部署 LangServe 应用到 AWS 上，通过 Api Gatewa
 
 ## 环境准备
 
-如果你还没有配置 Pluto 开发环境，请参考[快速开始](../../docs/documentation/getting-started.zh-CN.md)中的第 0、1 步进行配置，也可以使用 Pluto 提供的[在线 IDE 或容器](../../docs/documentation/getting-started.zh-CN.md#其他使用方式)体验。
+如果你还没有配置 Pluto 开发环境，请参考[快速开始](../../docs/documentation/getting-started.zh-CN.mdx)中的本地开发进行配置，或使用 Pluto 提供的在线 IDE 或容器体验。
 
 - 在线 IDE：
   - [Python 模板应用 | CodeSandbox](https://codesandbox.io/p/devbox/github/pluto-lang/codesandbox/tree/main/python?file=/README_zh.md)

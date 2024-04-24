@@ -1,8 +1,12 @@
 {
+  "introduction": "介绍",
   "getting-started": "快速开始",
   "how-pluto-works": "Pluto 工作原理",
   "what-problems-pluto-aims-to-address": "Pluto 要解决什么问题？",
   "whats-different": "Pluto 与其他产品的区别",
   "concepts": "概念",
+  "---": {
+    "type": "separator"
+  },
   "design": "设计"
 }

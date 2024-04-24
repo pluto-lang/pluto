@@ -1,0 +1,50 @@
+import Link from "next/link";
+import { Cards, Card } from "nextra/components";
+import { GiEgyptianBird } from "react-icons/gi";
+import { CgWebsite } from "react-icons/cg";
+import { TbMessageChatbot } from "react-icons/tb";
+import { ExampleCard } from "components/example-card";
+
+# Pluto
+
+Pluto is a development tool aimed at helping developers **build cloud and AI applications**, tackling the challenges of deploying AI applications and open-source models, as well as the high entry barrier to cloud services.
+
+Pluto supports writing applications in familiar programming languages like **Python and TypeScript**, and enables developers to **directly define and use the cloud resources required by the application within the code**, such as AWS SageMaker, DynamoDB, etc. Pluto automates the extraction of infrastructure resource needs from the code through **static analysis** and creates the necessary resource instances on specified cloud platforms (AWS, Kubernetes, Alibaba Cloud, etc.), **streamlining the process of resource creation and application deployment**.
+
+### Try It Out
+<Cards num="1">
+  <Card
+    icon={<span>🌐</span>}
+    title="Quickly develop a web example application"
+    href="getting-started"
+  />
+</Cards>
+
+### More Examples
+
+To explore more examples, please see the [Cookbook](/cookbook) section.
+
+<Cards num="2">
+  <ExampleCard
+    title="LangServe Application"
+    description="Deploy the LangServe application to AWS with Pluto, expose it through Api Gateway, enable RemoteRunnable calls, and support for Playground."
+    href="/cookbook/deploy-langserve-to-aws"
+    tags={["AWS", "Python", "LangServe"]}
+    deployUrl="https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8wj"
+    icon={<GiEgyptianBird />}
+  />
+  <ExampleCard
+    title="Llama2 Conversational Chatbot"
+    description="Combine Pluto, AWS services, LangChain, and Llama2 to build a simple conversational chatbot."
+    icon={<TbMessageChatbot />}
+    href="/cookbook/langchain-llama2-chatbot-sagemaker-python"
+    tags={["AWS", "Python", "LangChain", "Llama2"]}
+  />
+  <ExampleCard
+    title="FastAPI Application"
+    description="One-click deployment of your FastAPI application as a Serverless service on cloud platforms."
+    icon={<CgWebsite />}
+    href="/cookbook/fastapi"
+    tags={["AWS", "Python", "FastAPI"]}
+  />
+</Cards>

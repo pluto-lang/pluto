@@ -1,0 +1,244 @@
+# 🐳 Developing a Pluto Application in Container
+
+import { Callout, Tabs, Tab, Steps } from "nextra/components";
+import Formatter from "./repo-formatter";
+
+We provide a set of container images for developing Pluto applications, which include fundamental dependencies such as AWS CLI, Pulumi, and Pluto itself, along with Node.js 20.x and Python 3.10. You can choose the appropriate image based on your needs.
+
+| Image                               | Node.js | Python | k3d |
+| ----------------------------------- | ------- | ------ | --- |
+| `plutolang/pluto:latest`            | 20.x    | 3.10   | ❌  |
+| `plutolang/pluto:latest-typescript` | 20.x    | ❌     | ❌  |
+| `plutolang/pluto:latest-k3d`        | 20.x    | 3.10   | ✅  |
+
+Next, we'll demonstrate how to develop a Pluto application in a container, using K3s and AWS as examples.
+
+<Steps>
+
+### Creating a Container
+
+First, execute the command below to create a Pluto application development container:
+
+<Tabs items={["K3s", "AWS"]} storageKey="platform">
+<Tab>
+```shell
+docker run -it --privileged \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /lib/modules:/lib/modules \
+    --name pluto-k3d \
+    plutolang/pluto:latest-k3d bash
+```
+
+After creation, you'll automatically enter the container. Inside the container, execute the following command to automatically create a `k3s` cluster and install Knative. The last parameter is the cluster name, which you can change to another name:
+
+```shell
+bash /scripts/create-cluster.sh pluto-cluster
+```
+
+After the command completes, you should be able to see the `k3s` cluster nodes by executing:
+
+```shell
+kubectl get nodes
+```
+
+<Callout>
+  Please ensure your container has enough storage space, otherwise Kubernetes
+  Pods may fail to start. You can check the current container storage usage by
+  executing the `df -h` command.
+</Callout>
+
+</Tab>
+<Tab>
+
+```shell
+docker run -it --name pluto-app plutolang/pluto:latest bash
+```
+
+</Tab>
+</Tabs>
+
+### Developing the App
+
+Execute the command below to interactively create a Pluto application. During the process, you can configure the application name, programming language, target platform, etc. Once the creation is complete, a directory with the application name will be created in the current directory:
+
+```
+pluto new
+```
+
+Use the `cd project_name{:sh}` command to enter the project directory. Once inside, you'll see a basic project structure already set up. Next, execute the following commands to install dependencies. The installation method varies slightly for different programming languages:
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+<Tab>
+```shell
+npm install
+pip install -r ./requirements.txt
+```
+
+After installing dependencies, you can modify the `app/main.py` file according to your needs to complete the application development. Of course, you can also directly deploy the example application to experience Pluto's usage.
+</Tab>
+
+<Tab>
+
+```shell
+npm install
+```
+
+After installing dependencies, you can modify the `src/index.ts` file according to your needs to complete the application development. Of course, you can also directly deploy the example application to experience Pluto's usage.
+</Tab>
+</Tabs>
+
+### Configuring the Environment
+
+After the application development is complete, we still need to configure the environment information such as access credentials and image repositories to facilitate subsequent application deployment.
+
+<Tabs items={["K3s", "AWS"]} storageKey="platform">
+<Tab>
+During deployment, Pluto will package several functions in the application into container images and upload them to the specified image repository. During the cluster creation process, a local image repository was automatically created by the script. The repository name consists of the cluster name plus `-registry`, and the port is `5432`, for example, `pluto-cluster-registry:5432`.
+
+Next, we'll fill in the image repository address into Pluto's configuration file. Open the `.pluto/pluto.yml` configuration file in the project directory, find the stack you created (default is `dev`), and modify the `configs` field by filling in the image repository address as follows:
+
+```yaml {4-6}
+...
+stacks:
+  - name: dev
+    configs:
+      kubernetes:registry: pluto-cluster-registry:5432
+      kubernetes:platform: auto
+...
+```
+
+<Callout type="info">
+If you want to **upload to a public image repository**, you still need to configure the image repository address. The container image name built by Pluto consists of the following parts: `<registry>/<formatted_project_name>:<function_id>-<timestamp>`. Therefore, you need to create an image repository on platforms like Docker Hub with the project name first, and then configure the image repository address in the Pluto configuration file in the same manner. Note, to avoid illegal characters, we will format the project name to a combination of lowercase letters and hyphens when uploading the image. You can enter the project name below to get the formatted result and use it to create the image repository:
+
+<Formatter />
+
+</Callout>
+
+<Callout type="info">
+By default, the target platform for Pluto's image packaging is the `linux/amd64` architecture. If your K8s cluster is of another architecture, you need to configure the `kubernetes:platform` field in the Pluto configuration file. The options include `linux/amd64`, `linux/arm64`, and `auto`, where `auto` will automatically select based on the current device architecture.
+</Callout>
+
+</Tab>
+<Tab>
+The image already has AWS CLI installed, and we can configure AWS access credentials with the following command:
+
+```shell
+aws configure
+```
+
+During the command execution, you'll be prompted to enter the AWS Access Key ID, AWS Secret Access Key, default region, and output format. The first three are mandatory, while the last one can be left blank. You can obtain the first two pieces of information from the [AWS Console](https://us-east-1.console.aws.amazon.com/iam/home#security_credential).
+</Tab>
+</Tabs>
+
+### Deploying the App
+
+After configuring the environment information, we can execute the following command to deploy the Pluto application:
+
+```shell
+pluto deploy
+```
+
+This command may take some time, depending on the scale of your application and network environment. After completion, you can see the application's access address in the output. You can find out what resources Pluto has specifically deployed from the [Details](#details).
+
+### Testing
+
+<Tabs items={["K3s", "AWS"]} storageKey="platform">
+<Tab>
+In the K3s cluster, we can expose the service to the local environment using the `kubectl port-forward` command and then test the service with the `curl` command. You can execute the following command in the background to run `kubectl port-forward`, or you can choose to open another terminal window to execute it:
+
+```shell
+nohup kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8080:80 > /dev/null 2>&1 &
+```
+
+Then, we can test if the service is working properly by executing the two commands below. `hello-pluto-dev-plutolang-pluto-router-router.localdev.me` is the access address output at the end of the Pluto deployment. If your Pluto application name is not `hello-pluto`, you need to replace it completely with the access address you obtained:
+
+```shell
+curl --resolve hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080:127.0.0.1 \
+	http://hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080/hello
+curl --resolve hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080:127.0.0.1 \
+	http://hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080/store
+```
+
+If the deployment is successful, you should see output similar to the following:
+
+![K3s Test Results](../../../assets/getting-started/getting-started-container-deploy-k3s-output.png)
+
+<Callout type="info">
+If you encounter errors during testing, you can check the status of all Pods with the `kubectl get pods -A{:sh}` command. Pods with the `svclb-` prefix can be in Pending status, but all other non-Job Pods should have started normally. If your cluster is not like this, please wait for the Pods to start before testing again. You may need to redeploy the Pluto application.
+</Callout>
+
+</Tab>
+<Tab>
+
+We can test if the service is working properly by executing the following two commands, where `https://fvz3jhc4z2.execute-api.us-east-1.amazonaws.com/dev` is the access address output at the end of the Pluto deployment. You need to replace it completely with the access address you obtained:
+
+```shell
+curl https://fvz3jhc4z2.execute-api.us-east-1.amazonaws.com/dev/hello
+curl https://fvz3jhc4z2.execute-api.us-east-1.amazonaws.com/dev/store
+```
+
+If the deployment is successful, you should see output similar to the following:
+
+![AWS Test Results](../../../assets/getting-started/getting-started-container-deploy-aws-output.png)
+</Tab>
+</Tabs>
+
+### Cleanup
+
+<Tabs items={["K3s", "AWS"]} storageKey="platform">
+<Tab>
+Execute the following command to take down the Pluto application from the `k3s` cluster:
+
+```shell
+pluto destroy
+```
+
+If you want to delete the `k3s` cluster, you can execute the following command, and you need to change the cluster name to your own:
+
+```shell
+k3d cluster delete pluto-cluster
+```
+
+If you want to destroy the development environment, you can execute the following commands on the host machine:
+
+```shell
+docker stop pluto-k3d
+docker rm pluto-k3d
+```
+
+</Tab>
+<Tab>
+
+Execute the following command to take down the Pluto application from AWS:
+
+```shell
+pluto destroy
+```
+
+</Tab>
+</Tabs>
+</Steps>
+
+<Callout>
+1. If you want to deploy your application to multiple platforms simultaneously, you can refer to the [Multi-Platform Deployment](./multi-platform-deployment.en) documentation.
+2. If you're interested in exploring more examples of Pluto applications, you can check out the [Cookbook](/cookbook) documentation.
+</Callout>
+
+### Details
+
+During the deployment process, Pluto will deduce that it needs one route, one message queue, one KV database, and three function objects from the application code. Then, Pluto will automatically create the corresponding resource instances on your specified cloud platform and configure their dependencies.
+
+<Tabs items={["Kubernetes", "AWS"]}>
+<Tab>
+In Kubernetes, one Ingress, two Redis, and three Knative Services will be configured.
+</Tab>
+
+<Tab>
+<p align="center">
+  <img src="../../../assets/getting-started/getting-started-aws-arch.png" alt="aws arch" width="450" />
+</p>
+
+If the target platform is AWS, Pluto will create one API Gateway, one SNS topic, one DynamoDB, and three Lambda functions while configuring triggers, roles, permissions, etc.
+</Tab>
+</Tabs>
+

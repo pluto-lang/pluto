@@ -1,0 +1,216 @@
+# 💻 本地开发 Pluto 应用
+
+import { Callout, Tabs, Tab, Steps } from 'nextra/components' 
+import Formatter from "./repo-formatter"
+
+<Steps>
+
+### 前置
+
+- [Node.js](https://nodejs.org/): Pluto 运行在 Node.js 环境中，最好使用 20 版本以上。
+- [Pulumi](https://www.pulumi.com/docs/install/): Pluto 使用 Pulumi 与云平台（AWS 或 Kubernetes）进行交互，部署云资源，请参照 Pulumi 安装文档进行安装。
+- [Python](https://www.python.org/): 如果你想开发 Python 应用，需要安装 Python 环境，最好是 3.10 版本以上。
+
+### 安装
+
+Pluto 命令行工具可以使用 [npm](https://www.npmjs.com/) 进行安装:
+
+```shell
+npm install -g @plutolang/cli
+```
+
+Pluto 的命令是 `pluto`，可以通过以下命令验证是否安装成功:
+
+```shell
+pluto --help
+```
+
+### 创建应用
+
+首先，运行以下命令创建一个 Pluto 应用，这条命令将交互式地创建一个项目，根据你的需要选择编程语言、目标平台、项目信息等，配置完成后，Pluto 会使用提供的项目名称创建一个目录。
+
+```shell
+pluto new
+```
+
+### 开发应用
+
+使用 `cd project_name{:sh}` 命令进入项目目录，进入后可以看到已经配置有基本的项目结构，接下来我们执行下面的命令来安装依赖，不同编程语言的安装方式稍用不同：
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+
+```shell
+npm install
+pip install -r ./requirements.txt
+```
+
+安装完依赖后，你就可以根据自己的需求修改 `app/main.py` 文件，完成应用开发。当然，你也可以直接部署示例应用来体验 Pluto 的使用。
+
+</Tab>
+
+<Tab>
+
+```shell
+npm install
+```
+
+安装完依赖后，你就可以根据自己的需求修改 `src/index.ts` 文件，完成应用开发。当然，你也可以直接部署示例应用来体验 Pluto 的使用。
+
+</Tab>
+
+</Tabs>
+
+### 配置环境
+
+应用开发完成后，我们还需要对访问凭证、镜像仓库等环境信息进行配置，以便后续能够正常部署应用。
+
+<Tabs items={["Kubernetes", "AWS"]} storageKey="platform">
+<Tab>
+
+在部署时，Pluto 会将应用中包含的若干个函数分别打包成容器镜像，并上传到指定镜像仓库中。Pluto 构建的容器镜像名称由这几部分构成：`<registry>/<formatted_project_name>:<function_id>-<timestamp>`。
+
+因此，如果你希望上传至公开镜像仓库，你需要先在 Docker Hub 等平台上创建以项目名称命名的镜像仓库，然后采用相同的方式将镜像仓库地址配置到 Pluto 配置文件中。注意，为了避免违法字符，我们在上传镜像时会将项目名称格式化为小写字母和短横线的组合，你可以在下方输入项目名称，获取格式化的结果，并以此创建镜像仓库：
+
+<Formatter />
+
+接下来，我们将镜像仓库地址填写到 Pluto 的配置文件中。我们打开项目目录下的 `.pluto/pluto.yml` 配置文件，找到你创建的 stack，默认是 `dev`，修改其中的 `configs` 字段，将镜像仓库地址填写进去，填写方式如下：
+
+```yaml {4-6}
+...
+stacks:
+  - name: dev
+    configs:
+      kubernetes:registry: docker.io/your-username/
+      kubernetes:platform: auto # or linux/amd64, linux/arm64
+...
+```
+
+<Callout type="info">
+默认情况下， Pluto 打包镜像的目标平台是 `linux/amd64` 架构。如果你的 Kubernetes 集群是其他架构，则需要在 Pluto 配置文件中配置 `kubernetes:platform` 字段，可选项有 `linux/amd64`、`linux/arm64` 和 `auto`，其中 `auto` 会根据当前设备架构自动选择。
+</Callout>
+
+<Callout type="info">
+Pluto 会应用发布为多个 Knative Service，因此，需要事先在 Kubernetes 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative Serving，欢迎社区贡献者来帮助改进）。你可以根据[这篇文档](../../dev_guide/setup-k8s-dev-env.en.md)配置所需的 Kubernetes 环境。
+</Callout>
+
+</Tab>
+
+<Tab>
+
+你可以使用 `aws configure` 配置用户凭证，或自行创建 `~/.aws/credentials` 文件并配置，格式如下：
+
+```ini
+[default]
+aws_access_key_id = <your_access_key_id>
+aws_secret_access_key = <your_secret_access_key>
+```
+
+此外，Pluto 会尝试读取你的 AWS 配置文件 `~/.aws/config` 以获取默认的 AWS Region，如果没有配置，会尝试从环境变量 `AWS_REGION` 获取。**如果两者都没有配置，Pluto 在部署时将会报错。**
+
+<Callout type="info">
+`aws configure` 会提示你输入 AWS Access Key ID、AWS Secret Access Key、默认的区域和输出格式，前三个必须填写，最后一个可以留空。你可以从 [AWS 控制台](https://us-east-1.console.aws.amazon.com/iam/home#security_credential)中获取到前两项信息。
+</Callout>
+
+</Tab>
+</Tabs>
+
+
+### 部署
+
+在配置完环境信息后，我们就可以执行下面这条命令来部署 Pluto 应用了：
+
+```shell
+pluto deploy
+```
+
+这条命令可能会执行一段时间，取决于你的应用规模和网络环境。执行完成后，你可以从输出中看到应用的访问地址。你可以从[部署细节](#部署细节)中了解 Pluto 具体部署了哪些资源。
+
+
+### 测试
+
+<Tabs items={["Kubernetes", "AWS"]} storageKey="platform">
+
+<Tab>
+
+在 Kubernetes 集群中，我们可以通过 `kubectl port-forward` 命令将服务暴露到本地，然后通过 `curl` 命令来测试服务是否正常。你可以使用下面这条命令在后台执行 `kubectl port-forward` 命令，也可以选择再打开一个终端窗口执行：
+
+```shell
+nohup kubectl port-forward --namespace=ingress-nginx service/ingress-nginx-controller 8080:80 > /dev/null 2>&1 &
+```
+
+然后，我们可以通过先后执行以下两条命令来测试服务是否正常，其中 `hello-pluto-dev-plutolang-pluto-router-router.localdev.me` 是 Pluto 部署结束时输出的访问地址，如果你的 Pluto 应用名称不是 `hello-pluto`，则需要将其完整替换为你获取到的访问地址：
+
+```shell
+curl --resolve hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080:127.0.0.1 \
+	http://hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080/hello
+
+curl --resolve hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080:127.0.0.1 \
+	http://hello-pluto-dev-plutolang-pluto-router-router.localdev.me:8080/store
+```
+
+部署成功的话，你应该可以看到类似下面的输出：
+
+![Kubernetes 测试结果](../../../assets/getting-started/getting-started-local-deploy-k8s-out.png)
+
+<Callout type="info">
+如果你在测试时遇到错误，你可以通过 `kubectl get pods -A{:sh}` 命令查看所有 Pod 的状态，是否所有非 Job 类 Pod 都已经正常启动。如果你的集群不是这样，请等待 Pod 启动完成后再进行测试。可能需要重新部署 Pluto 应用。
+</Callout>
+
+</Tab>
+
+<Tab>
+
+我们可以通过先后执行以下两条命令来测试服务是否正常，其中 `https://fvz3jhc4z2.execute-api.us-east-1.amazonaws.com/dev` 是 Pluto 部署结束时输出的访问地址，需要将其完整替换为你获取到的访问地址：
+
+```shell
+curl https://fvz3jhc4z2.execute-api.us-east-1.amazonaws.com/dev/hello
+
+curl https://fvz3jhc4z2.execute-api.us-east-1.amazonaws.com/dev/store
+```
+
+部署成功的话，你应该可以看到类似下面的输出：
+
+![AWS 测试结果](../../../assets/getting-started/getting-started-container-deploy-aws-output.png)
+
+</Tab>
+
+</Tabs>
+
+
+### 清理
+
+如果你想从目标平台上下线这个应用，可以使用以下命令：
+
+```shell
+pluto destroy
+```
+
+</Steps>
+
+<Callout>
+1. 如果你希望将应用同时部署到多个平台上，可以参考[多平台部署](./multi-platform-deployment.zh-CN.mdx)文档。
+2. 如果你想了解更多 Pluto 应用示例，可以查看[案例](/cookbook)文档。
+</Callout>
+
+### 部署细节
+
+
+Pluto 将从应用代码中推导出需要 1 个路由、1 个消息队列、1 个 KV 数据库和 3 个函数对象，然后，Pluto 将自动地在你指定的云平台上创建相应的资源实例，并配置好它们之间的依赖关系。
+
+<Tabs items={["Kubernetes", "AWS"]}>
+<Tab>
+在 Kubernetes 中，将会配置 1 个 Ingress、2 个 Redis 和 3 个 Knative Service。
+</Tab>
+
+<Tab>
+
+<p align="center">
+  <img src="../../../assets/getting-started/getting-started-aws-arch.png" alt="aws arch" width="450" />
+</p>
+
+
+在 AWS 上，将会创建 1 个 API Gateway、1 个 SNS、1 个 DynamoDB 和 3 个 Lambda 函数，同时配置好触发器、角色、权限等。
+</Tab>
+</Tabs>

@@ -85,7 +85,7 @@ pluto deploy     # 一键部署！
 - 如果目标平台为 AWS，Pluto 会尝试读取你的 AWS 配置文件以获取默认的 AWS Region，如果没有配置，会尝试从环境变量 `AWS_REGION` 获取。**如果两者都没有配置，Pluto 在部署时将会报错。**
 - 如果目标平台为 Kubernetes，需要事先在 K8s 中安装 Knative，并关闭缩容到零的功能（因为 Pluto 尚不支持 Ingress 转发到 Knative servering，欢迎大佬来改进）。你可以根据[这篇文档](./docs/dev_guide/setup-k8s-dev-env.en.md)配置所需的 Kubernetes 环境。
 
-详细步骤可以参考[上手指南](./docs/documentation/getting-started.zh-CN.md)。
+详细步骤可以参考[上手指南](./docs/documentation/getting-started.zh-CN.mdx)。
 
 > 目前，Pluto 只支持单文件。在每个处理程序函数中，支持访问处理程序函数作用域之外的字面量常量与普通函数，Python 支持直接访问作用域外的类、接口等，TypeScript 需要将类、接口封装到函数中才能访问。
 
