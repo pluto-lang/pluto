@@ -1,5 +1,13 @@
 # @plutolang/pluto-infra
 
+## 0.4.10
+
+### Patch Changes
+
+- 89bd3fc: feat(infra sdk): enable forceDestroy for S3 bucket removal
+
+  After enabling the forceDestroy option, the S3 bucket will be removed even if it is not empty.
+
 ## 0.4.9
 
 ### Patch Changes
