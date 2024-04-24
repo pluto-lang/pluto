@@ -19,6 +19,7 @@
     "langchain-llama2-chatbot-sagemaker",
     "langchain-llama2-chatbot-sagemaker-python",
     "fastapi",
-    "deploy-langserve-to-aws"
+    "deploy-langserve-to-aws",
+    "rag-qa-bot-llama3"
   ]
 }

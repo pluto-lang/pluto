@@ -24,6 +24,7 @@ export class S3Bucket extends pulumi.ComponentResource implements IResourceInfra
       genAwsResourceName(this.id),
       {
         bucket: genAwsResourceName(this.id),
+        forceDestroy: true, // Destroy all objects before destroying the bucket
       },
       { parent: this }
     );

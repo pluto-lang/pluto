@@ -55,7 +55,6 @@ To deploy this chatbot, please follow the steps below:
 
    ```bash
    npm install
-   pip install -r requirements.txt
    ```
 
 3. Replace `HUGGING_FACE_HUB_TOKEN` in the `src/index.ts` file with your Hugging Face Hub Token. If you don’t have a token yet, generate one [here](https://huggingface.co/settings/tokens).

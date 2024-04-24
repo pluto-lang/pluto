@@ -321,6 +321,16 @@ export class CodeExtractor {
         break;
       }
 
+      case DeclarationType.Intrinsic: {
+        // The intrinsic declaration is a module, a function, or a class that is built-in. We don't
+        // need to extract it.
+        declSegment = CodeSegment.buildWithChildren({
+          node: declaration.node,
+          code: "",
+        });
+        break;
+      }
+
       default:
         if (process.env.DEBUG) {
           console.debug(

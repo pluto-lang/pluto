@@ -55,7 +55,6 @@ tags: ["AWS", "TypeScript", "LangChain", "Llama2"]
 
    ```bash
    npm install
-   pip install -r requirements.txt
    ```
 
 3. 将 `src/index.ts` 文件中的 `HUGGING_FACE_HUB_TOKEN` 修改成你的 Hugging Face Hub Token。如果你还没有 Token，可以在 [这里](https://huggingface.co/settings/tokens) 生成一个。
