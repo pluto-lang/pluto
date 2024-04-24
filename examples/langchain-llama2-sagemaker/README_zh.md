@@ -1,3 +1,9 @@
+---
+title: 部署集成了 Llama2 的 LangChain 应用
+description: 使用 Pluto 使 LangChian 应用程序轻松接入 Llama2 大语言模型，并最终将 LangChain 应用产品化部署到 AWS 云平台上，暴露出 HTTP 接口。
+tags: ["AWS", "TypeScript", "LangChain", "Llama2"]
+---
+
 # 部署集成了 Llama2 的 LangChain 应用
 
 这篇文档将介绍使用 Pluto 使 LangChian 应用程序轻松接入 Llama2 大语言模型，并最终将 LangChain 应用产品化部署到 AWS 云平台上，暴露出 HTTP 接口。

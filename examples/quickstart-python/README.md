@@ -1,11 +1,12 @@
 ---
 title: Simple web application using router, queue, and kvstore - Python
 description: A simple web application built using Router, Queue, and KVStore, involving HTTP routing, message queue subscription, etc., that can be deployed to AWS or Kubernetes.
+tags: ["Python", "AWS", "Kubernetes"]
 ---
 
 # Simple Web Application Using Router, Queue, and KVStore - Python
 
-This is a Python version of the example Pluto application in the [Quick Start](../../docs/documentation/getting-started.en.md) guide. You can grab the full code from [here](./).
+This is a Python version of the example Pluto application in the [Quick Start](../../docs/documentation/getting-started.en.mdx) guide. You can grab the full code from [here](./).
 
 The application we're developing is called Timestamp Store. The overall architecture of this web application is shown in the diagram below. It mainly has two routes: 1) `/hello`, which generates a timestamp and publishes it to the message queue; 2) `/store`, which retrieves the last timestamp of accessing `/hello` from the KV database and returns it. The message queue will have a subscriber that saves the message to the KV database. This application can be deployed on AWS or Kubernetes.
 
@@ -15,7 +16,7 @@ The application we're developing is called Timestamp Store. The overall architec
 
 ## 0 Prerequisites
 
-If you haven't set up your Pluto development environment yet, please refer to steps 0 and 1 in the [Quick Start](../../docs/documentation/getting-started.en.md) guide for configuration. Alternatively, you can try out Pluto's [online sandbox or container](../../docs/documentation/getting-started.en.md#alternative-usage-methods).
+If you haven't set up your Pluto development environment yet, please refer to the local development in the [Quick Start](../../docs/documentation/getting-started.en.mdx) guide for configuration. Alternatively, you can try out Pluto's [online sandbox or container](../../docs/documentation/getting-started.en.mdx).
 
 ## 1 Writing Code
 

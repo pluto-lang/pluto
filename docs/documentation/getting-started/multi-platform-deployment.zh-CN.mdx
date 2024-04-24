@@ -1,0 +1,34 @@
+---
+title: 多平台部署
+---
+
+# 多平台部署
+
+Pluto 支持在不修改代码的情况下，将应用部署到不同的平台上。不同平台的配置信息通过 Stack（栈）的概念来管理，你可以在部署时指定部署到哪个 stack。
+
+接下来我们简要介绍如何使用 Pluto 进行多平台部署。
+
+### 创建新的 Stack
+
+执行以下命令，会将进入一个交互式界面，过程中你可以自定义 stack 的名称、目标部署平台等配置信息：
+
+```shell
+pluto stack new
+```
+
+### 部署到指定 Stack
+
+在部署时，你可以指定部署到哪个 stack：
+
+```shell
+pluto deploy --stack [STACK_NAME]
+```
+
+### 从指定 Stack 下线
+
+执行以下命令可以将 Pluto 应用从指定 stack 下线：
+
+```shell
+pluto destroy --stack [STACK_NAME]
+```
+

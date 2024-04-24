@@ -87,7 +87,7 @@ pluto deploy     # Deploy with one click!
 - If the target platform is AWS, Pluto attempts to read your AWS configuration file to acquire the default AWS Region, or alternatively, tries to fetch it from the environment variable `AWS_REGION`. **Deployment will fail if neither is set.**
 - If the target platform is Kubernetes, Knative must firstly be installed within K8s and the scale-to-zero feature should be deactivated (as Pluto doesn't yet support Ingress forwarding to Knative serving). You can configure the required Kubernetes environment following [this document](./docs/dev_guide/setup-k8s-dev-env.en.md).
 
-For detailed steps, refer to the [Getting Started Guide](./docs/documentation/getting-started.en.md).
+For detailed steps, refer to the [Getting Started Guide](./docs/documentation/getting-started.en.mdx).
 
 > Currently, Pluto only supports single-file configurations. Inside each handler function, access is provided to literal constants and plain functions outside of the handler's scope; however, Python allows direct access to classes, interfaces, etc., outside of the scope, whereas TypeScript requires encapsulating these within functions for access.
 

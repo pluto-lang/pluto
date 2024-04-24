@@ -4,6 +4,7 @@
   },
   "index": {
     "title": "Home",
+    "display": "hidden",
     "theme": {
       "typesetting": "article"
     }

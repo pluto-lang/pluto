@@ -1,0 +1,55 @@
+import Link from "next/link";
+import { Cards, Card } from "nextra/components";
+
+import { GiEgyptianBird } from "react-icons/gi";
+import { CgWebsite } from "react-icons/cg";
+import { TbMessageChatbot } from "react-icons/tb";
+
+import { ExampleCard } from "components/example-card";
+
+# Pluto
+
+Pluto 是一款致力于帮助开发者**构建云与 AI 应用**的研发工具，解决 AI 应用与开源模型难部署、云的上手门槛高等问题。
+
+Pluto 支持使用 **Python、TypeScript** 等熟悉的编程语言编写应用，**在应用代码中直接定义与使用应用所需的云资源**，如 AWS SageMaker、DynamoDB 等。Pluto 会通过**静态分析**的方式从代码中自动获取应用程序的基础设施资源需求，并在指定云平台（AWS、Kubernetes、阿里云等）上创建相应的资源实例，**简化资源创建和应用部署流程**。
+
+### 上手试试
+
+<Cards num="1">
+  <Card
+    icon={<span>🌐</span>}
+    title="快速开发一个 Web 示例应用"
+    href="getting-started"
+  />
+</Cards>
+
+### 更多示例
+
+想要了解更多示例，请参阅 [案例](/cookbook) 目录。
+
+<Cards num="2">
+  <ExampleCard
+    title="LangServe 应用"
+    description="使用 Pluto 部署 LangServe 应用到 AWS 上，通过 Api Gateway 暴露 LangServe 应用，支持 RemoteRunnable 调用，支持 Playground。"
+    href="/cookbook/deploy-langserve-to-aws"
+    tags={["AWS", "Python", "LangServe"]}
+    deployUrl="https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8wj"
+    icon={<GiEgyptianBird />}
+  />
+
+  <ExampleCard
+    title="Llama2 会话聊天机器人"
+    description="结合 Pluto、AWS 服务、LangChain 和 Llama2 构建一个简易的会话型聊天机器人。"
+    icon={<TbMessageChatbot />}
+    href="/cookbook/langchain-llama2-chatbot-sagemaker-python"
+    tags={["AWS", "Python", "LangChain", "Llama2"]}
+  />
+
+  <ExampleCard
+    title="FastAPI 应用"
+    description="将 FastAPI 应用一键发布为云平台的 Serverless 应用。"
+    icon={<CgWebsite />}
+    href="/cookbook/fastapi"
+    tags={["AWS", "Python", "FastAPI"]}
+  />
+</Cards>

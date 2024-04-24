@@ -1,11 +1,12 @@
 ---
 title: 使用 Router、Queue、KVStore 的简单 Web 应用 - TypeScript
 description: 使用 Router、Queue、KVStore 构建一个简单的 Web 应用，涉及 HTTP 路由、消息队列订阅等功能，可以部署到 AWS 或 Kubernetes 上。
+tags: ["TypeScript", "AWS", "Kubernetes"]
 ---
 
 # 使用 Router、Queue、KVStore 的简单 Web 应用 - TypeScript
 
-这是[快速开始](../../docs/documentation/getting-started.zh-CN.md)中 TypeScript 版本的示例 Pluto 应用，你可以从[这里](./)获取完整的代码。
+这是[快速开始](../../docs/documentation/getting-started.zh-CN.mdx)中 TypeScript 版本的示例 Pluto 应用，你可以从[这里](./)获取完整的代码。
 
 这个应用整体架构如下图，主要有 2 个路由：1）`/hello`，产生一个时间戳，并将这个时间戳发布到消息队列；2）`/store`，从 KV 数据库中获取上次访问 `/hello` 的时间戳，并返回。消息队列会有一个订阅者，将消息保存到 KV 数据库中。这个应用部署被部署到 AWS 或 Kubernetes 上。
 
@@ -15,7 +16,7 @@ description: 使用 Router、Queue、KVStore 构建一个简单的 Web 应用，
 
 ## 0 环境
 
-如果你还没有配置 Pluto 开发环境，请参考[快速开始](../../docs/documentation/getting-started.zh-CN.md)中的第 0、1 步进行配置，也可以使用 Pluto 提供的[在线沙盒或容器](../../docs/documentation/getting-started.zh-CN.md#其他使用方式)体验。
+如果你还没有配置 Pluto 开发环境，请参考[快速开始](../../docs/documentation/getting-started.zh-CN.mdx)中的本地开发配置，也可以使用 Pluto 提供的[在线沙盒或容器](../../docs/documentation/getting-started.zh-CN.mdx)体验。
 
 ## 1 编写
 

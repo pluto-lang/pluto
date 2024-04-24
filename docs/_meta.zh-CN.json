@@ -4,6 +4,7 @@
   },
   "index": {
     "title": "首页",
+    "display": "hidden",
     "theme": {
       "typesetting": "article"
     }
@@ -24,6 +25,6 @@
     }
   },
   "dev_guide": {
-    "title": "开发者指南"
+    "title": "贡献者指南"
   }
 }
