@@ -1,5 +1,22 @@
 # @plutolang/pyright-deducer
 
+## 0.1.8
+
+### Patch Changes
+
+- bc6b168: feat(deducer): support extracting format string in Python
+
+  Previously, when the pyright deducer encountered a StringList node, it would only extract the string directly. However, for format strings that depend on variables, this approach was insufficient. This update allows the deducer to extract both the format string and its associated variables from the node.
+
+- a232931: fix(deducer): fix package installation with mismatched module names
+
+  Previously, the pyright deducer used the imported module name for package installation, causing failures for modules like `faiss`, which is imported as `faiss` but the package name is `faiss-cpu`.
+
+  Now, it will search all dist-info directories, constructing package information from metadata and top-level.txt files. This establishes the relationship between installed package names and imported module names, resolving the installation issue.
+
+- Updated dependencies [0a01098]
+  - @plutolang/base@0.4.3
+
 ## 0.1.7
 
 ### Patch Changes
