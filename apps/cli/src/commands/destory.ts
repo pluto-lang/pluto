@@ -10,6 +10,7 @@ import { dumpStackState, getStackBasicDirs } from "../utils";
 
 export interface DestoryOptions {
   stack?: string;
+  force: boolean;
 }
 
 export async function destroy(opts: DestoryOptions) {
@@ -36,7 +37,7 @@ export async function destroy(opts: DestoryOptions) {
     });
 
     logger.info("Destroying...");
-    await adapter.destroy();
+    await adapter.destroy({ force: opts.force });
     stack.setUndeployed();
     dumpStackState(stackStateFile(stateDir), stack.state);
     logger.info("Successfully destroyed!");
