@@ -1,5 +1,11 @@
 # @plutolang/cli
 
+## 0.4.15
+
+### Patch Changes
+
+- 8716509: feat(cli): enable --force option for destroy command
+
 ## 0.4.14
 
 ### Patch Changes
