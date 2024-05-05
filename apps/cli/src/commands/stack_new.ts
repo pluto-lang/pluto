@@ -1,8 +1,10 @@
+import assert from "assert";
 import { ProvisionType, PlatformType } from "@plutolang/base";
 import { createStack } from "../builder";
 import logger from "../log";
 import { dumpProject, isPlutoProject, loadProject } from "../utils";
 import { resolve } from "path";
+import { formatError } from "./utils";
 
 interface NewOptions {
   name?: string;
@@ -21,7 +23,9 @@ export async function newStack(opts: NewOptions) {
     name: opts.name,
     platformType: opts.platform,
     provisionType: opts.provision,
-  });
+  }).catch(formatError);
+  assert(sta, "Failed to create a stack.");
+
   proj.addStack(sta);
   dumpProject(proj);
   logger.info("Created a stack.");

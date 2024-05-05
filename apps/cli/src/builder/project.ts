@@ -1,7 +1,9 @@
+import { resolve } from "path";
 import { input, select } from "@inquirer/prompts";
 import { LanguageType, PlatformType, ProvisionType, config } from "@plutolang/base";
+
 import { createStack } from "./stack";
-import { resolve } from "path";
+import { handleIquirerError } from "./utils";
 
 export interface CreateProjectArgs {
   name?: string;
@@ -27,14 +29,14 @@ export async function createProject(args: CreateProjectArgs): Promise<config.Pro
           value: LanguageType.Python,
         },
       ],
-    }));
+    }).catch(handleIquirerError));
 
   args.name =
     args.name ??
     (await input({
       message: "Project name",
       default: "hello-pluto",
-    }));
+    }).catch(handleIquirerError));
 
   const sta = await createStack({
     name: args.stack,
@@ -43,7 +45,7 @@ export async function createProject(args: CreateProjectArgs): Promise<config.Pro
   });
 
   const projectRoot = resolve(args.rootpath ?? `./${args.name}`);
-  const proj = new config.Project(args.name, projectRoot, args.language);
+  const proj = new config.Project(args.name!, projectRoot, args.language!);
   proj.addStack(sta);
   proj.current = sta.name;
   return proj;

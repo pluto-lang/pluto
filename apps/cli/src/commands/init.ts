@@ -1,9 +1,13 @@
 import fs from "fs";
 import path from "path";
+import assert from "assert";
+
 import { createProject } from "../builder";
 import logger from "../log";
 import { dumpProject, isPlutoProject } from "../utils";
+
 import { NewOptions, genInitFiles } from "./new";
+import { formatError } from "./utils";
 
 export async function init(opts: NewOptions) {
   if (isPlutoProject("./")) {
@@ -27,7 +31,8 @@ export async function init(opts: NewOptions) {
     platformType: opts.platform,
     provisionType: opts.provision,
     rootpath: "./",
-  });
+  }).catch(formatError);
+  assert(proj, "Failed to create a project.");
 
   genInitFiles("./", proj.language);
   const pkgJsonPath = path.join("./", "package.json");
