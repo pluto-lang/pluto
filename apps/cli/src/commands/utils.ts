@@ -1,9 +1,9 @@
 import fs from "fs";
 import path from "path";
 import * as yaml from "js-yaml";
-import { LanguageType, ProvisionType } from "@plutolang/base";
+import { core, LanguageType, ProvisionType } from "@plutolang/base";
 import { Architecture } from "@plutolang/base/arch";
-import { core } from "@plutolang/base";
+import { ExitError } from "../errors";
 import { isPlutoProject, loadProject } from "../utils";
 
 /**
@@ -132,4 +132,29 @@ export function getDefaultEntrypoint(lang: LanguageType): string {
     default:
       throw new Error(`Invalid language type: ${lang}`);
   }
+}
+
+export function formatError(e: any) {
+  if (e instanceof ExitError) {
+    exitGracefully();
+    return;
+  }
+
+  if (e instanceof Error) {
+    console.error(e.message);
+  } else {
+    console.error(e);
+  }
+
+  if (process.env.DEBUG) {
+    console.error(e);
+  }
+}
+
+export function exitGracefully(sig?: string) {
+  if (process.env.DEBUG) {
+    console.warn(`\nReceived ${sig}. Exiting...`);
+  }
+  console.log("Bye~ 👋");
+  process.exit(1);
 }

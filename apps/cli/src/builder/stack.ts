@@ -1,6 +1,8 @@
 import { input, select } from "@inquirer/prompts";
 import { ProvisionType, PlatformType, config } from "@plutolang/base";
 
+import { handleIquirerError } from "./utils";
+
 export interface CreateStackArgs {
   name?: string;
   platformType?: PlatformType;
@@ -13,7 +15,7 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
     (await input({
       message: "Stack name",
       default: "dev",
-    }));
+    }).catch(handleIquirerError));
 
   args.platformType =
     args.platformType ??
@@ -43,7 +45,7 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
           disabled: "(Coming soon)",
         },
       ],
-    }));
+    }).catch(handleIquirerError));
 
   args.provisionType =
     args.provisionType ??
@@ -60,7 +62,7 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
           disabled: "(Coming soon)",
         },
       ],
-    }));
+    }).catch(handleIquirerError));
 
-  return new config.Stack(args.name, args.platformType, args.provisionType);
+  return new config.Stack(args.name!, args.platformType!, args.provisionType!);
 }

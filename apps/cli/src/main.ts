@@ -3,6 +3,17 @@ import * as cmd from "./commands";
 import { checkUpdate, version } from "./utils";
 import logger from "./log";
 
+function exitGracefully(sig: string) {
+  if (process.env.DEBUG) {
+    console.warn(`\nReceived ${sig}. Exiting...`);
+  }
+  console.log("\nBye~ 👋");
+  process.exit(1);
+}
+
+process.on("SIGINT", () => exitGracefully("SIGINT"));
+process.on("SIGTERM", () => exitGracefully("SIGTERM"));
+
 async function main() {
   checkUpdate();
 

@@ -1,10 +1,11 @@
 import path from "path";
-import fs from "fs";
+import assert from "assert";
+import * as fs from "fs-extra";
 import { ProvisionType, PlatformType, LanguageType } from "@plutolang/base";
-import { createProject } from "../builder";
 import logger from "../log";
 import { dumpProject } from "../utils";
-import { ensureDirSync } from "fs-extra";
+import { createProject } from "../builder";
+import { formatError } from "./utils";
 
 const TEMPLATE_DIR = path.join(__dirname, "../../template");
 
@@ -23,7 +24,8 @@ export async function create(opts: NewOptions) {
     language: opts.language,
     platformType: opts.platform,
     provisionType: opts.provision,
-  });
+  }).catch(formatError);
+  assert(proj, "Failed to create a project.");
 
   genInitFiles(proj.name, proj.language);
   const pkgJsonPath = path.join(proj.name, "package.json");
@@ -35,7 +37,7 @@ export async function create(opts: NewOptions) {
 }
 
 export function genInitFiles(destdir: string, language: string) {
-  ensureDirSync(destdir);
+  fs.ensureDirSync(destdir);
 
   const queue: string[] = [""];
   while (queue.length) {
