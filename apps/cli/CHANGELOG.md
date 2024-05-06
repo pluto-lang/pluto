@@ -1,5 +1,18 @@
 # @plutolang/cli
 
+## 0.4.16
+
+### Patch Changes
+
+- c128904: feat(cli): enable graceful exit
+- Updated dependencies [4cfb9a8]
+- Updated dependencies [e9a1551]
+- Updated dependencies [8db533e]
+- Updated dependencies [58e6359]
+  - @plutolang/static-deducer@0.4.5
+  - @plutolang/pyright-deducer@0.1.10
+  - @plutolang/simulator-adapter@0.3.15
+
 ## 0.4.15
 
 ### Patch Changes

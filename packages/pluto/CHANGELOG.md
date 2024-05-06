@@ -1,5 +1,13 @@
 # @plutolang/pluto
 
+## 0.4.6
+
+### Patch Changes
+
+- 52cd794: feat(sdk): move name option to separate argument in Function constructor
+
+  Moved the `name` option from the `options` argument to a separate `name` argument in the `Function` constructor. This change allows the deducer to correctly identify the name of the `Function` resource object.
+
 ## 0.4.5
 
 ### Patch Changes

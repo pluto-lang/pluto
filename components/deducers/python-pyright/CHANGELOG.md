@@ -1,5 +1,21 @@
 # @plutolang/pyright-deducer
 
+## 0.1.10
+
+### Patch Changes
+
+- e9a1551: fix: skip dependency installation even if the last install failed
+
+  Previously, the installation process overlooked the `done` flag in the metadata, causing it to skip installing dependencies even if the last attempt failed, as long as the dependencies were the same as those previously identified.
+
+- 8db533e: feat(deducer): dynamically obtain resource type FQN from class definition
+
+  Previously, the process of obtaining the fully qualified name (FQN) of a resource type was based on a hard-coded package name during deducing. This approach has been updated to leverage a `fqn` member variable present within the resource type class definition itself, thus avoiding the need for hard-coding.
+
+- 58e6359: feat(deducer): fix the name of extracted bundle
+
+  Previously, the name of the extracted bundle was determined by the entrypoint's position in the source code, leading to frequent changes and unnecessary reinstallation of dependent packages. This process was both time-consuming and network-intensive. Now, the naming convention relies on the associated resource's name, method name, and the name and index of the parameter corresponding to the bundle's entrypoint, enhancing stability.
+
 ## 0.1.9
 
 ### Patch Changes
