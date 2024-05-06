@@ -7,7 +7,6 @@ from pluto_client import (
     HttpRequest,
     HttpResponse,
     Function,
-    FunctionOptions,
     CloudEvent,
 )
 
@@ -51,4 +50,4 @@ def add(a: int, b: int) -> int:
     return a + b
 
 
-Function(add, FunctionOptions(name="add"))
+Function(add, "add")  # A function named "add"

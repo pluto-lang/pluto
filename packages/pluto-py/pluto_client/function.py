@@ -23,7 +23,6 @@ class DirectCallResponse:
 
 @dataclass
 class FunctionOptions:
-    name: str | None = None
     memory: int | None = 128  # The memory size in MB, default is 128.
     envs: Dict[str, Any] | None = None
 
@@ -53,19 +52,26 @@ class IFunctionInfra(IFunctionInfraApi, IFunctionCapturedProps):
 class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
     fqn = "@plutolang/pluto.Function"
 
-    def __init__(self, func: FnHandler, opts: Optional[FunctionOptions] = None):
+    def __init__(
+        self,
+        func: FnHandler,
+        name: Optional[str] = None,
+        opts: Optional[FunctionOptions] = None,
+    ):
         raise NotImplementedError(
             "Cannot instantiate this class, instead of its subclass depending on the target runtime."
         )
 
     @staticmethod
     def build_client(
-        func: FnHandler, opts: Optional[FunctionOptions] = None
+        func: FnHandler,
+        name: Optional[str] = None,
+        opts: Optional[FunctionOptions] = None,
     ) -> IFunctionClient[FnHandler]:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
             from .clients import aws
 
-            return aws.LambdaFunction(func, opts)
+            return aws.LambdaFunction(func, name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

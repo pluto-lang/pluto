@@ -23,9 +23,10 @@ export class PingSchedule
       throw new Error("This closure is invalid.");
     }
 
-    const func = new KnativeService(closure, {
-      name: `${this.id}-${cron.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`,
-    });
+    const func = new KnativeService(
+      closure,
+      /* name */ `${this.id}-${cron.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`
+    );
 
     new k8s.apiextensions.CustomResource(
       genK8sResourceName(this.id, "source"),

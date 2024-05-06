@@ -48,8 +48,8 @@ export class FCInstance extends pulumi.ComponentResource implements IResourceInf
 
   private readonly policies: RamPolicy[];
 
-  constructor(closure: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
-    const name = options?.name ?? DEFAULT_FUNCTION_NAME;
+  constructor(closure: ComputeClosure<AnyFunction>, name?: string, options?: FunctionOptions) {
+    name = name ?? DEFAULT_FUNCTION_NAME;
     super("pluto:function:alicloud/FC", name, options);
     this.id = genResourceId(Function.fqn, name);
 

@@ -70,9 +70,7 @@ export class RedisQueue extends pulumi.ComponentResource implements IResourceInf
     }
 
     const adaptHandler = adaptPlatformNorm(closure);
-    const func = new KnativeService(adaptHandler, {
-      name: `${this.id}-func`,
-    });
+    const func = new KnativeService(adaptHandler, /* name */ `${this.id}-func`);
 
     new k8s.apiextensions.CustomResource(
       genK8sResourceName(this.id, "sub"),

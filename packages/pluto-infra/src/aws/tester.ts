@@ -30,9 +30,7 @@ export class AwsTester extends pulumi.ComponentResource implements IResourceInfr
     }
 
     const runtimeHandler = wrapClosure(adaptAwsRuntime(closure), closure);
-    const lambda = new Lambda(runtimeHandler, {
-      name: `${this.id}-${description}-func`,
-    });
+    const lambda = new Lambda(runtimeHandler, /* name */ `${this.id}-${description}-func`);
 
     this.testCases.push({
       description: description,

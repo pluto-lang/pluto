@@ -20,8 +20,13 @@ successful_status_code = {
 
 
 class LambdaFunction(IFunctionClient[FnHandler]):
-    def __init__(self, func: FnHandler, opts: Optional[FunctionOptions] = None):
-        name = (opts.name if opts else None) or DEFAULT_FUNCTION_NAME
+    def __init__(
+        self,
+        func: FnHandler,
+        name: Optional[str] = None,
+        opts: Optional[FunctionOptions] = None,
+    ):
+        name = name or DEFAULT_FUNCTION_NAME
         self.__id = gen_resource_id(Function.fqn, name)
         self.__lambda_name = gen_aws_resource_name(self.__id)
 

@@ -5,8 +5,9 @@ import { ComputeClosure } from "@plutolang/base/closure";
 export class SimFunction implements simulator.IResourceInstance, IFunctionClient<AnyFunction> {
   private readonly closure: ComputeClosure<AnyFunction>;
 
-  constructor(handler: ComputeClosure<AnyFunction>, options?: FunctionOptions) {
+  constructor(handler: ComputeClosure<AnyFunction>, name?: string, options?: FunctionOptions) {
     this.closure = handler;
+    name;
     options;
   }
 

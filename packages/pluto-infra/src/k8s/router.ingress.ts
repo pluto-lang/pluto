@@ -68,9 +68,10 @@ export class IngressRouter
 
     // const adaptHandler = wrapClosure(adaptK8sRuntime(closure, raw), closure);
     const adaptHandler = adaptPlatformNorm(closure, raw);
-    const func = new KnativeService(adaptHandler, {
-      name: `${this.id}-${method}-${path.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`,
-    });
+    const func = new KnativeService(
+      adaptHandler,
+      /* name */ `${this.id}-${method}-${path.replaceAll(/[^_0-9a-zA-Z]/g, "")}-func`
+    );
     return func;
   }
 

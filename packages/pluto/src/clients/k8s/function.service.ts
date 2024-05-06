@@ -6,7 +6,6 @@ import {
   DEFAULT_FUNCTION_NAME,
   IFunctionClient,
   Function,
-  FunctionOptions,
   DirectCallResponse,
 } from "../../function";
 import { genK8sResourceName } from "./utils";
@@ -22,8 +21,8 @@ export class KnativeService<T extends AnyFunction> implements IFunctionClient<T>
   private readonly clusterIP?: string;
   private readonly port: number = 80;
 
-  constructor(func: T, opts?: FunctionOptions) {
-    this.id = genResourceId(Function.fqn, opts?.name || DEFAULT_FUNCTION_NAME);
+  constructor(func: T, name?: string) {
+    this.id = genResourceId(Function.fqn, name || DEFAULT_FUNCTION_NAME);
     this.serviceName = genK8sResourceName(this.id, "service");
     this.namespace = "default";
     if (!isLocalMode) {

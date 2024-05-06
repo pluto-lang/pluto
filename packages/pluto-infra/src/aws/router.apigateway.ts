@@ -94,9 +94,7 @@ export class ApiGatewayRouter
     const resourceNamePrefix = `${this.id}-${path.replace("/", "_")}-${op}`;
 
     const runtimeHandler = adaptPlatformNorm(closure, raw);
-    const lambda = new Lambda(runtimeHandler, {
-      name: `${resourceNamePrefix}-func`,
-    });
+    const lambda = new Lambda(runtimeHandler, /* name */ `${resourceNamePrefix}-func`);
 
     // Create an integration
     const integration = new aws.apigatewayv2.Integration(
