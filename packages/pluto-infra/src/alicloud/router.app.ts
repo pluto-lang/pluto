@@ -147,9 +147,7 @@ export class AppRouter extends pulumi.ComponentResource implements IRouterInfra,
     const resourceNamePrefix = `${this.id}-${path.replace("/", "_")}-${method}`;
 
     const runtimeHandler = wrapClosure(adaptAliCloudRuntime(closure, raw), closure);
-    const fnResource = new FCInstance(runtimeHandler, {
-      name: `${resourceNamePrefix}-func`,
-    });
+    const fnResource = new FCInstance(runtimeHandler, /* name */ `${resourceNamePrefix}-func`);
 
     const apiName = genAliResourceName(resourceNamePrefix, `api`);
     const api = new alicloud.apigateway.Api(

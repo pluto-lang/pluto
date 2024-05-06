@@ -23,9 +23,7 @@ export class CloudWatchSchedule
       throw new Error("This closure is invalid.");
     }
 
-    const lambda = new Lambda(closure, {
-      name: `${this.id}-${cron}-func`,
-    });
+    const lambda = new Lambda(closure, /* name */ `${this.id}-${cron}-func`);
 
     const rule = new aws.cloudwatch.EventRule(
       genAwsResourceName(this.id, "rule"),

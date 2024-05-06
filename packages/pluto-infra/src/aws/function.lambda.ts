@@ -50,10 +50,10 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
   private static lambdaAssetsBucket?: S3Bucket;
 
-  constructor(closure: ComputeClosure<AnyFunction>, options: FunctionOptions = {}) {
-    options.name = options.name ?? DEFAULT_FUNCTION_NAME;
-    super("pluto:function:aws/Lambda", options.name, options);
-    this.id = genResourceId(PlutoFunction.fqn, options.name);
+  constructor(closure: ComputeClosure<AnyFunction>, name?: string, options: FunctionOptions = {}) {
+    name = name ?? DEFAULT_FUNCTION_NAME;
+    super("pluto:function:aws/Lambda", name, options);
+    this.id = genResourceId(PlutoFunction.fqn, name);
     if (!isComputeClosure(closure)) {
       throw new Error("This closure is invalid.");
     }

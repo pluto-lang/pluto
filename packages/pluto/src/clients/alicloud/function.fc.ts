@@ -9,7 +9,6 @@ import {
 import { genResourceId } from "@plutolang/base/utils";
 import {
   AnyFunction,
-  FunctionOptions,
   IFunctionClient,
   DEFAULT_FUNCTION_NAME,
   Function,
@@ -24,8 +23,8 @@ export class FCInstance<T extends AnyFunction> implements IFunctionClient<T> {
   private readonly serviceName: string;
   private readonly functionName: string;
 
-  constructor(func: T, opts?: FunctionOptions) {
-    this.id = genResourceId(Function.fqn, opts?.name || DEFAULT_FUNCTION_NAME);
+  constructor(func: T, name?: string) {
+    this.id = genResourceId(Function.fqn, name || DEFAULT_FUNCTION_NAME);
     this.serviceName = genAliResourceName(this.id, "svc");
     this.functionName = genAliResourceName(this.id, "fc");
     func;

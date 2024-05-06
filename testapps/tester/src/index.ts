@@ -65,12 +65,9 @@ routerTester.it("GET /hello, responds with Hello, Pluto", async (): Promise<void
 /**
  * The following section tests the Function class.
  */
-const echoFunction = new Function(
-  async function (input: string) {
-    return input;
-  },
-  { name: "echoFunction" }
-);
+const echoFunction = new Function(async function (input: string) {
+  return input;
+}, /* name */ "echoFunction");
 
 const functionTester = new Tester("functionTester");
 

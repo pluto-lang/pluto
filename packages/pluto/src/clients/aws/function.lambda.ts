@@ -1,7 +1,6 @@
 import { LambdaClient, InvokeCommand, InvokeCommandInput } from "@aws-sdk/client-lambda";
 import {
   AnyFunction,
-  FunctionOptions,
   IFunctionClient,
   DEFAULT_FUNCTION_NAME,
   Function,
@@ -21,8 +20,8 @@ export class LambdaFunction<T extends AnyFunction> implements IFunctionClient<T>
   private readonly id: string;
   private readonly lambdaName: string;
 
-  constructor(func: T, opts?: FunctionOptions) {
-    this.id = genResourceId(Function.fqn, opts?.name || DEFAULT_FUNCTION_NAME);
+  constructor(func: T, name?: string) {
+    this.id = genResourceId(Function.fqn, name || DEFAULT_FUNCTION_NAME);
     this.lambdaName = genAwsResourceName(this.id);
     func;
   }

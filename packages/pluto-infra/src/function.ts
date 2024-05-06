@@ -10,6 +10,7 @@ export type IFunctionInfraImpl = IFunctionInfra & IResourceInfra;
 // all implementation classes have the correct and same constructor signature.
 type FunctionInfraImplClass = new (
   func: ComputeClosure<AnyFunction>,
+  name?: string,
   options?: FunctionOptions
 ) => IFunctionInfraImpl;
 
@@ -38,6 +39,7 @@ export abstract class Function {
    */
   public static async createInstance(
     func: ComputeClosure<AnyFunction>,
+    name?: string,
     options?: FunctionOptions
   ): Promise<IFunctionInfraImpl> {
     // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
@@ -45,13 +47,14 @@ export abstract class Function {
       utils.currentPlatformType() === PlatformType.Simulator &&
       utils.currentEngineType() === ProvisionType.Simulator
     ) {
-      return new (await import("./simulator")).SimFunction(func, options) as any;
+      return new (await import("./simulator")).SimFunction(func, name, options) as any;
     }
 
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),
       func,
+      name,
       options
     );
   }

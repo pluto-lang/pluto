@@ -10,7 +10,6 @@ import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes
 import {
   ArgumentNode,
   CallNode,
-  ExpressionNode,
   FunctionNode,
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
@@ -177,44 +176,76 @@ export default class PyrightDeducer extends core.Deducer {
     for (const node of constructNodes) {
       // Get the parameters of the resource object construction.
       const parameters: arch.Parameter[] = [];
+
+      // First, handle the non-functional arguments to obtain the resource name prior to the closure
+      // extraction.
       node.arguments.forEach((argNode, idx) => {
+        if (
+          TypeUtils.isLambdaNode(argNode.valueExpression) ||
+          TypeUtils.isFunctionVar(argNode.valueExpression, this.typeEvaluator!)
+        ) {
+          // Skip the lambda and function arguments.
+          return;
+        }
+
         const parameterName =
           argNode.name?.value ??
           getParameterName(node, idx, this.typeEvaluator!, /* isClassMember */ true) ??
           "unknown";
 
-        if (
-          TypeUtils.isLambdaNode(argNode.valueExpression) ||
-          TypeUtils.isFunctionVar(argNode.valueExpression, this.typeEvaluator!)
-        ) {
-          // This argument is a function or lambda expression, we need to extract it to a closure
-          // and store it to a sperate directory.
-          const { closure, codeSegment } = extractAndStoreClosure(
-            argNode,
-            sourceFile,
-            this.closureDir,
-            this.extractor!
-          );
-          this.closures.push(closure);
-          this.closureToSgementMap.set(closure.id, codeSegment);
+        // This argument should be composed of literals, and we can convert it into a JSON string.
+        const value = this.valueEvaluator!.getValue(argNode.valueExpression);
+        parameters.push({
+          index: idx,
+          name: parameterName,
+          type: "text",
+          value: Value.toJson(value),
+        });
+      });
 
-          parameters.push({
-            index: idx,
-            name: parameterName,
-            type: "closure",
-            value: closure.id,
-          });
-        } else {
-          // Otherwise, this argument should be composed of literals, and we can convert it into a
-          // JSON string.
-          const value = this.valueEvaluator!.getValue(argNode.valueExpression);
-          parameters.push({
-            index: idx,
-            name: parameterName,
-            type: "text",
-            value: Value.toJson(value),
-          });
+      // Get the name of the resource object. The determination of the resource object name is based
+      // on the following rules:
+      // 1. If there is a parameter named "name", use its value as the name of the resource object.
+      // 2. Otherwise, use "default" as the name of the resource object.
+      const nameParam = parameters.find((p) => p.name === "name");
+      const resourceName = (JSON.parse(nameParam?.value ?? '""') as string) || "default";
+
+      // Subsequently, process the functional arguments to extract closures and formulate the
+      // closure's name, which should be a combination of the resource name, parameter index, and
+      // parameter name.
+      node.arguments.forEach((argNode, argIdx) => {
+        if (
+          !TypeUtils.isLambdaNode(argNode.valueExpression) &&
+          !TypeUtils.isFunctionVar(argNode.valueExpression, this.typeEvaluator!)
+        ) {
+          // Skip the non-functional arguments.
+          return;
         }
+
+        const parameterName =
+          argNode.name?.value ??
+          getParameterName(node, argIdx, this.typeEvaluator!, /* isClassMember */ true) ??
+          "unknown";
+
+        // This argument is a function or lambda expression, we need to extract it to a closure
+        // and store it to a sperate directory.
+        const closureId = `${resourceName}_${argIdx}_${parameterName}`;
+        const { closure, codeSegment } = extractAndStoreClosure(
+          argNode,
+          sourceFile,
+          closureId,
+          this.closureDir,
+          this.extractor!
+        );
+        this.closures.push(closure);
+        this.closureToSgementMap.set(closure.id, codeSegment);
+
+        parameters.push({
+          index: argIdx,
+          name: parameterName,
+          type: "closure",
+          value: closure.id,
+        });
       });
 
       // Get the full qualified name of the class type.
@@ -223,18 +254,6 @@ export default class PyrightDeducer extends core.Deducer {
         throw new Error("The constructor node must be a class type.");
       }
       const typeFqn = getFqnOfResourceType(classType, this.valueEvaluator!);
-
-      // Get the name of the resource object. The determination of the resource object name is based
-      // on the following rules:
-      // 1. If there is a parameter named "name", use its value as the name of the resource object.
-      // 2. If the resource object is assigned to a variable, use the variable name as the name of
-      //    the resource object.
-      // 3. Otherwise, use "default" as the name of the resource object.
-      const nameParam = parameters.find((p) => p.name === "name");
-      const resourceName =
-        (nameParam ? JSON.parse(nameParam.value) : undefined) ??
-        getNameOfAssignedVar(node) ??
-        "default";
 
       // Generate the resource id.
       const resourceId = genResourceId(this.project, this.stack.name, typeFqn, resourceName);
@@ -250,14 +269,21 @@ export default class PyrightDeducer extends core.Deducer {
    * extract parameters and the operation name.
    */
   private buildRelationshipsFromInfraApis(infraCalls: CallNode[], sourceFile: SourceFile) {
-    for (const node of infraCalls) {
+    for (let nodeIdx = 0; nodeIdx < infraCalls.length; nodeIdx++) {
+      const node = infraCalls[nodeIdx];
+
+      // Get the resource object associated with the caller.
       const constructNode = this.tracker!.getConstructNodeForApiCall(node, sourceFile);
       if (!constructNode) {
         throw new Error("No resource object found for the infrastructure API call.");
       }
-      const fromResource = this.nodeToResourceMap.get(constructNode.id);
-      const fromResourceId: arch.IdWithType = { id: fromResource!.id, type: "resource" };
+      const fromResource = this.nodeToResourceMap.get(constructNode.id)!;
+      const fromResourceId: arch.IdWithType = { id: fromResource.id, type: "resource" };
 
+      // Get the operation name
+      const operation = getMemberName(node, this.typeEvaluator!);
+
+      // Get the resource object or closures associated with the callee.
       const toResourceIds: arch.IdWithType[] = [];
       const parameters: arch.Parameter[] = [];
       node.arguments.forEach((argNode, idx) => {
@@ -272,9 +298,11 @@ export default class PyrightDeducer extends core.Deducer {
         ) {
           // This argument is a function or lambda expression, we need to extract it to a closure
           // and store it to a sperate directory.
+          const closureId = `${fromResource.name}_${nodeIdx}_${operation}_${idx}_${parameterName}`;
           const { closure, codeSegment } = extractAndStoreClosure(
             argNode,
             sourceFile,
+            closureId,
             this.closureDir,
             this.extractor!
           );
@@ -301,7 +329,6 @@ export default class PyrightDeducer extends core.Deducer {
         }
       });
 
-      const operation = getMemberName(node, this.typeEvaluator!);
       const relationship = new arch.Relationship(
         fromResourceId,
         toResourceIds,
@@ -395,21 +422,6 @@ export default class PyrightDeducer extends core.Deducer {
 }
 
 /**
- * Try to get the name of the variable the call node is assigned to.
- * @param callNode - The call node.
- * @returns The name of the variable if it exists; otherwise, undefined.
- */
-function getNameOfAssignedVar(callNode: ExpressionNode): string | undefined {
-  if (callNode.parent?.nodeType === ParseNodeType.Assignment) {
-    const left = callNode.parent.leftExpression;
-    if (left.nodeType === ParseNodeType.Name) {
-      return left.value;
-    }
-  }
-  return;
-}
-
-/**
  * Get the name of the parameter at index `idx` for the function associated with this call node.
  * @param callNode - The call node.
  * @param idx - The expected parameter's index.
@@ -457,18 +469,18 @@ function getParameterName(
 function extractAndStoreClosure(
   argNode: ArgumentNode,
   sourceFile: SourceFile,
+  closureId: string,
   closureBaseDir: string,
   extractor: CodeExtractor
 ) {
   const codeSegment = extractor!.extractExpressionRecursively(argNode.valueExpression, sourceFile);
   const closureText = CodeSegment.toString(codeSegment, /* exportName */ "_default");
-  const closureName = "fn_" + argNode.start.toString();
-  const closureFile = path.resolve(closureBaseDir, closureName, "__init__.py");
+  const closureFile = path.resolve(closureBaseDir, closureId, "__init__.py");
   fs.ensureFileSync(closureFile);
   fs.writeFileSync(closureFile, closureText);
 
   return {
-    closure: new arch.Closure(closureName, path.dirname(closureFile)),
+    closure: new arch.Closure(closureId, path.dirname(closureFile)),
     codeSegment,
   };
 }

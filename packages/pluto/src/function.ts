@@ -30,7 +30,6 @@ interface FunctionHandler extends AnyFunction, FnResource {}
  * class.
  */
 export interface FunctionOptions {
-  name?: string;
   memory?: number; // The memory size in MB, default is 128.
   envs?: Record<string, any>;
 }
@@ -59,8 +58,9 @@ export type IFunctionInfra = IFunctionInfraApi & IFunctionCapturedProps;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class Function<T extends FunctionHandler> implements IResource {
-  constructor(func: FunctionHandler, opts?: FunctionOptions) {
+  constructor(func: FunctionHandler, name?: string, opts?: FunctionOptions) {
     func;
+    name;
     opts;
     throw new Error(
       "Cannot instantiate this class, instead of its subclass depending on the target runtime."
@@ -69,19 +69,22 @@ export class Function<T extends FunctionHandler> implements IResource {
 
   public static buildClient<T extends FunctionHandler>(
     func: T,
+    name?: string,
     opts?: FunctionOptions
   ): IFunctionClient<T> {
+    opts;
+
     const platformType = utils.currentPlatformType();
     switch (platformType) {
       case PlatformType.AWS:
-        return new aws.LambdaFunction(func, opts);
+        return new aws.LambdaFunction(func, name);
       case PlatformType.K8s:
-        return new k8s.KnativeService(func, opts);
+        return new k8s.KnativeService(func, name);
       case PlatformType.AliCloud:
-        return new ali.FCInstance(func, opts);
+        return new ali.FCInstance(func, name);
       case PlatformType.Simulator: {
         if (!process.env.PLUTO_SIMULATOR_URL) throw new Error("PLUTO_SIMULATOR_URL doesn't exist");
-        const resourceId = utils.genResourceId(Function.fqn, opts?.name ?? DEFAULT_FUNCTION_NAME);
+        const resourceId = utils.genResourceId(Function.fqn, name ?? DEFAULT_FUNCTION_NAME);
         return simulator.makeSimulatorClient(process.env.PLUTO_SIMULATOR_URL!, resourceId);
       }
       default:

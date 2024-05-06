@@ -38,7 +38,7 @@ export class SNSQueue extends pulumi.ComponentResource implements IResourceInfra
     }
 
     const awsHandler = adaptPlatformNorm(closure);
-    const lambda = new Lambda(awsHandler, { name: `${this.id}-func` });
+    const lambda = new Lambda(awsHandler, /* name */ `${this.id}-func`);
 
     // create topic subscription
     new aws.sns.TopicSubscription(

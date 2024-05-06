@@ -37,10 +37,10 @@ export class KnativeService
   public readonly serviceMeta: Metadata;
   public readonly kserviceMeta: Metadata;
 
-  constructor(closure: ComputeClosure<AnyFunction>, options: FunctionOptions = {}) {
-    options.name = options.name || DEFAULT_FUNCTION_NAME;
-    super("pluto:function:k8s/KnativeService", options.name, options);
-    this.id = genResourceId(Function.fqn, options.name);
+  constructor(closure: ComputeClosure<AnyFunction>, name?: string, options: FunctionOptions = {}) {
+    name = name || DEFAULT_FUNCTION_NAME;
+    super("pluto:function:k8s/KnativeService", name, options);
+    this.id = genResourceId(Function.fqn, name);
     this.options = options;
     this.appLabels = { app: genK8sResourceName(this.id) };
 
