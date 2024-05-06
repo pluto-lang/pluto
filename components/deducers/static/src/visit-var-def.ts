@@ -1,8 +1,8 @@
 import ts from "typescript";
-import { ResourceVariableInfo, VisitResult, concatVisitResult } from "./types";
 import { buildImportStore } from "./imports";
 import { getLocationOfNode, isResourceType } from "./utils";
 import { visitCallingArguments } from "./visit-calling-arguments";
+import { ResourceVariableInfo, VisitResult, concatVisitResult } from "./types";
 
 /**
  * Check if this variable declaration is defining a resource. If it is,
@@ -131,6 +131,7 @@ export function visitNewExpression(
 
   const resourceVarInfo: ResourceVariableInfo = {
     varName: varName,
+    resourceName: getResourceNameFromNewExpression(checker, parNode),
     resourceConstructInfo: {
       constructExpression: constructExpression,
       importElements: [importElement],
@@ -142,4 +143,62 @@ export function visitNewExpression(
     resourceRelatInfos: closureDependencies,
     resourceVarInfos: closureInfos.concat(resourceVarInfo),
   };
+}
+
+/**
+ * Get the name of the resource object. The determination of the resource object name is based on
+ * the following rules:
+ * 1. If there is a parameter named "name", use its value as the name ofthe resource object.
+ * 2. Otherwise, use "default" as the name of the resource object.
+ */
+function getResourceNameFromNewExpression(
+  typeChecker: ts.TypeChecker,
+  node: ts.NewExpression
+): string {
+  // Find the index of the parameter named "name" in the constructor.
+  function getNameParamIdx() {
+    const signature = typeChecker.getResolvedSignature(node);
+    if (!signature) {
+      throw new Error(`Cannot find the signature of the NewExpression: ${node.getText()}`);
+    }
+
+    const decl = signature.getDeclaration();
+    if (!decl) {
+      throw new Error(`Cannot find the declaration of the NewExpression: ${node.getText()}`);
+    }
+
+    if (!ts.isConstructorDeclaration(decl)) {
+      throw new Error(
+        `The declaration of the NewExpression is not a constructor: ${node.getText()}`
+      );
+    }
+
+    let nameParamIdx = -1;
+    decl.parameters.forEach((param, idx) => {
+      if (!ts.isIdentifier(param.name)) {
+        return;
+      }
+      if (param.name.text === "name") {
+        nameParamIdx = idx;
+      }
+    });
+
+    return nameParamIdx;
+  }
+
+  if (node.arguments === undefined || node.arguments.length === 0) {
+    // The constructor does not have any arguments.
+    return "default";
+  }
+
+  const nameParamIdx = getNameParamIdx();
+  if (
+    nameParamIdx === -1 || // The constructor does not have a parameter named "name".
+    node.arguments.length <= nameParamIdx // The constructor includes a parameter called "name", but it's not assigned.
+  ) {
+    return "default";
+  }
+
+  const nameArg = node.arguments[nameParamIdx];
+  return nameArg.getText().replace(/(^"|"$)/g, "");
 }

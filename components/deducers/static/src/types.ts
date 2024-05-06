@@ -29,6 +29,7 @@ export function concatVisitResult(...visitResults: (VisitResult | undefined)[]):
 
 export interface ResourceVariableInfo {
   varName: string;
+  resourceName?: string;
   resourceConstructInfo: ResourceConstructInfo;
 }
 

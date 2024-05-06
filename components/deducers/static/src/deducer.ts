@@ -179,19 +179,29 @@ function buildArchRef(
   resRelatInfos: ResourceRelationshipInfo[],
   ctx: Context
 ): arch.Architecture {
+  function getResourceNameByVarName(varName: string): string {
+    const resVarInfo = resVarInfos.find((val) => val.varName === varName);
+    assert(resVarInfo !== undefined, `'${varName}' is not found.`);
+    return resVarInfo.resourceName ?? varName;
+  }
+
   const archClosures: arch.Closure[] = [];
   const archResources: arch.Resource[] = [];
   resVarInfos.forEach((varInfo) => {
-    const resName = varInfo.varName;
+    let resName;
     const resType = varInfo.resourceConstructInfo.constructExpression;
     if (resType === FN_RESOURCE_TYPE_NAME) {
       // Closure
+      resName = varInfo.varName;
       const dirpath = path
         .resolve(ctx.closureBaseDir, resName)
         .replace(new RegExp(`^${ctx.rootpath}/?`), "");
       archClosures.push(new arch.Closure(resName, dirpath));
     } else {
       // Resource
+      resName = varInfo.resourceName;
+      assert(resName !== undefined, `The resource name is not defined.`);
+
       const resParams =
         varInfo.resourceConstructInfo.parameters?.map((param): arch.Parameter => {
           return {
@@ -213,10 +223,10 @@ function buildArchRef(
 
   const archRelats: arch.Relationship[] = resRelatInfos.map((relatInfo): arch.Relationship => {
     const fromRes =
-      archResources.find((val) => val.name == relatInfo.fromVarName) ??
+      archResources.find((val) => val.name == getResourceNameByVarName(relatInfo.fromVarName)) ??
       archClosures.find((val) => val.id == relatInfo.fromVarName);
     const toRes =
-      archResources.find((val) => val.name == relatInfo.toVarNames[0]) ??
+      archResources.find((val) => val.name == getResourceNameByVarName(relatInfo.toVarNames[0])) ??
       archClosures.find((val) => val.id == relatInfo.toVarNames[0]);
     assert(
       fromRes !== undefined && toRes !== undefined,
