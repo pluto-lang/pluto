@@ -3,8 +3,9 @@ import * as fs from "fs-extra";
 import { Uri } from "pyright-internal/dist/common/uri/uri";
 import { LogLevel } from "pyright-internal/dist/common/console";
 import { Program } from "pyright-internal/dist/analyzer/program";
-import { TypeCategory } from "pyright-internal/dist/analyzer/types";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
+import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
+import { ClassType, TypeCategory } from "pyright-internal/dist/analyzer/types";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import {
   ArgumentNode,
@@ -221,9 +222,7 @@ export default class PyrightDeducer extends core.Deducer {
       if (!classType || classType.category !== TypeCategory.Class) {
         throw new Error("The constructor node must be a class type.");
       }
-      // TODO: remove the hard-coded package name after build the mechanism to share the
-      // infrastrucutre sdk between different languages. const typeFqn = classType.details.fullName;
-      const typeFqn = "@plutolang/pluto." + classType.details.name;
+      const typeFqn = getFqnOfResourceType(classType, this.valueEvaluator!);
 
       // Get the name of the resource object. The determination of the resource object name is based
       // on the following rules:
@@ -480,4 +479,35 @@ function getMemberName(node: CallNode, typeEvaluator: TypeEvaluator) {
     throw new Error("The left expression of the call must be a function.");
   }
   return type.details.name;
+}
+
+function getFqnOfResourceType(type: ClassType, valueEvaluator: ValueEvaluator) {
+  const fqnMember = type.details.fields.get("fqn");
+  if (fqnMember === undefined) {
+    throw new Error(`The resource type ${type.details.name} does not have a 'fqn' field.`);
+  }
+
+  if (fqnMember.getDeclarations().length !== 1) {
+    throw new Error(
+      `The 'fqn' field of the resource type ${type.details.name} must be assigned only once.`
+    );
+  }
+
+  const decl = fqnMember.getDeclarations()[0];
+  if (decl.type !== DeclarationType.Variable) {
+    throw new Error(
+      `The 'fqn' field of the resource type ${type.details.name} must be a variable.`
+    );
+  }
+
+  const assignmentNode = decl.node.parent;
+  if (!assignmentNode || assignmentNode.nodeType !== ParseNodeType.Assignment) {
+    throw new Error(
+      `The 'fqn' field of the resource type ${type.details.name} must be a variable assignment.`
+    );
+  }
+
+  const value = valueEvaluator.getValue(assignmentNode.rightExpression);
+  const stringifiedFqn = Value.toString(value);
+  return JSON.parse(stringifiedFqn);
 }
