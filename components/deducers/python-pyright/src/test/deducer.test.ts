@@ -27,11 +27,11 @@ router_var.get("/get", lambda req: HttpResponse(status_code=200, body="hello"))
 
 test("should correctly deduce the called client apis and accessed captured properties", async () => {
   const code = `
-from pluto_client import Router, Queue, Function, FunctionOptions, HttpResponse
+from pluto_client import Router, Queue, Function, HttpResponse
 
 queue = Queue("queue")
 
-func = Function(lambda x: queue.push(x), FunctionOptions(name="func")) # client api call
+func = Function(lambda x: queue.push(x)) # client api call
 
 router = Router("router")
 
@@ -58,6 +58,40 @@ router.get("/", alias_handler) # infrastructure call
 
   const getHdlRelats = archRef.relationships.filter((r) => r.from.id === closureId);
   expect(getHdlRelats).toHaveLength(2);
+
+  clean();
+});
+
+test("should correctly deduce the Function arguments", async () => {
+  const code = `
+from pluto_client import Function, FunctionOptions
+
+default_func = Function(lambda x: x)
+named_func = Function(lambda x: x, name="name")
+func_with_options = Function(lambda x: x, name="option", options=FunctionOptions(memory=256))
+`;
+  const { archRef, clean } = await getArchRefForInline(code);
+
+  expect(archRef.resources).toHaveLength(3);
+
+  const defaultFunc = archRef.resources.find((r) => r.name === "default");
+  expect(defaultFunc).toBeDefined();
+
+  const namedFunc = archRef.resources.find((r) => r.name === "name");
+  expect(namedFunc).toBeDefined();
+  expect(namedFunc).toHaveProperty("parameters");
+  expect(namedFunc?.parameters).toContainEqual({
+    index: 1,
+    type: "text",
+    name: "name",
+    value: '"name"',
+  });
+
+  const funcWithOptions = archRef.resources.find((r) => r.name === "option");
+  expect(funcWithOptions).toBeDefined();
+  const options = funcWithOptions?.parameters?.find((p) => p.name === "options");
+  expect(options).toBeDefined();
+  expect(options?.value).toMatch('"memory": 256');
 
   clean();
 });
