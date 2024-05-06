@@ -52,8 +52,8 @@ export async function bundleModules(
   }
 
   const currentMeta = { runtime, architecture, platform: options.platform, modules, done: false };
-  if (!hasChanges(targetFolder, currentMeta)) {
-    // If there are no changes, skip the installation.
+  if (isCompleted(targetFolder, currentMeta)) {
+    // If the installation is already done, skip it.
     return;
   }
 
@@ -106,13 +106,13 @@ export async function bundleModules(
   MetadataUtils.dumpMetaFile(targetFolder, currentMeta);
 }
 
-function hasChanges(targetFolder: string, meta: MetadataUtils.Metadata) {
+function isCompleted(targetFolder: string, meta: MetadataUtils.Metadata) {
   const lastMeta = MetadataUtils.loadMetaFile(targetFolder);
-  if (lastMeta && MetadataUtils.sameMetadata(meta, lastMeta)) {
-    // If the metadata is the same as the last time, skip the installation.
-    return false;
+  if (lastMeta && lastMeta.done && MetadataUtils.sameMetadata(meta, lastMeta)) {
+    // If the metadata is the same as the last time, and the installation is done, skip it.
+    return true;
   }
-  return true;
+  return false;
 }
 
 function getBaseImageUri(
