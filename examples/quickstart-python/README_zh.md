@@ -11,7 +11,7 @@ tags: ["Python", "AWS", "Kubernetes"]
 这个应用整体架构如下图，主要有 2 个路由：1）`/hello`，产生一个时间戳，并将这个时间戳发布到消息队列；2）`/store`，从 KV 数据库中获取上次访问 `/hello` 的时间戳，并返回。消息队列会有一个订阅者，将消息保存到 KV 数据库中。这个应用部署被部署到 AWS 或 Kubernetes 上。
 
 <p align="center">
-  <img src="../../assets/getting-started-case-arch.png" alt="case arch" width="450">
+  <img src="../../assets/getting-started/getting-started-case-arch.png" alt="case arch" width="450">
 </p>
 
 ## 0 环境
@@ -59,7 +59,7 @@ pluto deploy
 ```
 
 <p align="center">
-  <img src="../../assets/getting-started-aws-arch.png" alt="aws arch" width="450">
+  <img src="../../assets/getting-started/getting-started-aws-arch.png" alt="aws arch" width="450">
 </p>
 
 Pluto 将从应用代码中推导出需要 1 个路由、1 个消息队列、1 个 KV 数据库和 3 个函数对象，然后，Pluto 将自动地在你指定的云平台上创建相应的资源实例，并配置好它们之间的依赖关系。以 AWS 为例，将会创建 1 个 API Gateway、1 个 SNS、1 个 DynamoDB 和 3 个 Lambda 函数，同时配置好触发器、角色、权限等。
