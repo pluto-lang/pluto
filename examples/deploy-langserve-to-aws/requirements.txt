@@ -1,6 +1,7 @@
 pluto_client
 fastapi
 mangum
+sse_starlette
 langserve
 langchain
 langchain_core
