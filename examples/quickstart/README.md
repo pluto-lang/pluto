@@ -11,7 +11,7 @@ This is a TypeScript version of the example Pluto application in the [Quick Star
 The application we're developing is called Timestamp Store. The overall architecture of this web application is shown in the diagram below. It mainly has two routes: 1) `/hello`, which generates a timestamp and publishes it to the message queue; 2) `/store`, which retrieves the last timestamp of accessing `/hello` from the KV database and returns it. The message queue will have a subscriber that saves the message to the KV database. This application can be deployed on AWS or Kubernetes.
 
 <p align="center">
-  <img src="../../assets/getting-started-case-arch.png" alt="case arch" width="450">
+  <img src="../../assets/getting-started/getting-started-case-arch.png" alt="case arch" width="450">
 </p>
 
 ## 0 Prerequisites
@@ -57,7 +57,7 @@ pluto deploy
 ```
 
 <p align="center">
-  <img src="../../assets/getting-started-aws-arch.png" alt="aws arch" width="450">
+  <img src="../../assets/getting-started/getting-started-aws-arch.png" alt="aws arch" width="450">
 </p>
 
 During the deployment process, Pluto will deduce that it needs one route, one message queue, one KV database, and three function objects from the application code. Then, Pluto will automatically create the corresponding resource instances on your specified cloud platform and configure their dependencies. Taking AWS as an example, it will create one API Gateway, one SNS topic, one DynamoDB, and three Lambda functions while configuring triggers, roles, permissions, etc.
