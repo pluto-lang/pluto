@@ -1,7 +1,7 @@
 ---
 title: Deploy LangServe application to AWS
 description: Deploy LangServe application to AWS using Pluto, expose LangServe application through Api Gateway, support RemoteRunnable invocation, and Playground.
-deployUrl: https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8w
+deployUrl: https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8wj
 tags: ["AWS", "LangServe", "Python"]
 ---
 
@@ -43,7 +43,7 @@ langchain app new --non-interactive my-app
 cd my-app
 ```
 
-Note: The `langchain app new` command depends on `git`, please make sure `git` is installed in your environment. If you are using the container environment provided by Pluto, please execute this command `apt-get update && apt-get install -y git` to install `git`:
+Note: The `langchain app new` command depends on `git`, please make sure `git` is installed in your environment. If you are using the container environment provided by Pluto, please execute this command `apt-get update && apt-get install -y git` to install `git`.
 
 #### Write LangServe Application
 
@@ -191,7 +191,7 @@ After the initialization is completed, we need to install some necessary depende
 npm install
 
 # When the Python version does not match, please modify the python version number in pyproject.toml
-poetry add pluto-client mangum langchain-openai langchain_anthropic
+poetry add pluto-client mangum langchain-openai langchain_anthropic sse_starlette
 ```
 
 Finally, we can deploy the LangServe application to AWS by executing the following command:
@@ -600,7 +600,7 @@ EOF4
 
 npm install
 sed -i 's/\^3.11/\^3.10/' pyproject.toml
-poetry add pluto-client mangum langchain-openai
+poetry add pluto-client mangum langchain-openai sse_starlette
 
 mkdir -p ~/.aws
 cat << EOF5 > ~/.aws/credentials

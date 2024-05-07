@@ -1,7 +1,7 @@
 ---
 title: 部署 LangServe 应用到 AWS
 description: 使用 Pluto 部署 LangServe 应用到 AWS 上，通过 Api Gateway 暴露 LangServe 应用，支持 RemoteRunnable 调用，支持 Playground。
-deployUrl: https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8w
+deployUrl: https://codesandbox.io/p/devbox/deploy-langserve-application-to-aws-csj8wj
 tags: ["AWS", "LangServe", "Python"]
 ---
 
@@ -48,7 +48,7 @@ langchain app new --non-interactive my-app
 cd my-app
 ```
 
-注意：`langchain app new` 命令依赖 `git`，请确保你的环境中已经安装了 `git`。如果你在使用 Pluto 提供的容器环境，请先执行这条命令 `apt-get update && apt-get install -y git` 安装 `git`：
+注意：`langchain app new` 命令依赖 `git`，请确保你的环境中已经安装了 `git`。如果你在使用 Pluto 提供的容器环境，请先执行这条命令 `apt-get update && apt-get install -y git` 安装 `git`。
 
 #### 编写 LangServe 应用
 
@@ -197,7 +197,7 @@ npm install
 
 pip install poetry
 # Python 版本不匹配时，请修改 pyproject.toml 中的 python 版本号
-poetry add pluto-client mangum langchain-openai langchain_anthropic
+poetry add pluto-client mangum langchain-openai langchain_anthropic sse_starlette
 ```
 
 最后，我们执行以下命令就可以将 LangServe 应用部署到 AWS 上：
@@ -606,7 +606,7 @@ EOF4
 
 npm install
 sed -i 's/\^3.11/\^3.10/' pyproject.toml
-poetry add pluto-client mangum langchain-openai
+poetry add pluto-client mangum langchain-openai sse_starlette
 
 mkdir -p ~/.aws
 cat << EOF5 > ~/.aws/credentials
