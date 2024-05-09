@@ -61,7 +61,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
 
     // Check if the closure is created by user directly or not. If yes, we need to wrap it with the
     // platform adaption function.
-    if (getDepth(closure) === 1) {
+    if (getDepth(closure) === 1 && !this.options.raw) {
       closure = adaptPlatformNorm(closure);
     }
 
