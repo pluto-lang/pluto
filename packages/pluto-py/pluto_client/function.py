@@ -25,6 +25,7 @@ class DirectCallResponse:
 class FunctionOptions:
     memory: int | None = 128  # The memory size in MB, default is 128.
     envs: Dict[str, Any] | None = None
+    raw: bool = False  # This option only works for the AWS currently.
 
 
 class IFunctionClientApi(Generic[FnHandler], IResourceClientApi):

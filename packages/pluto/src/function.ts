@@ -32,6 +32,7 @@ interface FunctionHandler extends AnyFunction, FnResource {}
 export interface FunctionOptions {
   memory?: number; // The memory size in MB, default is 128.
   envs?: Record<string, any>;
+  raw?: boolean; // This option only works for the AWS currently.
 }
 
 export interface IFunctionClientApi<T extends AnyFunction> extends IResourceClientApi {
