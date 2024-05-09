@@ -1,5 +1,16 @@
 # @plutolang/pluto-infra
 
+## 0.4.12
+
+### Patch Changes
+
+- ef557b1: feat(sdk): include the `raw` option in the Function constructor
+
+  Add the `raw` option to the Function constructor. When set to `true`, it ensures the function doesn't wrap the adapter provided by the SDK developer, allowing raw data from the platform to be sent directly to the function handler.
+
+- Updated dependencies [ef557b1]
+  - @plutolang/pluto@0.4.7
+
 ## 0.4.11
 
 ### Patch Changes
