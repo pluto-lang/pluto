@@ -1,0 +1,11 @@
+pluto_client
+faiss-cpu
+langchain-core
+langchain-community 
+langchain-openai 
+langchain_text_splitters
+fastui
+fastapi
+pydantic
+starlette
+mangum

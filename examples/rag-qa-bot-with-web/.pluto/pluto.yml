@@ -1,0 +1,7 @@
+current: dev
+language: python
+stacks:
+  - configs: {}
+    name: dev
+    platformType: AWS
+    provisionType: Pulumi
