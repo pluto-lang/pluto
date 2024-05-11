@@ -6,3 +6,4 @@ export { CloudWatchSchedule } from "./schedule.cloudwatch";
 export { AwsTester } from "./tester";
 export { SageMaker } from "./sagemaker";
 export { S3Bucket } from "./bucket.s3";
+export { Website } from "./website.s3";

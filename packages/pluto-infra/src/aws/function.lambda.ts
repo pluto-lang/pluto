@@ -189,8 +189,8 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
     const lambdaAssetName = genAwsResourceName(this.id, Date.now().toString());
     function upload(): pulumi.Output<string> {
       const lambdaZip = new pulumi.asset.FileArchive(workdir);
-      const object = new aws.s3.BucketObject(lambdaAssetName, {
-        bucket: Lambda.lambdaAssetsBucket!.bucket,
+      const object = new aws.s3.BucketObjectv2(lambdaAssetName, {
+        bucket: Lambda.lambdaAssetsBucket!.bucket.bucket,
         source: lambdaZip,
       });
       return object.key;
