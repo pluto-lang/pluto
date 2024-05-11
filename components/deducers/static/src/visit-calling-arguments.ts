@@ -1,6 +1,6 @@
 import ts from "typescript";
 import { ParameterInfo, ResourceRelationshipInfo, ResourceVariableInfo } from "./types";
-import { isResourceType } from "./utils";
+import { isResourceType, propBelongsToCapturedProps } from "./utils";
 import { visitFnResourceBody } from "./visit-fn-res";
 
 /**
@@ -32,7 +32,7 @@ export function visitCallingArguments(
   signature.parameters.forEach((paramSig, idx) => {
     const paramName = paramSig.name;
     const arg = args[idx];
-    const param: ParameterInfo = { name: paramName, order: idx, expression: arg };
+    const param = { name: paramName, order: idx, expression: arg };
 
     const paramType = checker.getTypeOfSymbol(paramSig);
     const decls = paramType.symbol?.declarations;
@@ -68,12 +68,38 @@ export function visitCallingArguments(
         closureDependencies.push(...result.resourceRelatInfos);
       }
 
-      param.resourceName = closureName;
-      parameters.push(param);
+      parameters.push({
+        type: "closure",
+        ...param,
+        closureName: closureName,
+      });
       return;
     }
 
-    parameters.push(param);
+    if (arg && isResourcePropertyCall(arg, checker)) {
+      // This parameter is accessing a property of a resource, like `router.url()`.
+      const propertyAccessExp = arg.expression as ts.PropertyAccessExpression;
+      const accessorName = propertyAccessExp.expression.getText();
+
+      const symbol = checker.getSymbolAtLocation(propertyAccessExp);
+      if (symbol == undefined) {
+        throw new Error("The symbol of this property is undefined: " + arg.getText());
+      }
+      const propertyName = checker.symbolToString(symbol);
+
+      parameters.push({
+        type: "property",
+        ...param,
+        resourceVarName: accessorName,
+        property: propertyName,
+      });
+      return;
+    }
+
+    parameters.push({
+      type: "text",
+      ...param,
+    });
     return;
   });
 
@@ -82,4 +108,15 @@ export function visitCallingArguments(
     closureDependencies: closureDependencies,
     parameters: parameters,
   };
+}
+
+function isResourcePropertyCall(
+  arg: ts.Expression,
+  checker: ts.TypeChecker
+): arg is ts.CallExpression {
+  return (
+    ts.isCallExpression(arg) &&
+    ts.isPropertyAccessExpression(arg.expression) &&
+    propBelongsToCapturedProps(arg.expression, checker)
+  );
 }

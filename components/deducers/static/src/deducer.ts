@@ -3,11 +3,13 @@ import path from "path";
 import assert from "assert";
 import { arch, core, utils } from "@plutolang/base";
 import {
+  ParameterInfo,
   ResourceRelationshipInfo,
   ResourceVariableInfo,
   VisitResult,
   concatVisitResult,
 } from "./types";
+import { IdWithType } from "@plutolang/base/arch";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
@@ -156,12 +158,15 @@ function storeAllClosure(
               parameters:
                 varInfo.resourceConstructInfo.parameters
                   ?.map((param) => {
-                    if (param.resourceName) {
-                      // TODO: Check if this parameter is a closure, or a resource. This is used to
-                      // generate the closure source code. If the parameter is a closure, we use the
-                      // any type to fill.
+                    if (param.type === "closure") {
+                      // If the parameter is a closure, we use the any type to fill.
                       return "({} as any)";
                     }
+
+                    if (param.type === "property") {
+                      return `${param.resourceVarName}.${param.property}()`;
+                    }
+
                     return param.expression?.getText() ?? "undefined";
                   })
                   .join(", ") ?? "",
@@ -185,6 +190,34 @@ function buildArchRef(
     return resVarInfo.resourceName ?? varName;
   }
 
+  function constructArchParameter(param: ParameterInfo): arch.Parameter {
+    const paramType = param.type === "closure" ? "closure" : "text";
+
+    let paramValue;
+    switch (param.type) {
+      case "closure":
+        paramValue = param.closureName;
+        break;
+      case "property": {
+        const resName = getResourceNameByVarName(param.resourceVarName);
+        const res = archResources.find((r) => r.name === resName);
+        assert(res !== undefined);
+        paramValue = `${res.id}.${param.property}()`;
+        break;
+      }
+      case "text":
+        paramValue = param.expression?.getText() ?? "undefined";
+        break;
+    }
+
+    return {
+      index: param.order,
+      name: param.name,
+      type: paramType,
+      value: paramValue,
+    };
+  }
+
   const archClosures: arch.Closure[] = [];
   const archResources: arch.Resource[] = [];
   resVarInfos.forEach((varInfo) => {
@@ -200,17 +233,9 @@ function buildArchRef(
     } else {
       // Resource
       resName = varInfo.resourceName;
-      assert(resName !== undefined, `The resource name is not defined.`);
+      assert(resName !== undefined, `The resource name ${resName} is not defined.`);
 
-      const resParams =
-        varInfo.resourceConstructInfo.parameters?.map((param): arch.Parameter => {
-          return {
-            index: param.order,
-            name: param.name,
-            type: param.resourceName ? "closure" : "text",
-            value: param.resourceName ?? param.expression?.getText() ?? "undefined",
-          };
-        }) ?? [];
+      const resParams = varInfo.resourceConstructInfo.parameters?.map(constructArchParameter) ?? [];
 
       // TODO: remove this temporary solution, fetch full quilified name of the resource type from
       // the user code.
@@ -222,33 +247,42 @@ function buildArchRef(
   });
 
   const archRelats: arch.Relationship[] = resRelatInfos.map((relatInfo): arch.Relationship => {
-    const fromRes =
+    const fromResource =
       archResources.find((val) => val.name == getResourceNameByVarName(relatInfo.fromVarName)) ??
       archClosures.find((val) => val.id == relatInfo.fromVarName);
-    const toRes =
-      archResources.find((val) => val.name == getResourceNameByVarName(relatInfo.toVarNames[0])) ??
-      archClosures.find((val) => val.id == relatInfo.toVarNames[0]);
-    assert(
-      fromRes !== undefined && toRes !== undefined,
-      `${relatInfo.fromVarName} --${relatInfo.operation}--> ${relatInfo.toVarNames[0]}`
-    );
+    assert(fromResource !== undefined);
 
-    const fromType = fromRes instanceof arch.Closure ? "closure" : "resource";
-    const toType = toRes instanceof arch.Closure ? "closure" : "resource";
+    const toResources: IdWithType[] = [];
+    for (const toVarName of relatInfo.toVarNames) {
+      const res = archResources.find((r) => r.name === getResourceNameByVarName(toVarName));
+      if (res) {
+        toResources.push({ id: res.id, type: "resource" });
+        continue;
+      }
+
+      const closure = archClosures.find((c) => c.id == toVarName);
+      if (closure) {
+        toResources.push({ id: closure.id, type: "closure" });
+        break;
+      }
+    }
+    for (const param of relatInfo.parameters) {
+      if (param.type === "property") {
+        const resName = getResourceNameByVarName(param.resourceVarName);
+        const res = archResources.find((r) => r.name === resName);
+        assert(res !== undefined, `The resource '${resName}' is not found.`);
+        toResources.push({ id: res.id, type: "resource" });
+      }
+    }
+
+    const fromType = fromResource instanceof arch.Closure ? "closure" : "resource";
 
     const relatType = relatInfo.type;
     const relatOp = relatInfo.operation;
-    const params = relatInfo.parameters.map((param): arch.Parameter => {
-      return {
-        index: param.order,
-        name: param.name,
-        type: param.resourceName ? "closure" : "text",
-        value: param.resourceName ?? param.expression?.getText() ?? "undefined",
-      };
-    });
+    const params = relatInfo.parameters.map(constructArchParameter);
     return new arch.Relationship(
-      { id: fromRes.id, type: fromType },
-      [{ id: toRes.id, type: toType }],
+      { id: fromResource.id, type: fromType },
+      toResources,
       relatType,
       relatOp,
       params

@@ -15,6 +15,7 @@ import {
 } from "pyright-internal/dist/parser/parseNodes";
 import { core, arch } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
+import * as TextUtils from "./text-utils";
 import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ProgramUtils from "./program-utils";
@@ -269,6 +270,23 @@ export default class PyrightDeducer extends core.Deducer {
    * extract parameters and the operation name.
    */
   private buildRelationshipsFromInfraApis(infraCalls: CallNode[], sourceFile: SourceFile) {
+    const isFunctionArg = (node: ArgumentNode) => {
+      return (
+        TypeUtils.isLambdaNode(node.valueExpression) ||
+        TypeUtils.isFunctionVar(node.valueExpression, this.typeEvaluator!)
+      );
+    };
+
+    const isCapturedPropertyAccess = (node: ArgumentNode) => {
+      return (
+        node.valueExpression.nodeType === ParseNodeType.Call &&
+        this.sepcialNodeMap!.getNodeById(
+          node.valueExpression.id,
+          TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME
+        )
+      );
+    };
+
     for (let nodeIdx = 0; nodeIdx < infraCalls.length; nodeIdx++) {
       const node = infraCalls[nodeIdx];
 
@@ -292,10 +310,7 @@ export default class PyrightDeducer extends core.Deducer {
           getParameterName(node, idx, this.typeEvaluator!, /* isClassMember */ true) ??
           "unknown";
 
-        if (
-          TypeUtils.isLambdaNode(argNode.valueExpression) ||
-          TypeUtils.isFunctionVar(argNode.valueExpression, this.typeEvaluator!)
-        ) {
+        if (isFunctionArg(argNode)) {
           // This argument is a function or lambda expression, we need to extract it to a closure
           // and store it to a sperate directory.
           const closureId = `${fromResource.name}_${nodeIdx}_${operation}_${idx}_${parameterName}`;
@@ -315,6 +330,31 @@ export default class PyrightDeducer extends core.Deducer {
             name: parameterName,
             type: "closure",
             value: closure.id,
+          });
+        } else if (isCapturedPropertyAccess(argNode)) {
+          // This argument facilitates direct access to the captured property of a resource object.
+          // Since in IaC code, the variable name of the resource object is replaced with the
+          // resource object ID, we need to alter the accessor in this method call to the resource
+          // object ID.
+          const propertyAccessNode = argNode.valueExpression as CallNode;
+          const resNode = this.tracker!.getConstructNodeForApiCall(propertyAccessNode, sourceFile);
+          if (!resNode) {
+            throw new Error(
+              "No resource object found for the captured property access, " +
+                TextUtils.getTextOfNode(propertyAccessNode, sourceFile)
+            );
+          }
+
+          const toResource = this.nodeToResourceMap.get(resNode.id);
+          toResourceIds.push({ id: toResource!.id, type: "resource" });
+
+          const method = getMemberName(propertyAccessNode, this.typeEvaluator!);
+          const paramValue = `${toResource!.id}.${method}()`;
+          parameters.push({
+            index: idx,
+            name: parameterName,
+            type: "text",
+            value: paramValue,
           });
         } else {
           // Otherwise, this argument should be composed of literals, and we can convert it into a
