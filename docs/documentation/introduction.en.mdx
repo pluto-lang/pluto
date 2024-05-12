@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Cards, Card } from "nextra/components";
+
 import { GiEgyptianBird } from "react-icons/gi";
 import { CgWebsite } from "react-icons/cg";
 import { TbMessageChatbot } from "react-icons/tb";
+import { RiRobot2Line } from "react-icons/ri";
+
 import { ExampleCard } from "components/example-card";
 
 # Pluto
@@ -46,5 +49,13 @@ To explore more examples, please see the [Cookbook](/cookbook) section.
     icon={<CgWebsite />}
     href="/cookbook/fastapi"
     tags={["AWS", "Python", "FastAPI"]}
+  />
+  <ExampleCard
+    title="RAG Document QA Assistant"
+    description="Create a dedicated document QA assistant for your GitHub project in 5 minutes, powered by LangChain, FastUI, and Pluto."
+    icon={<RiRobot2Line />}
+    href="/cookbook/rag-qa-bot-with-web"
+    tags={["AWS", "Python", "LangChain", "RAG"]}
+    deployUrl="https://codesandbox.io/p/devbox/pluto-doc-qa-bot-forked-8njh42"
   />
 </Cards>

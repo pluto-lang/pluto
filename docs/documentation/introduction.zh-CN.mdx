@@ -4,6 +4,7 @@ import { Cards, Card } from "nextra/components";
 import { GiEgyptianBird } from "react-icons/gi";
 import { CgWebsite } from "react-icons/cg";
 import { TbMessageChatbot } from "react-icons/tb";
+import { RiRobot2Line } from "react-icons/ri";
 
 import { ExampleCard } from "components/example-card";
 
@@ -51,5 +52,14 @@ Pluto 支持使用 **Python、TypeScript** 等熟悉的编程语言编写应用�
     icon={<CgWebsite />}
     href="/cookbook/fastapi"
     tags={["AWS", "Python", "FastAPI"]}
+  />
+
+  <ExampleCard
+    title="基于 RAG 的文档问答助手"
+    description="5 分钟为你的 GitHub 项目创建一个专属文档问答助手，基于 LangChain、FastUI 和 Pluto 实现。"
+    icon={<RiRobot2Line />}
+    href="/cookbook/rag-qa-bot-with-web"
+    tags={["AWS", "Python", "LangChain", "RAG"]}
+    deployUrl="https://codesandbox.io/p/devbox/pluto-doc-qa-bot-forked-8njh42"
   />
 </Cards>
