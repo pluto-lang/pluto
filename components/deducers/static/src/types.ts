@@ -51,11 +51,28 @@ export interface ResourceConstructInfo {
   locations: Location[];
 }
 
-export interface ParameterInfo {
-  name: string; // The parameter name in the function signature.
-  resourceName?: string;
-  expression: ts.Expression | undefined;
+export type ParameterInfo = TextParameterInfo | ClosureParameterInfo | PropertyParameterInfo;
+
+export interface BaseParameterInfo {
+  type: "text" | "closure" | "property";
+  name: string;
   order: number;
+  expression?: ts.Expression;
+}
+
+interface TextParameterInfo extends BaseParameterInfo {
+  type: "text";
+}
+
+interface ClosureParameterInfo extends BaseParameterInfo {
+  type: "closure";
+  closureName: string;
+}
+
+interface PropertyParameterInfo extends BaseParameterInfo {
+  type: "property";
+  resourceVarName: string;
+  property: string;
 }
 
 export interface Location {

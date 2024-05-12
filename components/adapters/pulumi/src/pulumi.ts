@@ -232,6 +232,7 @@ export class PulumiAdapter extends core.Adapter {
     for (const key of Object.keys(envs)) process.env[key] = envs[key];
 
     const pulumiConfig = await genPulumiConfig(this.stack);
+    pulumiConfig["pluto:projectRoot"] = { value: process.cwd() };
     await pulumiStack.setAllConfig(pulumiConfig);
     return pulumiStack;
   }

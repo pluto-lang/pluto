@@ -1,0 +1,61 @@
+import { Tab, Tabs } from 'nextra/components';
+
+# Website
+
+The `Website` resource represents a static website that can be hosted on cloud services. Such websites typically consist of a set of static files, including HTML, CSS, and JavaScript, which are updated each time the application is redeployed.
+
+## How to Use
+
+### Creating a Resource
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+```python
+from pluto_client import Website
+
+website = Website(path="./website", name="website")
+```
+</Tab>
+
+<Tab>
+```typescript
+import { Website } from "@plutolang/pluto";
+
+const website = new Website("./website", "website");
+```
+</Tab>
+
+</Tabs>
+
+Based on the example code above, you can store the static files of the website in the `./website` directory, including all static files such as `index.html`. The `name` parameter in the constructor can be left empty, with the default name of the website being `default`, which is related to the final generated URL.
+
+### Associating Dependent Resources
+
+Static websites might need to access other resources, such as backend services. In such cases, you can use the `addEnv` method to pass information about other resources to the website.
+
+During deployment, Pluto generates a `pluto.js` file in the root directory of the website and exposes these variables in the form of `window.plutoEnv`. Therefore, in the code that follows `<script src="pluto.js"></script>` (Requires manual addition), you can access these environment variables through `window.plutoEnv`.
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+```python
+from pluto_client import Function
+
+echo = Function(lambda x: x)
+website.addEnv("ECHO_URL", echo.url())
+```
+</Tab>
+
+<Tab>
+```typescript
+import { Function } from "@plutolang/pluto";
+
+const echo = new Function(async function echo(x: string) {
+  return x;
+});
+website.addEnv("ECHO_URL", echo.url());
+```
+</Tab>
+
+</Tabs>

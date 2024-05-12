@@ -26,7 +26,7 @@ export class ApiGatewayRouter
 {
   public readonly id: string;
 
-  public _url: pulumi.Output<string> = pulumi.interpolate`unkonwn`;
+  public _url: pulumi.Output<string>;
 
   private apiGateway: Api;
   private routes: Route[];

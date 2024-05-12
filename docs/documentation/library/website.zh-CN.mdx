@@ -1,0 +1,59 @@
+import { Tab, Tabs } from 'nextra/components';
+
+# Website
+
+`Website` 资源表示一个静态网站，可以托管在云服务上。这类网站通常包含一组静态文件，包括 HTML、CSS 和 JavaScript 等，这些文件在每次重新部署应用程序时都会被更新。
+
+## 使用方法
+
+### 创建资源
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+```python
+from pluto_client import Website
+website = Website(path="./website", name="website")
+```
+</Tab>
+
+<Tab>
+```typescript
+import { Website } from "@plutolang/pluto";
+const website = new Website("./website", "website");
+```
+</Tab>
+
+</Tabs>
+
+根据上面示例代码的情况，你可以将网站的静态文件存储在 `./website` 目录中，包括 `index.html` 等所有静态文件。构造函数中的 `name` 参数可以为空，默认网站的名称将是 `default`，这个名称与最终生成的 URL 有关。
+
+### 关联依赖资源
+
+在静态网站中可能会访问其他的资源，比如可能需要访问后端服务。这时可以通过 `addEnv` 方法来将其他资源的信息传递给网站。
+
+在部署时，Pluto 在部署时，Pluto 会在网站的根目录下生成一个 `pluto.js` 文件，然后在该文件中将这些变量以 `window.plutoEnv` 的形式暴露出来。因此，在 `<script src="pluto.js"></script>` （需要手动添加）之后的代码中，可以通过 `window.plutoEnv` 来访问这些环境变量。
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+```python
+from pluto_client import Function
+
+echo = Function(lambda x: x)
+website.addEnv("ECHO_URL", echo.url())
+```
+</Tab>
+
+<Tab>
+```typescript
+import { Function } from "@plutolang/pluto";
+
+const echo = new Function(async function echo(x: string) {
+  return x;
+});
+website.addEnv("ECHO_URL", echo.url());
+```
+</Tab>
+
+</Tabs>
