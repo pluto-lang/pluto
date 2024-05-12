@@ -1,5 +1,11 @@
 # @plutolang/pluto
 
+## 0.4.8
+
+### Patch Changes
+
+- e58e6d2: feat(sdk): add Website resource type
+
 ## 0.4.7
 
 ### Patch Changes
