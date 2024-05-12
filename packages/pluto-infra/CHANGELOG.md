@@ -1,5 +1,17 @@
 # @plutolang/pluto-infra
 
+## 0.4.13
+
+### Patch Changes
+
+- e58e6d2: feat(sdk): add Website resource type
+- 93a0d4b: chore(sdk): upgrade @pulumi/aws to support Python 3.12 in Lambda
+
+  Upgraded `@pulumi/aws` version from 6.4.1 to 6.34.1 to ensure compatibility with the Python 3.12 runtime in AWS Lambda functions.
+
+- Updated dependencies [e58e6d2]
+  - @plutolang/pluto@0.4.8
+
 ## 0.4.12
 
 ### Patch Changes
