@@ -18,8 +18,8 @@ export class GraphvizGenerator extends core.Generator {
     const dotFile = path.join(outdir, "arch.dot");
     writeToFile("", dotFile, dotText);
 
-    const svgFile = path.join(outdir, "arch.svg");
-    await toFile(dotText, svgFile, { format: "svg" });
+    const svgFile = path.join(outdir, "arch.png");
+    await toFile(dotText, svgFile, { format: "png" });
     return { entrypoint: svgFile };
   }
 }
@@ -41,7 +41,7 @@ function archToGraphviz(archRef: arch.Architecture): string {
         .join(",")
         .replace(/"/g, '\\"');
     const fromId = relat.from.id;
-    const toIds = relat.to.map((r) => r.id).join(",");
+    const toIds = relat.to.map((r) => r.id).join(",") || fromId;
     dotSource += `  ${fromId} -> ${toIds} [label="${label}",color="${color}"];\n`;
   }
   dotSource += "}";
