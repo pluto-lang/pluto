@@ -5,6 +5,7 @@ from .router import Router, RouterOptions, HttpRequest, HttpResponse
 from .bucket import Bucket, BucketOptions
 from .schedule import Schedule, ScheduleOptions
 from .website import Website, WebsiteOptions
+from .secret import Secret
 
 __all__ = [
     "Queue",
@@ -24,4 +25,5 @@ __all__ = [
     "ScheduleOptions",
     "Website",
     "WebsiteOptions",
+    "Secret",
 ]

@@ -117,7 +117,7 @@ export class SageMaker implements IResource {
     return new aws.SageMaker(name, imageUri, opts);
   }
 
-  public static fqn = "@plutolang/pluto.aws.SageMaker";
+  public static fqn = "@plutolang/pluto.SageMaker";
 }
 
 export interface SageMaker extends IResource, ISageMakerClient, ISageMakerInfra {}
