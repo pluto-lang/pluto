@@ -29,7 +29,14 @@ function archToGraphviz(archRef: arch.Architecture): string {
   for (const resName in archRef.resources) {
     const res = archRef.resources[resName];
     dotSource += `  ${res.id} [label="<<${res.type}>>\\n${res.name}"];\n`;
+
+    for (const arg of res.parameters) {
+      if (arg.type === "closure") {
+        dotSource += `  ${res.id} -> ${arg.value} [color="black"];\n`;
+      }
+    }
   }
+
   for (const relat of archRef.relationships) {
     let label =
       relat.type == arch.RelatType.Create ? relat.operation.toUpperCase() : relat.operation;
