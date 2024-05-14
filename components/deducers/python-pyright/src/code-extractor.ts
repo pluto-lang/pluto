@@ -12,6 +12,7 @@ import {
   FunctionNode,
   ImportAsNode,
   ImportFromAsNode,
+  IndexNode,
   LambdaNode,
   ListComprehensionForIfNode,
   ListComprehensionNode,
@@ -210,6 +211,9 @@ export class CodeExtractor {
       case ParseNodeType.Tuple:
       case ParseNodeType.List:
         segment = this.extractTupleOrListRecursively(node, sourceFile);
+        break;
+      case ParseNodeType.Index:
+        segment = this.extractIndexRecursively(node, sourceFile);
         break;
       default: {
         const nodeText = TextUtils.getTextOfNode(node, sourceFile);
@@ -734,6 +738,34 @@ export class CodeExtractor {
       node: node,
       code: statement,
     });
+  }
+
+  private extractIndexRecursively(node: IndexNode, sourceFile: SourceFile): CodeSegment {
+    const baseSegment = this.extractExpressionRecursively(node.baseExpression, sourceFile);
+
+    const indexItemSegments: CodeSegment[] = [];
+    node.items.forEach((item) => {
+      const indexSegment = this.extractExpressionRecursively(item.valueExpression, sourceFile);
+      indexItemSegments.push(indexSegment);
+    });
+
+    let code: string;
+    if (TypeUtils.isEnvVarAccess(node, this.typeEvaluator) && node.items.length == 1) {
+      // This index node is accessing an environment variable, such as `os.environ["key"]`. If we
+      // keep the original code, it will raise a KeyError since the key may not exist at runtime.
+      // So, we should replace it with `os.environ.get("key")` to avoid this issue.
+      code = `os.environ.get(${indexItemSegments[0].code})`;
+    } else {
+      code = `${baseSegment.code}[${indexItemSegments.map((seg) => seg.code).join(", ")}]`;
+    }
+
+    return CodeSegment.buildWithChildren(
+      {
+        node: node,
+        code: code,
+      },
+      [baseSegment].concat(indexItemSegments)
+    );
   }
 }
 

@@ -1,3 +1,4 @@
+import assert from "assert";
 import * as path from "path";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import {
@@ -7,7 +8,7 @@ import {
   isExpressionNode,
 } from "pyright-internal/dist/parser/parseNodes";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
-import { Value, ValueEvaluator } from "../value-evaluator";
+import { Value, ValueEvaluator, ValueType } from "../value-evaluator";
 import * as TextUtils from "../text-utils";
 import * as TestUtils from "./test-utils";
 
@@ -94,17 +95,17 @@ test("ValueEvaluator should correctly evaluate the values", () => {
 });
 
 describe("evaluateValueForBuiltin", () => {
-  test("should throw an error when try to deducer a non-literal type", () => {
+  test("should throw an error when try to deduce a non-literal type", () => {
     const code = `
 from typing import Any
 import random
 
 var_0: Any = 1
 var_1 = random.randint(1, 10)
-var_2 = 1.0
+# var_2 = 1.0 supported
 var_3 = bytearray(b"bytearr")
 var_4 = b"bytes"
-var_5 = {"a": 1}
+# var_5 = {"a": 1} supported
 var_7 = frozenset([1])
 var_8 = [1]
 var_9 = {1}
@@ -114,7 +115,8 @@ var_9 = {1}
       return (node) => {
         const text = TextUtils.getTextOfNode(node, sourceFile);
         if (text?.startsWith("var_")) {
-          expect(() => valueEvaluator.getValue(node)).toThrow();
+          const n = node;
+          expect(() => valueEvaluator.getValue(n)).toThrow();
         }
       };
     });
@@ -128,11 +130,8 @@ ${DATACLASS_DEF}
 
 from typing import Any
 
-any_var: Any = 1
+any_var: Any = 1 # Do not support for the assignment with type annotation
 tuple_1 = (any_var, 2, 3)
-
-model = Base(name="John", age=25)
-tuple_2 = (model,)
 `;
 
     testInlineCode(code, (valueEvaluator, sourceFile) => {
@@ -147,7 +146,7 @@ tuple_2 = (model,)
 });
 
 describe("evaluateValueForDataClass", () => {
-  test("should throw an error when try to deducer a data class instance", () => {
+  test("should correctly evaluate a data class instance", () => {
     const code = `
 ${DATACLASS_DEF}
 
@@ -158,10 +157,6 @@ model = Model(Base("name", 25), gender="male")
       return (node) => {
         const text = TextUtils.getTextOfNode(node, sourceFile);
         if (text === "model") {
-          expect(() => valueEvaluator.getValue(node)).toThrow();
-        }
-
-        if (text === 'Model(Base("name", 25), gender="male")') {
           const value = valueEvaluator.getValue(node);
           expect(value).toBeDefined();
 
@@ -180,6 +175,130 @@ model = Model(Base("name", 25), gender="male")
   });
 });
 
+describe("evaluate value about environment variable accessing", () => {
+  test("should correctly evaluate the direct access to an environment variable", () => {
+    const code = `
+import os
+
+var_1 = os.environ["KEY"]
+var_2 = os.environ.get("KEY")
+var_3 = os.environ.get("KEY", "DEFAULT_VALUE")
+`;
+
+    testInlineCode(code, (valueEvaluator, sourceFile) => {
+      return (node) => {
+        const text = TextUtils.getTextOfNode(node, sourceFile);
+        if (text?.startsWith("var_")) {
+          const value = valueEvaluator.getValue(node);
+          expect(value).toBeDefined();
+          expect(value.valueType).toEqual(ValueType.EnvVarAccess);
+          assert(value.valueType === ValueType.EnvVarAccess);
+          expect(value.envVarName).toEqual("KEY");
+
+          if (text === "var_3") {
+            expect(value.defaultEnvVarValue).toEqual("DEFAULT_VALUE");
+          }
+        }
+      };
+    });
+  });
+
+  test("should correctly evaluate the nested access to an environment variable", () => {
+    const code = `
+${DATACLASS_DEF}
+import os
+
+var_tuple = (os.environ["KEY"],)
+var_dict = {"key": os.environ["KEY"], "key2": {"key3": os.environ.get("KEY")}}
+var_dataclass = Model(Base("name", 25), gender=os.environ["KEY"])
+
+var_complex = (
+    os.environ["KEY"],
+    Base(os.environ.get("KEY"), 25),
+    os.environ.get("KEY", "DEFAULT_VALUE"),
+    None,
+    { "key": os.environ["KEY"], "key2": os.environ.get("KEY") },
+)
+`;
+
+    testInlineCode(code, (valueEvaluator, sourceFile) => {
+      return (node) => {
+        const text = TextUtils.getTextOfNode(node, sourceFile);
+        if (text?.startsWith("var_")) {
+          const value = valueEvaluator.getValue(node);
+          expect(value).toBeDefined();
+        }
+
+        if (text === "var_complex") {
+          const value = valueEvaluator.getValue(node);
+          expect(value).toBeDefined();
+          expect(value.valueType).toEqual(ValueType.Tuple);
+
+          const serialized = Value.toJson(value);
+          expect(serialized).toContain('os.environ.get("KEY")');
+          expect(serialized).toContain('{"name": os.environ.get("KEY"), "age": 25}');
+          expect(serialized).toContain('os.environ.get("KEY", "DEFAULT_VALUE")');
+
+          const types = Value.getTypes(value);
+          expect(types).toHaveLength(1);
+          expect(types[0]).toEqual("tmp.Base");
+        }
+      };
+    });
+  });
+});
+
+describe("evaluateValueForVariable", () => {
+  test("should correctly evaluate the variable assignment", () => {
+    const code = `
+${DATACLASS_DEF}
+import os
+
+common_var_1 = 1
+common_var_2 = Model(Base("name", 25), gender=os.environ["KEY"])
+
+var_1 = common_var_1
+var_2 = common_var_1 + 1
+
+var_tuple = (common_var_1, common_var_1 + 1, common_var_2)
+var_dict = {"key": common_var_1, "key2": common_var_1 + 1, "key3": common_var_2}
+var_dataclass = Base("name", common_var_1)
+`;
+
+    testInlineCode(code, (valueEvaluator, sourceFile) => {
+      return (node) => {
+        const text = TextUtils.getTextOfNode(node, sourceFile);
+        if (text?.startsWith("var_")) {
+          const value = valueEvaluator.getValue(node);
+          expect(value).toBeDefined();
+
+          switch (text) {
+            case "var_1":
+              expect(Value.toString(value)).toEqual("1");
+              break;
+            case "var_2":
+              expect(Value.toString(value)).toEqual("2");
+              break;
+            case "var_tuple":
+              expect(Value.toString(value)).toEqual(
+                '(1, 2, tmp.Model(nullable=None, tup=(1, 2, 3), base=tmp.Base(name="name", age=25), gender=os.environ.get("KEY")))'
+              );
+              break;
+            case "var_dict":
+              expect(Value.toString(value)).toEqual(
+                '{"key": 1, "key2": 2, "key3": tmp.Model(nullable=None, tup=(1, 2, 3), base=tmp.Base(name="name", age=25), gender=os.environ.get("KEY"))}'
+              );
+              break;
+            case "var_dataclass":
+              expect(Value.toString(value)).toEqual('tmp.Base(name="name", age=1)');
+              break;
+          }
+        }
+      };
+    });
+  });
+});
+
 function testInlineCode(
   code: string,
   validatorBuilder: (evaluator: ValueEvaluator, sourceFile: SourceFile) => Validator
@@ -191,7 +310,10 @@ function testInlineCode(
 
   const valueEvaluator = new ValueEvaluator(program.evaluator!);
   const walker = new ExpressionWalker(sourceFile, validatorBuilder(valueEvaluator, sourceFile));
-  walker.walk(parseTree!);
 
-  clean();
+  try {
+    walker.walk(parseTree!);
+  } finally {
+    clean();
+  }
 }
