@@ -313,7 +313,11 @@ function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
       // from that of an SDK invocation. Therefore, we interpret the body of the request as
       // arguments for the function.
       if (isHttpPayload(payload)) {
-        payload = JSON.parse(payload.body);
+        let body = payload.body;
+        if (payload.isBase64Encoded) {
+          body = Buffer.from(payload.body, "base64").toString();
+        }
+        payload = JSON.parse(body);
       }
 
       if (!Array.isArray(payload)) {
@@ -340,6 +344,7 @@ function adaptAwsRuntime(__handler_: AnyFunction): DirectCallHandler {
       }
       return response;
     } catch (e) {
+      console.error("System error:", e);
       // The error is caused by the HTTP processing, not the user function.
       return {
         code: 500,

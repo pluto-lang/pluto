@@ -87,7 +87,7 @@ class ISageMakerInfra(ISageMakerInfraApi, ISageMakerCapturedProps):
 
 
 class SageMaker(IResource, ISageMakerClient, ISageMakerInfra):
-    fqn = "@plutolang/pluto.aws.SageMaker"
+    fqn = "@plutolang/pluto.SageMaker"
 
     def __init__(
         self, name: str, image_uri: str, opts: Optional[SageMakerOptions] = None
