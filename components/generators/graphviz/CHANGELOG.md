@@ -1,5 +1,14 @@
 # @plutolang/graphviz-generator
 
+## 0.4.5
+
+### Patch Changes
+
+- 3efe230: feat(generator): default to from-resource's ID when to-resources is empty
+
+  - The generator will now use the 'from-resource' ID as a fallback when the 'to-resources' field is left empty.
+  - Also, changed the output format from SVG to PNG.
+
 ## 0.4.4
 
 ### Patch Changes
