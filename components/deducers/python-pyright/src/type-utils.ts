@@ -7,6 +7,7 @@ import {
   ExpressionNode,
   FunctionNode,
   LambdaNode,
+  NameNode,
   ParseNode,
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
@@ -146,4 +147,57 @@ export function getTypeName(type: Type): string {
     case TypeCategory.Unbound:
       return "unbound";
   }
+}
+
+/**
+ * Checks whether the specified expression node denotes access to an environment variable. Examples
+ * include os.environ["key"] or os.environ.get("key").
+ *
+ * @param node - The expression node to check.
+ * @param checker - The type evaluator used for type checking.
+ * @returns `true` if the expression node represents an environment variable access, `false`
+ * otherwise.
+ */
+export function isEnvVarAccess(node: ExpressionNode, checker: TypeEvaluator) {
+  if (node.nodeType === ParseNodeType.Index) {
+    // This is the case of `os.environ["key"]`.
+    return (
+      node.baseExpression.nodeType === ParseNodeType.MemberAccess &&
+      node.baseExpression.leftExpression.nodeType === ParseNodeType.Name &&
+      isOSModuleReference(node.baseExpression.leftExpression, checker) &&
+      node.baseExpression.memberName.value === "environ"
+    );
+  }
+
+  if (node.nodeType === ParseNodeType.Call) {
+    // This is the case of `os.environ.get("key")`.
+    const funcExpression = node.leftExpression;
+    if (funcExpression.nodeType !== ParseNodeType.MemberAccess) {
+      // The left expression should be a member access.
+      return false;
+    }
+
+    const leftExpression = funcExpression.leftExpression;
+    const memberName = funcExpression.memberName;
+    return (
+      leftExpression.nodeType === ParseNodeType.MemberAccess &&
+      leftExpression.leftExpression.nodeType === ParseNodeType.Name &&
+      isOSModuleReference(leftExpression.leftExpression, checker) &&
+      leftExpression.memberName.value === "environ" &&
+      memberName.value === "get"
+    );
+  }
+  return false;
+}
+
+/**
+ * Checks if the given node is a reference to the "os" module.
+ *
+ * @param node - The node to check.
+ * @param checker - The type evaluator to use.
+ * @returns `true` if the node is a reference to the "os" module, `false` otherwise.
+ */
+function isOSModuleReference(node: NameNode, checker: TypeEvaluator): boolean {
+  const type = checker.getType(node);
+  return type !== undefined && type.category === TypeCategory.Module && type.moduleName === "os";
 }

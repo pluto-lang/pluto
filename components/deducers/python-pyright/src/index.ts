@@ -22,7 +22,7 @@ import * as ProgramUtils from "./program-utils";
 import * as ScopeUtils from "./scope-utils";
 import { TypeSearcher } from "./type-searcher";
 import { SpecialNodeMap } from "./special-node-map";
-import { Value, ValueEvaluator } from "./value-evaluator";
+import { Value, ValueEvaluator, ValueType } from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
 import { CodeSegment, CodeExtractor } from "./code-extractor";
 import { ImportFinder } from "./import-finder";
@@ -174,83 +174,55 @@ export default class PyrightDeducer extends core.Deducer {
   }
 
   private buildConstructedResources(constructNodes: CallNode[], sourceFile: SourceFile) {
-    for (const node of constructNodes) {
+    for (const callNode of constructNodes) {
       // Get the parameters of the resource object construction.
       const parameters: arch.Parameter[] = [];
 
-      // First, handle the non-functional arguments to obtain the resource name prior to the closure
-      // extraction.
-      node.arguments.forEach((argNode, idx) => {
-        if (
-          TypeUtils.isLambdaNode(argNode.valueExpression) ||
-          TypeUtils.isFunctionVar(argNode.valueExpression, this.typeEvaluator!)
-        ) {
-          // Skip the lambda and function arguments.
-          return;
-        }
-
-        const parameterName =
-          argNode.name?.value ??
-          getParameterName(node, idx, this.typeEvaluator!, /* isClassMember */ true) ??
-          "unknown";
-
-        // This argument should be composed of literals, and we can convert it into a JSON string.
-        const value = this.valueEvaluator!.getValue(argNode.valueExpression);
-        parameters.push({
-          index: idx,
-          name: parameterName,
-          type: "text",
-          value: Value.toJson(value),
-        });
-      });
-
-      // Get the name of the resource object. The determination of the resource object name is based
-      // on the following rules:
+      // First, get the name of the resource object. The determination of the resource object name
+      // is based on the following rules:
       // 1. If there is a parameter named "name", use its value as the name of the resource object.
       // 2. Otherwise, use "default" as the name of the resource object.
-      const nameParam = parameters.find((p) => p.name === "name");
-      const resourceName = (JSON.parse(nameParam?.value ?? '""') as string) || "default";
-
-      // Subsequently, process the functional arguments to extract closures and formulate the
-      // closure's name, which should be a combination of the resource name, parameter index, and
-      // parameter name.
-      node.arguments.forEach((argNode, argIdx) => {
-        if (
-          !TypeUtils.isLambdaNode(argNode.valueExpression) &&
-          !TypeUtils.isFunctionVar(argNode.valueExpression, this.typeEvaluator!)
-        ) {
-          // Skip the non-functional arguments.
-          return;
-        }
-
+      let resourceName: string = "default";
+      callNode.arguments.forEach((argNode, idx) => {
         const parameterName =
           argNode.name?.value ??
-          getParameterName(node, argIdx, this.typeEvaluator!, /* isClassMember */ true) ??
+          getParameterName(callNode, idx, this.typeEvaluator!, /* isClassMember */ true) ??
           "unknown";
 
-        // This argument is a function or lambda expression, we need to extract it to a closure
-        // and store it to a sperate directory.
-        const closureId = `${resourceName}_${argIdx}_${parameterName}`;
-        const { closure, codeSegment } = extractAndStoreClosure(
-          argNode,
+        if (parameterName === "name") {
+          const value = this.valueEvaluator!.getValue(argNode.valueExpression);
+          if (value.valueType !== ValueType.Literal || typeof value.value !== "string") {
+            throw new Error("The value of the 'name' parameter must be a string literal.");
+          }
+          resourceName = value.value;
+        }
+      });
+
+      // Subsequently, process the arguments of the resource object construction.
+      callNode.arguments.forEach((argNode, argIdx) => {
+        const closureNamePrefix = `${resourceName}_${argIdx}`;
+        const parsedArg = this.parseArgumentOfInfraCall(
           sourceFile,
-          closureId,
-          this.closureDir,
-          this.extractor!
+          callNode,
+          closureNamePrefix,
+          argNode,
+          argIdx
         );
-        this.closures.push(closure);
-        this.closureToSgementMap.set(closure.id, codeSegment);
 
         parameters.push({
           index: argIdx,
-          name: parameterName,
-          type: "closure",
-          value: closure.id,
+          name: parsedArg.name,
+          type: parsedArg.type,
+          value: parsedArg.value,
         });
+
+        if (parsedArg.dependentResource && parsedArg.dependentResource.type === "resource") {
+          throw new Error("The resource object construction cannot depend on a resource object.");
+        }
       });
 
       // Get the full qualified name of the class type.
-      const classType = this.typeEvaluator!.getType(node);
+      const classType = this.typeEvaluator!.getType(callNode);
       if (!classType || classType.category !== TypeCategory.Class) {
         throw new Error("The constructor node must be a class type.");
       }
@@ -260,7 +232,7 @@ export default class PyrightDeducer extends core.Deducer {
       const resourceId = genResourceId(this.project, this.stack.name, typeFqn, resourceName);
 
       const resource = new arch.Resource(resourceId, resourceName, typeFqn, parameters);
-      this.nodeToResourceMap.set(node.id, resource);
+      this.nodeToResourceMap.set(callNode.id, resource);
     }
   }
 
@@ -270,28 +242,11 @@ export default class PyrightDeducer extends core.Deducer {
    * extract parameters and the operation name.
    */
   private buildRelationshipsFromInfraApis(infraCalls: CallNode[], sourceFile: SourceFile) {
-    const isFunctionArg = (node: ArgumentNode) => {
-      return (
-        TypeUtils.isLambdaNode(node.valueExpression) ||
-        TypeUtils.isFunctionVar(node.valueExpression, this.typeEvaluator!)
-      );
-    };
-
-    const isCapturedPropertyAccess = (node: ArgumentNode) => {
-      return (
-        node.valueExpression.nodeType === ParseNodeType.Call &&
-        this.sepcialNodeMap!.getNodeById(
-          node.valueExpression.id,
-          TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME
-        )
-      );
-    };
-
     for (let nodeIdx = 0; nodeIdx < infraCalls.length; nodeIdx++) {
-      const node = infraCalls[nodeIdx];
+      const callNode = infraCalls[nodeIdx];
 
       // Get the resource object associated with the caller.
-      const constructNode = this.tracker!.getConstructNodeForApiCall(node, sourceFile);
+      const constructNode = this.tracker!.getConstructNodeForApiCall(callNode, sourceFile);
       if (!constructNode) {
         throw new Error("No resource object found for the infrastructure API call.");
       }
@@ -299,73 +254,31 @@ export default class PyrightDeducer extends core.Deducer {
       const fromResourceId: arch.IdWithType = { id: fromResource.id, type: "resource" };
 
       // Get the operation name
-      const operation = getMemberName(node, this.typeEvaluator!);
+      const operation = getMemberName(callNode, this.typeEvaluator!);
 
       // Get the resource object or closures associated with the callee.
       const toResourceIds: arch.IdWithType[] = [];
       const parameters: arch.Parameter[] = [];
-      node.arguments.forEach((argNode, idx) => {
-        const parameterName =
-          argNode.name?.value ??
-          getParameterName(node, idx, this.typeEvaluator!, /* isClassMember */ true) ??
-          "unknown";
+      callNode.arguments.forEach((argNode, argIdx) => {
+        const closureNamePrefix = `${fromResource.name}_${nodeIdx}_${operation}`;
+        const parsedArg = this.parseArgumentOfInfraCall(
+          sourceFile,
+          callNode,
+          closureNamePrefix,
+          argNode,
+          argIdx,
+          /* isClassMember */ true
+        );
 
-        if (isFunctionArg(argNode)) {
-          // This argument is a function or lambda expression, we need to extract it to a closure
-          // and store it to a sperate directory.
-          const closureId = `${fromResource.name}_${nodeIdx}_${operation}_${idx}_${parameterName}`;
-          const { closure, codeSegment } = extractAndStoreClosure(
-            argNode,
-            sourceFile,
-            closureId,
-            this.closureDir,
-            this.extractor!
-          );
-          this.closures.push(closure);
-          this.closureToSgementMap.set(closure.id, codeSegment);
-          toResourceIds.push({ id: closure.id, type: "closure" });
+        parameters.push({
+          index: argIdx,
+          name: parsedArg.name,
+          type: parsedArg.type,
+          value: parsedArg.value,
+        });
 
-          parameters.push({
-            index: idx,
-            name: parameterName,
-            type: "closure",
-            value: closure.id,
-          });
-        } else if (isCapturedPropertyAccess(argNode)) {
-          // This argument facilitates direct access to the captured property of a resource object.
-          // Since in IaC code, the variable name of the resource object is replaced with the
-          // resource object ID, we need to alter the accessor in this method call to the resource
-          // object ID.
-          const propertyAccessNode = argNode.valueExpression as CallNode;
-          const resNode = this.tracker!.getConstructNodeForApiCall(propertyAccessNode, sourceFile);
-          if (!resNode) {
-            throw new Error(
-              "No resource object found for the captured property access, " +
-                TextUtils.getTextOfNode(propertyAccessNode, sourceFile)
-            );
-          }
-
-          const toResource = this.nodeToResourceMap.get(resNode.id);
-          toResourceIds.push({ id: toResource!.id, type: "resource" });
-
-          const method = getMemberName(propertyAccessNode, this.typeEvaluator!);
-          const paramValue = `${toResource!.id}.${method}()`;
-          parameters.push({
-            index: idx,
-            name: parameterName,
-            type: "text",
-            value: paramValue,
-          });
-        } else {
-          // Otherwise, this argument should be composed of literals, and we can convert it into a
-          // JSON string.
-          const value = this.valueEvaluator!.getValue(argNode.valueExpression);
-          parameters.push({
-            index: idx,
-            name: parameterName,
-            type: "text",
-            value: Value.toJson(value),
-          });
+        if (parsedArg.dependentResource) {
+          toResourceIds.push(parsedArg.dependentResource);
         }
       });
 
@@ -458,6 +371,104 @@ export default class PyrightDeducer extends core.Deducer {
         platform: this.stack.platformType,
       });
     }
+  }
+
+  /**
+   * Parses the argument of an infrastructure call, including the resource object construction and
+   * the infrastructure API call.
+   */
+  private parseArgumentOfInfraCall(
+    sourceFile: SourceFile,
+    callNode: CallNode,
+    closureNamePrefix: string,
+    argNode: ArgumentNode,
+    argIdx: number,
+    isClassMember: boolean = false
+  ) {
+    const isFunctionArg = (node: ArgumentNode) => {
+      return (
+        TypeUtils.isLambdaNode(node.valueExpression) ||
+        TypeUtils.isFunctionVar(node.valueExpression, this.typeEvaluator!)
+      );
+    };
+
+    const isCapturedPropertyAccess = (node: ArgumentNode) => {
+      return (
+        node.valueExpression.nodeType === ParseNodeType.Call &&
+        this.sepcialNodeMap!.getNodeById(
+          node.valueExpression.id,
+          TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME
+        )
+      );
+    };
+
+    let parsedArg: {
+      dependentResource?: arch.IdWithType;
+      name: string;
+      type: "closure" | "text";
+      value: string;
+    };
+
+    const parameterName =
+      argNode.name?.value ??
+      getParameterName(callNode, argIdx, this.typeEvaluator!, isClassMember) ??
+      "unknown";
+
+    if (isFunctionArg(argNode)) {
+      // This argument is a function or lambda expression, we need to extract it to a closure
+      // and store it to a sperate directory.
+      const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`;
+      const { closure, codeSegment } = extractAndStoreClosure(
+        argNode,
+        sourceFile,
+        closureId,
+        this.closureDir,
+        this.extractor!
+      );
+      this.closures.push(closure);
+      this.closureToSgementMap.set(closure.id, codeSegment);
+
+      parsedArg = {
+        dependentResource: { id: closure.id, type: "closure" },
+        name: parameterName,
+        type: "closure",
+        value: closure.id,
+      };
+    } else if (isCapturedPropertyAccess(argNode)) {
+      // This argument facilitates direct access to the captured property of a resource object.
+      // Since in IaC code, the variable name of the resource object is replaced with the
+      // resource object ID, we need to alter the accessor in this method call to the resource
+      // object ID.
+      const propertyAccessNode = argNode.valueExpression as CallNode;
+      const resNode = this.tracker!.getConstructNodeForApiCall(propertyAccessNode, sourceFile);
+      if (!resNode) {
+        throw new Error(
+          "No resource object found for the captured property access, " +
+            TextUtils.getTextOfNode(propertyAccessNode, sourceFile)
+        );
+      }
+
+      const toResource = this.nodeToResourceMap.get(resNode.id);
+      const method = getMemberName(propertyAccessNode, this.typeEvaluator!);
+      const paramValue = `${toResource!.id}.${method}()`;
+      parsedArg = {
+        dependentResource: { id: toResource!.id, type: "resource" },
+        name: parameterName,
+        type: "text",
+        value: paramValue,
+      };
+    } else {
+      // Otherwise, this argument should be composed of literals, and we can convert it into a
+      // JSON string.
+      const value = this.valueEvaluator!.getValue(argNode.valueExpression);
+      parsedArg = {
+        name: parameterName,
+        type: "text",
+        value: Value.toJson(value, { language: "typescript" }),
+      };
+    }
+
+    return parsedArg;
   }
 }
 
