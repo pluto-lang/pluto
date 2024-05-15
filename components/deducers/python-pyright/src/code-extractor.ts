@@ -38,6 +38,7 @@ import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ScopeUtils from "./scope-utils";
 import { SpecialNodeMap } from "./special-node-map";
+import { ValueEvaluator, ValueType } from "./value-evaluator";
 
 export interface CodeSegment {
   readonly node: ParseNode;
@@ -66,6 +67,10 @@ export interface CodeSegment {
    * The captured properties that are accessed in the current node.
    */
   readonly accessedCapturedProps?: CallNode[];
+  /**
+   * The environment variables that are accessed in the current node.
+   */
+  readonly accessedEnvVars?: string[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -128,6 +133,18 @@ export namespace CodeSegment {
     return Array.from(capturedProperties);
   }
 
+  export function getAccessedEnvVars(segment: CodeSegment): string[] {
+    const envVars: Set<string> = new Set();
+    function getAccessedEnvVarsRecursively(segment: CodeSegment) {
+      if (segment.accessedEnvVars) {
+        segment.accessedEnvVars.forEach((envVar) => envVars.add(envVar));
+      }
+      segment.dependentDeclarations?.forEach(getAccessedEnvVarsRecursively);
+    }
+    getAccessedEnvVarsRecursively(segment);
+    return Array.from(envVars);
+  }
+
   /**
    * Construct a code segment for a single node using the code segments from its child expressions.
    * @param parentInfo - The information of the parent node.
@@ -145,12 +162,14 @@ export namespace CodeSegment {
       dependentDeclarations: parentInfo.dependentDeclarations ?? [],
       calledClientApis: parentInfo.calledClientApis ?? [],
       accessedCapturedProps: parentInfo.accessedCapturedProps ?? [],
+      accessedEnvVars: parentInfo.accessedEnvVars ?? [],
     };
 
     children?.forEach((child) => {
       result.dependentDeclarations!.push(...(child.dependentDeclarations ?? []));
       result.calledClientApis!.push(...(child.calledClientApis ?? []));
       result.accessedCapturedProps!.push(...(child.accessedCapturedProps ?? []));
+      result.accessedEnvVars!.push(...(child.accessedEnvVars ?? []));
     });
     return result;
   }
@@ -161,11 +180,14 @@ export namespace CodeSegment {
  */
 export class CodeExtractor {
   private readonly accessedSpecialNodeFinder: AccessedSpecialNodeFinder;
+  private readonly valueEvaluator: ValueEvaluator;
+
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
     private readonly specialNodeMap: SpecialNodeMap<CallNode>
   ) {
     this.accessedSpecialNodeFinder = new AccessedSpecialNodeFinder(specialNodeMap);
+    this.valueEvaluator = new ValueEvaluator(this.typeEvaluator);
   }
 
   /**
@@ -420,17 +442,28 @@ export class CodeExtractor {
       TypeConsts.IRESOURCE_FULL_NAME
     );
 
+    // Check if the call node is for accessing an environment variable, like `os.environ.get('key')`.
+    const isAccessingEnvVar = TypeUtils.isEnvVarAccess(node, this.typeEvaluator);
+
     const children: CodeSegment[] = [];
     // The code for building each argument of the construct statement.
     const argumentCodes: string[] = [];
-    node.arguments.forEach((arg) => {
+    const accessedEnvVars: string[] = [];
+    node.arguments.forEach((argNode, ardIdx) => {
       // If the call node is for constructing a resource object, we don't need to extract the
       // function type argument from it. The function type argument will be sent to the cloud and
       // accessed via RPC.
       const extractFunctionArg = !isConstructedNode;
-      const segment = this.extractArgumentRecursively(arg, sourceFile, extractFunctionArg);
+      const segment = this.extractArgumentRecursively(argNode, sourceFile, extractFunctionArg);
       children.push(segment);
       argumentCodes.push(segment.code);
+
+      if (isAccessingEnvVar && ardIdx === 0) {
+        // If the call node is for accessing an environment variable, we should extract the
+        // environment variable key from the argument.
+        const envVarName = getEnvVarName(argNode.valueExpression, sourceFile, this.valueEvaluator);
+        accessedEnvVars.push(envVarName);
+      }
     });
 
     const methodSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
@@ -456,6 +489,7 @@ export class CodeExtractor {
         accessedCapturedProps: !isConstructedNode
           ? this.accessedSpecialNodeFinder.findCapturedProperties(node)
           : [],
+        accessedEnvVars: accessedEnvVars,
       },
       children
     );
@@ -741,28 +775,30 @@ export class CodeExtractor {
   }
 
   private extractIndexRecursively(node: IndexNode, sourceFile: SourceFile): CodeSegment {
+    const isAccessingEnvVar = TypeUtils.isEnvVarAccess(node, this.typeEvaluator);
+
     const baseSegment = this.extractExpressionRecursively(node.baseExpression, sourceFile);
 
     const indexItemSegments: CodeSegment[] = [];
+    const accessedEnvVars: string[] = [];
     node.items.forEach((item) => {
       const indexSegment = this.extractExpressionRecursively(item.valueExpression, sourceFile);
       indexItemSegments.push(indexSegment);
+
+      if (isAccessingEnvVar) {
+        // If the index node is accessing an environment variable, we should extract the environment
+        // variable key from the index item.
+        const envVarName = getEnvVarName(item.valueExpression, sourceFile, this.valueEvaluator);
+        accessedEnvVars.push(envVarName);
+      }
     });
 
-    let code: string;
-    if (TypeUtils.isEnvVarAccess(node, this.typeEvaluator) && node.items.length == 1) {
-      // This index node is accessing an environment variable, such as `os.environ["key"]`. If we
-      // keep the original code, it will raise a KeyError since the key may not exist at runtime.
-      // So, we should replace it with `os.environ.get("key")` to avoid this issue.
-      code = `os.environ.get(${indexItemSegments[0].code})`;
-    } else {
-      code = `${baseSegment.code}[${indexItemSegments.map((seg) => seg.code).join(", ")}]`;
-    }
-
+    const code = `${baseSegment.code}[${indexItemSegments.map((seg) => seg.code).join(", ")}]`;
     return CodeSegment.buildWithChildren(
       {
         node: node,
         code: code,
+        accessedEnvVars: accessedEnvVars,
       },
       [baseSegment].concat(indexItemSegments)
     );
@@ -930,4 +966,19 @@ class AccessedSpecialNodeFinder {
     this.accessedSpecialNodesMap.set(node.id, accessedSpecialNodes);
     return accessedSpecialNodes;
   }
+}
+
+function getEnvVarName(
+  node: ExpressionNode,
+  sourceFile: SourceFile,
+  valueEvaluator: ValueEvaluator
+): string {
+  const value = valueEvaluator.getValue(node);
+  if (value.valueType !== ValueType.Literal || typeof value.value !== "string") {
+    const text = TextUtils.getTextOfNode(node, sourceFile);
+    throw new Error(
+      `The value of the index item '${text}' is not a string literal ${value}, so we can't retrieve the environment variable key from it.`
+    );
+  }
+  return value.value;
 }

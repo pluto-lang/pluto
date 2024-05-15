@@ -154,6 +154,7 @@ const ${closure.id} = createClosure(${closure.id}_func, {
   dirpath: "${dirpath}",
   exportName: "${exportName}",
   dependencies: [${dependenciesString}],
+  accessedEnvVars: [${closure.envVars.map((envVar) => `"${envVar}"`).join(", ")}],
 });
 `;
   }

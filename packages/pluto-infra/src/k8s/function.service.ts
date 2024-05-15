@@ -95,6 +95,15 @@ export class KnativeService
         envs.push({ name: key, value: options.envs[key] });
       }
     }
+    closure.dependencies
+      ?.filter((dep) => dep.type === "property")
+      .forEach((dep) => {
+        const envName = createEnvNameForProperty(dep.resourceObject.id, dep.operation);
+        envs.push({ name: envName, value: (dep.resourceObject as any)[dep.operation]() });
+      });
+    closure.accessedEnvVars?.forEach((envVar) => {
+      envs.push({ name: envVar, value: process.env[envVar] ?? "" });
+    });
 
     // Create the knative service.
     const kservice = this.createKnativeService(image, envs);

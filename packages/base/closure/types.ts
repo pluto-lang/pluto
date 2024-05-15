@@ -38,6 +38,9 @@ export interface ComputeClosure<T extends AnyFunction> {
 
   // The client api and property dependencies of the compute closure.
   dependencies?: Dependency[];
+
+  // The environment variables accessed within the compute closure.
+  accessedEnvVars?: string[];
 }
 
 export function isComputeClosure<T extends AnyFunction>(obj: any): obj is ComputeClosure<T> {

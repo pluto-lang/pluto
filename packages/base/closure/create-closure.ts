@@ -7,10 +7,9 @@ export function createClosure<T extends AnyFunction>(
   options?: CreateClosureOptions
 ): ComputeClosure<T> {
   const newClosure: ComputeClosure<T> = Object.assign(fn, {
+    ...options,
     dirpath: options?.dirpath ?? "inline",
     exportName: options?.exportName ?? "default",
-    placeholder: options?.placeholder,
-    dependencies: options?.dependencies,
   });
 
   if (isComputeClosure(newClosure)) {
@@ -29,6 +28,7 @@ export function wrapClosure<T extends AnyFunction, K extends AnyFunction>(
     exportName: options?.exportName ?? "default",
     placeholder: options?.placeholder,
     dependencies: closure.dependencies?.concat(options?.dependencies ?? []),
+    accessedEnvVars: closure.accessedEnvVars?.concat(options?.accessedEnvVars ?? []),
     innerClosure: closure,
   });
 

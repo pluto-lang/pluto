@@ -3,7 +3,8 @@ export class Closure {
 
   constructor(
     public readonly id: string,
-    public readonly path: string
+    public readonly path: string,
+    public readonly envVars: string[] = []
   ) {}
 }
 
