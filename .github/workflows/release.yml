@@ -68,22 +68,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Send a Slack notification if a publish happens
-        if: steps.changesets.outputs.published == 'true'
-        id: slack
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          # Slack channel id, channel name, or user id to post message.
-          # See also: https://api.slack.com/methods/chat.postMessage#channels
-          # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
-          channel-id: "C0625J88DNY"
-          # For posting a simple plain text message
-          slack-message: >
-            The new version of the following package(s) has been published: ${{ steps.changesets.outputs.publishedPackages }}.
-            Commit URL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-
       - name: Check if @plutolang/cli is published
         if: steps.changesets.outputs.published == 'true'
         id: check-cli-publish
@@ -98,8 +82,36 @@ jobs:
         env:
           RELEASE_PACKAGES: ${{ toJSON(steps.changesets.outputs.publishedPackages) }}
 
+  send-slack-message:
+    name: Send Slack Message
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Construct Slack Message
+        id: construct-slack-message
+        run: |
+          MESSAGE="$(node scripts/construct-slack-message.js)"
+          echo "message=$MESSAGE" >> "$GITHUB_ENV"
+        env:
+          RELEASE_PACKAGES: ${{ needs.release.outputs.publishedPackages }}
+          COMMIT_URL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
+
+      - name: Send a Slack notification if a publish happens
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: "C0625J88DNY"
+          payload: ${{ steps.construct-slack-message.outputs.message }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  trigger-build-docker-images:
+    name: Trigger Build Docker Images
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger to build docker images
-        if: steps.check-cli-publish.outputs.published == 'true'
         run: |
           version=$(echo "${RELEASE_PACKAGES}" | jq -r '.[] | select(.name == "@plutolang/cli") | .version')
           curl -X POST \
@@ -109,10 +121,15 @@ jobs:
               -d '{ "event_type": "trigger-build-docker-images", "client_payload": { "version": "'${version}'" } }'
         env:
           GITHUB_TOKEN: ${{ secrets.PLUTO_WORKFLOW_GITHUB_TOKEN_JIANZS }}
-          RELEASE_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+          RELEASE_PACKAGES: ${{ needs.release.outputs.publishedPackages }}
 
+  trigger-bump-pluto-codesandbox:
+    name: Trigger Bump Pluto in Codesandbox
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
       - name: Trigger to bump pluto version in codesandbox
-        if: steps.changesets.outputs.published == 'true'
         run: |
           curl -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
@@ -121,4 +138,4 @@ jobs:
               -d '{ "event_type": "trigger-bump-pluto", "client_payload": { "packages": '${RELEASE_PACKAGES}' } }'
         env:
           GITHUB_TOKEN: ${{ secrets.PLUTO_WORKFLOW_GITHUB_TOKEN_JIANZS }}
-          RELEASE_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+          RELEASE_PACKAGES: ${{ needs.release.outputs.publishedPackages }}
