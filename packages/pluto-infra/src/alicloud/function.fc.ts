@@ -80,6 +80,9 @@ export class FCInstance extends pulumi.ComponentResource implements IResourceInf
         const envName = createEnvNameForProperty(dep.resourceObject.id, dep.operation);
         envs[envName] = (dep.resourceObject as any)[dep.operation]();
       });
+    closure.accessedEnvVars?.forEach((envVar) => {
+      envs[envVar] = process.env[envVar];
+    });
 
     // Serialize the closure with its dependencies to a directory.
     const workdir = path.join(os.tmpdir(), `pluto`, `${this.id}_${Date.now()}`);

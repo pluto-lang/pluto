@@ -88,6 +88,10 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         const envName = createEnvNameForProperty(dep.resourceObject.id, dep.operation);
         envs[envName] = (dep.resourceObject as any)[dep.operation]();
       });
+    // Add the environment variables that the closure accesses to the lambda.
+    closure.accessedEnvVars?.forEach((envVar) => {
+      envs[envVar] = process.env[envVar];
+    });
 
     // Serialize the closure with its dependencies to a directory.
     assert(process.env.WORK_DIR, "WORK_DIR is not set.");
@@ -196,11 +200,19 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       return object.key;
     }
 
+    const kms = new aws.kms.Key(
+      this.lambdaName,
+      {
+        description: `KMS key for ${this.lambdaName} lambda function`,
+        enableKeyRotation: true,
+      },
+      { parent: this }
+    );
+
     return new aws.lambda.Function(
       this.lambdaName,
       {
         name: this.lambdaName,
-        // code: pulumi.output(entrypointFilePathP).apply(() => new pulumi.asset.FileArchive(workdir)),
         s3Bucket: Lambda.lambdaAssetsBucket!.bucket.bucket,
         s3Key: pulumi.output(entrypointFilePathP).apply(upload),
         role: this.iam.arn,
@@ -210,6 +222,7 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         environment: {
           variables: envs,
         },
+        kmsKeyArn: kms.arn,
         timeout: 10 * 60,
       },
       { parent: this }

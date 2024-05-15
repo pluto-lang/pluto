@@ -530,8 +530,9 @@ function extractAndStoreClosure(
   fs.ensureFileSync(closureFile);
   fs.writeFileSync(closureFile, closureText);
 
+  const accessedEnvVars = CodeSegment.getAccessedEnvVars(codeSegment);
   return {
-    closure: new arch.Closure(closureId, path.dirname(closureFile)),
+    closure: new arch.Closure(closureId, path.dirname(closureFile), accessedEnvVars),
     codeSegment,
   };
 }
