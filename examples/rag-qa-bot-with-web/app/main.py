@@ -3,7 +3,7 @@ import re
 import sys
 import logging
 
-from pluto_client import FunctionOptions, Function, Bucket, Schedule
+from pluto_client import FunctionOptions, Function, Bucket, Schedule, Secret
 
 from langchain_core.pydantic_v1 import SecretStr
 from langchain_core.prompts import PromptTemplate
@@ -28,25 +28,27 @@ from starlette.responses import Response, HTMLResponse
 # 2. The GitHub Access Key is used to fetch the documents from the GitHub repository. You can create
 # a personal access token from https://github.com/settings/tokens
 
-PROJECT_NAME = "Pluto"
-REPO = "pluto-lang/website"
-BRANCH = "main"
-DOC_RELATIVE_PATH = "pages"
-OPENAI_BASE_URL = "https://api.openai.com/v1"
-OPENAI_API_KEY = "<replace_with_your_openai_api_key>"
-GITHUB_ACCESS_KEY = "<replace_with_your_github_access_key>"
+PROJECT_NAME = os.environ["PROJECT_NAME"]
+REPO = os.environ["REPO"]
+BRANCH = os.environ["BRANCH"]
+DOC_RELATIVE_PATH = os.environ.get("DOC_RELATIVE_PATH", "/")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+GITHUB_ACCESS_KEY = os.environ["GITHUB_ACCESS_KEY"]
 # ===========================
-
 
 FAISS_INDEX = "index"
 PKL_KEY = f"{FAISS_INDEX}.pkl"
 FAISS_KEY = f"{FAISS_INDEX}.faiss"
 
-embeddings = OpenAIEmbeddings(
-    base_url=OPENAI_BASE_URL, api_key=SecretStr(OPENAI_API_KEY)
-)
+openai_api_key = Secret("OPENAI_API_KEY", OPENAI_API_KEY)
+github_access_key = Secret("GITHUB_ACCESS_KEY", GITHUB_ACCESS_KEY)
 
 vector_store_bucket = Bucket("vector-store")
+
+embeddings = OpenAIEmbeddings(
+    base_url=OPENAI_BASE_URL, api_key=SecretStr(openai_api_key.get())
+)
 
 
 def build_logger():
@@ -80,7 +82,7 @@ def create_vector_store() -> FAISS | None:
     loader = GithubFileLoader(
         repo=REPO,
         branch=BRANCH,
-        access_token=GITHUB_ACCESS_KEY,
+        access_token=github_access_key.get(),
         github_api_url="https://api.github.com",
         file_filter=file_filter,
     )
@@ -175,7 +177,7 @@ Question: {question}"""
 llm = ChatOpenAI(
     model="gpt-3.5-turbo",
     base_url=OPENAI_BASE_URL,
-    api_key=SecretStr(OPENAI_API_KEY),
+    api_key=SecretStr(openai_api_key.get()),
 )
 
 rag_chain = (

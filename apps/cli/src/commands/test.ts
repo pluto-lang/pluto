@@ -14,6 +14,7 @@ import {
   loadProjectRoot,
   stackStateFile,
 } from "./utils";
+import { loadDotEnvs } from "./env";
 
 interface TestOptions {
   sim: boolean;
@@ -27,6 +28,9 @@ export async function test(entrypoint: string, opts: TestOptions) {
     const projectRoot = loadProjectRoot();
     const { project, stack: originalStack } = loadProjectAndStack(projectRoot);
     let stack = originalStack;
+
+    // Load the environment variables from the `.env` files.
+    loadDotEnvs(projectRoot, stack.name, false);
 
     // Ensure the entrypoint exist.
     entrypoint = entrypoint ?? getDefaultEntrypoint(project.language);

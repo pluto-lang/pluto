@@ -15,6 +15,7 @@ import {
   stackStateFile,
 } from "./utils";
 import { dumpStackState, prepareStackDirs } from "../utils";
+import { loadDotEnvs } from "./env";
 
 export interface DeployOptions {
   stack?: string;
@@ -29,6 +30,9 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
   try {
     const projectRoot = loadProjectRoot();
     const { project, stack } = loadProjectAndStack(projectRoot, opts.stack);
+
+    // Load the environment variables from the `.env` files.
+    loadDotEnvs(projectRoot, stack.name, false);
 
     // Prepare the directories for the stack.
     const { baseDir, closuresDir, generatedDir, stateDir } = await prepareStackDirs(

@@ -46,7 +46,7 @@ Once you enter the development environment, the console will automatically displ
   <img src="../../assets/getting-started/getting-started-online-config-aws.png" alt="Configure AWS Certificate" width="400" />
 </p>
 
-Next, we need to modify the configuration of the bot. Open the `app/main.py` file, starting from line 25, the following lines contain the bot's basic configuration, including the GitHub repository where the documents are stored, the repository branch, the relative path of the documents in the repository, OpenAI's API Key, GitHub Token, etc. You will need to modify these configurations according to your actual situation.
+Next, we need to modify the configuration of the bot. Open the `.env.local` file, which contains the bot's basic configuration, including the GitHub repository where the documents are stored, the repository branch, the relative path of the documents in the repository, OpenAI's API Key, GitHub Token, etc. You will need to modify these configurations according to your actual situation.
 
 ```python
 PROJECT_NAME = "Pluto" # Project name, related to the title of the Web page
@@ -59,7 +59,7 @@ OPENAI_API_KEY = "<replace_with_your_openai_api_key>" # OpenAI API Key
 GITHUB_ACCESS_KEY = "<replace_with_your_github_access_key>" # GitHub Token
 ```
 
-To customize your robot, such as changing the style of the robot's responses, you can achieve this by altering the `prompt` variable in the code.
+To customize your robot, such as changing the style of the robot's responses, you can achieve this by altering the `prompt` variable in the `app/main.py` code file.
 
 ### One-Click Deployment
 
