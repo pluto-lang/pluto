@@ -1,11 +1,14 @@
 import { ensureDirSync, existsSync, readFileSync, writeFileSync } from "fs-extra";
 import { randomUUID } from "crypto";
 import { isAbsolute, join, resolve } from "path";
-import { core } from "@plutolang/base";
+import { PlatformType, core } from "@plutolang/base";
+import { currentPlatformType } from "@plutolang/base/utils";
 import { CommandError, LocalWorkspace, Stack } from "@pulumi/pulumi/automation";
 import { genPulumiConfig, updateInProgress } from "./utils";
 
 const STATE_FILE_NAME = "pulumi-state.json";
+
+const debugStream = process.env.LOG_LEVEL?.toUpperCase().trim() === "LOG" ? console.log : undefined;
 
 /**
  * The status of the pulumi stack.
@@ -86,7 +89,7 @@ export class PulumiAdapter extends core.Adapter {
         throw new Error("Cannot find the target pulumi stack. Have you already deployed it?");
       }
 
-      await pulumiStack.refresh();
+      await pulumiStack.refresh({ onOutput: debugStream });
       const result = await pulumiStack.exportStack();
 
       const instances: core.ResourceInstance[] = [];
@@ -129,7 +132,7 @@ export class PulumiAdapter extends core.Adapter {
       }
 
       this.status = "updating";
-      const result = await pulumiStack.up();
+      const result = await pulumiStack.up({ onOutput: debugStream });
       this.status = "deployed";
 
       return { outputs: result.outputs["default"]?.value ?? {} };
@@ -167,7 +170,7 @@ export class PulumiAdapter extends core.Adapter {
 
       await pulumiStack.refresh();
       this.status = "updating";
-      await pulumiStack.destroy();
+      await pulumiStack.destroy({ onOutput: debugStream });
       this.status = "undeployed";
 
       await pulumiStack.workspace.removeStack(this.stack.name);
@@ -246,18 +249,74 @@ class PulumiError extends Error {
   }
 }
 
-function extractError(error: CommandError): PulumiError {
-  const errMsg = (error as any).commandResult.stderr;
-  const regex = /Error: ([\s\S]*?)\n([\s\S]*?)(?=\n\n)/;
-  const match = errMsg.match(regex);
-  if (match) {
-    const message = match[1];
-    const stack = match[2];
-    return new PulumiError(message, stack);
+function extractError(error: any): PulumiError {
+  const pulumiOutput: string = error.commandResult.stderr || error.commandResult.stdout;
+
+  function extractSDKError(): Error | undefined {
+    // Try to extract the error message that is defined and thrown by the Pluto Infra SDK.
+    const regex = /Error: ([\s\S]*?)\n([\s\S]*?)(?=\n\n)/;
+    const match = pulumiOutput.match(regex);
+    if (match) {
+      const message = match[1];
+      const stack = match[2];
+      return new PulumiError(message, stack);
+    }
+    return;
+  }
+
+  function extractPulumiInternalError(): Error | undefined {
+    // Try to extract the error message that is thrown by the Pulumi community SDK.
+    const errors: string[] = [];
+    const errorGroupReg = /^\s+error: \d+ error occurred:(\n\s+\* .+)+$/gm;
+    let errorGroupMatch: RegExpExecArray | null;
+    while ((errorGroupMatch = errorGroupReg.exec(pulumiOutput)) !== null) {
+      const errorDetailReg = /^\s+\* (.+)$/gm;
+      let errorDetailMatch: RegExpExecArray | null;
+      while ((errorDetailMatch = errorDetailReg.exec(errorGroupMatch[0])) !== null) {
+        console.log(errorDetailMatch[1]);
+        errors.push(errorDetailMatch[1]);
+      }
+    }
+
+    if (errors.length > 0) {
+      const errorMsg =
+        `${errors.length} error occured while running the Pulumi command:\n` +
+        errors.map((e) => `  * ${prettyErrorForPlatform(e)}`).join("\n");
+      return new PulumiError(errorMsg, "");
+    }
+    return;
+  }
+
+  const extractedError = extractSDKError() || extractPulumiInternalError();
+  if (extractedError) {
+    return extractedError;
   } else {
-    const errMsg = (error as any).commandResult.err.shortMessage;
+    const errMsg = error.commandResult.err.shortMessage;
     return new PulumiError(errMsg, "");
   }
+}
+
+/**
+ * Formats an error message based on the current platform.
+ * @param error - The error message to format.
+ * @returns The formatted error message.
+ */
+function prettyErrorForPlatform(error: string): string {
+  function prettyAWSError(): string {
+    const reg = /\b (.*?) \(arn:([^)]+)\).*StatusCode: (\d+), RequestID: ([\w-]+), (\w+): (.*)/g;
+    const match = reg.exec(error);
+    if (match && match.length === 7) {
+      const [, resourceType, arn, statusCode, requestId, errorType, errorMsg] = match;
+      return `${errorType}: ${errorMsg} An error occurred while operating the resource ${resourceType} (${arn}). StatusCode: ${statusCode}, RequestID: ${requestId}.`;
+    }
+    return error;
+  }
+
+  const prettyHanderMap: { [platform in PlatformType]?: () => string } = {
+    [PlatformType.AWS]: prettyAWSError,
+  };
+  const platform = currentPlatformType();
+  return prettyHanderMap[platform] ? prettyHanderMap[platform]!() : error;
 }
 
 /* The CommandError example:
