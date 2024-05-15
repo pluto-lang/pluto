@@ -21,7 +21,6 @@ from langchain_community.llms.sagemaker_endpoint import (
     LLMContentHandler,
 )
 
-
 # ====== Configuration ======
 # 1. The OpenAI API key is used to access the OpenAI Embeddings API. You can get the API key from
 # https://platform.openai.com/account/api-keys
@@ -31,13 +30,13 @@ from langchain_community.llms.sagemaker_endpoint import (
 # deploying the model on AWS SageMaker. You can get the token from
 # https://huggingface.co/settings/tokens
 
-REPO = "pluto-lang/website"
-BRANCH = "main"
-DOC_RELATIVE_PATH = "pages"
-OPENAI_BASE_URL = "https://api.openai.com/v1"
-OPENAI_API_KEY = "<replace_with_your_openai_api_key>"
-GITHUB_ACCESS_KEY = "<replace_with_your_github_access_key>"
-HUGGING_FACE_HUB_TOKEN = "<replace_with_your_hugging_face_hub_token>"
+REPO = os.environ["REPO"]
+BRANCH = os.environ["BRANCH"]
+DOC_RELATIVE_PATH = os.environ.get("DOC_RELATIVE_PATH", "/")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+GITHUB_ACCESS_KEY = os.environ["GITHUB_ACCESS_KEY"]
+HUGGING_FACE_HUB_TOKEN = os.environ["HUGGING_FACE_HUB_TOKEN"]
 # ===========================
 
 
@@ -66,18 +65,24 @@ Llama 70B  ml.p4d.24xlarge    8
 The initial limit set for these instances is zero. If you need more, you can request an increase
 in quota via the [AWS Management Console](https://console.aws.amazon.com/servicequotas/home).
 """
+
+a = "ffff"
+
 sagemaker = SageMaker(
-    "llama3-model",
-    "763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-tgi-inference:2.1.1-tgi2.0.0-gpu-py310-cu121-ubuntu22.04-v2.0",
+    "name",
+    os.environ["AWS_REGION"],
     SageMakerOptions(
         instanceType="ml.g5.2xlarge",
         envs={
+            "AAA": a,
             "HF_MODEL_ID": "meta-llama/Meta-Llama-3-8B-Instruct",
             "HF_TASK": "text-generation",
             "MAX_TOTAL_TOKENS": "8096",
             # If you want to deploy the Meta Llama3 model, you need to request a permission and
             # prepare the token. You can get the token from https://huggingface.co/settings/tokens
-            "HUGGING_FACE_HUB_TOKEN": HUGGING_FACE_HUB_TOKEN,
+            "HUGGING_FACE_HUB_TOKEN": os.environ.get(
+                "HUGGING_FACE_HUB_TOKEN", HUGGING_FACE_HUB_TOKEN
+            ),
         },
     ),
 )
@@ -259,4 +264,4 @@ schd = Schedule("schedule")
 schd.cron("0 0 * * *", flush_vector_store)
 
 # This application requires a minimum of 256MB memory to run.
-Function(query, FunctionOptions(name="query", memory=512))
+Function(query, name="query", opts=FunctionOptions(memory=512))

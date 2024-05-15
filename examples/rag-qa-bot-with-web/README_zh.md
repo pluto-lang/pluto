@@ -47,7 +47,7 @@ deployUrl: https://codesandbox.io/p/devbox/pluto-doc-qa-bot-forked-8njh42
   <img src="../../assets/getting-started/getting-started-online-config-aws.png" alt="配置 AWS 证书" width="400" />
 </p>
 
-接下来，我们就需要修改机器人的配置了，打开 `app/main.py` 文件，在代码的第 25 行开始，随后的几行包含了这个文档机器人的基本配置，包括文档所在的 GitHub 仓库，仓库分支，文档在仓库中的相对路径，OpenAI 的 API Key，GitHub 的 Token 等，你需要根据你的实际情况修改这些配置。
+接下来，我们就需要修改机器人的配置了，打开 `.env.local` 文件，该文件包含了这个文档机器人的基本配置，包括文档所在的 GitHub 仓库，仓库分支，文档在仓库中的相对路径，OpenAI 的 API Key，GitHub 的 Token 等，你需要根据你的实际情况修改这些配置。
 
 ```python
 PROJECT_NAME = "Pluto" # 项目名称，会与 Web 页面的标题相关
@@ -60,7 +60,7 @@ OPENAI_API_KEY = "<replace_with_your_openai_api_key>" # OpenAI API Key
 GITHUB_ACCESS_KEY = "<replace_with_your_github_access_key>" # GitHub Token
 ```
 
-如果你想定制化你的机器人，比如修改机器人的回答风格，可以通过修改代码中的 `prompt` 变量来实现。
+如果你想定制化你的机器人，比如修改机器人的回答风格，可以通过修改 `app/main.py` 代码文件中的 `prompt` 变量来实现。
 
 ### 一键部署
 
