@@ -4,6 +4,7 @@ import { arch, core } from "@plutolang/base";
 import logger from "../log";
 import { buildDeducer, buildGenerator, getDefaultDeducerPkg, getDefaultEntrypoint } from "./utils";
 import { PLUTO_PROJECT_OUTPUT_DIR, isPlutoProject, loadProject } from "../utils";
+import { loadDotEnvs } from "./env";
 
 const GRAPHVIZ_GENERATOR_PKG = "@plutolang/graphviz-generator";
 
@@ -36,6 +37,8 @@ export async function compile(entrypoint: string, opts: CompileOptions) {
     );
     process.exit(1);
   }
+
+  loadDotEnvs(projectRoot, stackName, false);
 
   const stack = project.getStack(stackName);
   if (!stack) {

@@ -7,6 +7,7 @@ import {
   stackStateFile,
 } from "./utils";
 import { dumpStackState, getStackBasicDirs } from "../utils";
+import { loadDotEnvs } from "./env";
 
 export interface DestoryOptions {
   stack?: string;
@@ -17,6 +18,9 @@ export async function destroy(opts: DestoryOptions) {
   try {
     const projectRoot = loadProjectRoot();
     const { project, stack } = loadProjectAndStack(projectRoot, opts.stack);
+
+    // Load the environment variables from the `.env` files.
+    loadDotEnvs(projectRoot, stack.name, false);
 
     if (!stack.archRefFile || !stack.provisionFile) {
       throw new Error(
