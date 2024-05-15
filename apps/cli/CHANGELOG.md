@@ -1,5 +1,36 @@
 # @plutolang/cli
 
+## 0.4.20
+
+### Patch Changes
+
+- b0a3b1a: feat(cli): add .env file support for environment variables
+
+  CLI commands now support loading environment variables from .env files. This feature simplifies configuring different environments without needing to change the codebase.
+
+  Pluto CLI will load the `.env` files in a specific order. Test environment files are loaded only with the `test` command. And the local environment files are usually ignored by git:
+
+  1. `.env` - The default file.
+  2. `.env.local` - Local overrides, loaded in all environments for local development.
+  3. `.env.test` - Overrides for the test environment.
+  4. `.env.test.local` - Local overrides for the test environment.
+  5. `.env.${stack}` - Environment-specific overrides, loaded for the specified stack, like `.env.aws` for the stack named `aws`.
+  6. `.env.${stack}.local` - Local overrides for a specific stack.
+  7. `.env.${stack}.test` - Test environment overrides for a specific stack.
+  8. `.env.${stack}.test.local` - Local test environment overrides for a specific stack.
+
+- Updated dependencies [5dd7c89]
+- Updated dependencies [5930c52]
+- Updated dependencies [87f35b5]
+- Updated dependencies [1e8f254]
+  - @plutolang/pyright-deducer@0.1.12
+  - @plutolang/graphviz-generator@0.4.6
+  - @plutolang/static-generator@0.4.4
+  - @plutolang/base@0.4.4
+  - @plutolang/pulumi-adapter@0.4.6
+  - @plutolang/simulator-adapter@0.3.18
+  - @plutolang/static-deducer@0.4.7
+
 ## 0.4.19
 
 ### Patch Changes

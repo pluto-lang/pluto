@@ -1,5 +1,28 @@
 # @plutolang/pyright-deducer
 
+## 0.1.12
+
+### Patch Changes
+
+- 5dd7c89: feat(deducer): support more situations for resource constructor and infra api args
+
+  This update enhances the deducer module by allowing environment variables and variables to be passed to resource constructors and infra API arguments. Specifically, it now supports:
+
+  - Direct literal values (e.g., `1`, `true`, `"hello"`).
+  - Direct dataclass constructors (e.g., `Model(name="hello")` where `Model` is a dataclass).
+  - Direct access to environment variables (e.g., `os.environ["key"]`, `os.environ.get("key", "default")`).
+  - Variables (e.g., `var1`, `var2`), with the requirement that they are defined exactly once and assigned with the supported value types.
+  - Tuples or dicts containing the supported types of values.
+
+- 87f35b5: feat: enable runtime access to locally defined env vars
+
+  Previously, environment variables were only accessible through the resource constructor and infrastructure APIs. This commit enables client APIs to access these variables.
+
+  During function argument extraction by the deducer from the resource constructor or infrastructure APIs, all accessed environment variables within the compute closure are recorded. These variables are then passed to the architecture reference. Subsequently, the generator declares these environment variables for each closure variable in the IaC code. When the adapter runs the IaC code, it sets up the environment variables for the built function instance, such as AWS Lambda instances. The procedure of setting up these environment variables is written in the infrastructure SDK.
+
+- Updated dependencies [87f35b5]
+  - @plutolang/base@0.4.4
+
 ## 0.1.11
 
 ### Patch Changes

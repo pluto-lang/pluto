@@ -1,5 +1,16 @@
 # @plutolang/graphviz-generator
 
+## 0.4.6
+
+### Patch Changes
+
+- 5930c52: fix(generator): fix lost connection line between constructor call and closure
+
+  This commit addresses the issue where there was a missing link between the resource constructor call and the closure it created, leading to unexpected behaviors in the generator functionality.
+
+- Updated dependencies [87f35b5]
+  - @plutolang/base@0.4.4
+
 ## 0.4.5
 
 ### Patch Changes
