@@ -1,5 +1,13 @@
 # @plutolang/pluto
 
+## 0.4.9
+
+### Patch Changes
+
+- c36a239: feat(sdk): add `Secret` resource type
+- Updated dependencies [87f35b5]
+  - @plutolang/base@0.4.4
+
 ## 0.4.8
 
 ### Patch Changes

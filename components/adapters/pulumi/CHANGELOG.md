@@ -1,5 +1,13 @@
 # @plutolang/pulumi-adapter
 
+## 0.4.6
+
+### Patch Changes
+
+- 1e8f254: feat(adapter): prettify pulumi error output on AWS deployment
+- Updated dependencies [87f35b5]
+  - @plutolang/base@0.4.4
+
 ## 0.4.5
 
 ### Patch Changes
