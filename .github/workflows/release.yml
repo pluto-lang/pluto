@@ -95,7 +95,8 @@ jobs:
         id: construct-slack-message
         run: |
           MESSAGE="$(node scripts/construct-slack-message.js)"
-          echo "message=$MESSAGE" >> "$GITHUB_ENV"
+          echo $MESSAGE
+          echo "message=$MESSAGE" >> "$GITHUB_OUTPUT"
         env:
           RELEASE_PACKAGES: ${{ needs.release.outputs.publishedPackages }}
           COMMIT_URL: ${{ github.event.pull_request.html_url || github.event.head_commit.url }}
