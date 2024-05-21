@@ -254,7 +254,12 @@ export class CodeExtractor {
     }
 
     // Find the symbols that are used in the lambda function but defined outside of it.
-    const walker = new OutsideSymbolFinder(this.typeEvaluator, lambdaScope);
+    const walker = new OutsideSymbolFinder(
+      sourceFile,
+      this.typeEvaluator,
+      this.valueEvaluator,
+      lambdaScope
+    );
     walker.walk(lambdaNode);
 
     // Extract each symbol that is used in the lambda function but defined outside of it. We will
@@ -271,6 +276,7 @@ export class CodeExtractor {
         code: nodeText!,
         calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(lambdaNode),
         accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(lambdaNode),
+        accessedEnvVars: walker.envVarNames,
       },
       children
     );
@@ -413,7 +419,13 @@ export class CodeExtractor {
       throw new Error(`No scope found for this function '${funcNode.name.value}'.`);
     }
 
-    const walker = new OutsideSymbolFinder(this.typeEvaluator, functionScope, funcNode.name);
+    const walker = new OutsideSymbolFinder(
+      sourceFile,
+      this.typeEvaluator,
+      this.valueEvaluator,
+      functionScope,
+      funcNode.name
+    );
     walker.walk(funcNode);
 
     const children: CodeSegment[] = [];
@@ -429,6 +441,7 @@ export class CodeExtractor {
         code: TextUtils.getTextOfNode(funcNode, sourceFile)!,
         calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(funcNode),
         accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(funcNode),
+        accessedEnvVars: walker.envVarNames,
       },
       children
     );
@@ -558,7 +571,14 @@ export class CodeExtractor {
     const members: SymbolTable = new Map();
     PyrightTypeUtils.getMembersForClass(classType, members, /* includeInstanceVars */ false);
 
-    const walker = new OutsideSymbolFinder(this.typeEvaluator, classScope, classNode.name, members);
+    const walker = new OutsideSymbolFinder(
+      sourceFile,
+      this.typeEvaluator,
+      this.valueEvaluator,
+      classScope,
+      classNode.name,
+      members
+    );
     walker.walk(classNode);
 
     const children: CodeSegment[] = [];
@@ -574,6 +594,7 @@ export class CodeExtractor {
         code: nodeText!,
         calledClientApis: this.accessedSpecialNodeFinder.findClientApiCalls(classNode),
         accessedCapturedProps: this.accessedSpecialNodeFinder.findCapturedProperties(classNode),
+        accessedEnvVars: walker.envVarNames,
       },
       children
     );
@@ -810,13 +831,13 @@ export class CodeExtractor {
  * scope.
  */
 class OutsideSymbolFinder extends ParseTreeWalker {
-  /**
-   * The name nodes that defined outside of the function, and not in the built-in scope.
-   */
-  public readonly nameNodes: NameNode[] = [];
+  private readonly _nameNodes: Map<number, NameNode> = new Map();
+  private readonly _envVarNames: Set<string> = new Set();
 
   constructor(
+    private readonly sourceFile: SourceFile,
     private readonly typeEvaluator: TypeEvaluator,
+    private readonly valueEvaluator: ValueEvaluator,
     private readonly scope: Scope,
     private readonly rootNode?: ParseNode,
     private readonly members?: SymbolTable // Only used for class members.
@@ -824,11 +845,57 @@ class OutsideSymbolFinder extends ParseTreeWalker {
     super();
   }
 
+  /**
+   * The name nodes that defined outside of the function, and not in the built-in scope.
+   */
+  public get nameNodes(): NameNode[] {
+    return Array.from(this._nameNodes.values());
+  }
+
+  /**
+   * The environment variable names that are accessed in the function.
+   */
+  public get envVarNames(): string[] {
+    return Array.from(this._envVarNames);
+  }
+
   public override visitName(node: NameNode): boolean {
     if (node !== this.rootNode && !this.shouldIgnore(node)) {
       const symbol = this.typeEvaluator.lookUpSymbolRecursive(node, node.value, false);
       assert(symbol); // The symbol cannot be undefined; it's checked in `shouldIgnore`.
-      this.nameNodes.push(node);
+      this._nameNodes.set(node.id, node);
+    }
+    return true;
+  }
+
+  public override visitCall(node: CallNode): boolean {
+    if (TypeUtils.isEnvVarAccess(node, this.typeEvaluator)) {
+      assert(
+        node.arguments.length === 1,
+        `The function for accessing environment variables should only take one argument.`
+      );
+      const envVarName = getEnvVarName(
+        node.arguments[0].valueExpression,
+        this.sourceFile,
+        this.valueEvaluator
+      );
+      this._envVarNames.add(envVarName);
+    }
+    return true;
+  }
+
+  public override visitIndex(node: IndexNode): boolean {
+    if (TypeUtils.isEnvVarAccess(node, this.typeEvaluator)) {
+      assert(
+        node.items.length === 1,
+        `The length of the items in 'os.environ["ENV_NAME"]' should be only one.`
+      );
+      const envVarName = getEnvVarName(
+        node.items[0].valueExpression,
+        this.sourceFile,
+        this.valueEvaluator
+      );
+      this._envVarNames.add(envVarName);
     }
     return true;
   }
