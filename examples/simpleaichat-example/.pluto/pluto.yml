@@ -1,0 +1,7 @@
+current: aws
+language: python
+stacks:
+  - configs: {}
+    name: aws
+    platformType: AWS
+    provisionType: Pulumi

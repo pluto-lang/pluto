@@ -592,6 +592,24 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
 
+  examples/simpleaichat-example:
+    devDependencies:
+      '@plutolang/base':
+        specifier: workspace:*
+        version: link:../../packages/base
+      '@plutolang/pluto-infra':
+        specifier: workspace:*
+        version: link:../../packages/pluto-infra
+      '@pulumi/pulumi':
+        specifier: ^3.88.0
+        version: 3.88.0
+      '@types/node':
+        specifier: ^20
+        version: 20.10.4
+      typescript:
+        specifier: ^5.2.2
+        version: 5.2.2
+
   packages/base:
     dependencies:
       fs-extra:
@@ -4650,11 +4668,7 @@ packages:
     engines: {node: '>=14'}
     deprecated: Please use @opentelemetry/api >= 1.3.0
     dependencies:
-      '@opentelemetry/api': 1.7.0
-
-  /@opentelemetry/api@1.7.0:
-    resolution: {integrity: sha512-AdY5wvN0P2vXBi3b29hxZgSFvdhdxPB9+f0B6s//P9Q8nibRWeA3cHm8UmLpio9ABigkVHJ5NMPk+Mz8VCCyrw==}
-    engines: {node: '>=8.0.0'}
+      '@opentelemetry/api': 1.8.0
 
   /@opentelemetry/api@1.8.0:
     resolution: {integrity: sha512-I/s6F7yKUDdtMsoBWXJe8Qz40Tui5vsuKCWJEWVL+5q9sSWRzzx6v2KeNsOBEwd94j0eWkpWCH4yB6rZg9Mf0w==}
