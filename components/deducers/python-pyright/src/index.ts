@@ -417,7 +417,9 @@ export default class PyrightDeducer extends core.Deducer {
     if (isFunctionArg(argNode)) {
       // This argument is a function or lambda expression, we need to extract it to a closure
       // and store it to a sperate directory.
-      const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`;
+      const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`
+        .replace(/[^_a-zA-Z0-9]/g, "_")
+        .replace(/^[0-9_]+/, "");
       const { closure, codeSegment } = extractAndStoreClosure(
         argNode,
         sourceFile,
