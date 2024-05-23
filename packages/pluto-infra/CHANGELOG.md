@@ -1,5 +1,16 @@
 # @plutolang/pluto-infra
 
+## 0.4.15
+
+### Patch Changes
+
+- e34d204: feat(sdk): add ReactApp resource type
+
+  Adds ReactApp resource type to support building and deploying React applications.
+
+- Updated dependencies [e34d204]
+  - @plutolang/pluto@0.4.10
+
 ## 0.4.14
 
 ### Patch Changes
