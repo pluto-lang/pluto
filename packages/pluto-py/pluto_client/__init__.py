@@ -6,6 +6,7 @@ from .bucket import Bucket, BucketOptions
 from .schedule import Schedule, ScheduleOptions
 from .website import Website, WebsiteOptions
 from .secret import Secret
+from .reactapp import ReactApp, ReactAppOptions
 
 __all__ = [
     "Queue",
@@ -26,4 +27,6 @@ __all__ = [
     "Website",
     "WebsiteOptions",
     "Secret",
+    "ReactApp",
+    "ReactAppOptions",
 ]

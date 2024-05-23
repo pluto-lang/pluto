@@ -2,7 +2,7 @@ import { ProvisionType, PlatformType, utils, IResourceInfra } from "@plutolang/b
 import { IWebsiteInfra, WebsiteOptions } from "@plutolang/pluto";
 import { ImplClassMap } from "./utils";
 
-type IWebsiteInfraImpl = IWebsiteInfra & IResourceInfra;
+export type IWebsiteInfraImpl = IWebsiteInfra & IResourceInfra;
 
 // Construct a type for a class constructor. The key point is that the parameters of the constructor
 // must be consistent with the client class of this resource type. Use this type to ensure that

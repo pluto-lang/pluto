@@ -1,0 +1,66 @@
+---
+title: ReactApp
+---
+
+import { Tab, Tabs } from 'nextra/components';
+
+# ReactApp
+
+`ReactApp` resources are used to host React front-end applications on cloud services.
+
+## How to Use
+
+### Creating a Resource
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+<Tab>
+```python
+from pluto_client import ReactApp, ReactAppOptions
+app = ReactApp(
+  project_path="./web", 
+  name="web", 
+  opts=ReactAppOptions(buildCommand="npm run build", buildDir="build"),
+)
+```
+</Tab>
+
+<Tab>
+```typescript
+import { ReactApp } from "@plutolang/pluto";
+const app = new ReactApp("./web", "web", {
+  buildCommand: "npm run build",
+  buildDir: "build",
+});
+```
+</Tab>
+</Tabs>
+
+As shown in the example code above, the `./web` directory is the root directory of the React front-end application. The `name` parameter in the constructor can be omitted, in which case the default name of the site will be `default`. This name is related to the URL that will be generated eventually. You can also configure the build command, build directory, and so forth through the `options` parameter.
+
+### Associating Dependent Resources
+
+Front-end applications often need to access other resources to implement the full functionality of the app. This can be achieved by using the `addEnv` method to pass the information of other resources to the website.
+During deployment, Pluto will create a `pluto.js` file in the root directory of the site, and expose these variables as `window.plutoEnv` within that file.
+
+Therefore, by adding a line of code `<script src="pluto.js"></script>` to the `<head>` tag of your React app's `index.html`, following scripts can access these variables via `window.plutoEnv`.
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+<Tab>
+```python
+from pluto_client import Function
+
+echo = Function(lambda x: x)
+app.addEnv("ECHO_URL", echo.url())
+```
+</Tab>
+<Tab>
+```typescript
+import { Function } from "@plutolang/pluto";
+
+const echo = new Function(async function echo(x: string) {
+  return x;
+});
+app.addEnv("ECHO_URL", echo.url());
+```
+</Tab>
+</Tabs>
