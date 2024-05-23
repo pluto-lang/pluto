@@ -1,0 +1,72 @@
+---
+title: ReactApp
+---
+
+import { Tab, Tabs } from 'nextra/components';
+
+# ReactApp
+
+`ReactApp` 资源用来将 React 前端应用托管在云服务上。
+
+## 使用方法
+
+### 创建资源
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+```python
+from pluto_client import ReactApp, ReactAppOptions
+app = ReactApp(
+  project_path="./web", 
+  name="web", 
+  opts=ReactAppOptions(buildCommand="npm run build", buildDir="build"),
+)
+```
+</Tab>
+
+<Tab>
+```typescript
+import { ReactApp } from "@plutolang/pluto";
+const app = new ReactApp("./web", "web", {
+  buildCommand: "npm run build",
+  buildDir: "build",
+});
+```
+</Tab>
+
+</Tabs>
+
+根据上面示例代码的情况，`./web` 目录为 React 前端应用的根目录。构造函数中的 `name` 参数可以为空，默认网站的名称将是 `default`，这个名称与最终生成的 URL 有关。你还可以通过 `options` 参数来配置构建命令、构建目录等。
+
+### 关联依赖资源
+
+前端应用通常需要访问其他资源来实现整个应用的功能，这时可以通过 `addEnv` 方法来将其他资源的信息传递给网站。
+
+在部署时，Pluto 在部署时，Pluto 会在网站的根目录下生成一个 `pluto.js` 文件，然后在该文件中将这些变量以 `window.plutoEnv` 的形式暴露出来。
+
+因此，在 React 应用 `index.html` 的 `<head>` 标签中添加一行代码 `<script src="pluto.js"></script>`，该行代码之后的脚本代码中，可以通过 `window.plutoEnv` 来访问这些变量。
+
+<Tabs items={["Python", "TypeScript"]} storageKey="lang">
+
+<Tab>
+```python
+from pluto_client import Function
+
+echo = Function(lambda x: x)
+app.addEnv("ECHO_URL", echo.url())
+```
+</Tab>
+
+<Tab>
+```typescript
+import { Function } from "@plutolang/pluto";
+
+const echo = new Function(async function echo(x: string) {
+  return x;
+});
+app.addEnv("ECHO_URL", echo.url());
+```
+</Tab>
+
+</Tabs>

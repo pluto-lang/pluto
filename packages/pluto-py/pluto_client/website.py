@@ -52,12 +52,14 @@ class Website(IResource, IWebsiteClient, IWebsiteInfra):
 
     @staticmethod
     def build_client(
-        name: str, opts: Optional[WebsiteOptions] = None
+        path: str,
+        name: Optional[str] = None,
+        opts: Optional[WebsiteOptions] = None,
     ) -> IWebsiteClient:
         platform_type = utils.current_platform_type()
         if platform_type in [PlatformType.AWS]:
             from .clients import shared
 
-            return shared.RouterClient(name, opts)
+            return shared.WebsiteClient(path, name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

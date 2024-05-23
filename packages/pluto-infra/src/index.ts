@@ -8,3 +8,4 @@ export { SageMaker } from "./sagemaker.aws";
 export { Bucket } from "./bucket";
 export { Website } from "./website";
 export { Secret } from "./secret";
+export { ReactApp } from "./reactapp";

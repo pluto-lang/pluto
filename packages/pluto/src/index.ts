@@ -8,3 +8,4 @@ export * from "./sagemaker.aws";
 export * from "./bucket";
 export * from "./website";
 export * from "./secret";
+export * from "./reactapp";

@@ -61,10 +61,10 @@ export class Website extends pulumi.ComponentResource implements IResourceInfra 
     }
 
     function uploadFileToS3(bucket: S3Bucket, dirpath: string) {
-      glob.sync(`${dirpath}/**/*`).forEach((file) => {
+      return glob.sync(`${dirpath}/**/*`, { nodir: true }).map((file) => {
         const lambdaAssetName = file.replace(new RegExp(`${dirpath}/?`, "g"), "");
         const mimeType = mime.lookup(file) || undefined;
-        new aws.s3.BucketObjectv2(lambdaAssetName, {
+        return new aws.s3.BucketObjectv2(lambdaAssetName, {
           bucket: bucket.bucket.bucket,
           key: lambdaAssetName,
           contentType: mimeType,
@@ -82,16 +82,20 @@ export class Website extends pulumi.ComponentResource implements IResourceInfra 
         ? fs.readFileSync(filepath, "utf8")
         : undefined;
 
+      let objects: aws.s3.BucketObjectv2[] = [];
       try {
         dumpPlutoJs(filepath, envs);
-        uploadFileToS3(this.websiteBucket, this.websiteDir);
-        // Remove the generated `pluto.js` file after deployment.
-        fs.removeSync(filepath);
+        objects = uploadFileToS3(this.websiteBucket, this.websiteDir);
       } finally {
-        // Restore original pluto.js content.
-        if (originalPlutoJs) {
-          fs.writeFileSync(filepath, originalPlutoJs);
-        }
+        // Clean up the generated `pluto.js` file after uploading all files to S3.
+        pulumi.all(objects.map((o) => o.id)).apply(async () => {
+          // Remove the generated `pluto.js` file after deployment.
+          fs.removeSync(filepath);
+          // Restore original pluto.js content.
+          if (originalPlutoJs) {
+            fs.writeFileSync(filepath, originalPlutoJs);
+          }
+        });
       }
     });
   }
