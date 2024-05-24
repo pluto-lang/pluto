@@ -30,6 +30,8 @@ const website = new Website("./website", "website");
 
 Based on the example code above, you can store the static files of the website in the `./website` directory, including all static files such as `index.html`. The `name` parameter in the constructor can be left empty, with the default name of the website being `default`, which is related to the final generated URL.
 
+Additionally, it supports deploying the Website to Vercel. You just need to set `platform` to `Vercel` in the third parameter `options` of the constructor, and at the same time, set `VERCEL_API_TOKEN` and `VERCEL_TEAM_ID` in the `.env` file or environment variables. If these are not set or set to invalid parameters, it will default to deploying on the cloud provider you have specified.
+
 ### Associating Dependent Resources
 
 Static websites might need to access other resources, such as backend services. In such cases, you can use the `addEnv` method to pass information about other resources to the website.

@@ -28,6 +28,8 @@ const website = new Website("./website", "website");
 
 根据上面示例代码的情况，你可以将网站的静态文件存储在 `./website` 目录中，包括 `index.html` 等所有静态文件。构造函数中的 `name` 参数可以为空，默认网站的名称将是 `default`，这个名称与最终生成的 URL 有关。
 
+另外，支持将 Website 部署到 Vercel 上，需要在构造函数的第三个参数 `options` 中设置 `platform` 为 `Vercel`，同时在 `.env` 文件或环境变量中设置 `VERCEL_API_TOKEN` 和 `VERCEL_TEAM_ID`。如果不设置或设置为无效参数，则默认部署到你指定的云服务商上。
+
 ### 关联依赖资源
 
 在静态网站中可能会访问其他的资源，比如可能需要访问后端服务。这时可以通过 `addEnv` 方法来将其他资源的信息传递给网站。

@@ -20,7 +20,7 @@ from pluto_client import ReactApp, ReactAppOptions
 app = ReactApp(
   project_path="./web", 
   name="web", 
-  opts=ReactAppOptions(buildCommand="npm run build", buildDir="build"),
+  options=ReactAppOptions(buildCommand="npm run build", buildDir="build"),
 )
 ```
 </Tab>
@@ -38,6 +38,9 @@ const app = new ReactApp("./web", "web", {
 </Tabs>
 
 根据上面示例代码的情况，`./web` 目录为 React 前端应用的根目录。构造函数中的 `name` 参数可以为空，默认网站的名称将是 `default`，这个名称与最终生成的 URL 有关。你还可以通过 `options` 参数来配置构建命令、构建目录等。
+
+另外，支持部署到 Vercel 上，需要在构造函数的第三个参数 `options` 中设置 `platform` 为 `Vercel`，同时在 `.env` 文件或环境变量中设置 `VERCEL_API_TOKEN` 和 `VERCEL_TEAM_ID`。如果不设置或设置为无效参数，则默认部署到你指定的云服务商上。
+
 
 ### 关联依赖资源
 

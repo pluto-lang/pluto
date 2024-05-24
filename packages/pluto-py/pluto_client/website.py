@@ -12,7 +12,11 @@ from pluto_base.resource import (
 
 @dataclass
 class WebsiteOptions:
-    pass
+    platform: Optional[str] = None
+    """
+    Currently, only support Vercel. If an invalid value is provided, or if no value is provided at
+    all, it will default to your specified platform.
+    """
 
 
 class IWebsiteClientApi(IResourceClientApi):

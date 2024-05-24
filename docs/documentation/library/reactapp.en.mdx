@@ -37,6 +37,8 @@ const app = new ReactApp("./web", "web", {
 
 As shown in the example code above, the `./web` directory is the root directory of the React front-end application. The `name` parameter in the constructor can be omitted, in which case the default name of the site will be `default`. This name is related to the URL that will be generated eventually. You can also configure the build command, build directory, and so forth through the `options` parameter.
 
+Additionally, it supports deploying to Vercel. You just need to set `platform` to `Vercel` in the third parameter `options` of the constructor, and at the same time, set `VERCEL_API_TOKEN` and `VERCEL_TEAM_ID` in the `.env` file or environment variables. If these are not set or set to invalid parameters, it will default to deploying on the cloud provider you have specified.
+
 ### Associating Dependent Resources
 
 Front-end applications often need to access other resources to implement the full functionality of the app. This can be achieved by using the `addEnv` method to pass the information of other resources to the website.

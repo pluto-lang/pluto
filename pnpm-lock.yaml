@@ -701,6 +701,9 @@ importers:
       '@pulumi/pulumi':
         specifier: 3.88.0
         version: 3.88.0
+      '@pulumiverse/vercel':
+        specifier: ^1.11.0
+        version: 1.11.0
       fs-extra:
         specifier: ^11.1.1
         version: 11.1.1
@@ -4901,6 +4904,14 @@ packages:
 
   /@pulumi/query@0.3.0:
     resolution: {integrity: sha512-xfo+yLRM2zVjVEA4p23IjQWzyWl1ZhWOGobsBqRpIarzLvwNH/RAGaoehdxlhx4X92302DrpdIFgTICMN4P38w==}
+
+  /@pulumiverse/vercel@1.11.0:
+    resolution: {integrity: sha512-d08fjLd9iXhj3y/EsAF3/8PX9tGfGHgtx8b3BsTnGQmqRtmjdkZSnhXKmbJJmfLqoef2WOlZx05Xt1+zon040g==}
+    dependencies:
+      '@pulumi/pulumi': 3.88.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
 
   /@redis/bloom@1.2.0(@redis/client@1.5.11):
     resolution: {integrity: sha512-HG2DFjYKbpNmVXsa0keLHp/3leGJz1mjh09f2RLGGLQZzSHpkmZWuwJbAvo3QcRY8p80m5+ZdXZdYOSBLlp7Cg==}
