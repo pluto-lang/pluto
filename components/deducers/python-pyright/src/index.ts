@@ -1,3 +1,4 @@
+import assert from "assert";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { Uri } from "pyright-internal/dist/common/uri/uri";
@@ -175,9 +176,6 @@ export default class PyrightDeducer extends core.Deducer {
 
   private buildConstructedResources(constructNodes: CallNode[], sourceFile: SourceFile) {
     for (const callNode of constructNodes) {
-      // Get the parameters of the resource object construction.
-      const parameters: arch.Parameter[] = [];
-
       // First, get the name of the resource object. The determination of the resource object name
       // is based on the following rules:
       // 1. If there is a parameter named "name", use its value as the name of the resource object.
@@ -186,7 +184,12 @@ export default class PyrightDeducer extends core.Deducer {
       callNode.arguments.forEach((argNode, idx) => {
         const parameterName =
           argNode.name?.value ??
-          getParameterName(callNode, idx, this.typeEvaluator!, /* isClassMember */ true) ??
+          getParameterName(
+            callNode,
+            idx,
+            this.typeEvaluator!,
+            /* isConstructorOrClassMethod */ true
+          ) ??
           "unknown";
 
         if (parameterName === "name") {
@@ -198,27 +201,23 @@ export default class PyrightDeducer extends core.Deducer {
         }
       });
 
-      // Subsequently, process the arguments of the resource object construction.
-      callNode.arguments.forEach((argNode, argIdx) => {
-        const closureNamePrefix = `${resourceName}_${argIdx}`;
-        const parsedArg = this.parseArgumentOfInfraCall(
-          sourceFile,
-          callNode,
-          closureNamePrefix,
-          argNode,
-          argIdx
-        );
-
-        parameters.push({
-          index: argIdx,
-          name: parsedArg.name,
-          type: parsedArg.type,
-          value: parsedArg.value,
-        });
-
-        if (parsedArg.dependentResource && parsedArg.dependentResource.type === "resource") {
+      // Get the parameters of the resource object construction.
+      const parsedParams = this.parseAllParameters(
+        callNode,
+        sourceFile,
+        resourceName,
+        /* isConstructorOrClassMethod */ true
+      );
+      const parameters: arch.Parameter[] = parsedParams.map((param) => {
+        if (param.dependentResource && param.dependentResource.type === "resource") {
           throw new Error("The resource object construction cannot depend on a resource object.");
         }
+        return {
+          index: param.index,
+          name: param.name,
+          type: param.type,
+          value: param.value,
+        };
       });
 
       // Get the full qualified name of the class type.
@@ -255,30 +254,27 @@ export default class PyrightDeducer extends core.Deducer {
 
       // Get the operation name
       const operation = getMemberName(callNode, this.typeEvaluator!);
+      const closureNamePrefix = `${fromResource.name}_${nodeIdx}_${operation}`;
+      const parsedParams = this.parseAllParameters(
+        callNode,
+        sourceFile,
+        closureNamePrefix,
+        /* isConstructorOrClassMethod */ true
+      );
 
       // Get the resource object or closures associated with the callee.
       const toResourceIds: arch.IdWithType[] = [];
       const parameters: arch.Parameter[] = [];
-      callNode.arguments.forEach((argNode, argIdx) => {
-        const closureNamePrefix = `${fromResource.name}_${nodeIdx}_${operation}`;
-        const parsedArg = this.parseArgumentOfInfraCall(
-          sourceFile,
-          callNode,
-          closureNamePrefix,
-          argNode,
-          argIdx,
-          /* isClassMember */ true
-        );
-
+      parsedParams.forEach((param) => {
         parameters.push({
-          index: argIdx,
-          name: parsedArg.name,
-          type: parsedArg.type,
-          value: parsedArg.value,
+          index: param.index,
+          name: param.name,
+          type: param.type,
+          value: param.value,
         });
 
-        if (parsedArg.dependentResource) {
-          toResourceIds.push(parsedArg.dependentResource);
+        if (param.dependentResource) {
+          toResourceIds.push(param.dependentResource);
         }
       });
 
@@ -374,16 +370,101 @@ export default class PyrightDeducer extends core.Deducer {
   }
 
   /**
+   * Parses all arguments of a function call in the order of the function signature.
+   *
+   * @param callNode - The call node representing the function call.
+   * @param sourceFile - The source file containing the function call.
+   * @param closureNamePrefix - The prefix to use for closure IDs.
+   * @param isConstructorOrClassMethod - Indicates whether the function call is a constructor or a
+   * class method.
+   * @returns An array of parsed parameters.
+   */
+  private parseAllParameters(
+    callNode: CallNode,
+    sourceFile: SourceFile,
+    closureNamePrefix: string,
+    isConstructorOrClassMethod = false
+  ) {
+    interface ParsedParameter {
+      index: number; // The index of the parameter in the function signature.
+      name: string; // The name of the parameter.
+      type: "closure" | "text";
+      value: string;
+      dependentResource?: arch.IdWithType;
+    }
+
+    const argumentMap: { [paramName: string]: ParsedParameter } = {};
+
+    // In Python code, the sequence of arguments can deviate from the order presented in the
+    // function signature. However, this is not permissible in TypeScript. Given that we will
+    // produce IaC in TypeScript, using the same arguments as in Python, we align the argument
+    // sequence in TypeScript with the function signature's parameter sequence.
+    //
+    // First, we record the parameters in the function signature.
+    const functionNode = getFunctionNodeForCallNode(callNode, this.typeEvaluator!);
+    functionNode.parameters.forEach((paramNode, paramIdx) => {
+      if (isConstructorOrClassMethod && paramIdx === 0) {
+        return;
+      }
+
+      const paramName = paramNode.name?.value;
+      assert(paramName, "The parameter name must be a string.");
+
+      argumentMap[paramName] = {
+        index: paramIdx - (isConstructorOrClassMethod ? 1 : 0),
+        name: paramName,
+        type: "text",
+        value: "undefined", // The default value is "undefined".
+      };
+    });
+
+    // Then, we parse the arguments in the call node.
+    let paramIdx = Object.keys(argumentMap).length;
+    callNode.arguments.forEach((argNode, argIdx) => {
+      const parameterName =
+        argNode.name?.value ??
+        getParameterName(callNode, argIdx, this.typeEvaluator!, isConstructorOrClassMethod) ??
+        "unknown";
+
+      const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`
+        .replace(/[^_a-zA-Z0-9]/g, "_")
+        .replace(/^[0-9_]+/, "");
+
+      const parsedArg = this.parseArgumentOfInfraCall(
+        parameterName,
+        closureId,
+        argNode,
+        sourceFile
+      );
+
+      if (argumentMap[parameterName]) {
+        argumentMap[parameterName].type = parsedArg.type;
+        argumentMap[parameterName].value = parsedArg.value;
+        argumentMap[parameterName].dependentResource = parsedArg.dependentResource;
+      } else {
+        argumentMap[parameterName] = {
+          index: paramIdx,
+          name: parameterName,
+          type: parsedArg.type,
+          value: parsedArg.value,
+          dependentResource: parsedArg.dependentResource,
+        };
+        paramIdx++;
+      }
+    });
+
+    return Object.values(argumentMap);
+  }
+
+  /**
    * Parses the argument of an infrastructure call, including the resource object construction and
    * the infrastructure API call.
    */
   private parseArgumentOfInfraCall(
-    sourceFile: SourceFile,
-    callNode: CallNode,
-    closureNamePrefix: string,
+    parameterName: string,
+    closureId: string,
     argNode: ArgumentNode,
-    argIdx: number,
-    isClassMember: boolean = false
+    sourceFile: SourceFile
   ) {
     const isFunctionArg = (node: ArgumentNode) => {
       return (
@@ -409,17 +490,9 @@ export default class PyrightDeducer extends core.Deducer {
       value: string;
     };
 
-    const parameterName =
-      argNode.name?.value ??
-      getParameterName(callNode, argIdx, this.typeEvaluator!, isClassMember) ??
-      "unknown";
-
     if (isFunctionArg(argNode)) {
       // This argument is a function or lambda expression, we need to extract it to a closure
       // and store it to a sperate directory.
-      const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`
-        .replace(/[^_a-zA-Z0-9]/g, "_")
-        .replace(/^[0-9_]+/, "");
       const { closure, codeSegment } = extractAndStoreClosure(
         argNode,
         sourceFile,
@@ -475,17 +548,15 @@ export default class PyrightDeducer extends core.Deducer {
 }
 
 /**
- * Get the name of the parameter at index `idx` for the function associated with this call node.
+ * Retrieves the function node associated with a call node.
+ *
  * @param callNode - The call node.
- * @param idx - The expected parameter's index.
- * @returns The name of the parameter if it exists; otherwise, undefined.
+ * @param typeEvaluator - The type evaluator.
+ * @returns The function node associated with the call node.
+ * @throws Error if the type of the call node is not supported, or if the __init__ function is not a
+ * function.
  */
-function getParameterName(
-  callNode: CallNode,
-  idx: number,
-  typeEvaluator: TypeEvaluator,
-  isClassMember = false
-): string | undefined {
+function getFunctionNodeForCallNode(callNode: CallNode, typeEvaluator: TypeEvaluator) {
   let functionNode: FunctionNode;
 
   const type = typeEvaluator!.getType(callNode.leftExpression);
@@ -496,7 +567,6 @@ function getParameterName(
         throw new Error(`The __init__ function must be a function.`);
       }
       functionNode = constructor;
-      isClassMember = true;
       break;
     }
     case TypeCategory.Function: {
@@ -511,8 +581,25 @@ function getParameterName(
       throw new Error(`The type of the call node is not supported.`);
   }
 
+  return functionNode;
+}
+
+/**
+ * Get the name of the parameter at index `idx` for the function associated with this call node.
+ * @param callNode - The call node.
+ * @param idx - The expected parameter's index.
+ * @returns The name of the parameter if it exists; otherwise, undefined.
+ */
+function getParameterName(
+  callNode: CallNode,
+  idx: number,
+  typeEvaluator: TypeEvaluator,
+  isConstructorOrClassMethod = false
+): string | undefined {
+  const functionNode = getFunctionNodeForCallNode(callNode, typeEvaluator);
+  TypeUtils.isEnvVarAccess;
   const parameters = functionNode.parameters;
-  const realIdx = idx + (isClassMember ? 1 : 0);
+  const realIdx = idx + (isConstructorOrClassMethod ? 1 : 0);
   if (realIdx < parameters.length) {
     return parameters[realIdx].name?.value;
   }
