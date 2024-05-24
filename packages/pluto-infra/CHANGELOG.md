@@ -1,5 +1,16 @@
 # @plutolang/pluto-infra
 
+## 0.4.16
+
+### Patch Changes
+
+- 9c86635: feat(sdk): add Vercel deployment for ReactApp and Website
+
+  Enable deployment of static websites and compiled React applications to Vercel.
+
+- Updated dependencies [9c86635]
+  - @plutolang/pluto@0.4.11
+
 ## 0.4.15
 
 ### Patch Changes
