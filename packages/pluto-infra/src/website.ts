@@ -39,6 +39,11 @@ export abstract class Website {
     name?: string,
     options?: WebsiteOptions
   ): Promise<IWebsiteInfraImpl> {
+    if (options?.platform === "Vercel") {
+      const klass = (await import("./vercel")).Website;
+      return new klass(path, name, options);
+    }
+
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

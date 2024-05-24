@@ -24,6 +24,7 @@
     "@pulumi/docker": "4.4.3",
     "@pulumi/kubernetes": "4.3.0",
     "@pulumi/pulumi": "3.88.0",
+    "@pulumiverse/vercel": "^1.11.0",
     "fs-extra": "^11.1.1",
     "glob": "^10.3.10",
     "mime-types": "^2.1.35"

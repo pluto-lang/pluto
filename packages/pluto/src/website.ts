@@ -11,7 +11,13 @@ import { shared } from "./clients";
  * The options for instantiating an infrastructure implementation class or a client implementation
  * class.
  */
-export interface WebsiteOptions {}
+export interface WebsiteOptions {
+  /**
+   * Currently, only support Vercel. If an invalid value is provided, or if no value is provided at
+   * all, it will default to your specified platform.
+   */
+  platform?: "Vercel";
+}
 
 /**
  * Don't export these methods to developers.

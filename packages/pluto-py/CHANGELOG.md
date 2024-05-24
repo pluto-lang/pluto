@@ -1,5 +1,11 @@
 # pluto-client
 
+## 0.0.13
+
+feat(sdk): add Vercel deployment for ReactApp and Website
+
+Enable deployment of static websites and compiled React applications to Vercel.
+
 ## 0.0.12
 
 feat(sdk): add ReactApp resource type
