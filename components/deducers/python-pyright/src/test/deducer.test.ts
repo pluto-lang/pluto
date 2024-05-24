@@ -96,6 +96,25 @@ func_with_options = Function(lambda x: x, name="option", options=FunctionOptions
   clean();
 });
 
+test("should correctly deduce the arguments in the sequence of the function signature parameters.", async () => {
+  const code = `
+from pluto_client import Website, WebsiteOptions
+
+website = Website("./web", opts=WebsiteOptions(platform="Vercel"))
+`;
+
+  const { archRef, clean } = await getArchRefForInline(code);
+
+  expect(archRef.resources).toHaveLength(1);
+
+  const resource = archRef.resources[0];
+  expect(resource).toBeDefined();
+  expect(resource.parameters).toHaveLength(3);
+  expect(resource.parameters[1].value).toEqual("undefined");
+
+  clean();
+});
+
 async function getArchRefForInline(code: string, filename: string = "tmp.py") {
   const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "pyright-deducer-"));
   const tmpfile = path.join(tmpdir, filename);
