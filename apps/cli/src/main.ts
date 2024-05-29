@@ -115,6 +115,17 @@ async function main() {
     )
     .action(cmd.destroy);
 
+  program
+    .command("logs")
+    .description(
+      "View the logs of the application. Please be aware that the logs that are displayed may not be in sequence. "
+    )
+    .option("-s, --stack <stack>", "Specified stack")
+    .option("-f, --follow", "Follow the log, like `tail -f`", false)
+    .option("-a, --all", "Show all logs from the beginning", false)
+    .option("--show-platform", "Show the logs of the platform", false)
+    .action(cmd.log);
+
   program.command("stack", "Manage stacks");
 
   if (process.env["DEBUG"]) {

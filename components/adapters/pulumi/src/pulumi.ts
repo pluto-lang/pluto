@@ -89,7 +89,7 @@ export class PulumiAdapter extends core.Adapter {
         throw new Error("Cannot find the target pulumi stack. Have you already deployed it?");
       }
 
-      await pulumiStack.refresh({ onOutput: debugStream });
+      // await pulumiStack.refresh({ onOutput: debugStream });
       const result = await pulumiStack.exportStack();
 
       const instances: core.ResourceInstance[] = [];
