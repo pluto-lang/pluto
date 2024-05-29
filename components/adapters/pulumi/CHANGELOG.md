@@ -1,5 +1,11 @@
 # @plutolang/pulumi-adapter
 
+## 0.4.7
+
+### Patch Changes
+
+- 7cfe152: feat(cli): add `logs` command
+
 ## 0.4.6
 
 ### Patch Changes

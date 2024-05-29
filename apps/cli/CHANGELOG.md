@@ -1,5 +1,14 @@
 # @plutolang/cli
 
+## 0.4.25
+
+### Patch Changes
+
+- 7cfe152: feat(cli): add `logs` command
+- Updated dependencies [7cfe152]
+  - @plutolang/pulumi-adapter@0.4.7
+  - @plutolang/simulator-adapter@0.3.21
+
 ## 0.4.24
 
 ### Patch Changes
