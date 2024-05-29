@@ -21,7 +21,8 @@ def handler(event, context):
         query=event.get("queryStringParameters", {}) or {},
         body=payload,
     )
-    print("Pluto: Handling HTTP request: ", request)
+    if os.environ.get("DEBUG"):
+        print("Pluto: Handling HTTP request: ", request)
 
     try:
         user_handler: Callable[[HttpRequest], HttpResponse] = globals()["__handler_"]

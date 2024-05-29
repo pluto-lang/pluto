@@ -18,7 +18,8 @@ def handler(payload, context):
     account_id = context.invoked_function_arn.split(":")[4]
     os.environ["AWS_ACCOUNT_ID"] = account_id
     try:
-        print("Payload:", payload)
+        if os.environ.get("DEBUG"):
+            print("Payload:", payload)
         if is_http_payload(payload):
             if payload["isBase64Encoded"]:
                 body = base64.b64decode(payload["body"]).decode("utf-8")

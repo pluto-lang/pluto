@@ -15,7 +15,8 @@ def handler(event, context):
         payload = record["Sns"]["Message"]
         data = json.loads(payload)
         cloud_event = CloudEvent(timestamp=data["timestamp"], data=data["data"])
-        print("Pluto: Handling event: ", cloud_event)
+        if os.environ.get("DEBUG"):
+            print("Pluto: Handling event: ", cloud_event)
 
         try:
             user_handler: Callable[[CloudEvent], None] = globals()["__handler_"]

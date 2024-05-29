@@ -31,6 +31,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.583.0",
     "@aws-sdk/client-lambda": "^3.462.0",
     "@inquirer/prompts": "^3.2.0",
     "@plutolang/base": "workspace:^",

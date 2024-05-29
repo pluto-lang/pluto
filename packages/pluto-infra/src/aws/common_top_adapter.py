@@ -7,18 +7,21 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 depth = 0
 child_directory = os.path.join(current_directory, f"child_{depth}")
 while os.path.exists(child_directory):
-    print(f"Adding {child_directory} to the system path.")
+    if os.environ.get("DEBUG"):
+        print(f"Adding {child_directory} to the system path.")
     sys.path.insert(0, child_directory)
 
     site_pkgs_dir = os.path.join(child_directory, "site-packages")
     if os.path.exists(site_pkgs_dir):
-        print(f"Adding {site_pkgs_dir} to the system path.")
+        if os.environ.get("DEBUG"):
+            print(f"Adding {site_pkgs_dir} to the system path.")
         sys.path.insert(0, site_pkgs_dir)
 
     depth += 1
     child_directory = os.path.join(child_directory, f"child_{depth}")
 
-print("The system path is:", sys.path)
+if os.environ.get("DEBUG"):
+    print("The system path is:", sys.path)
 
 
 def handler(*args, **kwargs):
