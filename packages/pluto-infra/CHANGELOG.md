@@ -1,5 +1,11 @@
 # @plutolang/pluto-infra
 
+## 0.4.17
+
+### Patch Changes
+
+- 7cfe152: feat(cli): add `logs` command
+
 ## 0.4.16
 
 ### Patch Changes
