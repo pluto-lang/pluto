@@ -1,0 +1,112 @@
+---
+title: Function Encapsulation Mechanism Design
+date: 2024-06-06
+---
+
+# Function Encapsulation Mechanism Design
+
+## Objective
+
+To support users in encapsulating the process of reusing infrastructure configuration through functions.
+
+## User Story
+
+I am creating a Chatbot based on LLMs (Large Language Models), using Pluto to build the application's backend, which supports multiple LLMs. Each LLM has two interfaces: 1) `/{model}/info` to get the basic information of the current LLM, and 2) `/{model}/invoke` to call the LLM. To reuse the process of configuring routes, it is necessary to implement a function to configure routes for a single LLM, and call this function multiple times to configure routes for each LLM.
+
+## Constraints
+
+1. Code related to runtime should not be called within compile-time code.
+2. Functions encapsulated by users, which include infrastructure code, should be treated as infrastructure functions, similar to Infra APIs; however, their parameter lists may contain closure variables needed by runtime functions.
+3. Functions encapsulated by users cannot have function variables as parameters, which means higher-order functions are not supported.
+4. Parameters of user-defined encapsulated functions cannot be modified, and it must be ensured that the parameters passed to Infra APIs are statically inferable.
+5. Infra APIs can only be called within the global scope and the scope of normal encapsulated functions, but not within the scope of Lambdas, Classes, etc.
+
+## The Simplest Case - Encapsulated Function is Single-Layered and Solely Contains Infra API Calls
+
+```python
+class LLM:
+    def __init__(self, model: str, memory: KVStore, info: str):
+        self.model = model
+        self.memory = memory
+        self.info = info
+
+    def invoke(self, question: str):
+        ans = f"Answer for {question} by {self.model}"
+        self.memory.set(question, ans)
+        return ans
+
+def add_routes(router: Router, model: str, llm: LLM):
+    def invoke_handler(req):
+        question = req.query.get("question")
+        return llm.invoke(question)
+
+    # Ignoring LLM state storage for now, assuming LLM's memory and other states are already set with a KV database or other external storage instances
+    router.get(f"/{model}/info", lambda x: llm.info)
+    router.get(f"/{model}/invoke", invoke_handler)
+
+    # The following behavior is prohibited as it actually accesses runtime variables at compile-time
+    # llm.invoke("Hi")
+    # router.get(f"/{llm["model"]}/info", lambda x: x["info"])
+
+router = Router("router")
+
+llm1 = LLM("model1", KVStore("memory1"), "LLM Info")
+llm2 = LLM("model2", KVStore("memory2"), "LLM Info")
+
+add_routes(router, "model1", llm1)
+add_routes(router, "model2", llm2)
+```
+
+### Implementation:
+
+`add_routes` contains infrastructure code, so during the deduce stage, both the definition and invocation of the two methods will be analyzed.
+
+1. Analyze the definition of `add_routes` to identify code related to runtime and accessed closure variables, constructing a partial graph.
+   1. Use the implemented approach to build partial architecture references, `router -> invoke_handler`, `router -> lambda`, `invoke_handler -set-> llm.memory`
+      1. Both `router` and `llm.memory` depend on external parameters, placeholders are left to be filled after the parameters are determined.
+   2. Static analysis reveals that the `invoke_handler` function is a runtime entry function.
+   3. The `invoke_handler` function depends on the external variable `llm`, which is the third parameter of `add_routes`.
+   4. Package the `invoke_handler` function but leave placeholders for `llm`.
+2. Analyzing the invocation of `add_routes` to fill in the partial graph and construct a global graph.
+   1. From the previous step, knowing the partial architecture references and the packaged runtime function, bring parameters into the information analyzed in the previous step to fill placeholders.
+
+## Encapsulation of Functions that Call Nested Functions
+
+```python
+def nested_add_routes(router: Router, model: str, llm2: LLM):
+    router.get(f"/{model}/info", lambda x: llm2.info)
+def add_routes(router: Router, model: str, llm: LLM):
+    def invoke_handler(req):
+        question = req.query.get("question")
+        return llm.invoke(question)
+
+    nested_add_routes(router, model, llm)
+    router.get(f"/{model}/invoke", invoke_handler)
+```
+
+## Encapsulation of Functions Containing Compile-Time Executable Code
+
+```python
+def create_react_web(project_path: str, name: str | None):
+
+    def build_react(project_path: str, dist_path: str):
+        # Execute the React compilation command
+        pass
+
+    # The following behavior is forbidden, as Infra API parameters are unknown at compile time
+    # This also requires users to recognize the difference between compile time and runtime
+    # dist_path = build_react(project_path, dist_path)
+
+    dist_path = "path/to/your/dist"
+    build_react(project_path, dist_path)
+    return Website(dist_path, name)
+
+react_path = "path/to/your/react/app"
+website = create_react_web(react_path, "react-app")
+```
+
+Issues with encapsulating functions that contain user-defined, compile-time executable code `build_react`:
+
+1. Pluto's design of biz code -> arch ref -> IaC does not include the ability to add user-defined compile-time code.
+2. Furthermore, arch ref requires all parameters to be known during the deduce phase. However, in the case of the encapsulated function described, parameters of arch ref might relate to the user-defined function, as indicated in the comment regarding `dist_path`.
+3. IaC (Infrastructure as Code) scripts are TypeScript code, which cannot support users defining compile-time code in Python.
