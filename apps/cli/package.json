@@ -20,7 +20,8 @@
   "files": [
     "bin/",
     "dist/",
-    "template/"
+    "template/",
+    "scripts/"
   ],
   "scripts": {
     "build": "tsc",
@@ -28,7 +29,8 @@
     "test": "vitest run --coverage --reporter=verbose",
     "test:watch": "vitest --coverage --reporter=verbose",
     "dev": "./bin/pluto",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "postinstall": "bash ./scripts/postinstall.sh"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.583.0",
