@@ -1,5 +1,13 @@
 # @plutolang/cli
 
+## 0.4.26
+
+### Patch Changes
+
+- 6dbf274: fix(cli): fix that lost dotfiles in published package
+
+  The npm pack command excludes dotfiles by default. This commit introduces a postinstall script to rename .gitignore to gitignore, applying the same renaming strategy to other dotfiles.
+
 ## 0.4.25
 
 ### Patch Changes
