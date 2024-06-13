@@ -9,6 +9,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "tester",
+    "tester-py",
     "app-with-prop-access",
     "chat-bot",
     "daily-joke-slack",
