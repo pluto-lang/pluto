@@ -19,6 +19,9 @@ const implClassMap = new ImplClassMap<IRouterInfraImpl, RouterInfraImplClass>(
       [PlatformType.K8s]: async () => (await import("./k8s")).IngressRouter,
       [PlatformType.AliCloud]: async () => (await import("./alicloud")).AppRouter,
     },
+    [ProvisionType.Simulator]: {
+      [PlatformType.Simulator]: async () => (await import("./simulator")).SimRouter,
+    },
   }
 );
 
@@ -36,14 +39,6 @@ export abstract class Router {
     name: string,
     options?: RouterOptions
   ): Promise<IRouterInfraImpl> {
-    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimRouter(name, options) as any;
-    }
-
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

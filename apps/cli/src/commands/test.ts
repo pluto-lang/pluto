@@ -257,11 +257,7 @@ class AwsTesterClient implements TesterClient {
         await this.runOne(testCase);
         logger.info(`  ✔️ Passed`);
       } catch (e) {
-        if (e instanceof Error) {
-          logger.error("  ✖️ Failed, ", e.message);
-        } else {
-          logger.error("  ✖️ Failed, ", e);
-        }
+        logger.error("  ✖️ Failed, ", e);
       }
     }
   }
@@ -299,11 +295,7 @@ class SimTesterClient implements TesterClient {
         await this.simClient.runTest(testCase);
         logger.info(`  ✔️ Passed`);
       } catch (e) {
-        if (e instanceof Error) {
-          logger.error("  ✖️ Failed, ", e.message);
-        } else {
-          logger.error("  ✖️ Failed, ", e);
-        }
+        logger.error("  ✖️ Failed, ", e);
       }
     }
   }

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, Optional
 from pluto_base.platform import PlatformType
 from pluto_base import utils, resource
+from .utils import create_simulator_client
 
 
 @dataclass
@@ -76,5 +77,10 @@ class Router(resource.IResource, IRouterClient, IRouterInfra):
             from .clients import shared
 
             return shared.RouterClient(name, opts)
+
+        elif platform_type == PlatformType.Simulator:
+            resource_id = utils.gen_resource_id(Router.fqn, name)
+            return create_simulator_client(resource_id)
+
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

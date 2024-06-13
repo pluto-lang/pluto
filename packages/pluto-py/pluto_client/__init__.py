@@ -7,6 +7,7 @@ from .schedule import Schedule, ScheduleOptions
 from .website import Website, WebsiteOptions
 from .secret import Secret
 from .reactapp import ReactApp, ReactAppOptions
+from .tester import Tester, TesterOptions
 
 __all__ = [
     "Queue",
@@ -29,4 +30,6 @@ __all__ = [
     "Secret",
     "ReactApp",
     "ReactAppOptions",
+    "Tester",
+    "TesterOptions",
 ]

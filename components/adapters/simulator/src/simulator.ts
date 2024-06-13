@@ -1,7 +1,10 @@
-import { arch, simulator } from "@plutolang/base";
-import { ComputeClosure, AnyFunction, createClosure } from "@plutolang/base/closure";
+import fs from "fs";
 import http from "http";
 import path from "path";
+import assert from "assert";
+import { LanguageType, arch, simulator } from "@plutolang/base";
+import { ComputeClosure, AnyFunction, createClosure } from "@plutolang/base/closure";
+import { currentLanguage } from "@plutolang/base/utils";
 
 const SIM_HANDLE_PATH = "/call";
 
@@ -18,23 +21,51 @@ export class Simulator {
     this.projectRoot = projectRoot;
     this.resources = new Map();
     this.closures = new Map();
+
+    const exitHandler = async () => {
+      if (process.env.DEBUG) {
+        console.log("Received SIGINT, stopping the simulator...");
+      }
+      await this.stop();
+    };
+    process.on("SIGINT", exitHandler);
+    process.on("SIGTERM", exitHandler);
   }
 
-  public async loadApp(archRef: arch.Architecture): Promise<void> {
+  public async loadApp(archRef: arch.Architecture) {
     // Ensure that a resource's dependencies are created before the resource itself, by establishing
     // the entities in a topological order.
     const entities = archRef.topoSort();
     for (const entity of entities) {
-      if (entity instanceof arch.Resource) {
+      if (arch.isResource(entity)) {
         const resource = await this.createResource(entity);
         this.resources.set(entity.id, resource);
-      } else if (entity instanceof arch.Closure) {
+      } else if (arch.isClosure(entity)) {
         const closure = await this.createClosure(entity);
         this.closures.set(entity.id, closure);
-      } else if (entity instanceof arch.Relationship) {
+      } else if (arch.isRelationship(entity)) {
         await this.linkRelationship(entity);
       }
     }
+
+    const result: { [id: string]: any } = {};
+    for (const entity of entities) {
+      if (!arch.isResource(entity)) {
+        continue;
+      }
+      const resource = this.resources.get(entity.id);
+      // Execute the postProcess function of the resource
+      const postProcessFn = (resource as any)["postProcess"];
+      if (postProcessFn) {
+        await postProcessFn.call(resource);
+      }
+
+      // Collect the outputs of the resource.
+      if ((resource as any).outputs) {
+        result[entity.id] = (resource as any).outputs;
+      }
+    }
+    return result;
   }
 
   private async createResource(resource: arch.Resource): Promise<simulator.IResourceInstance> {
@@ -63,16 +94,31 @@ export class Simulator {
   }
 
   private async createClosure(closure: arch.Closure): Promise<ComputeClosure<AnyFunction>> {
-    const closurePath = path.join(this.projectRoot, closure.path);
-    if (!closureExists(closurePath)) {
-      throw new Error(`Closure ${closurePath} not found.`);
-    }
+    const closurePath = path.isAbsolute(closure.path)
+      ? closure.path
+      : path.join(this.projectRoot, closure.path);
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const handler = require(closurePath).default;
-    return createClosure(handler, {
-      dirpath: closure.path,
-    });
+    if (currentLanguage() === LanguageType.TypeScript) {
+      if (!isValidJsModule(closurePath)) {
+        throw new Error(`Closure '${closurePath}' is not a valid JS module.`);
+      }
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const handler = require(closurePath).default;
+      return createClosure(handler, {
+        dirpath: closure.path,
+        exportName: "default",
+      });
+    } else if (currentLanguage() === LanguageType.Python) {
+      if (!fs.existsSync(closurePath)) {
+        throw new Error(`Closure '${closurePath}' not found.`);
+      }
+      return createClosure(() => {}, {
+        dirpath: closure.path,
+        exportName: "_default",
+      });
+    } else {
+      throw new Error(`Unsupported language type: ${currentLanguage()}`);
+    }
   }
 
   private async linkRelationship(relationship: arch.Relationship): Promise<void> {
@@ -81,19 +127,57 @@ export class Simulator {
     if (from.type === "closure") return;
 
     const args = new Array(relationship.parameters.length);
-    relationship.parameters.forEach((param) => {
+    for (const param of relationship.parameters) {
       if (param.type === "text") {
-        args[param.index] = param.value === "undefined" ? undefined : JSON.parse(param.value);
+        // TODO: divide the "text" type parameter into more specific categories, and enhance the
+        // logic.
+        let arg;
+        if (param.value === "undefined") {
+          arg = undefined;
+        } else if (isValidJson(param.value)) {
+          arg = JSON.parse(param.value);
+        } else {
+          // The parameter value is accessing a captured resource property, or a environment
+          // variable.
+          const parts = param.value.split(".");
+          assert(parts.length === 2, `Invalid value ${param.value}`);
+          const [resourceName, methodCall] = parts;
+          if (resourceName === "process") {
+            // The parameter value is accessing an environment variable.
+            const regResult = /env\["(.*)"\]/g.exec(methodCall);
+            if (!regResult) {
+              throw new Error(`Invalid value ${param.value}`);
+            }
+            arg = process.env[regResult[1]];
+          } else {
+            // The parameter value is accessing a captured resource property.
+            const resource = this.resources.get(resourceName);
+            if (!resource) {
+              throw new Error(`Resource '${resourceName}' not found.`);
+            }
+            const methodName = methodCall.replace(/\(\)$/g, "");
+            arg = await (resource as any)[methodName]();
+          }
+        }
+        args[param.index] = arg;
       } else if (param.type === "closure") {
         args[param.index] = this.closures.get(param.value);
       }
-    });
+    }
 
     const resource = this.resources.get(from.id);
     if (!resource) {
       throw new Error(`Resource ${from.id} not found.`);
     }
-    resource.addEventHandler(relationship.operation, args);
+
+    const method = (resource as any)[relationship.operation];
+    if (method) {
+      await method.call(resource, ...args);
+    } else {
+      throw new Error(
+        `Resource '${from.id}' does not have the method '${relationship.operation}'.`
+      );
+    }
   }
 
   public async start(): Promise<void> {
@@ -174,7 +258,7 @@ export class Simulator {
     await new Promise<void>((resolve) => {
       server!.listen(0, "127.0.0.1", () => {
         const addr = server.address();
-        if (addr && typeof addr === "object" && (addr as any).port) {
+        if (addr && typeof addr === "object" && addr.port) {
           this._serverUrl = `http://${addr.address}:${addr.port}`;
         }
         this._server = server;
@@ -189,7 +273,11 @@ export class Simulator {
     this._server = undefined;
     this._serverUrl = undefined;
     for (const resource of this.resources.values()) {
-      await resource.cleanup();
+      try {
+        await resource.cleanup();
+      } catch (e: any) {
+        console.error(`Error cleaning up resource: ${e.message}`);
+      }
     }
   }
 
@@ -201,9 +289,18 @@ export class Simulator {
   }
 }
 
-function closureExists(closurePath: string): boolean {
+function isValidJsModule(closurePath: string): boolean {
   try {
     require.resolve(closurePath);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function isValidJson(str: string): boolean {
+  try {
+    JSON.parse(str);
     return true;
   } catch (e) {
     return false;

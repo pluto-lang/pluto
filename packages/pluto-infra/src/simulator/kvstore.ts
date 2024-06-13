@@ -1,10 +1,14 @@
-import { simulator } from "@plutolang/base";
-import { IKVStoreClient, KVStoreOptions } from "@plutolang/pluto";
+import { IResourceInfra } from "@plutolang/base";
+import { genResourceId } from "@plutolang/base/utils";
+import { IKVStoreClient, IKVStoreInfra, KVStore, KVStoreOptions } from "@plutolang/pluto";
 
-export class SimKVStore implements IKVStoreClient, simulator.IResourceInstance {
+export class SimKVStore implements IResourceInfra, IKVStoreClient, IKVStoreInfra {
+  public readonly id: string;
+
   private readonly table: Map<string, any>;
 
   constructor(name: string, opts?: KVStoreOptions) {
+    this.id = genResourceId(KVStore.fqn, name);
     this.table = new Map();
     name;
     opts;
@@ -28,4 +32,7 @@ export class SimKVStore implements IKVStoreClient, simulator.IResourceInstance {
   public async set(key: string, val: string): Promise<void> {
     this.table.set(key, val);
   }
+
+  public grantPermission(): void {}
+  public postProcess(): void {}
 }

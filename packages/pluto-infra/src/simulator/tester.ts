@@ -1,28 +1,36 @@
-import { simulator } from "@plutolang/base";
-import { TestCase, ITesterClient, TesterOptions, TestHandler } from "@plutolang/pluto";
+import { IResourceInfra } from "@plutolang/base";
+import {
+  TestCase,
+  ITesterClient,
+  TesterOptions,
+  TestHandler,
+  ITesterInfra,
+  Tester,
+} from "@plutolang/pluto";
 import { ComputeClosure, isComputeClosure } from "@plutolang/base/closure";
+import { genResourceId } from "@plutolang/base/utils";
+import { SimFunction } from "./function";
 
-export class SimTester implements ITesterClient, simulator.IResourceInstance {
-  readonly topicName: string;
-  private testCases: TestCase[];
+export class SimTester implements IResourceInfra, ITesterClient, ITesterInfra {
+  public readonly id: string;
+
+  public readonly topicName: string;
+  private readonly testCases: TestCase[];
+  private readonly testFnMap: Record<string, SimFunction> = {};
 
   constructor(name: string, opts?: TesterOptions) {
+    this.id = genResourceId(Tester.fqn, name);
     this.topicName = name;
     this.testCases = [];
     opts;
   }
 
-  public addEventHandler(op: string, args: any[]): void {
-    if (op != "it") {
-      throw new Error("Only 'it' is valid");
-    }
-
-    const description = args[0];
-    const closure = args[1] as ComputeClosure<TestHandler>;
+  public it(description: string, closure: ComputeClosure<TestHandler>): void {
     if (!isComputeClosure(closure)) {
       throw new Error("The second argument of 'it' must be a closure");
     }
     this.testCases.push({ description, testHandler: closure });
+    this.testFnMap[description] = new SimFunction(closure);
   }
 
   public async cleanup(): Promise<void> {}
@@ -36,6 +44,9 @@ export class SimTester implements ITesterClient, simulator.IResourceInstance {
     if (testCase === undefined) {
       throw new Error(`Test case not found: ${req.description}`);
     }
-    await testCase.testHandler();
+    await this.testFnMap[req.description].invoke();
   }
+
+  public grantPermission() {}
+  public postProcess(): void {}
 }

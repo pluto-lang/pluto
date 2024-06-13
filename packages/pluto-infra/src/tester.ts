@@ -17,6 +17,9 @@ const implClassMap = new ImplClassMap<ITesterInfraImpl, TesterInfraImplClass>(
     [ProvisionType.Pulumi]: {
       [PlatformType.AWS]: async () => (await import("./aws")).AwsTester,
     },
+    [ProvisionType.Simulator]: {
+      [PlatformType.Simulator]: async () => (await import("./simulator")).SimTester,
+    },
   }
 );
 
@@ -34,14 +37,6 @@ export abstract class Tester {
     name: string,
     options?: TesterOptions
   ): Promise<ITesterInfraImpl> {
-    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimTester(name, options) as any;
-    }
-
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),
