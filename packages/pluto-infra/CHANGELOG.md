@@ -1,5 +1,13 @@
 # @plutolang/pluto-infra
 
+## 0.4.19
+
+### Patch Changes
+
+- e761342: fix(sdk): correct `express` dependency classification
+
+  This commit addresses an error where `express` was incorrectly included in dev-dependencies instead of dependencies.
+
 ## 0.4.18
 
 ### Patch Changes
