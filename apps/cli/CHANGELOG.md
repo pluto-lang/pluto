@@ -1,5 +1,16 @@
 # @plutolang/cli
 
+## 0.4.28
+
+### Patch Changes
+
+- d6a6d9e: feat(cli): introduce `run` command
+
+  This commit adds the `run` command to the Pluto CLI. The `pluto run` command is designed to execute the Pluto app within the simulator.
+
+- Updated dependencies [adc87b9]
+  - @plutolang/simulator-adapter@0.3.22
+
 ## 0.4.27
 
 ### Patch Changes

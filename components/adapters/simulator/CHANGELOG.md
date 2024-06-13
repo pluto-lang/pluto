@@ -1,5 +1,16 @@
 # @plutolang/simulator-adapter
 
+## 0.3.22
+
+### Patch Changes
+
+- adc87b9: feat(adapter): enable Python execution in simulator
+
+  This commit introduces the ability to execute Python within the simulator. It also adds support for parsing arguments that access captured properties or environment variables.
+
+- Updated dependencies [adc87b9]
+  - @plutolang/pluto-infra@0.4.18
+
 ## 0.3.21
 
 ### Patch Changes
