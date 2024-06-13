@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# If this is a release build and we are in CI, skip this script to avoid modifying the source code
+if [ "$RELEASE" = "true" ] && [ "$CI" = "true" ]; then
+    echo "Skipping postinstall.sh"
+    exit 0
+fi
+
 languages=("python" "typescript")
 files=("gitignore" "env" "env.local")
 
