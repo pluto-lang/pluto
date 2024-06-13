@@ -8,6 +8,7 @@ from pluto_base.resource import (
 )
 from pluto_base.platform import PlatformType
 from pluto_base import utils
+from .utils import create_simulator_client
 
 
 DEFAULT_FUNCTION_NAME = "default"
@@ -74,5 +75,10 @@ class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
             from .clients import aws
 
             return aws.LambdaFunction(func, name, opts)
+
+        elif platform_type == PlatformType.Simulator:
+            resource_id = utils.gen_resource_id(Function.fqn, name)
+            return create_simulator_client(resource_id)
+
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

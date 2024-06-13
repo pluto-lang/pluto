@@ -18,6 +18,9 @@ const implClassMap = new ImplClassMap<IKVStoreInfraImpl, KVStoreInfraImplClass>(
       [PlatformType.AWS]: async () => (await import("./aws")).DynamoKVStore,
       [PlatformType.K8s]: async () => (await import("./k8s")).RedisKVStore,
     },
+    [ProvisionType.Simulator]: {
+      [PlatformType.Simulator]: async () => (await import("./simulator")).SimKVStore,
+    },
   }
 );
 
@@ -35,14 +38,6 @@ export abstract class KVStore {
     name: string,
     options?: KVStoreOptions
   ): Promise<IKVStoreInfraImpl> {
-    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimKVStore(name, options) as any;
-    }
-
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

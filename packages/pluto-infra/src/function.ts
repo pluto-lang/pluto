@@ -24,6 +24,9 @@ const implClassMap = new ImplClassMap<IFunctionInfraImpl, FunctionInfraImplClass
       [PlatformType.K8s]: async () => (await import("./k8s")).KnativeService,
       [PlatformType.AliCloud]: async () => (await import("./alicloud")).FCInstance,
     },
+    [ProvisionType.Simulator]: {
+      [PlatformType.Simulator]: async () => (await import("./simulator")).SimFunction,
+    },
   }
 );
 
@@ -42,14 +45,6 @@ export abstract class Function {
     name?: string,
     options?: FunctionOptions
   ): Promise<IFunctionInfraImpl> {
-    // TODO: ensure that the resource implementation class for the simulator has identical methods as those for the cloud.
-    if (
-      utils.currentPlatformType() === PlatformType.Simulator &&
-      utils.currentEngineType() === ProvisionType.Simulator
-    ) {
-      return new (await import("./simulator")).SimFunction(func, name, options) as any;
-    }
-
     return implClassMap.createInstanceOrThrow(
       utils.currentPlatformType(),
       utils.currentEngineType(),

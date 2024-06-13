@@ -22,7 +22,8 @@
   "dependencies": {
     "@plutolang/base": "workspace:^",
     "@plutolang/pluto": "workspace:^",
-    "@plutolang/pluto-infra": "workspace:^"
+    "@plutolang/pluto-infra": "workspace:^",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@types/node": "^20.8.4",

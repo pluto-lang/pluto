@@ -1,62 +1,89 @@
 import http from "http";
+import cors from "cors";
 import express from "express";
-import { simulator } from "@plutolang/base";
-import { HttpRequest, IRouterClient, RequestHandler, RouterOptions } from "@plutolang/pluto";
-import { findAvailablePort } from "../utils";
+import bodyParser from "body-parser";
+import { IResourceInfra } from "@plutolang/base";
+import {
+  HttpRequest,
+  IRouterClient,
+  IRouterInfra,
+  RequestHandler,
+  Router,
+  RouterOptions,
+} from "@plutolang/pluto";
 import { ComputeClosure } from "@plutolang/base/closure";
+import { genResourceId } from "@plutolang/base/utils";
+import { SimFunction } from "./function";
 
-const VALID_HTTP_METHODS = ["get", "post", "put", "delete", "head", "options", "patch", "connect"];
+const VALID_HTTP_METHODS = ["get", "post", "put", "delete"];
 
-export class SimRouter implements simulator.IResourceInstance, IRouterClient {
+export class SimRouter implements IResourceInfra, IRouterInfra, IRouterClient {
+  public readonly id: string;
+
   private readonly expressApp: express.Application;
-  private httpServer?: http.Server;
-  private port?: number;
+  private httpServer: http.Server;
+  private port: number;
 
-  private cleaned: boolean = false;
+  public outputs: string;
 
   constructor(name: string, opts?: RouterOptions) {
+    this.id = genResourceId(Router.fqn, name);
+
     this.expressApp = express();
-    const portP = findAvailablePort();
-    portP.then((port) => {
-      this.port = port;
-      this.httpServer = this.expressApp.listen(port);
-      if (this.cleaned && this.httpServer) {
-        // There's a possibility that the router may be cleaned up before the http server even
-        // starts. If the 'cleaned' flag is set to true and 'httpServer' is not undefined, it
-        // indicates that the router was cleaned up before the server's initiation. Therefore, it's
-        // necessary to close the server in this scenario.
-        this.httpServer.close();
-        this.httpServer = undefined;
-      }
-    });
+    this.expressApp.use(cors());
+    this.expressApp.use(bodyParser.urlencoded({ extended: false }));
+    this.expressApp.use(bodyParser.json());
+
+    this.httpServer = this.expressApp.listen(0);
+    const address = this.httpServer.address();
+    if (address && typeof address !== "string") {
+      this.port = address.port;
+    } else {
+      throw new Error(`Failed to obtain the port for the router: ${name}`);
+    }
+    this.outputs = this.url();
+
     name;
     opts;
   }
 
   public url(): string {
-    if (!this.port) {
-      throw new Error("The router is not running yet.");
-    }
     return `http://localhost:${this.port}`;
   }
 
   public async setup() {}
 
-  public addEventHandler(op: string, args: any[]): void {
+  public get(path: string, closure: ComputeClosure<RequestHandler>) {
+    this.addEventHandler("get", [path, closure]);
+  }
+
+  public post(path: string, closure: ComputeClosure<RequestHandler>) {
+    this.addEventHandler("post", [path, closure]);
+  }
+
+  public put(path: string, closure: ComputeClosure<RequestHandler>) {
+    this.addEventHandler("put", [path, closure]);
+  }
+
+  public delete(path: string, closure: ComputeClosure<RequestHandler>) {
+    this.addEventHandler("delete", [path, closure]);
+  }
+
+  public all(path: string, closure: ComputeClosure<RequestHandler>) {
+    for (const method of VALID_HTTP_METHODS) {
+      this.addEventHandler(method, [path, closure]);
+    }
+  }
+
+  private addEventHandler(op: string, args: any[]): void {
     if (VALID_HTTP_METHODS.indexOf(op.toLocaleLowerCase()) === -1) {
       throw new Error(`Invalid HTTP method: ${op}`);
     }
-    const method = op.toLowerCase() as
-      | "get"
-      | "post"
-      | "put"
-      | "delete"
-      | "head"
-      | "options"
-      | "patch"
-      | "connect";
+    const method = op.toLowerCase() as "get" | "post" | "put" | "delete";
     const path = args[0] as string;
     const closure = args[1] as ComputeClosure<RequestHandler>;
+
+    const func = new SimFunction(closure);
 
     this.expressApp[method](
       path,
@@ -73,8 +100,9 @@ export class SimRouter implements simulator.IResourceInstance, IRouterClient {
         }
 
         try {
-          const resp = await closure(reqPluto);
-          res.status(resp.statusCode).end(resp.body);
+          const resp = await func.invoke(reqPluto);
+          // TODO: unify the response format
+          res.status(resp.statusCode ?? resp.status_code).end(resp.body);
         } catch (e) {
           return next(e);
         }
@@ -83,10 +111,11 @@ export class SimRouter implements simulator.IResourceInstance, IRouterClient {
   }
 
   public async cleanup(): Promise<void> {
-    this.cleaned = true;
     if (this.httpServer) {
       this.httpServer.close();
-      this.httpServer = undefined;
     }
   }
+
+  public grantPermission() {}
+  public postProcess(): void {}
 }

@@ -21,6 +21,9 @@ const implClassMap = new ImplClassMap<IWebsiteInfraImpl, WebsiteInfraImplClass>(
     [ProvisionType.Pulumi]: {
       [PlatformType.AWS]: async () => (await import("./aws")).Website,
     },
+    [ProvisionType.Simulator]: {
+      [PlatformType.Simulator]: async () => (await import("./simulator")).SimWebsite,
+    },
   }
 );
 
