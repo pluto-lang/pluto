@@ -1,5 +1,11 @@
 # @plutolang/cli
 
+## 0.4.29
+
+### Patch Changes
+
+- @plutolang/simulator-adapter@0.3.23
+
 ## 0.4.28
 
 ### Patch Changes
