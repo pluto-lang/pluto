@@ -3,12 +3,19 @@ import * as cmd from "./commands";
 import { checkUpdate, version } from "./utils";
 import logger from "./log";
 
+let exitCnt = 0;
+
 function exitGracefully(sig: string) {
   if (process.env.DEBUG) {
-    console.warn(`\nReceived ${sig}. Exiting...`);
+    console.warn(`\nReceived ${sig}.`);
   }
-  console.log("\nBye~ 👋");
-  process.exit(1);
+  exitCnt++;
+  if (exitCnt >= 2 || sig === "SIGTERM") {
+    console.log("\nBye~ 👋");
+    process.exit(1);
+  } else {
+    console.log("\nPress Ctrl+C again to exit.");
+  }
 }
 
 process.on("SIGINT", () => exitGracefully("SIGINT"));
@@ -81,6 +88,12 @@ async function main() {
         .hideHelp()
     )
     .action(cmd.test);
+
+  program
+    .command("run")
+    .description("Run the application in the local simulator environment")
+    .argument("[entrypoint]", "The files need to be compiled.")
+    .action(cmd.run);
 
   program
     .command("deploy")

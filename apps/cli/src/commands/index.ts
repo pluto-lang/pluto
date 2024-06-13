@@ -6,3 +6,4 @@ export { destroy } from "./destory";
 export { test } from "./test";
 export { newStack } from "./stack_new";
 export { log } from "./log";
+export { run } from "./run";
