@@ -1,12 +1,16 @@
 import assert from "assert";
 import { ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
+import { ClassType, TypeCategory } from "pyright-internal/dist/analyzer/types";
+import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import { KeywordType, OperatorType } from "pyright-internal/dist/parser/tokenizerTypes";
 import {
   BinaryOperationTreeNode,
+  CallTreeNode,
   ConstantTreeNode,
   DictionaryTreeNode,
   FormatStringTreeNode,
   IndexTreeNode,
+  NumberTreeNode,
   ParameterTreeNode,
   StringListTreeNode,
   StringTreeNode,
@@ -24,12 +28,18 @@ import {
   LiteralValue,
   TupleValue,
   NoneValue,
+  DataClassValue,
 } from "./value-types";
+import { Fillings } from "./value-evaluator";
+import { TreeBuilder } from "./value-tree-builder";
 
-type EvaluateFunction<T extends TreeNodeBase> = (node: T, fillings: Map<number, Value>) => Value;
+type EvaluateFunction<T extends TreeNodeBase> = (node: T, fillings: Fillings) => Value;
 
 export class TreeEvaluator {
-  constructor() {}
+  constructor(
+    private readonly typeEvaluator: TypeEvaluator,
+    private readonly treeBuilder: TreeBuilder
+  ) {}
 
   private readonly createNodeFunctions: { [NodeType in ParseNodeType]?: EvaluateFunction<any> } = {
     [ParseNodeType.Error]: this.unimplementedNode,
@@ -50,14 +60,14 @@ export class TreeEvaluator {
     [ParseNodeType.Lambda]: this.unimplementedNode,
     [ParseNodeType.Constant]: this.evaluateForConstant,
     [ParseNodeType.Ellipsis]: this.unimplementedNode,
-    [ParseNodeType.Number]: this.unimplementedNode,
+    [ParseNodeType.Number]: this.evaluatorForNumber,
     [ParseNodeType.String]: this.evaluateForString,
     [ParseNodeType.FormatString]: this.evaluateForFormatString,
     [ParseNodeType.StringList]: this.evaluateForStringList,
     [ParseNodeType.List]: this.unimplementedNode,
     [ParseNodeType.Set]: this.unimplementedNode,
     [ParseNodeType.Name]: this.unimplementedNode,
-    [ParseNodeType.Call]: this.unimplementedNode,
+    [ParseNodeType.Call]: this.evaluateForCall,
     [ParseNodeType.Index]: this.evaluateForIndex,
     [ParseNodeType.Tuple]: this.evaluateForTuple,
     [ParseNodeType.Dictionary]: this.evaluateForDictionary,
@@ -65,7 +75,7 @@ export class TreeEvaluator {
     [ParseNodeType.Parameter]: this.evaluateForParameter,
   };
 
-  public evaluate(tree: TreeNode, fillings: Map<number, Value>): Value {
+  public evaluate(tree: TreeNode, fillings: Fillings): Value {
     const evaluateFunction = this.createNodeFunctions[tree.nodeType];
     if (!evaluateFunction) {
       throw new Error(`This type of node '${tree.node.nodeType}' cannot be evaluated.`);
@@ -74,7 +84,7 @@ export class TreeEvaluator {
     return evaluateFunction.call(this, tree, fillings);
   }
 
-  private evaluateForParameter(node: ParameterTreeNode, fillings: Map<number, Value>): Value {
+  private evaluateForParameter(node: ParameterTreeNode, fillings: Fillings): Value {
     if (fillings.has(node.node.id)) {
       return fillings.get(node.node.id)!;
     }
@@ -84,15 +94,20 @@ export class TreeEvaluator {
     throw new Error(`${getNodeText(node.node)}: No filling found for the parameter node`);
   }
 
-  private evaluateForConstant(node: ConstantTreeNode): NoneValue {
-    assert(
-      node.node.constType === KeywordType.None,
-      `Only support the constant node with value 'None'.`
-    );
-    return NoneValue.create();
+  private evaluateForConstant(node: ConstantTreeNode): NoneValue | LiteralValue {
+    switch (node.node.constType) {
+      case KeywordType.None:
+        return NoneValue.create();
+      case KeywordType.True:
+        return LiteralValue.create(true);
+      case KeywordType.False:
+        return LiteralValue.create(false);
+      default:
+        throw new Error(`The constant type '${node.node.constType}' is not supported yet.`);
+    }
   }
 
-  private evaluateForIndex(node: IndexTreeNode, fillings: Map<number, Value>): EnvVarAccessValue {
+  private evaluateForIndex(node: IndexTreeNode, fillings: Fillings): EnvVarAccessValue {
     // Currently, we only support the environment variable access using the index node.
     if (node.flags && node.flags & TreeNodeFlags.AccessEnvVar) {
       const value = this.evaluate(node.items[0], fillings);
@@ -106,11 +121,11 @@ export class TreeEvaluator {
     }
   }
 
-  private evaluateForTuple(node: TupleTreeNode, fillings: Map<number, Value>): TupleValue {
+  private evaluateForTuple(node: TupleTreeNode, fillings: Fillings): TupleValue {
     return TupleValue.create(node.items.map((item) => this.evaluate(item, fillings)));
   }
 
-  private evaluateForDictionary(node: DictionaryTreeNode, fillings: Map<number, Value>): DictValue {
+  private evaluateForDictionary(node: DictionaryTreeNode, fillings: Fillings): DictValue {
     const result: [Value, Value][] = [];
     for (const [key, value] of node.items) {
       result.push([this.evaluate(key, fillings), this.evaluate(value, fillings)]);
@@ -119,10 +134,7 @@ export class TreeEvaluator {
     return DictValue.create(result);
   }
 
-  private evaluateForStringList(
-    node: StringListTreeNode,
-    fillings: Map<number, Value>
-  ): LiteralValue {
+  private evaluateForStringList(node: StringListTreeNode, fillings: Fillings): LiteralValue {
     const result = node.strings
       .map((str) => {
         const part = this.evaluate(str, fillings);
@@ -140,10 +152,7 @@ export class TreeEvaluator {
     return LiteralValue.create(node.node.value);
   }
 
-  private evaluateForFormatString(
-    node: FormatStringTreeNode,
-    fillings: Map<number, Value>
-  ): LiteralValue {
+  private evaluateForFormatString(node: FormatStringTreeNode, fillings: Fillings): LiteralValue {
     const fieldValues = node.fields.map((field) => this.evaluate(field, fillings));
 
     let result = "";
@@ -159,12 +168,9 @@ export class TreeEvaluator {
           node.node.fieldExpressions[fieldIdx].start < node.node.middleTokens[middleIdx].start);
 
       if (isField && !Value.isStringLiteral(fieldValues[fieldIdx])) {
-        console.error(fieldValues[fieldIdx]);
-
+        // prettier-ignore
         throw new Error(
-          `${getNodeText(
-            node.node
-          )}: Only support string literal, not including the string returned by a function, in the format string.`
+          `${getNodeText(node.node)}: Only support string literal, not including the string returned by a function, in the format string.`
         );
       }
 
@@ -176,9 +182,63 @@ export class TreeEvaluator {
     return LiteralValue.create(result);
   }
 
+  private evaluateForCall(node: CallTreeNode, fillings: Fillings) {
+    if (node.flags && node.flags & TreeNodeFlags.AccessEnvVar) {
+      // This expression is an environment variable access.
+      const envVarName = this.evaluate(node.args[0], fillings);
+      if (!Value.isStringLiteral(envVarName)) {
+        throw new Error(`${getNodeText(node.node)}: Only support string literal access as index.`);
+      }
+
+      const defaultValue = node.args[1] ? this.evaluate(node.args[1], fillings) : undefined;
+      if (defaultValue && !Value.isStringLiteral(defaultValue)) {
+        throw new Error(
+          `${getNodeText(
+            node.node
+          )}: Only support string literal as default value in environment variable access.`
+        );
+      }
+
+      return EnvVarAccessValue.create(envVarName.value as any, defaultValue?.value as any);
+    }
+
+    if (node.dataclass) {
+      const type = this.typeEvaluator.getType(node.node);
+      assert(type && type.category === TypeCategory.Class, "The type of the node is not a class.");
+
+      const values: Record<string, Value> = {};
+
+      // If the data class has default values, we evaluate the default values first.
+      const entries = ClassType.getDataClassEntries(type);
+      entries.forEach((entry) => {
+        if (entry.hasDefault) {
+          const name = entry.name;
+          const tree = this.treeBuilder.createNode(entry.defaultValueExpression!);
+          values[name] = this.evaluate(tree, fillings);
+        }
+      });
+
+      // Then we evaluate the values of the arguments passed to the constructor.
+      node.node.arguments.forEach((arg, idx) => {
+        const name = arg.name?.value ?? entries[idx].name;
+        values[name] = this.evaluate(node.args[idx], fillings);
+      });
+
+      return DataClassValue.create(type.details.fullName, values);
+    }
+
+    throw new Error(
+      `${getNodeText(node.node)}: Only support environment variable access and data class.`
+    );
+  }
+
+  private evaluatorForNumber(node: NumberTreeNode) {
+    return LiteralValue.create(node.node.value);
+  }
+
   private evaluateForBinaryOperation(
     node: BinaryOperationTreeNode,
-    fillings: Map<number, Value>
+    fillings: Fillings
   ): LiteralValue {
     const left = this.evaluate(node.left, fillings);
     const right = this.evaluate(node.right, fillings);

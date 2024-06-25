@@ -38,7 +38,7 @@ import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import * as ScopeUtils from "./scope-utils";
 import { SpecialNodeMap } from "./special-node-map";
-import { ValueEvaluator, ValueType } from "./value-evaluator";
+import { ValueEvaluator, ValueType, createValueEvaluator } from "./value-evaluator";
 
 export interface CodeSegment {
   readonly node: ParseNode;
@@ -187,7 +187,7 @@ export class CodeExtractor {
     private readonly specialNodeMap: SpecialNodeMap<CallNode>
   ) {
     this.accessedSpecialNodeFinder = new AccessedSpecialNodeFinder(specialNodeMap);
-    this.valueEvaluator = new ValueEvaluator(this.typeEvaluator);
+    this.valueEvaluator = createValueEvaluator(this.typeEvaluator);
   }
 
   /**
@@ -1040,7 +1040,7 @@ function getEnvVarName(
   sourceFile: SourceFile,
   valueEvaluator: ValueEvaluator
 ): string {
-  const value = valueEvaluator.getValue(node);
+  const value = valueEvaluator.evaluate(node);
   if (value.valueType !== ValueType.Literal || typeof value.value !== "string") {
     const text = TextUtils.getTextOfNode(node, sourceFile);
     throw new Error(

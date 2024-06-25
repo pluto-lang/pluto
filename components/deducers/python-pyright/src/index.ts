@@ -23,7 +23,13 @@ import * as ProgramUtils from "./program-utils";
 import * as ScopeUtils from "./scope-utils";
 import { TypeSearcher } from "./type-searcher";
 import { SpecialNodeMap } from "./special-node-map";
-import { Value, ValueEvaluator, ValueType } from "./value-evaluator";
+import {
+  Value,
+  ValueEvaluator,
+  ValueType,
+  createValueEvaluator,
+  genEnvVarAccessTextForTypeScript,
+} from "./value-evaluator";
 import { ResourceObjectTracker } from "./resource-object-tracker";
 import { CodeSegment, CodeExtractor } from "./code-extractor";
 import { ImportFinder } from "./import-finder";
@@ -100,7 +106,7 @@ export default class PyrightDeducer extends core.Deducer {
     }
 
     this.tracker = new ResourceObjectTracker(this.typeEvaluator, this.sepcialNodeMap);
-    this.valueEvaluator = new ValueEvaluator(this.typeEvaluator);
+    this.valueEvaluator = createValueEvaluator(this.typeEvaluator);
     this.extractor = new CodeExtractor(this.typeEvaluator, this.sepcialNodeMap);
 
     this.buildConstructedResources(constructNodes, sourceFile);
@@ -193,7 +199,7 @@ export default class PyrightDeducer extends core.Deducer {
           "unknown";
 
         if (parameterName === "name") {
-          const value = this.valueEvaluator!.getValue(argNode.valueExpression);
+          const value = this.valueEvaluator!.evaluate(argNode.valueExpression);
           if (value.valueType !== ValueType.Literal || typeof value.value !== "string") {
             throw new Error("The value of the 'name' parameter must be a string literal.");
           }
@@ -535,11 +541,11 @@ export default class PyrightDeducer extends core.Deducer {
     } else {
       // Otherwise, this argument should be composed of literals, and we can convert it into a
       // JSON string.
-      const value = this.valueEvaluator!.getValue(argNode.valueExpression);
+      const value = this.valueEvaluator!.evaluate(argNode.valueExpression);
       parsedArg = {
         name: parameterName,
         type: "text",
-        value: Value.toJson(value, { language: "typescript" }),
+        value: Value.toJson(value, { genEnvVarAccessText: genEnvVarAccessTextForTypeScript }),
       };
     }
 
@@ -660,7 +666,7 @@ function getFqnOfResourceType(type: ClassType, valueEvaluator: ValueEvaluator) {
     );
   }
 
-  const value = valueEvaluator.getValue(assignmentNode.rightExpression);
+  const value = valueEvaluator.evaluate(assignmentNode.rightExpression);
   const stringifiedFqn = Value.toString(value);
   return JSON.parse(stringifiedFqn);
 }

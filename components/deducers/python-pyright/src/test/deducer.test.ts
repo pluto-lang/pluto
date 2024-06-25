@@ -91,7 +91,7 @@ func_with_options = Function(lambda x: x, name="option", options=FunctionOptions
   expect(funcWithOptions).toBeDefined();
   const options = funcWithOptions?.parameters?.find((p) => p.name === "options");
   expect(options).toBeDefined();
-  expect(options?.value).toMatch('"memory": 256');
+  expect(options?.value).toMatch('"memory":256');
 
   clean();
 });

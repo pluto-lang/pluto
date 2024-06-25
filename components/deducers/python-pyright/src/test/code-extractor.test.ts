@@ -11,7 +11,7 @@ import {
 import * as TestUtils from "./test-utils";
 import * as TypeUtils from "../type-utils";
 import * as TypeConsts from "../type-consts";
-import { ValueEvaluator } from "../value-evaluator";
+import { createValueEvaluator } from "../value-evaluator";
 import { CodeSegment, CodeExtractor } from "../code-extractor";
 import { ResourceObjectTracker } from "../resource-object-tracker";
 
@@ -325,7 +325,7 @@ foo()
 function createTools(program: Program, sourceFile: SourceFile) {
   const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
   const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
-  const valueEvaluator = new ValueEvaluator(program.evaluator!);
+  const valueEvaluator = createValueEvaluator(program.evaluator!);
   const extractor = new CodeExtractor(program.evaluator!, specialNodeMap);
   return { specialNodeMap, tracker, valueEvaluator, extractor };
 }

@@ -29,7 +29,7 @@ export interface ValueEvaluator {
    * values represent the fillings.
    * @returns The evaluated value of the root node.
    */
-  evaluate(root: ExpressionNode, fillings: Fillings): Value;
+  evaluate(root: ExpressionNode, fillings?: Fillings): Value;
 
   /**
    * Print the value tree of the given root node.
@@ -56,7 +56,7 @@ class valueEvaluator implements ValueEvaluator {
 
   constructor(readonly typeEvaluator: TypeEvaluator) {
     this.treeBuilder = new TreeBuilder(typeEvaluator);
-    this.treeEvaluator = new TreeEvaluator();
+    this.treeEvaluator = new TreeEvaluator(typeEvaluator, this.treeBuilder);
   }
 
   public printValueTree(root: ExpressionNode, log?: Writable) {
@@ -94,8 +94,8 @@ class valueEvaluator implements ValueEvaluator {
     return Array.from(placeholderNodes.values());
   }
 
-  public evaluate(root: ExpressionNode, fillings: Map<number, Value>) {
+  public evaluate(root: ExpressionNode, fillings?: Map<number, Value>) {
     const tree = this.treeBuilder.createNode(root);
-    return this.treeEvaluator.evaluate(tree, fillings);
+    return this.treeEvaluator.evaluate(tree, fillings ?? new Map());
   }
 }

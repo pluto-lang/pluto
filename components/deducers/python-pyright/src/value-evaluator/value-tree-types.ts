@@ -7,6 +7,7 @@ import {
   ExpressionNode,
   FormatStringNode,
   IndexNode,
+  NumberNode,
   ParameterNode,
   ParseNode,
   ParseNodeType,
@@ -125,15 +126,22 @@ export interface CallTreeNode extends TreeNodeBase {
   readonly nodeType: ParseNodeType.Call;
   readonly node: CallNode;
   readonly args: TreeNode[];
+  readonly dataclass?: boolean;
 }
 
 export namespace CallTreeNode {
-  export function create(parseNode: CallNode, args: TreeNode[], accessEnvVar?: boolean) {
+  export interface CreateOptions {
+    accessEnvVar?: boolean;
+    dataclass?: boolean;
+  }
+
+  export function create(parseNode: CallNode, args: TreeNode[], options?: CreateOptions) {
     const node: CallTreeNode = {
       nodeType: ParseNodeType.Call,
       node: parseNode,
       args: args,
-      flags: accessEnvVar ? TreeNodeFlags.AccessEnvVar : undefined,
+      flags: options?.accessEnvVar ? TreeNodeFlags.AccessEnvVar : undefined,
+      dataclass: options?.dataclass,
       print: () => `${getNodeText(parseNode, "Call")}(${args.map((a) => a.node.id).join(",")})`,
     };
 
@@ -239,6 +247,23 @@ export namespace ConstantTreeNode {
   }
 }
 
+export interface NumberTreeNode extends TreeNodeBase {
+  readonly nodeType: ParseNodeType.Number;
+  readonly node: NumberNode;
+}
+
+export namespace NumberTreeNode {
+  export function create(parseNode: NumberNode) {
+    const node: NumberTreeNode = {
+      nodeType: ParseNodeType.Number,
+      node: parseNode,
+      print: () => `${getNodeText(parseNode, "Number")}`,
+    };
+
+    return node;
+  }
+}
+
 export type TreeNode =
   | ParameterTreeNode
   | IndexTreeNode
@@ -249,7 +274,8 @@ export type TreeNode =
   | StringListTreeNode
   | StringTreeNode
   | FormatStringTreeNode
-  | ConstantTreeNode;
+  | ConstantTreeNode
+  | NumberTreeNode;
 
 function getNodeText(node: ParseNode, nodeType: string): string {
   const fileInfo = AnalyzerNodeInfo.getFileInfo(node);
@@ -262,6 +288,7 @@ export function listDependencies(node: TreeNode) {
     case ParseNodeType.Parameter:
     case ParseNodeType.String:
     case ParseNodeType.Constant:
+    case ParseNodeType.Number:
       return [];
     case ParseNodeType.Tuple:
     case ParseNodeType.Index:

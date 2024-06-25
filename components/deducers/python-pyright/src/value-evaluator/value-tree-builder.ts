@@ -1,27 +1,32 @@
 import assert from "assert";
 import {
   BinaryOperationNode,
+  CallNode,
   ConstantNode,
   DictionaryNode,
   ExpressionNode,
   FormatStringNode,
   IndexNode,
   NameNode,
+  NumberNode,
   ParseNode,
   ParseNodeType,
   StringListNode,
   StringNode,
   TupleNode,
+  TypeAnnotationNode,
 } from "pyright-internal/dist/parser/parseNodes";
 import { KeywordType } from "pyright-internal/dist/parser/tokenizerTypes";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import * as TypeUtils from "../type-utils";
 import {
   BinaryOperationTreeNode,
+  CallTreeNode,
   ConstantTreeNode,
   DictionaryTreeNode,
   FormatStringTreeNode,
   IndexTreeNode,
+  NumberTreeNode,
   ParameterTreeNode,
   StringListTreeNode,
   StringTreeNode,
@@ -48,7 +53,7 @@ export class TreeBuilder {
       [ParseNodeType.UnaryOperation]: this.unimplementedNode,
       [ParseNodeType.BinaryOperation]: this.createNodeForBinaryOperation,
       [ParseNodeType.Assignment]: this.unimplementedNode,
-      [ParseNodeType.TypeAnnotation]: this.unimplementedNode,
+      [ParseNodeType.TypeAnnotation]: this.createNodeForTypeAnnotation,
       [ParseNodeType.AssignmentExpression]: this.unimplementedNode,
       [ParseNodeType.AugmentedAssignment]: this.unimplementedNode,
       [ParseNodeType.Await]: this.unimplementedNode,
@@ -62,14 +67,14 @@ export class TreeBuilder {
       [ParseNodeType.Lambda]: this.unimplementedNode,
       [ParseNodeType.Constant]: this.createNodeForConstant,
       [ParseNodeType.Ellipsis]: this.unimplementedNode,
-      [ParseNodeType.Number]: this.unimplementedNode,
+      [ParseNodeType.Number]: this.createNodeForNumber,
       [ParseNodeType.String]: this.createNodeForString,
       [ParseNodeType.FormatString]: this.createNodeForFormatString,
       [ParseNodeType.StringList]: this.createNodeForStringList,
       [ParseNodeType.List]: this.unimplementedNode,
       [ParseNodeType.Set]: this.unimplementedNode,
       [ParseNodeType.Name]: this.createNodeForName,
-      [ParseNodeType.Call]: this.unimplementedNode,
+      [ParseNodeType.Call]: this.createNodeForCall,
       [ParseNodeType.Index]: this.createNodeForIndex,
       [ParseNodeType.Tuple]: this.createNodeForTuple,
       [ParseNodeType.Dictionary]: this.createNodeForDictionary,
@@ -114,13 +119,18 @@ export class TreeBuilder {
       return ParameterTreeNode.create(decl.node, defaultValueNode);
     }
 
-    if (decl.node.parent?.nodeType !== ParseNodeType.Assignment) {
+    const assignmentNode =
+      decl.node.parent?.nodeType === ParseNodeType.TypeAnnotation
+        ? decl.node.parent?.parent
+        : decl.node.parent;
+    if (assignmentNode?.nodeType !== ParseNodeType.Assignment) {
       // prettier-ignore
       throw new Error(
         `Variable '${getNodeText(node)}' must be assigned a value directly. We only support the simplest assignment statement, the tuple assignment or other statements are not supported yet.`
       );
     }
-    return this.createNode(decl.node.parent.rightExpression);
+
+    return this.createNode(assignmentNode.rightExpression);
   }
 
   private createNodeForIndex(node: IndexNode): IndexTreeNode {
@@ -147,12 +157,18 @@ export class TreeBuilder {
   }
 
   private createNodeForConstant(node: ConstantNode): ConstantTreeNode {
-    if (node.constType !== KeywordType.None) {
-      throw new Error(
-        `${getNodeText(node)}: Only support the constant node with the value 'None'.`
-      );
+    switch (node.constType) {
+      case KeywordType.None:
+      case KeywordType.True:
+      case KeywordType.False:
+        return ConstantTreeNode.create(node);
+      default:
+        throw new Error(
+          `${getNodeText(
+            node
+          )}: Only support the constant node with the value 'None', 'True' or 'False'.`
+        );
     }
-    return ConstantTreeNode.create(node);
   }
 
   private createNodeForTuple(node: TupleNode): TupleTreeNode {
@@ -160,6 +176,24 @@ export class TreeBuilder {
       node,
       /* items */ node.expressions.map((expr) => this.createNode(expr))
     );
+  }
+
+  private createNodeForCall(node: CallNode): CallTreeNode {
+    const accessEnvVar = TypeUtils.isEnvVarAccess(node, this.typeEvaluator);
+    const dataclass = TypeUtils.isDataClassConstructor(node, this.typeEvaluator);
+    return CallTreeNode.create(
+      node,
+      /* args */ node.arguments.map((arg) => this.createNode(arg.valueExpression)),
+      { accessEnvVar, dataclass }
+    );
+  }
+
+  private createNodeForNumber(node: NumberNode): NumberTreeNode {
+    return NumberTreeNode.create(node);
+  }
+
+  private createNodeForTypeAnnotation(node: TypeAnnotationNode) {
+    return this.createNode(node.valueExpression);
   }
 
   private createNodeForDictionary(node: DictionaryNode): DictionaryTreeNode {
