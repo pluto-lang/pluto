@@ -80,6 +80,26 @@ def foo(arg: str = "Hello"):
   });
 });
 
+test("should throw an error when trying to evaluate the value of a local variable that has multiple declarations", () => {
+  const code = `
+def foo(arg: str = "Hello"):
+    arg = arg + " World"
+    to_be_evaluated = arg
+
+arg = "Hello"
+arg = arg + " World"
+to_be_evaluated = arg
+`;
+  testInlineCode(code, (valueEvaluator, sourceFile) => {
+    return (node) => {
+      const text = TextUtils.getTextOfNode(node, sourceFile);
+      if (text?.startsWith("to_be_evaluated")) {
+        expect(() => valueEvaluator.evaluate(node)).toThrow(/multiple declarations/);
+      }
+    };
+  });
+});
+
 test("should throw an error when there is no filling for a placeholder", () => {
   const code = `
 def foo(arg: str):

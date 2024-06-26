@@ -87,7 +87,7 @@ export class TreeBuilder {
 
     const createNodeFunction = this.createNodeFunctions[node.nodeType];
     if (!createNodeFunction) {
-      throw new Error(`This type of node '${node.nodeType}' cannot serve as a tree node.`);
+      throw new Error(`This type of node '${node.nodeType}' cannot serve as a value tree node.`);
     }
 
     const treeNode = createNodeFunction.call(this, node);
@@ -101,11 +101,17 @@ export class TreeBuilder {
       /* skipUnreachableCode */ true
     );
     if (!decls || decls.length === 0) {
+      // RULE: A variable should be declared just once and no more.
       throw new Error(`No declaration found for name node: ${getNodeText(node)}`);
     }
+    if (decls.length > 1) {
+      // RULE: The variable should not have multiple declarations.
+      throw new Error(
+        `Variable '${getNodeText(node)}' has multiple declarations, which is not supported yet.`
+      );
+    }
 
-    // TODO: assume the last declaration is the one we want to evaluate,
-    const decl = decls[decls.length - 1];
+    const decl = decls[0];
     if (decl.node.nodeType === ParseNodeType.Parameter) {
       assert(
         decl.node.name !== undefined,
