@@ -3,6 +3,7 @@ import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker"
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import { ClassType, Type, TypeCategory } from "pyright-internal/dist/analyzer/types";
 import {
+  CallNode,
   ClassNode,
   ExpressionNode,
   FunctionNode,
@@ -200,4 +201,9 @@ export function isEnvVarAccess(node: ExpressionNode, checker: TypeEvaluator) {
 function isOSModuleReference(node: NameNode, checker: TypeEvaluator): boolean {
   const type = checker.getType(node);
   return type !== undefined && type.category === TypeCategory.Module && type.moduleName === "os";
+}
+
+export function isDataClassConstructor(node: CallNode, checker: TypeEvaluator) {
+  const valueType = checker.getType(node.leftExpression);
+  return valueType && valueType.category === TypeCategory.Class && ClassType.isDataClass(valueType);
 }

@@ -26,13 +26,6 @@ num_2 = num_1 + 1
 str_2 = str_1 + "str2" "str2_plus"
 
 
-def fn_1(a: int, b: str, c: bool):
-    pass
-
-
-fn_1(num_2, b=str_1, c=bool_1)
-
-
 # tuple value evaluation
 num_tuple_1 = (1, 2, 3)
 str_tuple_1 = ("str2", "str3", "str4")
