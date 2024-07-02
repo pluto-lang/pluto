@@ -21,18 +21,23 @@
   },
   "dependencies": {
     "@aws-sdk/credential-providers": "^3.445.0",
+    "@esm2cjs/execa": "6.1.1-cjs.1",
     "@plutolang/base": "workspace:^",
     "@pulumi/pulumi": "^3.88.0",
     "@smithy/shared-ini-file-loader": "^2.2.8",
+    "axios": "^1.7.2",
     "dotenv": "^16.3.1",
     "fs-extra": "^11.1.1",
     "js-yaml": "^4.1.0",
-    "open": "^8.4.2"
+    "jszip": "^3.10.1",
+    "open": "^8.4.2",
+    "tar": "^6.2.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/js-yaml": "^4.0.7",
     "@types/node": "^20.8.4",
+    "@types/tar": "^6.1.13",
     "@vitest/coverage-v8": "^0.34.6",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6"

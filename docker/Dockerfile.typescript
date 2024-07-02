@@ -7,6 +7,7 @@ ARG NODEJS_VERSION
 ARG PLUTO_VERSION
 
 ARG PULUMI_BIN_VERSION=v3.112.0
+ARG PLUTO_USER_CONFIG_DIR=/root/.pluto
 
 # Install AWS CLI, Pulumi, Node.js
 RUN apt-get update && \
@@ -34,8 +35,9 @@ RUN apt-get update && \
     *) echo "Unsupported platform: $TARGETPLATFORM" && exit 1 ;; \
     esac && \
     curl https://get.pulumi.com/releases/sdk/pulumi-${PULUMI_BIN_VERSION}-linux-${PULUMI_ARCH}.tar.gz -o pulumi.tar.gz && \
-    tar -xvf pulumi.tar.gz -C /usr/local && \
-    ln -s /usr/local/pulumi/pulumi /usr/local/bin/pulumi && \
+    mkdir -p ${PLUTO_USER_CONFIG_DIR}/bin && \
+    tar -xvf pulumi.tar.gz -C ${PLUTO_USER_CONFIG_DIR}/bin --strip-components=1 && \
+    ln -s ${PLUTO_USER_CONFIG_DIR}/bin/pulumi /usr/local/bin/pulumi && \
     rm pulumi.tar.gz && \
     curl -fsSL https://deb.nodesource.com/setup_${NODEJS_VERSION} | bash - && \
     apt-get install -y nodejs && \
