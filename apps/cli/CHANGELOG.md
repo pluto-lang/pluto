@@ -1,5 +1,12 @@
 # @plutolang/cli
 
+## 0.4.30
+
+### Patch Changes
+
+- Updated dependencies [434e3fe]
+  - @plutolang/pyright-deducer@0.1.16
+
 ## 0.4.29
 
 ### Patch Changes
