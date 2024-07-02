@@ -22,6 +22,7 @@
     "fastapi",
     "deploy-langserve-to-aws",
     "rag-qa-bot-llama3",
-    "rag-qa-bot-with-web"
+    "rag-qa-bot-with-web",
+    "simpleaichat-example"
   ]
 }
