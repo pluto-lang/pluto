@@ -1,5 +1,12 @@
 # @plutolang/cli
 
+## 0.4.31
+
+### Patch Changes
+
+- Updated dependencies [ebc2191]
+  - @plutolang/pulumi-adapter@0.4.8
+
 ## 0.4.30
 
 ### Patch Changes
