@@ -4,7 +4,7 @@ import { isAbsolute, join, resolve } from "path";
 import { PlatformType, core } from "@plutolang/base";
 import { currentPlatformType } from "@plutolang/base/utils";
 import { CommandError, LocalWorkspace, Stack } from "@pulumi/pulumi/automation";
-import { genPulumiConfig, updateInProgress } from "./utils";
+import { genPulumiConfig, installPulumi, needsPulumi, updateInProgress } from "./utils";
 
 const STATE_FILE_NAME = "pulumi-state.json";
 
@@ -82,6 +82,8 @@ export class PulumiAdapter extends core.Adapter {
   }
 
   public async state(): Promise<core.StateResult> {
+    await this.ensurePulumi();
+
     try {
       const pulumiStack = await this.createPulumiStack();
       const stackState = await pulumiStack.workspace.stack();
@@ -115,6 +117,8 @@ export class PulumiAdapter extends core.Adapter {
   }
 
   public async deploy(opts: core.DeployOptions = {}): Promise<core.DeployResult> {
+    await this.ensurePulumi();
+
     try {
       const pulumiStack = await this.createPulumiStack();
       if (
@@ -152,6 +156,8 @@ export class PulumiAdapter extends core.Adapter {
   }
 
   public async destroy(opts: core.DestroyOptions = {}): Promise<void> {
+    await this.ensurePulumi();
+
     try {
       const pulumiStack = await this.createPulumiStack();
       if (
@@ -238,6 +244,17 @@ export class PulumiAdapter extends core.Adapter {
     pulumiConfig["pluto:projectRoot"] = { value: process.cwd() };
     await pulumiStack.setAllConfig(pulumiConfig);
     return pulumiStack;
+  }
+
+  private async ensurePulumi() {
+    try {
+      if (await needsPulumi()) {
+        await installPulumi();
+      }
+    } catch (e) {
+      console.error(e);
+      throw new Error("Failed to install pulumi.");
+    }
   }
 }
 

@@ -57,10 +57,6 @@ docker run -it --name pluto-app plutolang/pluto:latest bash
 
 <b style="color: green;">本地体验</b>：如果你想在本地使用的话，请按照以下步骤配置：
 
-### 0. 安装 Pulumi
-
-Pluto 运行在 Node.js 环境，并使用 Pulumi 与云平台（AWS 或 K8s）进行交互，可以参考 [Pulumi 安装指南进行安装](https://www.pulumi.com/docs/install/)。
-
 ### 1. 安装 Pluto
 
 ```shell
