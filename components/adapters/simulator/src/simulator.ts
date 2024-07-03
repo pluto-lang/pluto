@@ -37,23 +37,29 @@ export class Simulator {
     // the entities in a topological order.
     const entities = archRef.topoSort();
     for (const entity of entities) {
-      if (arch.isResource(entity)) {
-        const resource = await this.createResource(entity);
-        this.resources.set(entity.id, resource);
-      } else if (arch.isClosure(entity)) {
-        const closure = await this.createClosure(entity);
-        this.closures.set(entity.id, closure);
-      } else if (arch.isRelationship(entity)) {
-        await this.linkRelationship(entity);
+      switch (entity.type) {
+        case arch.EntityType.Resource: {
+          const resource = await this.createResource(entity.resource);
+          this.resources.set(entity.resource.id, resource);
+          break;
+        }
+        case arch.EntityType.Bundle: {
+          const closure = await this.createClosure(entity.closure);
+          this.closures.set(entity.closure.id, closure);
+          break;
+        }
+        case arch.EntityType.Relationship: {
+          await this.linkRelationship(entity.relationship);
+        }
       }
     }
 
     const result: { [id: string]: any } = {};
     for (const entity of entities) {
-      if (!arch.isResource(entity)) {
+      if (entity.type !== arch.EntityType.Resource) {
         continue;
       }
-      const resource = this.resources.get(entity.id);
+      const resource = this.resources.get(entity.resource.id);
       // Execute the postProcess function of the resource
       const postProcessFn = (resource as any)["postProcess"];
       if (postProcessFn) {
@@ -62,7 +68,7 @@ export class Simulator {
 
       // Collect the outputs of the resource.
       if ((resource as any).outputs) {
-        result[entity.id] = (resource as any).outputs;
+        result[entity.resource.id] = (resource as any).outputs;
       }
     }
     return result;
