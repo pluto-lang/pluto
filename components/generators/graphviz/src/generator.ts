@@ -30,26 +30,44 @@ function archToGraphviz(archRef: arch.Architecture): string {
     const res = archRef.resources[resName];
     dotSource += `  ${res.id} [label="<<${res.type}>>\\n${res.name}"];\n`;
 
-    for (const arg of res.parameters) {
+    for (const arg of res.arguments) {
       if (arg.type === "closure") {
-        dotSource += `  ${res.id} -> ${arg.value} [color="black"];\n`;
+        dotSource += `  ${res.id} -> ${arg.closureId} [color="black"];\n`;
       }
     }
   }
 
   for (const relat of archRef.relationships) {
-    let label =
-      relat.type == arch.RelatType.Create ? relat.operation.toUpperCase() : relat.operation;
-    const color = relat.type == arch.RelatType.Create ? "black" : "blue";
-    label +=
-      " " +
-      relat.parameters
-        .map((p) => `${p.name}:${p.value}`)
-        .join(",")
-        .replace(/"/g, '\\"');
-    const fromId = relat.from.id;
-    const toIds = relat.to.map((r) => r.id).join(",") || fromId;
-    dotSource += `  ${fromId} -> ${toIds} [label="${label}",color="${color}"];\n`;
+    switch (relat.type) {
+      case arch.RelationshipType.Infrastructure: {
+        const fromId = relat.caller.id;
+
+        let label = relat.operation.toUpperCase();
+        label +=
+          " " + relat.arguments.map((a) => `${a.name}:${arch.Argument.stringify(a)}`).join(",");
+        label = label.replace(/"/g, '\\"');
+
+        relat.arguments.forEach((arg) => {
+          if (arg.type === "closure") {
+            dotSource += `  ${fromId} -> ${arg.closureId} [label="${label}",color="black"];\n`;
+          } else if (arg.type === "resource" || arg.type === "capturedProperty") {
+            dotSource += `  ${fromId} -> ${arg.resourceId} [label="${label}",color="black"];\n`;
+          }
+        });
+
+        break;
+      }
+      case arch.RelationshipType.Client: {
+        const label = relat.operation;
+        dotSource += `  ${relat.bundle.id} -> ${relat.resource.id} [label="${label}",color="blue"];\n`;
+        break;
+      }
+      case arch.RelationshipType.CapturedProperty: {
+        const label = relat.property;
+        dotSource += `  ${relat.bundle.id} -> ${relat.resource.id} [label="${label}",color="blue"];\n`;
+        break;
+      }
+    }
   }
   dotSource += "}";
   return dotSource;

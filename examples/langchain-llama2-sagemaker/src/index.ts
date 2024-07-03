@@ -144,9 +144,7 @@ You are a cool and aloof robot, answering questions very briefly and directly.</
       .trim();
     return answer;
   },
-  {
-    name: "chatbot", // The name should vary between different functions, and cannot be empty if there are more than one function instances.
-  }
+  "chatbot" // The name should vary between different functions, and cannot be empty if there are more than one function instances.
 );
 
 /**
@@ -166,24 +164,19 @@ const promptTemplate = `Use the following pieces of context to answer the questi
 Question: {question}
 Answer:`;
 
-const qaFunc = new Function(
-  async (query) => {
-    const docs = [new Document({ pageContent: exampleDoc1 })];
+const qaFunc = new Function(async (query) => {
+  const docs = [new Document({ pageContent: exampleDoc1 })];
 
-    const prompt = new PromptTemplate({
-      template: promptTemplate,
-      inputVariables: ["context", "question"],
-    });
+  const prompt = new PromptTemplate({
+    template: promptTemplate,
+    inputVariables: ["context", "question"],
+  });
 
-    const chain = loadQAChain(await createSageMakerModel(), {
-      type: "stuff",
-      prompt: prompt,
-    });
+  const chain = loadQAChain(await createSageMakerModel(), {
+    type: "stuff",
+    prompt: prompt,
+  });
 
-    const result = await chain.invoke({ input_documents: docs, question: query });
-    return result["text"];
-  },
-  {
-    name: "qa",
-  }
-);
+  const result = await chain.invoke({ input_documents: docs, question: query });
+  return result["text"];
+}, "qa");

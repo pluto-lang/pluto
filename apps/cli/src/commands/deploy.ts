@@ -198,8 +198,28 @@ async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Prom
   // Create the relationship table for printing.
   const relatData = [["Source Entity ID", "Target Entity ID", "Relationship Type", "Operation"]];
   for (const relat of archRef.relationships) {
-    const toIds = relat.to.map((to) => to.id).join("\n");
-    relatData.push([relat.from.id, toIds, relat.type, relat.operation]);
+    switch (relat.type) {
+      case arch.RelationshipType.Infrastructure: {
+        for (const arg of relat.arguments) {
+          if (arg.type === "resource") {
+            relatData.push([relat.caller.id, arg.resourceId, "Infra", arg.name]);
+          } else if (arg.type === "closure") {
+            relatData.push([relat.caller.id, arg.closureId, "Infra", arg.name]);
+          } else if (arg.type === "capturedProperty") {
+            relatData.push([relat.caller.id, arg.resourceId, "Infra", arg.name]);
+          }
+        }
+        break;
+      }
+      case arch.RelationshipType.Client: {
+        relatData.push([relat.bundle.id, relat.resource.id, "Client", relat.operation]);
+        break;
+      }
+      case arch.RelationshipType.CapturedProperty: {
+        relatData.push([relat.bundle.id, relat.resource.id, "Property", relat.property]);
+        break;
+      }
+    }
   }
 
   // To display the relationship table, which includes the relationships among resources in the arch ref.

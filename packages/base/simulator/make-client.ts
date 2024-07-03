@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import { ServerRequest, ServerResponse, SimulatorCleint } from "./interfaces";
 
 const SIM_HANDLE_PATH = "/call";

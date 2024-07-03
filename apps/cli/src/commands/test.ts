@@ -1,4 +1,5 @@
 import fs from "fs";
+import assert from "assert";
 import { InvokeCommand, LambdaClient, LogType } from "@aws-sdk/client-lambda";
 import { arch, config, core, ProvisionType, PlatformType, simulator } from "@plutolang/base";
 import { genResourceId } from "@plutolang/base/utils";
@@ -147,7 +148,9 @@ async function testOneGroup(
           continue;
         }
 
-        const description = eval(resource.parameters.find((p) => p.index === 0)!.value);
+        const descriptionArg = resource.arguments.find((p) => p.index === 0);
+        assert(descriptionArg?.type === "text");
+        const description = eval(descriptionArg.value);
         if (description == undefined) {
           throw new Error(`The description of ${resourceName} is not found.`);
         }

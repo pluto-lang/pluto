@@ -208,23 +208,12 @@ export default class PyrightDeducer extends core.Deducer {
       });
 
       // Get the parameters of the resource object construction.
-      const parsedParams = this.parseAllParameters(
+      const args = this.parseAllArguments(
         callNode,
         sourceFile,
         resourceName,
         /* isConstructorOrClassMethod */ true
       );
-      const parameters: arch.Parameter[] = parsedParams.map((param) => {
-        if (param.dependentResource && param.dependentResource.type === "resource") {
-          throw new Error("The resource object construction cannot depend on a resource object.");
-        }
-        return {
-          index: param.index,
-          name: param.name,
-          type: param.type,
-          value: param.value,
-        };
-      });
 
       // Get the full qualified name of the class type.
       const classType = this.typeEvaluator!.getType(callNode);
@@ -236,7 +225,7 @@ export default class PyrightDeducer extends core.Deducer {
       // Generate the resource id.
       const resourceId = genResourceId(this.project, this.stack.name, typeFqn, resourceName);
 
-      const resource = new arch.Resource(resourceId, resourceName, typeFqn, parameters);
+      const resource = arch.Resource.create(resourceId, resourceName, typeFqn, args);
       this.nodeToResourceMap.set(callNode.id, resource);
     }
   }
@@ -256,41 +245,18 @@ export default class PyrightDeducer extends core.Deducer {
         throw new Error("No resource object found for the infrastructure API call.");
       }
       const fromResource = this.nodeToResourceMap.get(constructNode.id)!;
-      const fromResourceId: arch.IdWithType = { id: fromResource.id, type: "resource" };
 
       // Get the operation name
       const operation = getMemberName(callNode, this.typeEvaluator!);
       const closureNamePrefix = `${fromResource.name}_${nodeIdx}_${operation}`;
-      const parsedParams = this.parseAllParameters(
+      const args = this.parseAllArguments(
         callNode,
         sourceFile,
         closureNamePrefix,
         /* isConstructorOrClassMethod */ true
       );
 
-      // Get the resource object or closures associated with the callee.
-      const toResourceIds: arch.IdWithType[] = [];
-      const parameters: arch.Parameter[] = [];
-      parsedParams.forEach((param) => {
-        parameters.push({
-          index: param.index,
-          name: param.name,
-          type: param.type,
-          value: param.value,
-        });
-
-        if (param.dependentResource) {
-          toResourceIds.push(param.dependentResource);
-        }
-      });
-
-      const relationship = new arch.Relationship(
-        fromResourceId,
-        toResourceIds,
-        arch.RelatType.Create,
-        operation,
-        parameters
-      );
+      const relationship = arch.InfraRelationship.create(fromResource, operation, args);
       this.relationships.push(relationship);
     }
   }
@@ -302,8 +268,6 @@ export default class PyrightDeducer extends core.Deducer {
    */
   private buildRelationshipsFromClosures(closures: arch.Closure[], sourceFile: SourceFile) {
     for (const closure of closures) {
-      const fromResourceId: arch.IdWithType = { id: closure.id, type: "closure" };
-
       const codeSegment = this.closureToSgementMap.get(closure.id);
       if (!codeSegment) {
         throw new Error(`No code segment found for closure '${closure.id}'.`);
@@ -317,15 +281,8 @@ export default class PyrightDeducer extends core.Deducer {
           throw new Error("No resource object found for the client API call.");
         }
         const toResource = this.nodeToResourceMap.get(constructNode.id);
-        const toResourceId: arch.IdWithType = { id: toResource!.id, type: "resource" };
-
         const operation = getMemberName(clientApi, this.typeEvaluator!);
-        const relationship = new arch.Relationship(
-          fromResourceId,
-          [toResourceId],
-          arch.RelatType.MethodCall,
-          operation
-        );
+        const relationship = arch.ClientRelationship.create(closure, toResource!, operation);
         this.relationships.push(relationship);
       });
 
@@ -337,14 +294,11 @@ export default class PyrightDeducer extends core.Deducer {
           throw new Error("No resource object found for the client API call.");
         }
         const toResource = this.nodeToResourceMap.get(constructNode.id);
-        const toResourceId: arch.IdWithType = { id: toResource!.id, type: "resource" };
-
-        const operation = getMemberName(accessedProp, this.typeEvaluator!);
-        const relationship = new arch.Relationship(
-          fromResourceId,
-          [toResourceId],
-          arch.RelatType.PropertyAccess,
-          operation
+        const property = getMemberName(accessedProp, this.typeEvaluator!);
+        const relationship = arch.CapturedPropertyRelationship.create(
+          closure,
+          toResource!,
+          property
         );
         this.relationships.push(relationship);
       });
@@ -385,21 +339,13 @@ export default class PyrightDeducer extends core.Deducer {
    * class method.
    * @returns An array of parsed parameters.
    */
-  private parseAllParameters(
+  private parseAllArguments(
     callNode: CallNode,
     sourceFile: SourceFile,
     closureNamePrefix: string,
     isConstructorOrClassMethod = false
-  ) {
-    interface ParsedParameter {
-      index: number; // The index of the parameter in the function signature.
-      name: string; // The name of the parameter.
-      type: "closure" | "text";
-      value: string;
-      dependentResource?: arch.IdWithType;
-    }
-
-    const argumentMap: { [paramName: string]: ParsedParameter } = {};
+  ): arch.Argument[] {
+    const argumentMap: { [paramName: string]: arch.Argument } = {};
 
     // In Python code, the sequence of arguments can deviate from the order presented in the
     // function signature. However, this is not permissible in TypeScript. Given that we will
@@ -416,12 +362,8 @@ export default class PyrightDeducer extends core.Deducer {
       const paramName = paramNode.name?.value;
       assert(paramName, "The parameter name must be a string.");
 
-      argumentMap[paramName] = {
-        index: paramIdx - (isConstructorOrClassMethod ? 1 : 0),
-        name: paramName,
-        type: "text",
-        value: "undefined", // The default value is "undefined".
-      };
+      const paramIndex = paramIdx - (isConstructorOrClassMethod ? 1 : 0);
+      argumentMap[paramName] = arch.TextArgument.create(paramIndex, paramName, "undefined");
     });
 
     // Then, we parse the arguments in the call node.
@@ -432,31 +374,21 @@ export default class PyrightDeducer extends core.Deducer {
         getParameterName(callNode, argIdx, this.typeEvaluator!, isConstructorOrClassMethod) ??
         "unknown";
 
+      const parameterIndex = argumentMap[parameterName]?.index ?? paramIdx++;
+
       const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`
         .replace(/[^_a-zA-Z0-9]/g, "_")
         .replace(/^[0-9_]+/, "");
 
       const parsedArg = this.parseArgumentOfInfraCall(
         parameterName,
+        parameterIndex,
         closureId,
         argNode,
         sourceFile
       );
 
-      if (argumentMap[parameterName]) {
-        argumentMap[parameterName].type = parsedArg.type;
-        argumentMap[parameterName].value = parsedArg.value;
-        argumentMap[parameterName].dependentResource = parsedArg.dependentResource;
-      } else {
-        argumentMap[parameterName] = {
-          index: paramIdx,
-          name: parameterName,
-          type: parsedArg.type,
-          value: parsedArg.value,
-          dependentResource: parsedArg.dependentResource,
-        };
-        paramIdx++;
-      }
+      argumentMap[parameterName] = parsedArg;
     });
 
     return Object.values(argumentMap);
@@ -468,10 +400,11 @@ export default class PyrightDeducer extends core.Deducer {
    */
   private parseArgumentOfInfraCall(
     parameterName: string,
+    parameterIndex: number,
     closureId: string,
     argNode: ArgumentNode,
     sourceFile: SourceFile
-  ) {
+  ): arch.Argument {
     const isFunctionArg = (node: ArgumentNode) => {
       return (
         TypeUtils.isLambdaNode(node.valueExpression) ||
@@ -489,13 +422,6 @@ export default class PyrightDeducer extends core.Deducer {
       );
     };
 
-    let parsedArg: {
-      dependentResource?: arch.IdWithType;
-      name: string;
-      type: "closure" | "text";
-      value: string;
-    };
-
     if (isFunctionArg(argNode)) {
       // This argument is a function or lambda expression, we need to extract it to a closure
       // and store it to a sperate directory.
@@ -509,12 +435,8 @@ export default class PyrightDeducer extends core.Deducer {
       this.closures.push(closure);
       this.closureToSgementMap.set(closure.id, codeSegment);
 
-      parsedArg = {
-        dependentResource: { id: closure.id, type: "closure" },
-        name: parameterName,
-        type: "closure",
-        value: closure.id,
-      };
+      const argument = arch.ClosureArgument.create(parameterIndex, parameterName, closure.id);
+      return argument;
     } else if (isCapturedPropertyAccess(argNode)) {
       // This argument facilitates direct access to the captured property of a resource object.
       // Since in IaC code, the variable name of the resource object is replaced with the
@@ -531,25 +453,21 @@ export default class PyrightDeducer extends core.Deducer {
 
       const toResource = this.nodeToResourceMap.get(resNode.id);
       const method = getMemberName(propertyAccessNode, this.typeEvaluator!);
-      const paramValue = `${toResource!.id}.${method}()`;
-      parsedArg = {
-        dependentResource: { id: toResource!.id, type: "resource" },
-        name: parameterName,
-        type: "text",
-        value: paramValue,
-      };
+      const argument = arch.CapturedPropertyArgument.create(
+        parameterIndex,
+        parameterName,
+        toResource!.id,
+        method
+      );
+      return argument;
     } else {
       // Otherwise, this argument should be composed of literals, and we can convert it into a
       // JSON string.
       const value = this.valueEvaluator!.evaluate(argNode.valueExpression);
-      parsedArg = {
-        name: parameterName,
-        type: "text",
-        value: Value.toJson(value, { genEnvVarAccessText: genEnvVarAccessTextForTypeScript }),
-      };
+      const text = Value.toJson(value, { genEnvVarAccessText: genEnvVarAccessTextForTypeScript });
+      const argument = arch.TextArgument.create(parameterIndex, parameterName, text);
+      return argument;
     }
-
-    return parsedArg;
   }
 }
 
@@ -603,7 +521,6 @@ function getParameterName(
   isConstructorOrClassMethod = false
 ): string | undefined {
   const functionNode = getFunctionNodeForCallNode(callNode, typeEvaluator);
-  TypeUtils.isEnvVarAccess;
   const parameters = functionNode.parameters;
   const realIdx = idx + (isConstructorOrClassMethod ? 1 : 0);
   if (realIdx < parameters.length) {
