@@ -1,4 +1,5 @@
 import path from "path";
+import assert from "assert";
 import * as ts from "typescript";
 import { LanguageType, arch, core } from "@plutolang/base";
 import { writeToFile } from "./utils";
@@ -81,10 +82,13 @@ ${infraCode}
     const dotPos = resource.type.lastIndexOf(".");
     const pkgName = dotPos == -1 ? "@plutolang/pluto" : resource.type.substring(0, dotPos);
     const typeName = dotPos == -1 ? resource.type : resource.type.substring(dotPos + 1);
+    const parameterString = resource.arguments
+      .map((arg) => arch.Argument.stringify(arg))
+      .join(", ");
     return `
 const ${resource.id} = await (
   await import("${pkgName}-infra")
-).${typeName}.createInstance(${resource.getParamString()});
+).${typeName}.createInstance(${parameterString});
 `;
   }
 
@@ -101,24 +105,17 @@ const ${resource.id} = await (
     // 2. Resources whose methods the closure calls. For these resources, we need to request
     //    permissions so that the closure can invoke these methods during runtime on the platform.
     const dependencies: Dependency[] = [];
-    archRef.relationships
-      .filter(
-        (relat) =>
-          relat.from.type === "closure" &&
-          relat.from.id === closure.id &&
-          relat.type !== arch.RelatType.Create
-      )
-      .forEach((relat) => {
-        relat.to
-          .filter((to) => to.type === "resource")
-          .forEach((to) => {
-            dependencies.push({
-              resourceId: to.id,
-              type: relat.type === arch.RelatType.MethodCall ? "method" : "property",
-              operation: relat.operation,
-            });
-          });
+    archRef.relationships.forEach((relat) => {
+      if (relat.type === arch.RelationshipType.Infrastructure || relat.bundle.id !== closure.id) {
+        return;
+      }
+
+      dependencies.push({
+        resourceId: relat.resource.id,
+        type: relat.type === arch.RelationshipType.Client ? "method" : "property",
+        operation: relat.type === arch.RelationshipType.Client ? relat.operation : relat.property,
       });
+    });
 
     // Construct the dependency items and concatenate them using a comma separator.
     const dependenciesString = dependencies
@@ -164,8 +161,16 @@ const ${closure.id} = createClosure(${closure.id}_func, {
   }
 
   private generateInfraCode_Relationship(relationship: arch.Relationship): string {
+    assert(
+      relationship.type === arch.RelationshipType.Infrastructure,
+      "Only infrastructure relationships are supported."
+    );
+    const parameterString = relationship.arguments
+      .map((arg) => arch.Argument.stringify(arg))
+      .join(", ");
+
     return `
-${relationship.from.id}.${relationship.operation}(${relationship.getParamString()});
+${relationship.caller.id}.${relationship.operation}(${parameterString});
 `;
   }
 }

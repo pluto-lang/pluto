@@ -1,10 +1,9 @@
 import fs from "fs";
 import http from "http";
 import path from "path";
-import assert from "assert";
+import { currentLanguage } from "@plutolang/base/utils";
 import { LanguageType, arch, simulator } from "@plutolang/base";
 import { ComputeClosure, AnyFunction, createClosure } from "@plutolang/base/closure";
-import { currentLanguage } from "@plutolang/base/utils";
 
 const SIM_HANDLE_PATH = "/call";
 
@@ -88,12 +87,20 @@ export class Simulator {
       );
     }
 
-    const args = new Array(resource.parameters.length);
-    resource.parameters.forEach((param) => {
+    const args = new Array(resource.arguments.length);
+    resource.arguments.forEach((param) => {
       if (param.type === "text") {
         args[param.index] = param.value === "undefined" ? undefined : eval(param.value);
       } else if (param.type === "closure") {
-        args[param.index] = this.closures.get(param.value);
+        args[param.index] = this.closures.get(param.closureId);
+      } else if (param.type === "capturedProperty") {
+        args[param.index] = eval(arch.Argument.stringify(param));
+      } else if (param.type === "resource") {
+        const resource = this.resources.get(param.resourceId);
+        if (!resource) {
+          throw new Error(`Resource '${param.resourceId}' not found.`);
+        }
+        args[param.index] = resource;
       }
     });
     return await resourceInfraClass.createInstance(...args);
@@ -128,47 +135,52 @@ export class Simulator {
   }
 
   private async linkRelationship(relationship: arch.Relationship): Promise<void> {
-    const from = relationship.from;
-    if (relationship.type !== arch.RelatType.Create) return;
-    if (from.type === "closure") return;
+    if (relationship.type !== arch.RelationshipType.Infrastructure) {
+      return;
+    }
+    const from = relationship.caller;
 
-    const args = new Array(relationship.parameters.length);
-    for (const param of relationship.parameters) {
-      if (param.type === "text") {
-        // TODO: divide the "text" type parameter into more specific categories, and enhance the
-        // logic.
-        let arg;
-        if (param.value === "undefined") {
-          arg = undefined;
-        } else if (isValidJson(param.value)) {
-          arg = JSON.parse(param.value);
-        } else {
-          // The parameter value is accessing a captured resource property, or a environment
-          // variable.
-          const parts = param.value.split(".");
-          assert(parts.length === 2, `Invalid value ${param.value}`);
-          const [resourceName, methodCall] = parts;
-          if (resourceName === "process") {
-            // The parameter value is accessing an environment variable.
-            const regResult = /env\["(.*)"\]/g.exec(methodCall);
+    const args = new Array(relationship.arguments.length);
+    for (const param of relationship.arguments) {
+      let arg;
+      switch (param.type) {
+        case "text": {
+          if (param.value === "undefined") {
+            arg = undefined;
+          } else if (isValidJson(param.value)) {
+            arg = JSON.parse(param.value);
+          } else if (param.value.startsWith("process.env")) {
+            const regResult = /process.env\["(.*)"\]/g.exec(param.value);
             if (!regResult) {
               throw new Error(`Invalid value ${param.value}`);
             }
             arg = process.env[regResult[1]];
-          } else {
-            // The parameter value is accessing a captured resource property.
-            const resource = this.resources.get(resourceName);
-            if (!resource) {
-              throw new Error(`Resource '${resourceName}' not found.`);
-            }
-            const methodName = methodCall.replace(/\(\)$/g, "");
-            arg = await (resource as any)[methodName]();
           }
+          break;
         }
-        args[param.index] = arg;
-      } else if (param.type === "closure") {
-        args[param.index] = this.closures.get(param.value);
+        case "capturedProperty": {
+          // The parameter value is accessing a captured resource property.
+          const resource = this.resources.get(param.resourceId);
+          if (!resource) {
+            throw new Error(`Resource '${param.resourceId}' not found.`);
+          }
+          arg = await (resource as any)[param.property]();
+          break;
+        }
+        case "closure": {
+          arg = this.closures.get(param.closureId);
+          break;
+        }
+        case "resource": {
+          const resource = this.resources.get(param.resourceId);
+          if (!resource) {
+            throw new Error(`Resource '${param.resourceId}' not found.`);
+          }
+          arg = resource;
+          break;
+        }
       }
+      args[param.index] = arg;
     }
 
     const resource = this.resources.get(from.id);
@@ -275,7 +287,6 @@ export class Simulator {
 
   public async stop(): Promise<void> {
     this._server?.close();
-    this._server?.closeAllConnections();
     this._server = undefined;
     this._serverUrl = undefined;
     for (const resource of this.resources.values()) {

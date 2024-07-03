@@ -1,25 +1,34 @@
-import { Parameter } from "./parameter";
+import { Argument } from "./argument";
 
-export class Resource {
-  public readonly extras: Record<string, any> = {};
-
+export interface Resource {
   /**
-   * @param {string} id - The unique identifier of the resource, which varies for each individual
-   * resource.
-   * @param {string} name - The name of the resource provided by the user.
-   * @param {string} type - The type of the resource, in the format: 'package.type', for instance,
-   * '@plutolang/pluto.Router'.
-   * @param {Parameter[]} parameters -
+   * The unique identifier of the resource, which varies for each individual resource.
    */
-  constructor(
-    public readonly id: string,
-    public readonly name: string,
-    public readonly type: string,
-    public readonly parameters: Parameter[] = []
-  ) {}
+  readonly id: string;
+  /**
+   * The name of the resource provided by the user.
+   */
+  readonly name: string;
+  /**
+   * The type of the resource, in the format: 'package.type', for instance,
+   * '@plutolang/pluto.Router'.
+   */
+  readonly type: string;
+  /**
+   * The arguments for creating the resource.
+   */
+  readonly arguments: Argument[];
+  readonly extras: Record<string, any>;
+}
 
-  public getParamString(): string {
-    this.parameters.sort((a, b) => a.index - b.index);
-    return this.parameters.map((item) => item.value).join(", ");
+export namespace Resource {
+  export function create(id: string, name: string, type: string, args: Argument[]): Resource {
+    return {
+      id,
+      name,
+      type,
+      arguments: args,
+      extras: {},
+    };
   }
 }

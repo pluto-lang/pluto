@@ -1,46 +1,40 @@
 resources:
-  - id: router
+  - &ref_0
+    id: router
     name: router
     type: "@plutolang/pluto.Router"
-    parameters:
+    arguments:
       - index: 0
         name: name
         type: text
         value: '"router"'
-  - id: queue
+  - &ref_1
+    id: queue
     name: queue
     type: "@plutolang/pluto.Queue"
-    parameters:
+    arguments:
       - index: 0
         name: name
         type: text
         value: '"queue"'
 closures:
-  - id: fn_5_21
+  - &ref_2
+    id: fn_5_21
     path: path/to/fn_5_21
 relationships:
-  - from:
-      id: router
-      type: resource
-    to:
-      - id: fn_5_21
-        type: closure
-    type: Create
+  - type: infrastructure
+    caller: *ref_0
     operation: get
-    parameters:
+    arguments:
       - index: 0
         name: path
-        type: closure
+        type: text
         value: '"/echo"'
       - index: 1
         name: fn
         type: closure
-        value: fn_5_21
-  - from:
-      id: fn_5_21
-      type: closure
-    to:
-      - id: queue
-        type: resource
-    type: MethodCall
+        closureId: fn_5_21
+  - type: client
+    bundle: *ref_2
+    resource: *ref_1
     operation: push

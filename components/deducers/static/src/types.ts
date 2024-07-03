@@ -36,7 +36,7 @@ export interface ResourceVariableInfo {
 export interface ResourceRelationshipInfo {
   fromVarName: string;
   toVarNames: string[];
-  type: arch.RelatType;
+  type: arch.RelationshipType;
   operation: string;
   parameters: ParameterInfo[];
 }

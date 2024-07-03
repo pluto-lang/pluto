@@ -1,38 +1,19 @@
 resources:
-  - id: Tester_tester
+  - &ref_0
+    id: Tester_tester
     name: tester
     type: "@plutolang/pluto.Tester"
-    parameters:
+    arguments:
       - index: 0
         name: unknown
-        type: text
-        value: '"e2e"'
+        type: closure
+        closureId: fn_15_24
 closures:
-  - id: fn_15_24
+  - &ref_1
+    id: fn_15_24
     path: path/to/fn_15_24
 relationships:
-  - from:
-      id: Tester_tester
-      type: resource
-    to:
-      - id: fn_15_24
-        type: closure
-    type: MethodCall
-    operation: it
-    parameters:
-      - index: 0
-        name: description
-        type: closure
-        value: '"test echo"'
-      - index: 1
-        name: fn
-        type: closure
-        value: fn_15_24
-  - from:
-      id: fn_15_24
-      type: closure
-    to:
-      - id: Tester_tester
-        type: resource
-    type: PropertyAccess
-    operation: invalid_op
+  - type: "capturedProperty"
+    bundle: *ref_1
+    resource: *ref_0
+    property: invalid_op

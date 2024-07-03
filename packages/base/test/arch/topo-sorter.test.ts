@@ -4,7 +4,7 @@ import { TopoSorter } from "../../arch/topo-sorter";
 import {
   Architecture,
   EntityType,
-  RelatType,
+  RelationshipType,
   RelationshipEntity,
   parseArchFromYaml,
 } from "../../arch";
@@ -35,6 +35,8 @@ describe("TopoSort.topologySort", () => {
     expect(nodes[nodes.length - 1].type).toBe(EntityType.Relationship);
 
     const lastNode = nodes[nodes.length - 1] as RelationshipEntity;
-    expect(lastNode.relationship).toBe(arch.relationships.find((r) => r.type === RelatType.Create));
+    expect(lastNode.relationship).toBe(
+      arch.relationships.find((r) => r.type === RelationshipType.Infrastructure)
+    );
   });
 });

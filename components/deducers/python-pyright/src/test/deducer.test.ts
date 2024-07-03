@@ -1,6 +1,7 @@
 import * as os from "os";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { arch } from "@plutolang/base";
 import PyrightDeducer from "../";
 
 test("should correctly deduce a simple function", async () => {
@@ -20,7 +21,10 @@ router_var.get("/get", lambda req: HttpResponse(status_code=200, body="hello"))
 
   const router = archRef.resources[0];
   expect(router.name).toBe("router");
-  expect(archRef.relationships[0].from).toMatchObject({ id: router.id });
+  expect(archRef.relationships[0].type).toBe(arch.RelationshipType.Infrastructure);
+  expect((archRef.relationships[0] as arch.InfraRelationship).caller).toMatchObject({
+    id: router.id,
+  });
 
   clean();
 });
@@ -52,12 +56,19 @@ router.get("/", alias_handler) # infrastructure call
   const router = archRef.resources.find((r) => r.name === "router");
   expect(router).toBeDefined();
 
-  const routerRelats = archRef.relationships.filter((r) => r.from.id === router?.id);
-  expect(routerRelats).toHaveLength(1);
-  const closureId = routerRelats[0].to[0].id;
+  const routerInfraRelats = archRef.relationships.filter(
+    (r) => r.type === arch.RelationshipType.Infrastructure && r.caller.id === router?.id
+  );
+  expect(routerInfraRelats).toHaveLength(1);
 
-  const getHdlRelats = archRef.relationships.filter((r) => r.from.id === closureId);
-  expect(getHdlRelats).toHaveLength(2);
+  const getHdlInfraRelat = routerInfraRelats[0] as arch.InfraRelationship;
+  expect(getHdlInfraRelat.arguments[1].type).toBe("closure");
+  const closureId = (getHdlInfraRelat.arguments[1] as arch.BundleArgument).closureId;
+
+  const getHdlClientRelats = archRef.relationships.filter(
+    (r) => r.type !== arch.RelationshipType.Infrastructure && r.bundle.id === closureId
+  );
+  expect(getHdlClientRelats).toHaveLength(2);
 
   clean();
 });
@@ -79,8 +90,7 @@ func_with_options = Function(lambda x: x, name="option", options=FunctionOptions
 
   const namedFunc = archRef.resources.find((r) => r.name === "name");
   expect(namedFunc).toBeDefined();
-  expect(namedFunc).toHaveProperty("parameters");
-  expect(namedFunc?.parameters).toContainEqual({
+  expect(namedFunc!.arguments).toContainEqual({
     index: 1,
     type: "text",
     name: "name",
@@ -89,9 +99,10 @@ func_with_options = Function(lambda x: x, name="option", options=FunctionOptions
 
   const funcWithOptions = archRef.resources.find((r) => r.name === "option");
   expect(funcWithOptions).toBeDefined();
-  const options = funcWithOptions?.parameters?.find((p) => p.name === "options");
+  const options = funcWithOptions?.arguments?.find((p) => p.name === "options");
   expect(options).toBeDefined();
-  expect(options?.value).toMatch('"memory":256');
+  expect(options?.type).toBe("text");
+  expect((options as arch.TextArgument).value).toMatch('"memory":256');
 
   clean();
 });
@@ -109,8 +120,9 @@ website = Website("./web", opts=WebsiteOptions(platform="Vercel"))
 
   const resource = archRef.resources[0];
   expect(resource).toBeDefined();
-  expect(resource.parameters).toHaveLength(3);
-  expect(resource.parameters[1].value).toEqual("undefined");
+  expect(resource.arguments).toHaveLength(3);
+  expect(resource.arguments[1].type).toBe("text");
+  expect((resource.arguments[1] as arch.TextArgument).value).toEqual("undefined");
 
   clean();
 });

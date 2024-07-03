@@ -1,9 +1,9 @@
 import * as yaml from "js-yaml";
+import { Entity } from "./types";
 import { Closure } from "./closure";
-import { IdWithType, Relationship, sameRelationship } from "./relationship";
 import { Resource } from "./resource";
 import { TopoSorter } from "./topo-sorter";
-import { Entity } from "./types";
+import { Relationship, sameRelationship } from "./relationship";
 
 export class Architecture {
   public readonly extras: Record<string, any> = {};
@@ -46,17 +46,6 @@ export class Architecture {
 
   public findClosure(id: string): Closure | undefined {
     return this._closures.find((c) => c.id === id);
-  }
-
-  public findResourceOrClosure(entity: IdWithType): Resource | Closure | undefined {
-    if (entity.type === "resource") {
-      return this.findResource(entity.id);
-    } else if (entity.type === "closure") {
-      return this.findClosure(entity.id);
-    }
-    throw new Error(
-      `The entity '${entity.id}' type is '${entity.type}', not a resource or closure`
-    );
   }
 
   public addRelationship(relat: Relationship) {

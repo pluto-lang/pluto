@@ -9,7 +9,6 @@ import {
   VisitResult,
   concatVisitResult,
 } from "./types";
-import { IdWithType } from "@plutolang/base/arch";
 import { FN_RESOURCE_TYPE_NAME } from "./constants";
 import { visitVariableStatement } from "./visit-var-def";
 import { visitExpression } from "./visit-expression";
@@ -190,32 +189,28 @@ function buildArchRef(
     return resVarInfo.resourceName ?? varName;
   }
 
-  function constructArchParameter(param: ParameterInfo): arch.Parameter {
-    const paramType = param.type === "closure" ? "closure" : "text";
-
-    let paramValue;
+  function constructArchParameter(param: ParameterInfo): arch.Argument {
     switch (param.type) {
       case "closure":
-        paramValue = param.closureName;
-        break;
+        return arch.ClosureArgument.create(param.order, param.name, param.closureName);
       case "property": {
         const resName = getResourceNameByVarName(param.resourceVarName);
         const res = archResources.find((r) => r.name === resName);
         assert(res !== undefined);
-        paramValue = `${res.id}.${param.property}()`;
-        break;
+        return arch.CapturedPropertyArgument.create(
+          param.order,
+          param.name,
+          res.id,
+          param.property
+        );
       }
       case "text":
-        paramValue = param.expression?.getText() ?? "undefined";
-        break;
+        return arch.TextArgument.create(
+          param.order,
+          param.name,
+          param.expression?.getText() ?? "undefined"
+        );
     }
-
-    return {
-      index: param.order,
-      name: param.name,
-      type: paramType,
-      value: paramValue,
-    };
   }
 
   const archClosures: arch.Closure[] = [];
@@ -241,52 +236,54 @@ function buildArchRef(
       // the user code.
       const tmpResType = "@plutolang/pluto." + resType;
       const resId = utils.genResourceId(ctx.projectName, ctx.stackName, tmpResType, resName);
-      const res = new arch.Resource(resId, resName, tmpResType, resParams);
+      const res = arch.Resource.create(resId, resName, tmpResType, resParams);
       archResources.push(res);
     }
   });
 
   const archRelats: arch.Relationship[] = resRelatInfos.map((relatInfo): arch.Relationship => {
-    const fromResource =
-      archResources.find((val) => val.name == getResourceNameByVarName(relatInfo.fromVarName)) ??
-      archClosures.find((val) => val.id == relatInfo.fromVarName);
-    assert(fromResource !== undefined);
+    switch (relatInfo.type) {
+      case arch.RelationshipType.Infrastructure: {
+        const callerResource = archResources.find(
+          (val) => val.name == getResourceNameByVarName(relatInfo.fromVarName)
+        );
+        assert(callerResource !== undefined);
 
-    const toResources: IdWithType[] = [];
-    for (const toVarName of relatInfo.toVarNames) {
-      const res = archResources.find((r) => r.name === getResourceNameByVarName(toVarName));
-      if (res) {
-        toResources.push({ id: res.id, type: "resource" });
-        continue;
+        const relatOp = relatInfo.operation;
+        const args = relatInfo.parameters.map(constructArchParameter);
+        return arch.InfraRelationship.create(callerResource, relatOp, args);
       }
+      case arch.RelationshipType.Client: {
+        const bundle = archClosures.find((val) => val.id == relatInfo.fromVarName);
+        assert(bundle !== undefined);
 
-      const closure = archClosures.find((c) => c.id == toVarName);
-      if (closure) {
-        toResources.push({ id: closure.id, type: "closure" });
-        break;
+        assert(
+          relatInfo.toVarNames.length == 1,
+          "Client relationship should have only one target."
+        );
+        const res = archResources.find(
+          (val) => val.name == getResourceNameByVarName(relatInfo.toVarNames[0])
+        );
+        assert(res !== undefined);
+
+        return arch.ClientRelationship.create(bundle, res, relatInfo.operation);
+      }
+      case arch.RelationshipType.CapturedProperty: {
+        const bundle = archClosures.find((val) => val.id == relatInfo.fromVarName);
+        assert(bundle !== undefined);
+
+        assert(
+          relatInfo.toVarNames.length == 1,
+          "Captured property relationship should have only one target."
+        );
+        const res = archResources.find(
+          (val) => val.name == getResourceNameByVarName(relatInfo.toVarNames[0])
+        );
+        assert(res !== undefined);
+
+        return arch.CapturedPropertyRelationship.create(bundle, res, relatInfo.operation);
       }
     }
-    for (const param of relatInfo.parameters) {
-      if (param.type === "property") {
-        const resName = getResourceNameByVarName(param.resourceVarName);
-        const res = archResources.find((r) => r.name === resName);
-        assert(res !== undefined, `The resource '${resName}' is not found.`);
-        toResources.push({ id: res.id, type: "resource" });
-      }
-    }
-
-    const fromType = fromResource instanceof arch.Closure ? "closure" : "resource";
-
-    const relatType = relatInfo.type;
-    const relatOp = relatInfo.operation;
-    const params = relatInfo.parameters.map(constructArchParameter);
-    return new arch.Relationship(
-      { id: fromResource.id, type: fromType },
-      toResources,
-      relatType,
-      relatOp,
-      params
-    );
   });
 
   const archRef = new arch.Architecture();

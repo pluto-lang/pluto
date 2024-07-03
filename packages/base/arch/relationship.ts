@@ -1,41 +1,85 @@
 import _ from "lodash";
-import { Parameter } from "./parameter";
-
-export enum RelatType {
-  Create = "Create",
-  MethodCall = "MethodCall",
-  PropertyAccess = "PropertyAccess",
-}
-
-export interface IdWithType {
-  id: string;
-  type: "resource" | "closure";
-}
-
-export class Relationship {
-  public readonly extras: Record<string, any> = {};
-
-  /**
-   * @param {IdWithType} from - The source node.
-   * @param {IdWithType[]} to - The target nodes.
-   * @param {RelatType} type
-   * @param {string} operation
-   * @param {Parameter[]} parameters
-   */
-  constructor(
-    public readonly from: IdWithType,
-    public readonly to: IdWithType[],
-    public readonly type: RelatType,
-    public readonly operation: string,
-    public readonly parameters: Parameter[] = []
-  ) {}
-
-  public getParamString(): string {
-    this.parameters.sort((a, b) => a.index - b.index);
-    return this.parameters.map((item) => item.value).join(", ");
-  }
-}
+import { Closure } from "./closure";
+import { Argument } from "./argument";
+import { Resource } from "./resource";
 
 export function sameRelationship(relat1: Relationship, relat2: Relationship): boolean {
   return _.isEqual(relat1, relat2);
 }
+
+export enum RelationshipType {
+  Infrastructure = "infrastructure",
+  Client = "client",
+  CapturedProperty = "capturedProperty",
+}
+
+interface RelationshipBase {
+  readonly type: RelationshipType;
+}
+
+export interface InfraRelationship extends RelationshipBase {
+  readonly type: RelationshipType.Infrastructure;
+  readonly caller: Resource;
+  readonly operation: string;
+  readonly arguments: Argument[];
+}
+
+export namespace InfraRelationship {
+  export function create(caller: Resource, operation: string, args: Argument[]): InfraRelationship {
+    const relationship: InfraRelationship = {
+      type: RelationshipType.Infrastructure,
+      caller,
+      operation,
+      arguments: args,
+    };
+    return relationship;
+  }
+}
+
+export interface ClientRelationship extends RelationshipBase {
+  readonly type: RelationshipType.Client;
+  readonly bundle: Closure;
+  readonly resource: Resource;
+  readonly operation: string;
+}
+
+export namespace ClientRelationship {
+  export function create(
+    bundle: Closure,
+    resource: Resource,
+    operation: string
+  ): ClientRelationship {
+    const relationship: ClientRelationship = {
+      type: RelationshipType.Client,
+      bundle,
+      resource,
+      operation,
+    };
+    return relationship;
+  }
+}
+
+export interface CapturedPropertyRelationship extends RelationshipBase {
+  readonly type: RelationshipType.CapturedProperty;
+  readonly bundle: Closure;
+  readonly resource: Resource;
+  readonly property: string;
+}
+
+export namespace CapturedPropertyRelationship {
+  export function create(
+    bundle: Closure,
+    resource: Resource,
+    property: string
+  ): CapturedPropertyRelationship {
+    const relationship: CapturedPropertyRelationship = {
+      type: RelationshipType.CapturedProperty,
+      bundle,
+      resource,
+      property,
+    };
+    return relationship;
+  }
+}
+
+export type Relationship = InfraRelationship | ClientRelationship | CapturedPropertyRelationship;
