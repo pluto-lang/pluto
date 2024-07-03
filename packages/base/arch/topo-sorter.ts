@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import { Architecture, Closure, Resource, RelatType } from "./";
-import { Entity } from "./types";
+import { BundleEntity, Entity, RelationshipEntity, ResourceEntity } from "./types";
 
 type EntityMap = Record<string, Entity>;
 function genNodeIndex(node: Entity): string {
@@ -90,9 +90,11 @@ export class TopoSorter {
 
   private buildNodeMap() {
     const nodes: Entity[] = [
-      ...this.archRef.resources,
-      ...this.archRef.closures,
-      ...this.archRef.relationships.filter((relat) => relat.type === RelatType.Create),
+      ...this.archRef.resources.map((r) => ResourceEntity.create(r)),
+      ...this.archRef.closures.map((c) => BundleEntity.create(c)),
+      ...this.archRef.relationships
+        .filter((relat) => relat.type === RelatType.Create)
+        .map((r) => RelationshipEntity.create(r)),
     ];
 
     const nodeMap: EntityMap = {};
@@ -120,7 +122,7 @@ export class TopoSorter {
               `The architecture is invalid, the closure '${param.value}' cannot be found.`
             );
           }
-          this.addOneEdge(sourceNode, targetNode);
+          this.addOneEdge(BundleEntity.create(sourceNode), ResourceEntity.create(targetNode));
         });
     });
   }
@@ -136,14 +138,25 @@ export class TopoSorter {
         if (sourceNode == undefined) {
           throw Error(`The architecture is invalid, the entity '${relat.from}' cannot be found.`);
         }
-        this.addOneEdge(sourceNode, targetNode);
+        this.addOneEdge(
+          ResourceEntity.create(sourceNode as Resource),
+          RelationshipEntity.create(targetNode)
+        );
 
         relat.to.forEach((to) => {
           const sourceNode = this.archRef.findResourceOrClosure(to);
           if (sourceNode == undefined) {
             throw Error(`The architecture is invalid, the entity '${to}' cannot be found.`);
           }
-          this.addOneEdge(sourceNode, targetNode);
+          to.type === "resource"
+            ? this.addOneEdge(
+                ResourceEntity.create(sourceNode as Resource),
+                RelationshipEntity.create(targetNode)
+              )
+            : this.addOneEdge(
+                BundleEntity.create(sourceNode as Closure),
+                RelationshipEntity.create(targetNode)
+              );
         });
       });
   }
@@ -166,7 +179,15 @@ export class TopoSorter {
           if (sourceNode == undefined) {
             throw Error(`The architecture is invalid, the entity '${to}' cannot be found.`);
           }
-          this.addOneEdge(sourceNode, targetNode);
+          to.type === "resource"
+            ? this.addOneEdge(
+                ResourceEntity.create(sourceNode as Resource),
+                BundleEntity.create(targetNode as Closure)
+              )
+            : this.addOneEdge(
+                BundleEntity.create(sourceNode as Closure),
+                BundleEntity.create(targetNode as Closure)
+              );
         });
       });
   }

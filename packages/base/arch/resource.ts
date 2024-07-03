@@ -23,15 +23,3 @@ export class Resource {
     return this.parameters.map((item) => item.value).join(", ");
   }
 }
-
-export function isResource(obj: any): obj is Resource {
-  const fakeResource = new Resource("", "", "", []);
-  const props = Object.getOwnPropertyNames(fakeResource);
-  for (const prop of props) {
-    if (!(prop in obj) || typeof (fakeResource as any)[prop] !== typeof obj[prop]) {
-      // If the property is not in the object or the type is different, return false.
-      return false;
-    }
-  }
-  return true;
-}

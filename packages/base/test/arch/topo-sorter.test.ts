@@ -1,7 +1,13 @@
 import * as path from "path";
 import { describe, it, expect } from "vitest";
 import { TopoSorter } from "../../arch/topo-sorter";
-import { Architecture, RelatType, parseArchFromYaml } from "../../arch";
+import {
+  Architecture,
+  EntityType,
+  RelatType,
+  RelationshipEntity,
+  parseArchFromYaml,
+} from "../../arch";
 import { readFileSync } from "fs";
 
 const FIXTURES_DIRPATH = path.resolve(__dirname, "fixtures");
@@ -25,8 +31,10 @@ describe("TopoSort.topologySort", () => {
     const nodes = topoSort.topologySort();
 
     expect(nodes).toHaveLength(4);
-    expect(nodes[nodes.length - 1]).toBe(
-      arch.relationships.find((r) => r.type === RelatType.Create)
-    );
+
+    expect(nodes[nodes.length - 1].type).toBe(EntityType.Relationship);
+
+    const lastNode = nodes[nodes.length - 1] as RelationshipEntity;
+    expect(lastNode.relationship).toBe(arch.relationships.find((r) => r.type === RelatType.Create));
   });
 });

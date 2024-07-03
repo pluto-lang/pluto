@@ -1,6 +1,6 @@
 export { Architecture, parseArchFromYaml } from "./architecture";
 export { Parameter } from "./parameter";
-export { Resource, isResource } from "./resource";
-export { Closure, isClosure } from "./closure";
-export { Relationship, isRelationship, RelatType, IdWithType } from "./relationship";
+export { Resource } from "./resource";
+export { Closure } from "./closure";
+export { Relationship, RelatType, IdWithType } from "./relationship";
 export * from "./types";
