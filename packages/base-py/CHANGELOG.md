@@ -1,5 +1,9 @@
 # pluto-base
 
+## 0.0.4
+
+chore: update requests dependency to version 2.32.3
+
 ## 0.0.3
 
 enable Python execution in simulator
