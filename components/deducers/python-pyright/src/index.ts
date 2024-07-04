@@ -105,13 +105,13 @@ export default class PyrightDeducer extends core.Deducer {
       }
     }
 
-    this.tracker = new ResourceObjectTracker(this.typeEvaluator, this.sepcialNodeMap);
+    this.tracker = new ResourceObjectTracker(this.typeEvaluator);
     this.valueEvaluator = createValueEvaluator(this.typeEvaluator);
     this.extractor = new CodeExtractor(this.typeEvaluator, this.sepcialNodeMap);
 
     this.buildConstructedResources(constructNodes, sourceFile);
     this.buildRelationshipsFromInfraApis(infraApiNodes, sourceFile);
-    this.buildRelationshipsFromClosures(this.closures, sourceFile);
+    this.buildRelationshipsFromClosures(this.closures);
 
     const execEnv = program.importResolver
       .getConfigOptions()
@@ -240,7 +240,7 @@ export default class PyrightDeducer extends core.Deducer {
       const callNode = infraCalls[nodeIdx];
 
       // Get the resource object associated with the caller.
-      const constructNode = this.tracker!.getConstructNodeForApiCall(callNode, sourceFile);
+      const constructNode = this.tracker!.getDeclarationForCallerOfCallNode(callNode);
       if (!constructNode) {
         throw new Error("No resource object found for the infrastructure API call.");
       }
@@ -266,7 +266,7 @@ export default class PyrightDeducer extends core.Deducer {
    * within it. Then we establish the relationships between the closure and the resource objects or
    * closures the client API calls and the accessed captured properties correspond to.
    */
-  private buildRelationshipsFromClosures(closures: arch.Closure[], sourceFile: SourceFile) {
+  private buildRelationshipsFromClosures(closures: arch.Closure[]) {
     for (const closure of closures) {
       const codeSegment = this.closureToSgementMap.get(closure.id);
       if (!codeSegment) {
@@ -276,7 +276,7 @@ export default class PyrightDeducer extends core.Deducer {
       // Get the client's API calls and establish the connection between the closure and the
       // resource object associated with the caller.
       CodeSegment.getCalledClientApis(codeSegment).forEach((clientApi) => {
-        const constructNode = this.tracker!.getConstructNodeForApiCall(clientApi, sourceFile);
+        const constructNode = this.tracker!.getDeclarationForCallerOfCallNode(clientApi);
         if (!constructNode) {
           throw new Error("No resource object found for the client API call.");
         }
@@ -289,7 +289,7 @@ export default class PyrightDeducer extends core.Deducer {
       // Get the accessed captured properties and establish the connection between the closure and
       // the resource object associated with the accessed captured properties.
       CodeSegment.getAccessedCapturedProperties(codeSegment).forEach((accessedProp) => {
-        const constructNode = this.tracker!.getConstructNodeForApiCall(accessedProp, sourceFile);
+        const constructNode = this.tracker!.getDeclarationForCallerOfCallNode(accessedProp);
         if (!constructNode) {
           throw new Error("No resource object found for the client API call.");
         }
@@ -443,7 +443,7 @@ export default class PyrightDeducer extends core.Deducer {
       // resource object ID, we need to alter the accessor in this method call to the resource
       // object ID.
       const propertyAccessNode = argNode.valueExpression as CallNode;
-      const resNode = this.tracker!.getConstructNodeForApiCall(propertyAccessNode, sourceFile);
+      const resNode = this.tracker!.getDeclarationForCallerOfCallNode(propertyAccessNode);
       if (!resNode) {
         throw new Error(
           "No resource object found for the captured property access, " +
