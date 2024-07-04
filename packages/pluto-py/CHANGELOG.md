@@ -1,5 +1,9 @@
 # pluto-client
 
+## 0.0.16
+
+bump the pluto-base version to 0.0.4
+
 ## 0.0.14
 
 enable Python execution in simulator
