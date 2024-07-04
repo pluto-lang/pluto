@@ -1,5 +1,23 @@
 # @plutolang/pyright-deducer
 
+## 0.1.17
+
+### Patch Changes
+
+- 2afaee6: feat(deducer): support to extract the code segment for a paramter
+
+  Enhance CodeExtractor to handle parameters by retrieving associated arguments from provided fillings. It now extracts code segments for these arguments and replaces the parameter's code segment accordingly.
+
+- 6f75db8: refactor(base): refactor architecture reference data structure
+
+  Refine the argument type for adding resources to capture property types, clarifying usage. Redefine the three Relationship types for improved code readability and to clarify resource relationships across various scenarios.
+
+- 70f0e77: enhance(deducer): remove SourceFile dependency in CodeExtractor
+- 26757ce: ehance(deducer): limit the type of filllings for variable evaluation
+- Updated dependencies [6f75db8]
+- Updated dependencies [339dcfb]
+  - @plutolang/base@0.4.5
+
 ## 0.1.16
 
 ### Patch Changes

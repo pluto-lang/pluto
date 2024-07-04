@@ -1,5 +1,25 @@
 # @plutolang/simulator-adapter
 
+## 0.3.24
+
+### Patch Changes
+
+- 6f75db8: refactor(base): refactor architecture reference data structure
+
+  Refine the argument type for adding resources to capture property types, clarifying usage. Redefine the three Relationship types for improved code readability and to clarify resource relationships across various scenarios.
+
+- 339dcfb: feat(base): add type attribute to topology sort results
+
+  The topology sort previously returned a list of Entity instances, including Resource, Closure, and Relationship types. Processing these required type-checking each entity via attribute comparison, which was cumbersome and error-prone.
+
+  This commit introduces a 'type' attribute to the topology sort's output, distinguishing between 'resource', 'bundle', and 'relationship'. This enhancement simplifies entity processing and increases code safety.
+
+- Updated dependencies [6f75db8]
+- Updated dependencies [339dcfb]
+  - @plutolang/base@0.4.5
+  - @plutolang/pluto@0.4.12
+  - @plutolang/pluto-infra@0.4.20
+
 ## 0.3.23
 
 ### Patch Changes
