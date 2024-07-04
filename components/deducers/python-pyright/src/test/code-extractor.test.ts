@@ -403,7 +403,7 @@ create_closure("param")`);
 
 function createTools(program: Program, sourceFile: SourceFile) {
   const specialNodeMap = TestUtils.getSpecialNodeMap(program, sourceFile);
-  const tracker = new ResourceObjectTracker(program.evaluator!, specialNodeMap);
+  const tracker = new ResourceObjectTracker(program.evaluator!);
   const valueEvaluator = createValueEvaluator(program.evaluator!);
   const extractor = new CodeExtractor(program.evaluator!, specialNodeMap);
   return { specialNodeMap, tracker, valueEvaluator, extractor };

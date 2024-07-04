@@ -12,6 +12,8 @@ import {
   ParseNode,
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
+import { IRESOURCE_FULL_NAME } from "./type-consts";
+import { getNodeText } from "./common/position-utils";
 
 /**
  * Check if the type is a subclass of the target type.
@@ -206,4 +208,30 @@ function isOSModuleReference(node: NameNode, checker: TypeEvaluator): boolean {
 export function isDataClassConstructor(node: CallNode, checker: TypeEvaluator) {
   const valueType = checker.getType(node.leftExpression);
   return valueType && valueType.category === TypeCategory.Class && ClassType.isDataClass(valueType);
+}
+
+/**
+ * Checks if a given call node represents a constructor call for a resource object.
+ *
+ * @param node - The call node to check.
+ * @param checker - The type evaluator used to determine the type of the left expression.
+ * @returns `true` if the call node represents a constructor call for a resource object, `false`
+ * otherwise.
+ * @throws An error if the type of the left expression of the call node cannot be determined.
+ */
+export function isResourceConstructorCall(node: CallNode, checker: TypeEvaluator) {
+  const funcType = checker.getType(node.leftExpression);
+  if (funcType === undefined) {
+    throw new Error(
+      `${getNodeText(node)}: Cannot determine the type of the left expression of the call node.`
+    );
+  }
+
+  // If the function type is overloaded, we only need to check the first overload since all
+  // overloads should be within the same class.
+  const type =
+    funcType.category === TypeCategory.OverloadedFunction ? funcType.overloads[0] : funcType;
+
+  // This is a constructor call. And the type of the object being constructed is a resource object.
+  return type.category === TypeCategory.Class && isSubclassOf(type, IRESOURCE_FULL_NAME);
 }
