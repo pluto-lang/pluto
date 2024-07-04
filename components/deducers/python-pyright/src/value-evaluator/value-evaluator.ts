@@ -1,13 +1,13 @@
 import assert from "assert";
 import { Writable } from "stream";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
-import { ExpressionNode, ParseNode } from "pyright-internal/dist/parser/parseNodes";
+import { ArgumentNode, ExpressionNode, ParseNode } from "pyright-internal/dist/parser/parseNodes";
 import { Value } from "./value-types";
 import { TreeBuilder } from "./value-tree-builder";
 import { TreeEvaluator } from "./value-tree-evaluator";
 import { TreeNodeFlags, listDependencies } from "./value-tree-types";
 
-export type Fillings = Map<number, Value>;
+export type Fillings = ReadonlyMap<number, ArgumentNode>;
 
 /**
  * Value evaluator is used to evaluate the value of the given expression node with the fillings.
@@ -94,7 +94,7 @@ class valueEvaluator implements ValueEvaluator {
     return Array.from(placeholderNodes.values());
   }
 
-  public evaluate(root: ExpressionNode, fillings?: Map<number, Value>) {
+  public evaluate(root: ExpressionNode, fillings?: Fillings) {
     const tree = this.treeBuilder.createNode(root);
     return this.treeEvaluator.evaluate(tree, fillings ?? new Map());
   }
