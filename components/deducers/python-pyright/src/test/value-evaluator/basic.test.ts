@@ -1,12 +1,17 @@
 import * as path from "path";
+import {
+  ArgumentNode,
+  ExpressionNode,
+  ParseNodeType,
+} from "pyright-internal/dist/parser/parseNodes";
 import * as TextUtils from "../../text-utils";
-import { LiteralValue, Value } from "../../value-evaluator/index";
-import { testInlineCode, testPyFile } from "./utils";
+import { Value, ValueEvaluator } from "../../value-evaluator";
 import { DATACLASS_DEF } from "./dataclass.test";
+import { testInlineCode, testPyFile } from "./utils";
 
 const SAMPLES_ROOT = path.join(__dirname, "../samples");
 
-test("should correctly evaluate the value of a local variable", () => {
+describe("Evaluate the value of a local variable", () => {
   const code = `
 import os
 
@@ -51,32 +56,56 @@ def foo(arg: str = "Hello"):
         "env": env_var, 
         "number": num_add_result
     }
+
+foo("hello")
 `;
-  process.env["ENV_VAR"] = "PLUTO_TEST";
 
-  testInlineCode(code, (valueEvaluator, sourceFile) => {
-    return (node) => {
-      const text = TextUtils.getTextOfNode(node, sourceFile);
-      if (text?.startsWith("to_be_evaluated")) {
-        const placeholderNodes = valueEvaluator.getPlaceholders(node);
-        expect(placeholderNodes).toHaveLength(1);
+  let toBeEvaluatedNode: ExpressionNode | undefined;
+  let argumentNode: ArgumentNode | undefined;
+  let valueEvaluator: ValueEvaluator | undefined;
 
-        const fillings = new Map<number, Value>();
+  beforeAll(() => {
+    process.env["ENV_VAR"] = "PLUTO_TEST";
 
-        const value = valueEvaluator.evaluate(node, fillings);
-        const jsonified = Value.toJson(value);
-        expect(jsonified).toContain(
-          `{"arg":"Hello","tup":["HelloHello WorldHello HelloHello Hello WorldWorld !","Hello"],"none":null,"env":"PLUTO_TEST","number":246.456`
-        );
+    testInlineCode(code, (evaluator, sourceFile) => {
+      valueEvaluator = evaluator;
+      return (node) => {
+        const text = TextUtils.getTextOfNode(node, sourceFile);
+        if (text?.startsWith("to_be_evaluated")) {
+          // Get the local variable to be evaluated
+          toBeEvaluatedNode = node;
+        } else if (text === 'foo("hello")' && node.nodeType === ParseNodeType.Call) {
+          // Get the argument of the function call
+          argumentNode = node.arguments[0];
+        }
+      };
+    });
 
-        fillings.set(placeholderNodes[0].id, LiteralValue.create("hello"));
-        const value2 = valueEvaluator.evaluate(node, fillings);
-        const jsonified2 = Value.toJson(value2);
-        expect(jsonified2).toContain(
-          `{"arg":"hello","tup":["hellohello WorldHello helloHello hello WorldWorld !","hello"],"none":null,"env":"PLUTO_TEST","number":246.456`
-        );
-      }
-    };
+    // Check if the nodes are found
+    expect(toBeEvaluatedNode).toBeDefined();
+    expect(argumentNode).toBeDefined();
+    expect(valueEvaluator).toBeDefined();
+  });
+
+  test("should correctly evaluate the value of the local variable with no fillings", () => {
+    const value = valueEvaluator!.evaluate(toBeEvaluatedNode!);
+    const jsonified = Value.toJson(value);
+    expect(jsonified).toContain(
+      `{"arg":"Hello","tup":["HelloHello WorldHello HelloHello Hello WorldWorld !","Hello"],"none":null,"env":"PLUTO_TEST","number":246.456`
+    );
+  });
+
+  test("should correctly evaluate the value of the local variable with fillings", () => {
+    const placeholderNodes = valueEvaluator!.getPlaceholders(toBeEvaluatedNode!);
+    expect(placeholderNodes).toHaveLength(1);
+
+    const fillings = new Map<number, ArgumentNode>();
+    fillings.set(placeholderNodes[0].id, argumentNode!);
+    const value2 = valueEvaluator!.evaluate(toBeEvaluatedNode!, fillings);
+    const jsonified2 = Value.toJson(value2);
+    expect(jsonified2).toContain(
+      `{"arg":"hello","tup":["hellohello WorldHello helloHello hello WorldWorld !","hello"],"none":null,"env":"PLUTO_TEST","number":246.456`
+    );
   });
 });
 
@@ -116,9 +145,7 @@ def foo(arg: str):
       const placeholderNodes = valueEvaluator.getPlaceholders(node);
       expect(placeholderNodes).toHaveLength(1);
 
-      // empty fillings
-      const fillings = new Map<number, Value>();
-      expect(() => valueEvaluator.evaluate(node, fillings)).toThrow();
+      expect(() => valueEvaluator.evaluate(node)).toThrow();
     };
   });
 });

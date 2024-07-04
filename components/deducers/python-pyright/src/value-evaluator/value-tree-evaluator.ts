@@ -85,8 +85,10 @@ export class TreeEvaluator {
   }
 
   private evaluateForParameter(node: ParameterTreeNode, fillings: Fillings): Value {
-    if (fillings.has(node.node.id)) {
-      return fillings.get(node.node.id)!;
+    const argumentNode = fillings.get(node.node.id);
+    if (argumentNode) {
+      const argTreeNode = this.treeBuilder.createNode(argumentNode.valueExpression);
+      return this.evaluate(argTreeNode, fillings);
     }
     if (node.defaultValue) {
       return this.evaluate(node.defaultValue, fillings);

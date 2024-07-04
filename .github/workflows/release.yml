@@ -41,9 +41,7 @@ jobs:
           python-version: "3.10"
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+        uses: pnpm/action-setup@v4
 
       - name: Prepare dependent packages
         run: bash scripts/prepare.sh
