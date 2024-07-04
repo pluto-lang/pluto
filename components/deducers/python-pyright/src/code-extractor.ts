@@ -184,6 +184,8 @@ export class CodeExtractor {
 
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
+    // TODO: Remove the special node map from the code extractor, instead, check if a node is a
+    // special node internally.
     private readonly specialNodeMap: SpecialNodeMap<CallNode>
   ) {
     this.accessedSpecialNodeFinder = new AccessedSpecialNodeFinder(specialNodeMap);
@@ -196,20 +198,24 @@ export class CodeExtractor {
    * @param node - The expression node.
    * @param sourceFile - The source file where the expression node is located.
    */
-  public extractExpressionRecursively(node: ExpressionNode, sourceFile: SourceFile): CodeSegment {
+  public extractExpressionRecursively(
+    node: ExpressionNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     let segment: CodeSegment | undefined;
     switch (node.nodeType) {
       case ParseNodeType.Lambda:
-        segment = this.extractLambdaRecursively(node, sourceFile);
+        segment = this.extractLambdaRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.Name:
-        segment = this.extractNameNodeRecursively(node, sourceFile);
+        segment = this.extractNameNodeRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.Call:
-        segment = this.extractCallRecursively(node, sourceFile);
+        segment = this.extractCallRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.MemberAccess:
-        segment = this.extractMemberAccessRecursively(node, sourceFile);
+        segment = this.extractMemberAccessRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.Number:
       case ParseNodeType.Constant:
@@ -219,23 +225,23 @@ export class CodeExtractor {
         });
         break;
       case ParseNodeType.StringList:
-        segment = this.extractStringListRecursively(node, sourceFile);
+        segment = this.extractStringListRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.BinaryOperation:
-        segment = this.extractBinaryOperationRecursively(node, sourceFile);
+        segment = this.extractBinaryOperationRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.ListComprehension:
-        segment = this.extractListComprehensionRecursively(node, sourceFile);
+        segment = this.extractListComprehensionRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.Dictionary:
-        segment = this.extractDictRecursively(node, sourceFile);
+        segment = this.extractDictRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.Tuple:
       case ParseNodeType.List:
-        segment = this.extractTupleOrListRecursively(node, sourceFile);
+        segment = this.extractTupleOrListRecursively(node, sourceFile, fillings);
         break;
       case ParseNodeType.Index:
-        segment = this.extractIndexRecursively(node, sourceFile);
+        segment = this.extractIndexRecursively(node, sourceFile, fillings);
         break;
       default: {
         const nodeText = TextUtils.getTextOfNode(node, sourceFile);
@@ -245,7 +251,11 @@ export class CodeExtractor {
     return segment;
   }
 
-  private extractLambdaRecursively(lambdaNode: LambdaNode, sourceFile: SourceFile): CodeSegment {
+  private extractLambdaRecursively(
+    lambdaNode: LambdaNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const nodeText = TextUtils.getTextOfNode(lambdaNode, sourceFile);
 
     const lambdaScope = getScopeForNode(lambdaNode.expression);
@@ -266,7 +276,7 @@ export class CodeExtractor {
     // append the delarations of these symbols to the lambda function.
     const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
+      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile, fillings);
       children.push(childSegment);
     }
 
@@ -288,7 +298,11 @@ export class CodeExtractor {
    * node itself, and return the code segment for that declaration. Therefore, the function's return
    * value is the code segment of the declaration associated with the name node.
    */
-  private extractNameNodeRecursively(nameNode: NameNode, sourceFile: SourceFile): CodeSegment {
+  private extractNameNodeRecursively(
+    nameNode: NameNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const lookUpResult = this.typeEvaluator.lookUpSymbolRecursive(nameNode, nameNode.value, false);
     if (!lookUpResult) {
       throw new Error(`No symbol found for node '${nameNode.value}'.`);
@@ -320,7 +334,7 @@ export class CodeExtractor {
           }
           case ParseNodeType.Name: {
             // The name node is a variable.
-            declSegment = this.extractVariableRecursively(declaration.node, sourceFile);
+            declSegment = this.extractVariableRecursively(declaration.node, sourceFile, fillings);
             break;
           }
           default:
@@ -329,13 +343,31 @@ export class CodeExtractor {
         break;
       }
 
+      case DeclarationType.Parameter: {
+        // This could happen when try to extract for a bundle created witin a custom infrastucture
+        // function.
+        const argumentNode = fillings?.get(declaration.node.id);
+        if (argumentNode === undefined) {
+          throw new Error(`No argument found for parameter '${nameNode.value}'.`);
+        }
+
+        // When a name node is linked to an parameter node, and we can't locate a corresponding
+        // assignment node for it, the solution is to directly extract the argument node. Then we
+        // use this to take up the spot originally held by the name node.
+        return this.extractExpressionRecursively(
+          argumentNode.valueExpression,
+          sourceFile,
+          fillings
+        );
+      }
+
       case DeclarationType.Function: {
-        declSegment = this.extractFunctionRecursively(declaration.node, sourceFile);
+        declSegment = this.extractFunctionRecursively(declaration.node, sourceFile, fillings);
         break;
       }
 
       case DeclarationType.Class: {
-        declSegment = this.extractClassRecursively(declaration.node, sourceFile);
+        declSegment = this.extractClassRecursively(declaration.node, sourceFile, fillings);
         break;
       }
 
@@ -381,7 +413,11 @@ export class CodeExtractor {
     });
   }
 
-  private extractVariableRecursively(node: NameNode, sourceFile: SourceFile): CodeSegment {
+  private extractVariableRecursively(
+    node: NameNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     if (node.parent?.nodeType === ParseNodeType.ListComprehensionFor) {
       // This variable is defined in a list comprehension for loop, we don't need to extract it.
       return CodeSegment.buildWithChildren({
@@ -397,7 +433,7 @@ export class CodeExtractor {
     }
 
     const rightExpression = node.parent.rightExpression;
-    const segment = this.extractExpressionRecursively(rightExpression, sourceFile);
+    const segment = this.extractExpressionRecursively(rightExpression, sourceFile, fillings);
 
     // We cannot use the source code of the assignment statement directly, as it may contain the
     // creation of a resource object, which the constructor call should be replaced with the
@@ -413,7 +449,11 @@ export class CodeExtractor {
     );
   }
 
-  private extractFunctionRecursively(funcNode: FunctionNode, sourceFile: SourceFile): CodeSegment {
+  private extractFunctionRecursively(
+    funcNode: FunctionNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const functionScope = getScopeForNode(funcNode.suite);
     if (!functionScope) {
       throw new Error(`No scope found for this function '${funcNode.name.value}'.`);
@@ -430,7 +470,7 @@ export class CodeExtractor {
 
     const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
+      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile, fillings);
       children.push(childSegment);
     }
 
@@ -447,7 +487,11 @@ export class CodeExtractor {
     );
   }
 
-  private extractCallRecursively(node: CallNode, sourceFile: SourceFile): CodeSegment {
+  private extractCallRecursively(
+    node: CallNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     // If the call node can be found in the special node map, it means the call node is for
     // constructing a resource object.
     const isConstructedNode = !!this.specialNodeMap.getNodeById(
@@ -467,7 +511,12 @@ export class CodeExtractor {
       // function type argument from it. The function type argument will be sent to the cloud and
       // accessed via RPC.
       const extractFunctionArg = !isConstructedNode;
-      const segment = this.extractArgumentRecursively(argNode, sourceFile, extractFunctionArg);
+      const segment = this.extractArgumentRecursively(
+        argNode,
+        sourceFile,
+        extractFunctionArg,
+        fillings
+      );
       children.push(segment);
       argumentCodes.push(segment.code);
 
@@ -479,7 +528,11 @@ export class CodeExtractor {
       }
     });
 
-    const methodSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
+    const methodSegment = this.extractExpressionRecursively(
+      node.leftExpression,
+      sourceFile,
+      fillings
+    );
     const methodCode = methodSegment.code;
     children.push(methodSegment);
 
@@ -511,7 +564,8 @@ export class CodeExtractor {
   private extractArgumentRecursively(
     arg: ArgumentNode,
     sourceFile: SourceFile,
-    extractFunctionArg: boolean
+    extractFunctionArg: boolean,
+    fillings?: ReadonlyMap<number, ArgumentNode>
   ): CodeSegment {
     const codePrefix = arg.name ? `${arg.name.value}=` : "";
 
@@ -531,7 +585,11 @@ export class CodeExtractor {
       }
     }
 
-    const valueSegment = this.extractExpressionRecursively(arg.valueExpression, sourceFile);
+    const valueSegment = this.extractExpressionRecursively(
+      arg.valueExpression,
+      sourceFile,
+      fillings
+    );
     return CodeSegment.buildWithChildren(
       {
         node: arg,
@@ -546,7 +604,11 @@ export class CodeExtractor {
    * @param classNode - The class node.
    * @param sourceFile - The source file where the class node is located.
    */
-  private extractClassRecursively(classNode: ClassNode, sourceFile: SourceFile): CodeSegment {
+  private extractClassRecursively(
+    classNode: ClassNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const nodeText = TextUtils.getTextOfNode(classNode, sourceFile);
 
     const classScope = getScopeForNode(classNode.suite);
@@ -583,7 +645,7 @@ export class CodeExtractor {
 
     const children: CodeSegment[] = [];
     for (const nameNode of walker.nameNodes) {
-      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile);
+      const childSegment = this.extractNameNodeRecursively(nameNode, sourceFile, fillings);
       children.push(childSegment);
     }
 
@@ -609,9 +671,14 @@ export class CodeExtractor {
    */
   private extractMemberAccessRecursively(
     node: MemberAccessNode,
-    sourceFile: SourceFile
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
   ): CodeSegment {
-    const callerSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
+    const callerSegment = this.extractExpressionRecursively(
+      node.leftExpression,
+      sourceFile,
+      fillings
+    );
     const code = `${callerSegment.code}.${node.memberName.value}`;
     return CodeSegment.buildWithChildren(
       {
@@ -622,14 +689,18 @@ export class CodeExtractor {
     );
   }
 
-  private extractStringListRecursively(node: StringListNode, sourceFile: SourceFile): CodeSegment {
+  private extractStringListRecursively(
+    node: StringListNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const children: CodeSegment[] = [];
     node.strings
       .filter((node) => node.nodeType === ParseNodeType.FormatString)
       .forEach((stringNode) => {
         const formatStringNode = stringNode as FormatStringNode;
         formatStringNode.fieldExpressions.forEach((expr) => {
-          const segment = this.extractExpressionRecursively(expr, sourceFile);
+          const segment = this.extractExpressionRecursively(expr, sourceFile, fillings);
           children.push(segment);
         });
       });
@@ -645,10 +716,19 @@ export class CodeExtractor {
 
   private extractBinaryOperationRecursively(
     node: BinaryOperationNode,
-    sourceFile: SourceFile
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
   ): CodeSegment {
-    const leftSegment = this.extractExpressionRecursively(node.leftExpression, sourceFile);
-    const rightSegment = this.extractExpressionRecursively(node.rightExpression, sourceFile);
+    const leftSegment = this.extractExpressionRecursively(
+      node.leftExpression,
+      sourceFile,
+      fillings
+    );
+    const rightSegment = this.extractExpressionRecursively(
+      node.rightExpression,
+      sourceFile,
+      fillings
+    );
     return CodeSegment.buildWithChildren(
       {
         node: node,
@@ -660,7 +740,8 @@ export class CodeExtractor {
 
   private extractListComprehensionRecursively(
     node: ListComprehensionNode,
-    sourceFile: SourceFile
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
   ): CodeSegment {
     if (!isExpressionNode(node.expression)) {
       throw new Error(`Unsupported node type ${node.expression.nodeType} in list comprehension.`);
@@ -668,7 +749,7 @@ export class CodeExtractor {
 
     const children: CodeSegment[] = [];
 
-    const segment = this.extractExpressionRecursively(node.expression, sourceFile);
+    const segment = this.extractExpressionRecursively(node.expression, sourceFile, fillings);
     children.push(segment);
 
     node.forIfNodes.forEach((forIfNode: ListComprehensionForIfNode) => {
@@ -676,19 +757,25 @@ export class CodeExtractor {
         case ParseNodeType.ListComprehensionFor: {
           const forSegment = this.extractExpressionRecursively(
             forIfNode.iterableExpression,
-            sourceFile
+            sourceFile,
+            fillings
           );
           children.push(forSegment);
 
           const targetSegment = this.extractExpressionRecursively(
             forIfNode.targetExpression,
-            sourceFile
+            sourceFile,
+            fillings
           );
           children.push(targetSegment);
           break;
         }
         case ParseNodeType.ListComprehensionIf: {
-          const ifSegment = this.extractExpressionRecursively(forIfNode.testExpression, sourceFile);
+          const ifSegment = this.extractExpressionRecursively(
+            forIfNode.testExpression,
+            sourceFile,
+            fillings
+          );
           children.push(ifSegment);
           break;
         }
@@ -710,17 +797,29 @@ export class CodeExtractor {
    * Iterate through the dictionary node and extract the dependent declarations of each key-value
    * pair.
    */
-  private extractDictRecursively(node: DictionaryNode, sourceFile: SourceFile): CodeSegment {
+  private extractDictRecursively(
+    node: DictionaryNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const children: CodeSegment[] = [];
     node.entries.forEach((entry) => {
       if (entry.nodeType !== ParseNodeType.DictionaryKeyEntry) {
         throw new Error(`Unsupported dictionary entry type: ${entry.nodeType}`);
       }
 
-      const keySegment = this.extractExpressionRecursively(entry.keyExpression, sourceFile);
+      const keySegment = this.extractExpressionRecursively(
+        entry.keyExpression,
+        sourceFile,
+        fillings
+      );
       children.push(keySegment);
 
-      const valueSegment = this.extractExpressionRecursively(entry.valueExpression, sourceFile);
+      const valueSegment = this.extractExpressionRecursively(
+        entry.valueExpression,
+        sourceFile,
+        fillings
+      );
       children.push(valueSegment);
     });
 
@@ -738,13 +837,14 @@ export class CodeExtractor {
    */
   private extractTupleOrListRecursively(
     node: TupleNode | ListNode,
-    sourceFile: SourceFile
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
   ): CodeSegment {
     const items = node.nodeType === ParseNodeType.Tuple ? node.expressions : node.entries;
 
     const children: CodeSegment[] = [];
     items.forEach((item) => {
-      const segment = this.extractExpressionRecursively(item, sourceFile);
+      const segment = this.extractExpressionRecursively(item, sourceFile, fillings);
       children.push(segment);
     });
 
@@ -795,15 +895,27 @@ export class CodeExtractor {
     });
   }
 
-  private extractIndexRecursively(node: IndexNode, sourceFile: SourceFile): CodeSegment {
+  private extractIndexRecursively(
+    node: IndexNode,
+    sourceFile: SourceFile,
+    fillings?: ReadonlyMap<number, ArgumentNode>
+  ): CodeSegment {
     const isAccessingEnvVar = TypeUtils.isEnvVarAccess(node, this.typeEvaluator);
 
-    const baseSegment = this.extractExpressionRecursively(node.baseExpression, sourceFile);
+    const baseSegment = this.extractExpressionRecursively(
+      node.baseExpression,
+      sourceFile,
+      fillings
+    );
 
     const indexItemSegments: CodeSegment[] = [];
     const accessedEnvVars: string[] = [];
     node.items.forEach((item) => {
-      const indexSegment = this.extractExpressionRecursively(item.valueExpression, sourceFile);
+      const indexSegment = this.extractExpressionRecursively(
+        item.valueExpression,
+        sourceFile,
+        fillings
+      );
       indexItemSegments.push(indexSegment);
 
       if (isAccessingEnvVar) {
