@@ -117,7 +117,12 @@ export default class PyrightDeducer extends core.Deducer {
       .getConfigOptions()
       .findExecEnvironment(Uri.file(entrypoints[0]))!;
     this.importFinder = new ImportFinder(program.importResolver, execEnv, this.stack.platformType);
-    await this.prepareDependencies(this.closures);
+    if (
+      this.stack.configs["bundleWithDependencies"] === undefined ||
+      this.stack.configs["bundleWithDependencies"] === true
+    ) {
+      await this.prepareDependencies(this.closures);
+    }
 
     program.dispose();
 
