@@ -1,12 +1,11 @@
 import { CallNode } from "pyright-internal/dist/parser/parseNodes";
-import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
 import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import { ClassType, FunctionType, TypeCategory } from "pyright-internal/dist/analyzer/types";
-import * as TextUtils from "./text-utils";
 import * as TypeUtils from "./type-utils";
 import * as TypeConsts from "./type-consts";
 import { SpecialNodeMap } from "./special-node-map";
+import { getNodeText } from "./common/position-utils";
 
 /**
  * This class is responsible for searching for special types usage in the parse tree of one source
@@ -18,13 +17,28 @@ export class TypeSearcher extends ParseTreeWalker {
 
   constructor(
     private readonly typeEvaluator: TypeEvaluator,
-    private readonly sourceFile: SourceFile
+    private readonly skipSubScope: boolean = false
   ) {
     super();
   }
 
   get specialNodeMap() {
     return this._specialNodeMap;
+  }
+
+  // If `skipSubScope` is true, we'll skip all the sub-scopes of the current scope. This is useful
+  // when we want to search for special types in a specific scope only.
+  public override visitListComprehension(): boolean {
+    return !this.skipSubScope;
+  }
+  public override visitFunction(): boolean {
+    return !this.skipSubScope;
+  }
+  public override visitLambda(): boolean {
+    return !this.skipSubScope;
+  }
+  public override visitClass(): boolean {
+    return !this.skipSubScope;
   }
 
   public override visitCall(node: CallNode): boolean {
@@ -37,12 +51,10 @@ export class TypeSearcher extends ParseTreeWalker {
     //
     // 2. Constructor calls - When you're creating a new instance with a class constructor, the
     //    TypeEvaluator can determine the type of the object being constructed.
-    const nodeText = TextUtils.getTextOfNode(node, this.sourceFile);
-
     const funcType = this.typeEvaluator.getType(node.leftExpression);
     if (funcType === undefined) {
       throw new Error(
-        `Cannot determine the type of the left expression of the call node '${nodeText}'.`
+        `${getNodeText(node)}: Cannot determine the type of the left expression of the call node.`
       );
     }
 
@@ -59,7 +71,9 @@ export class TypeSearcher extends ParseTreeWalker {
         // the next step, we'll check if the resource object is assigned to a variable that isn't a
         // special type, like UnionType. If it is, we'll throw an error at that point.
         console.warn(
-          `The type of the left expression of the call node '${nodeText}' is Any, Unknown or Union. We skip it.`
+          `${getNodeText(
+            node
+          )}: The type of the left expression of the call node is Any, Unknown or Union. Skip it.`
         );
         break;
       case TypeCategory.Function:
@@ -69,7 +83,7 @@ export class TypeSearcher extends ParseTreeWalker {
         this.validateClassCall(node, type);
         break;
       default:
-        throw new Error(`Unexpected type category: ${type.category}, ${nodeText}`);
+        throw new Error(`${getNodeText(node)}: Unexpected type category '${type.category}'`);
     }
     return true;
   }

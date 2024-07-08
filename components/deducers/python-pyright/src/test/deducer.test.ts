@@ -79,7 +79,7 @@ from pluto_client import Function, FunctionOptions
 
 default_func = Function(lambda x: x)
 named_func = Function(lambda x: x, name="name")
-func_with_options = Function(lambda x: x, name="option", options=FunctionOptions(memory=256))
+func_with_options = Function(lambda x: x, name="option", opts=FunctionOptions(memory=256))
 `;
   const { archRef, clean } = await getArchRefForInline(code);
 
@@ -99,7 +99,7 @@ func_with_options = Function(lambda x: x, name="option", options=FunctionOptions
 
   const funcWithOptions = archRef.resources.find((r) => r.name === "option");
   expect(funcWithOptions).toBeDefined();
-  const options = funcWithOptions?.arguments?.find((p) => p.name === "options");
+  const options = funcWithOptions?.arguments?.find((p) => p.name === "opts");
   expect(options).toBeDefined();
   expect(options?.type).toBe("text");
   expect((options as arch.TextArgument).value).toMatch('"memory":256');

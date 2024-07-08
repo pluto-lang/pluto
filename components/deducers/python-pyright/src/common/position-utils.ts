@@ -9,4 +9,9 @@ export function getNodeText(node: ParseNode): string {
   return `<${fileName}:${startPos.line + 1}:${startPos.character + 1}>`;
 }
 
+export function getPosition(node: ParseNode) {
+  const fileInfo = AnalyzerNodeInfo.getFileInfo(node);
+  return convertOffsetToPosition(node.start, fileInfo.lines);
+}
+
 export * from "pyright-internal/dist/common/positionUtils";
