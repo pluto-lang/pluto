@@ -78,7 +78,7 @@ export class Simulator {
     const dotPos = resourceTypeFqn.lastIndexOf(".");
     const pkgName = resourceTypeFqn.substring(0, dotPos);
     const resourceType = resourceTypeFqn.substring(dotPos + 1);
-    // TODO: check if the package exists
+    // TODO: check if the package exists, and import from user project
     const infraPkg = (await import(`${pkgName}-infra`)) as any;
     const resourceInfraClass = infraPkg[resourceType];
     if (!resourceInfraClass) {
@@ -90,7 +90,8 @@ export class Simulator {
     const args = new Array(resource.arguments.length);
     resource.arguments.forEach((param) => {
       if (param.type === "text") {
-        args[param.index] = param.value === "undefined" ? undefined : eval(param.value);
+        args[param.index] =
+          param.value === "undefined" ? undefined : eval(`const v = ${param.value}; v`);
       } else if (param.type === "closure") {
         args[param.index] = this.closures.get(param.closureId);
       } else if (param.type === "capturedProperty") {
