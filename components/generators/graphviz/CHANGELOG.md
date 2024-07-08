@@ -1,5 +1,17 @@
 # @plutolang/graphviz-generator
 
+## 0.4.7
+
+### Patch Changes
+
+- 6f75db8: refactor(base): refactor architecture reference data structure
+
+  Refine the argument type for adding resources to capture property types, clarifying usage. Redefine the three Relationship types for improved code readability and to clarify resource relationships across various scenarios.
+
+- Updated dependencies [6f75db8]
+- Updated dependencies [339dcfb]
+  - @plutolang/base@0.4.5
+
 ## 0.4.6
 
 ### Patch Changes

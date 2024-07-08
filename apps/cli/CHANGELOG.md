@@ -1,5 +1,26 @@
 # @plutolang/cli
 
+## 0.4.32
+
+### Patch Changes
+
+- 6f75db8: refactor(base): refactor architecture reference data structure
+
+  Refine the argument type for adding resources to capture property types, clarifying usage. Redefine the three Relationship types for improved code readability and to clarify resource relationships across various scenarios.
+
+- Updated dependencies [2afaee6]
+- Updated dependencies [6f75db8]
+- Updated dependencies [70f0e77]
+- Updated dependencies [339dcfb]
+- Updated dependencies [26757ce]
+  - @plutolang/pyright-deducer@0.1.17
+  - @plutolang/graphviz-generator@0.4.7
+  - @plutolang/simulator-adapter@0.3.24
+  - @plutolang/static-generator@0.4.5
+  - @plutolang/static-deducer@0.4.8
+  - @plutolang/base@0.4.5
+  - @plutolang/pulumi-adapter@0.4.9
+
 ## 0.4.31
 
 ### Patch Changes

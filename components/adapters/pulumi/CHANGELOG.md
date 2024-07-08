@@ -1,5 +1,13 @@
 # @plutolang/pulumi-adapter
 
+## 0.4.9
+
+### Patch Changes
+
+- Updated dependencies [6f75db8]
+- Updated dependencies [339dcfb]
+  - @plutolang/base@0.4.5
+
 ## 0.4.8
 
 ### Patch Changes
