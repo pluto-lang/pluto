@@ -137,7 +137,7 @@ async function getArchRefForInline(code: string, filename: string = "tmp.py") {
     project: "test",
     rootpath: __dirname,
     closureDir: closureDir,
-    stack: {} as any,
+    stack: { configs: [] } as any,
   });
 
   return {
