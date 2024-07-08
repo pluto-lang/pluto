@@ -58,7 +58,7 @@ function testSourceFile(program: Program, sourceFile: SourceFile, expectNums: Ex
   const parseTree = sourceFile.getParseResults()?.parseTree;
   expect(parseTree).toBeDefined();
 
-  const walker = new TypeSearcher(program.evaluator!, sourceFile);
+  const walker = new TypeSearcher(program.evaluator!);
   walker.walk(parseTree!);
 
   const specialTypeNum = [

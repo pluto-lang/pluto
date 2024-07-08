@@ -5,8 +5,7 @@ import { Uri } from "pyright-internal/dist/common/uri/uri";
 import { LogLevel } from "pyright-internal/dist/common/console";
 import { Program } from "pyright-internal/dist/analyzer/program";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
-import { DeclarationType } from "pyright-internal/dist/analyzer/declaration";
-import { ClassType, TypeCategory } from "pyright-internal/dist/analyzer/types";
+import { getChildNodes } from "pyright-internal/dist/analyzer/parseTreeWalker";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import {
   ArgumentNode,
@@ -15,26 +14,26 @@ import {
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
 import { core, arch } from "@plutolang/base";
-import { genResourceId } from "@plutolang/base/utils";
-import * as TextUtils from "./text-utils";
-import * as TypeUtils from "./type-utils";
-import * as TypeConsts from "./type-consts";
-import * as ProgramUtils from "./program-utils";
-import * as ScopeUtils from "./scope-utils";
-import { TypeSearcher } from "./type-searcher";
-import { SpecialNodeMap } from "./special-node-map";
-import {
-  Value,
-  ValueEvaluator,
-  ValueType,
-  createValueEvaluator,
-  genEnvVarAccessTextForTypeScript,
-} from "./value-evaluator";
-import { ResourceObjectTracker } from "./resource-object-tracker";
-import { CodeSegment, CodeExtractor } from "./code-extractor";
-import { ImportFinder } from "./import-finder";
-import { bundleModules } from "./module-bundler";
 import packageJson from "../package.json";
+import { TypeSearcher } from "./type-searcher";
+import { ImportFinder } from "./import-finder";
+import * as ProgramUtils from "./program-utils";
+import { CodeExtractor } from "./code-extractor";
+import { bundleModules } from "./module-bundler";
+import {
+  CustomInfraFn,
+  validateCustomInfraFn,
+  evaluateGraph,
+  buildGraphForFunction,
+  buildGraphForModule,
+  ProjectInfo,
+} from "./custom-infra-fn";
+import * as TypeConsts from "./type-consts";
+import * as ScopeUtils from "./scope-utils";
+import { SpecialNodeMap } from "./special-node-map";
+import { Diagnostic, DiagnosticCategory } from "./diagnostic";
+import { ResourceObjectTracker } from "./resource-object-tracker";
+import { ValueEvaluator, createValueEvaluator } from "./value-evaluator";
 import { getDefaultPythonRuntime } from "./module-bundler/command-utils";
 
 export default class PyrightDeducer extends core.Deducer {
@@ -51,11 +50,6 @@ export default class PyrightDeducer extends core.Deducer {
   private valueEvaluator?: ValueEvaluator;
   private extractor?: CodeExtractor;
   private importFinder?: ImportFinder;
-
-  private readonly nodeToResourceMap: Map<number, arch.Resource> = new Map();
-  private readonly closures: arch.Closure[] = [];
-  private readonly closureToSgementMap: Map<string, CodeSegment> = new Map();
-  private readonly relationships: arch.Relationship[] = [];
 
   constructor(args: core.NewDeducerArgs) {
     super(args);
@@ -76,42 +70,91 @@ export default class PyrightDeducer extends core.Deducer {
       throw new Error("No type evaluator found.");
     }
 
-    // Find the special nodes in the source file, including:
-    // 1. the resource object construction nodes;
-    // 2. the infrastructure API call nodes.
-    // 3. the client API call nodes.
-    // 4. the nodes that access the captured properties.
+    // Find the special nodes in the source file, which include those found within the body of a
+    // function.
     this.sepcialNodeMap = this.getSecpialNodes(program, sourceFile);
 
-    // Check if the resource object construction and infrastructure API calls are in global scope.
-    // We only support the resource object construction and infrastructure API calls in global scope
-    // currently.
-    //
-    // TODO: support the resource object construction and infrastructure API calls in non-global
-    // scope.
-    const constructNodes = this.sepcialNodeMap.getNodesByType(TypeConsts.IRESOURCE_FULL_NAME);
-    if (!constructNodes) {
-      throw new Error("No resource object construction found.");
-    }
-    // It's okay to have no infrastructure API calls. Some users might just want to create cloud
-    // resources.
-    const infraApiNodes =
-      this.sepcialNodeMap.getNodesByType(TypeConsts.IRESOURCE_INFRA_API_FULL_NAME) ?? [];
-    for (const node of [constructNodes, infraApiNodes].flat()) {
-      if (node && !ScopeUtils.inGlobalScope(node, sourceFile)) {
-        throw new Error(
-          "All constructor and infrastructre API calls related to pluto resource types should be in global scope. We will relax this restriction in the future."
-        );
-      }
+    const infraFns = findCandidateInfraFns(this.sepcialNodeMap, sourceFile);
+    const diagnostics: Diagnostic[] = infraFns
+      .map((fn) => validateCustomInfraFn(fn, this.typeEvaluator!, this.sepcialNodeMap!))
+      .flat();
+    diagnostics.forEach((d) => Diagnostic.print(d));
+
+    if (diagnostics.find((d) => d.category === DiagnosticCategory.Error)) {
+      // If there are errors, we should stop the deducing process.
+      throw new Error("Errors found in the custom infrastructure functions. See the above logs.");
     }
 
-    this.tracker = new ResourceObjectTracker(this.typeEvaluator);
     this.valueEvaluator = createValueEvaluator(this.typeEvaluator);
+    this.tracker = new ResourceObjectTracker(this.typeEvaluator);
     this.extractor = new CodeExtractor(this.typeEvaluator, this.sepcialNodeMap);
 
-    this.buildConstructedResources(constructNodes, sourceFile);
-    this.buildRelationshipsFromInfraApis(infraApiNodes, sourceFile);
-    this.buildRelationshipsFromClosures(this.closures);
+    const projectInfo: ProjectInfo = {
+      projectName: this.project,
+      stackName: this.stack.name,
+      bundleBaseDir: this.closureDir,
+    };
+
+    const globalGraph = buildGraphForModule(
+      this.typeEvaluator!,
+      this.tracker,
+      sourceFile.getParseResults()!.parseTree
+    );
+    const { archRef: globalArchRef, resourceMapping: globalResourceMapping } = evaluateGraph(
+      globalGraph,
+      new Map(),
+      new Map(),
+      projectInfo,
+      sourceFile,
+      this.typeEvaluator!,
+      this.valueEvaluator!,
+      this.extractor!,
+      this.tracker!
+    );
+
+    const partialArchRefs: arch.Architecture[] = [];
+    const customInfraFnCallNodes = this.findAllCustomInfraFnCallNodes(infraFns, sourceFile);
+    for (let i = 0; i < customInfraFnCallNodes.length; i++) {
+      const customInfraFnCall = customInfraFnCallNodes[i];
+      const graph = buildGraphForFunction(
+        this.typeEvaluator!,
+        this.tracker,
+        customInfraFnCall.functionNode
+      );
+
+      const argumentFillings: Map<number, ArgumentNode> = new Map();
+      customInfraFnCall.callNode.arguments.forEach((argNode, idx) => {
+        const parameterNodeId = customInfraFnCall.functionNode.parameters[idx].id;
+        argumentFillings.set(parameterNodeId, argNode);
+      });
+
+      const partialArchRef = evaluateGraph(
+        graph,
+        globalResourceMapping,
+        argumentFillings,
+        projectInfo,
+        sourceFile,
+        this.typeEvaluator!,
+        this.valueEvaluator!,
+        this.extractor!,
+        this.tracker!,
+        `custom_infra_fn_${i}`
+      );
+      partialArchRefs.push(partialArchRef.archRef);
+    }
+
+    const archRef = new arch.Architecture();
+    for (const ref of [globalArchRef, ...partialArchRefs]) {
+      // Avoid the duplication of resources. If a custom infrastructure function depends on the
+      // global resources, we don't need to add them again
+      ref.resources
+        .filter((r) => !archRef.findResource(r.id))
+        .forEach((value) => archRef.addResource(value));
+
+      ref.closures.forEach((value) => archRef.addClosure(value));
+      ref.relationships.forEach((value) => archRef.addRelationship(value));
+      Object.keys(ref.extras).forEach((key) => (archRef.extras[key] = ref.extras[key]));
+    }
 
     const execEnv = program.importResolver
       .getConfigOptions()
@@ -121,20 +164,56 @@ export default class PyrightDeducer extends core.Deducer {
       this.stack.configs["bundleWithDependencies"] === undefined ||
       this.stack.configs["bundleWithDependencies"] === true
     ) {
-      await this.prepareDependencies(this.closures);
+      await this.prepareDependencies(archRef.closures);
     }
 
     program.dispose();
 
-    const archRef = new arch.Architecture();
-    this.nodeToResourceMap.forEach((value) => archRef.addResource(value));
-    this.closures.forEach((value) => archRef.addClosure(value));
-    this.relationships.forEach((value) => archRef.addRelationship(value));
     return { archRef };
   }
 
+  private findAllCustomInfraFnCallNodes(customInfraFns: CustomInfraFn[], sourceFile: SourceFile) {
+    const customInfraFnCallNodes: { callNode: CallNode; functionNode: FunctionNode }[] = [];
+
+    const childNodes = getChildNodes(sourceFile.getParseResults()!.parseTree);
+    for (const childNode of childNodes) {
+      if (childNode?.nodeType !== ParseNodeType.StatementList) {
+        continue;
+      }
+
+      for (const statement of childNode.statements) {
+        if (
+          statement.nodeType !== ParseNodeType.Call ||
+          statement.leftExpression.nodeType !== ParseNodeType.Name
+        ) {
+          continue;
+        }
+
+        const fnName = statement.leftExpression;
+        const decls = this.typeEvaluator!.getDeclarationsForNameNode(fnName);
+        assert(decls?.length === 1, "The function name must be declared only once.");
+
+        const customInfraFn = customInfraFns.find((fn) => fn.topNode.id === decls[0].node.id);
+        if (customInfraFn) {
+          // This call node is a call to a custom infrastructure function.
+          customInfraFnCallNodes.push({
+            callNode: statement,
+            functionNode: decls[0].node as FunctionNode,
+          });
+        }
+      }
+    }
+
+    return customInfraFnCallNodes;
+  }
+
   /**
-   * Use the TypeSearcher to get the special nodes in the source file.
+   * Find the special nodes in the source file, which include those found within the body of a
+   * function. These special node are:
+   * 1. the resource object construction nodes.
+   * 2. the infrastructure API call nodes.
+   * 3. the client API call nodes.
+   * 4. the nodes that access the captured properties.
    */
   private getSecpialNodes(program: Program, sourceFile: SourceFile) {
     const parseResult = sourceFile.getParseResults();
@@ -143,7 +222,7 @@ export default class PyrightDeducer extends core.Deducer {
     }
     const parseTree = parseResult.parseTree;
 
-    const walker = new TypeSearcher(program.evaluator!, sourceFile);
+    const walker = new TypeSearcher(program.evaluator!);
     walker.walk(parseTree);
     return walker.specialNodeMap;
   }
@@ -185,132 +264,7 @@ export default class PyrightDeducer extends core.Deducer {
     return { program, sourceFile };
   }
 
-  private buildConstructedResources(constructNodes: CallNode[], sourceFile: SourceFile) {
-    for (const callNode of constructNodes) {
-      // First, get the name of the resource object. The determination of the resource object name
-      // is based on the following rules:
-      // 1. If there is a parameter named "name", use its value as the name of the resource object.
-      // 2. Otherwise, use "default" as the name of the resource object.
-      let resourceName: string = "default";
-      callNode.arguments.forEach((argNode, idx) => {
-        const parameterName =
-          argNode.name?.value ??
-          getParameterName(
-            callNode,
-            idx,
-            this.typeEvaluator!,
-            /* isConstructorOrClassMethod */ true
-          ) ??
-          "unknown";
-
-        if (parameterName === "name") {
-          const value = this.valueEvaluator!.evaluate(argNode.valueExpression);
-          if (value.valueType !== ValueType.Literal || typeof value.value !== "string") {
-            throw new Error("The value of the 'name' parameter must be a string literal.");
-          }
-          resourceName = value.value;
-        }
-      });
-
-      // Get the parameters of the resource object construction.
-      const args = this.parseAllArguments(
-        callNode,
-        sourceFile,
-        resourceName,
-        /* isConstructorOrClassMethod */ true
-      );
-
-      // Get the full qualified name of the class type.
-      const classType = this.typeEvaluator!.getType(callNode);
-      if (!classType || classType.category !== TypeCategory.Class) {
-        throw new Error("The constructor node must be a class type.");
-      }
-      const typeFqn = getFqnOfResourceType(classType, this.valueEvaluator!);
-
-      // Generate the resource id.
-      const resourceId = genResourceId(this.project, this.stack.name, typeFqn, resourceName);
-
-      const resource = arch.Resource.create(resourceId, resourceName, typeFqn, args);
-      this.nodeToResourceMap.set(callNode.id, resource);
-    }
-  }
-
-  /**
-   * For infrastructure API calls, we aim to establish connections between the resource object the
-   * caller corresponds to and the resource object or closure the callee corresponds to. We also
-   * extract parameters and the operation name.
-   */
-  private buildRelationshipsFromInfraApis(infraCalls: CallNode[], sourceFile: SourceFile) {
-    for (let nodeIdx = 0; nodeIdx < infraCalls.length; nodeIdx++) {
-      const callNode = infraCalls[nodeIdx];
-
-      // Get the resource object associated with the caller.
-      const constructNode = this.tracker!.getDeclarationForCallerOfCallNode(callNode);
-      if (!constructNode) {
-        throw new Error("No resource object found for the infrastructure API call.");
-      }
-      const fromResource = this.nodeToResourceMap.get(constructNode.id)!;
-
-      // Get the operation name
-      const operation = getMemberName(callNode, this.typeEvaluator!);
-      const closureNamePrefix = `${fromResource.name}_${nodeIdx}_${operation}`;
-      const args = this.parseAllArguments(
-        callNode,
-        sourceFile,
-        closureNamePrefix,
-        /* isConstructorOrClassMethod */ true
-      );
-
-      const relationship = arch.InfraRelationship.create(fromResource, operation, args);
-      this.relationships.push(relationship);
-    }
-  }
-
-  /**
-   * For each closure, we try to find the client API calls and the accessed captured properties
-   * within it. Then we establish the relationships between the closure and the resource objects or
-   * closures the client API calls and the accessed captured properties correspond to.
-   */
-  private buildRelationshipsFromClosures(closures: arch.Closure[]) {
-    for (const closure of closures) {
-      const codeSegment = this.closureToSgementMap.get(closure.id);
-      if (!codeSegment) {
-        throw new Error(`No code segment found for closure '${closure.id}'.`);
-      }
-
-      // Get the client's API calls and establish the connection between the closure and the
-      // resource object associated with the caller.
-      CodeSegment.getCalledClientApis(codeSegment).forEach((clientApi) => {
-        const constructNode = this.tracker!.getDeclarationForCallerOfCallNode(clientApi);
-        if (!constructNode) {
-          throw new Error("No resource object found for the client API call.");
-        }
-        const toResource = this.nodeToResourceMap.get(constructNode.id);
-        const operation = getMemberName(clientApi, this.typeEvaluator!);
-        const relationship = arch.ClientRelationship.create(closure, toResource!, operation);
-        this.relationships.push(relationship);
-      });
-
-      // Get the accessed captured properties and establish the connection between the closure and
-      // the resource object associated with the accessed captured properties.
-      CodeSegment.getAccessedCapturedProperties(codeSegment).forEach((accessedProp) => {
-        const constructNode = this.tracker!.getDeclarationForCallerOfCallNode(accessedProp);
-        if (!constructNode) {
-          throw new Error("No resource object found for the client API call.");
-        }
-        const toResource = this.nodeToResourceMap.get(constructNode.id);
-        const property = getMemberName(accessedProp, this.typeEvaluator!);
-        const relationship = arch.CapturedPropertyRelationship.create(
-          closure,
-          toResource!,
-          property
-        );
-        this.relationships.push(relationship);
-      });
-    }
-  }
-
-  private async prepareDependencies(closures: arch.Closure[]) {
+  private async prepareDependencies(closures: readonly arch.Closure[]) {
     console.log(`Bundling dependencies, this may take a while...`);
     for (const closure of closures) {
       const destBaseDir = path.resolve(closure.path, "site-packages");
@@ -333,262 +287,41 @@ export default class PyrightDeducer extends core.Deducer {
       });
     }
   }
-
-  /**
-   * Parses all arguments of a function call in the order of the function signature.
-   *
-   * @param callNode - The call node representing the function call.
-   * @param sourceFile - The source file containing the function call.
-   * @param closureNamePrefix - The prefix to use for closure IDs.
-   * @param isConstructorOrClassMethod - Indicates whether the function call is a constructor or a
-   * class method.
-   * @returns An array of parsed parameters.
-   */
-  private parseAllArguments(
-    callNode: CallNode,
-    sourceFile: SourceFile,
-    closureNamePrefix: string,
-    isConstructorOrClassMethod = false
-  ): arch.Argument[] {
-    const argumentMap: { [paramName: string]: arch.Argument } = {};
-
-    // In Python code, the sequence of arguments can deviate from the order presented in the
-    // function signature. However, this is not permissible in TypeScript. Given that we will
-    // produce IaC in TypeScript, using the same arguments as in Python, we align the argument
-    // sequence in TypeScript with the function signature's parameter sequence.
-    //
-    // First, we record the parameters in the function signature.
-    const functionNode = getFunctionNodeForCallNode(callNode, this.typeEvaluator!);
-    functionNode.parameters.forEach((paramNode, paramIdx) => {
-      if (isConstructorOrClassMethod && paramIdx === 0) {
-        return;
-      }
-
-      const paramName = paramNode.name?.value;
-      assert(paramName, "The parameter name must be a string.");
-
-      const paramIndex = paramIdx - (isConstructorOrClassMethod ? 1 : 0);
-      argumentMap[paramName] = arch.TextArgument.create(paramIndex, paramName, "undefined");
-    });
-
-    // Then, we parse the arguments in the call node.
-    let paramIdx = Object.keys(argumentMap).length;
-    callNode.arguments.forEach((argNode, argIdx) => {
-      const parameterName =
-        argNode.name?.value ??
-        getParameterName(callNode, argIdx, this.typeEvaluator!, isConstructorOrClassMethod) ??
-        "unknown";
-
-      const parameterIndex = argumentMap[parameterName]?.index ?? paramIdx++;
-
-      const closureId = `${closureNamePrefix}_${argIdx}_${parameterName}`
-        .replace(/[^_a-zA-Z0-9]/g, "_")
-        .replace(/^[0-9_]+/, "");
-
-      const parsedArg = this.parseArgumentOfInfraCall(
-        parameterName,
-        parameterIndex,
-        closureId,
-        argNode,
-        sourceFile
-      );
-
-      argumentMap[parameterName] = parsedArg;
-    });
-
-    return Object.values(argumentMap);
-  }
-
-  /**
-   * Parses the argument of an infrastructure call, including the resource object construction and
-   * the infrastructure API call.
-   */
-  private parseArgumentOfInfraCall(
-    parameterName: string,
-    parameterIndex: number,
-    closureId: string,
-    argNode: ArgumentNode,
-    sourceFile: SourceFile
-  ): arch.Argument {
-    const isFunctionArg = (node: ArgumentNode) => {
-      return (
-        TypeUtils.isLambdaNode(node.valueExpression) ||
-        TypeUtils.isFunctionVar(node.valueExpression, this.typeEvaluator!)
-      );
-    };
-
-    const isCapturedPropertyAccess = (node: ArgumentNode) => {
-      return (
-        node.valueExpression.nodeType === ParseNodeType.Call &&
-        this.sepcialNodeMap!.getNodeById(
-          node.valueExpression.id,
-          TypeConsts.IRESOURCE_CAPTURED_PROPS_FULL_NAME
-        )
-      );
-    };
-
-    if (isFunctionArg(argNode)) {
-      // This argument is a function or lambda expression, we need to extract it to a closure
-      // and store it to a sperate directory.
-      const { closure, codeSegment } = extractAndStoreClosure(
-        argNode,
-        sourceFile,
-        closureId,
-        this.closureDir,
-        this.extractor!
-      );
-      this.closures.push(closure);
-      this.closureToSgementMap.set(closure.id, codeSegment);
-
-      const argument = arch.ClosureArgument.create(parameterIndex, parameterName, closure.id);
-      return argument;
-    } else if (isCapturedPropertyAccess(argNode)) {
-      // This argument facilitates direct access to the captured property of a resource object.
-      // Since in IaC code, the variable name of the resource object is replaced with the
-      // resource object ID, we need to alter the accessor in this method call to the resource
-      // object ID.
-      const propertyAccessNode = argNode.valueExpression as CallNode;
-      const resNode = this.tracker!.getDeclarationForCallerOfCallNode(propertyAccessNode);
-      if (!resNode) {
-        throw new Error(
-          "No resource object found for the captured property access, " +
-            TextUtils.getTextOfNode(propertyAccessNode, sourceFile)
-        );
-      }
-
-      const toResource = this.nodeToResourceMap.get(resNode.id);
-      const method = getMemberName(propertyAccessNode, this.typeEvaluator!);
-      const argument = arch.CapturedPropertyArgument.create(
-        parameterIndex,
-        parameterName,
-        toResource!.id,
-        method
-      );
-      return argument;
-    } else {
-      // Otherwise, this argument should be composed of literals, and we can convert it into a
-      // JSON string.
-      const value = this.valueEvaluator!.evaluate(argNode.valueExpression);
-      const text = Value.toJson(value, { genEnvVarAccessText: genEnvVarAccessTextForTypeScript });
-      const argument = arch.TextArgument.create(parameterIndex, parameterName, text);
-      return argument;
-    }
-  }
 }
 
 /**
- * Retrieves the function node associated with a call node.
- *
- * @param callNode - The call node.
- * @param typeEvaluator - The type evaluator.
- * @returns The function node associated with the call node.
- * @throws Error if the type of the call node is not supported, or if the __init__ function is not a
- * function.
+ * Get all the user-defined functions which contain infrastructure API calls.
  */
-function getFunctionNodeForCallNode(callNode: CallNode, typeEvaluator: TypeEvaluator) {
-  let functionNode: FunctionNode;
+function findCandidateInfraFns(
+  sepcialNodeMap: SpecialNodeMap<CallNode>,
+  sourceFile: SourceFile
+): CustomInfraFn[] {
+  const constructNodes = sepcialNodeMap.getNodesByType(TypeConsts.IRESOURCE_FULL_NAME);
+  if (!constructNodes) {
+    throw new Error("No resource object construction found.");
+  }
+  // It's okay to have no infrastructure API calls. Some users might just want to create cloud
+  // resources.
+  const infraApiNodes =
+    sepcialNodeMap.getNodesByType(TypeConsts.IRESOURCE_INFRA_API_FULL_NAME) ?? [];
+  // The resource object construction and infrastructure API calls are collectively referred to as
+  // infrastructure calls.
+  const infraCallNodes = [constructNodes, infraApiNodes].flat();
 
-  const type = typeEvaluator!.getType(callNode.leftExpression);
-  switch (type?.category) {
-    case TypeCategory.Class: {
-      const constructor = type.details.fields.get("__init__")?.getDeclarations()[0].node;
-      if (constructor?.nodeType !== ParseNodeType.Function) {
-        throw new Error(`The __init__ function must be a function.`);
-      }
-      functionNode = constructor;
-      break;
+  // Find all the custom infrastructure functions. If a infrastructure call is in a function, we
+  // consider it as a custom infrastructure function.
+  const customInfraFns: Map<number, CustomInfraFn> = new Map();
+  for (const node of infraCallNodes) {
+    if (ScopeUtils.inGlobalScope(node, sourceFile)) {
+      continue;
     }
-    case TypeCategory.Function: {
-      const func = type.details.declaration?.node;
-      if (func?.nodeType !== ParseNodeType.Function) {
-        throw new Error(`Only can get the parameter name from a function.`);
-      }
-      functionNode = func;
-      break;
+    const scopeHierarchy = ScopeUtils.getScopeHierarchy(node);
+    assert(scopeHierarchy && scopeHierarchy.length > 0, `No scope hierarchy found for node.`);
+    const topNode = ScopeUtils.findTopNodeInScope(node, scopeHierarchy[0]);
+    assert(topNode, `No top node found in scope.`);
+    if (!customInfraFns.has(topNode.id)) {
+      customInfraFns.set(topNode.id, { topNode, sourceFile, hierarchy: scopeHierarchy });
     }
-    default:
-      throw new Error(`The type of the call node is not supported.`);
   }
-
-  return functionNode;
-}
-
-/**
- * Get the name of the parameter at index `idx` for the function associated with this call node.
- * @param callNode - The call node.
- * @param idx - The expected parameter's index.
- * @returns The name of the parameter if it exists; otherwise, undefined.
- */
-function getParameterName(
-  callNode: CallNode,
-  idx: number,
-  typeEvaluator: TypeEvaluator,
-  isConstructorOrClassMethod = false
-): string | undefined {
-  const functionNode = getFunctionNodeForCallNode(callNode, typeEvaluator);
-  const parameters = functionNode.parameters;
-  const realIdx = idx + (isConstructorOrClassMethod ? 1 : 0);
-  if (realIdx < parameters.length) {
-    return parameters[realIdx].name?.value;
-  }
-  return;
-}
-
-function extractAndStoreClosure(
-  argNode: ArgumentNode,
-  sourceFile: SourceFile,
-  closureId: string,
-  closureBaseDir: string,
-  extractor: CodeExtractor
-) {
-  const codeSegment = extractor!.extractExpressionRecursively(argNode.valueExpression, sourceFile);
-  const closureText = CodeSegment.toString(codeSegment, /* exportName */ "_default");
-  const closureFile = path.resolve(closureBaseDir, closureId, "__init__.py");
-  fs.ensureFileSync(closureFile);
-  fs.writeFileSync(closureFile, closureText);
-
-  const accessedEnvVars = CodeSegment.getAccessedEnvVars(codeSegment);
-  return {
-    closure: new arch.Closure(closureId, path.dirname(closureFile), accessedEnvVars),
-    codeSegment,
-  };
-}
-
-function getMemberName(node: CallNode, typeEvaluator: TypeEvaluator) {
-  const type = typeEvaluator!.getType(node.leftExpression);
-  if (!type || type.category !== TypeCategory.Function) {
-    throw new Error("The left expression of the call must be a function.");
-  }
-  return type.details.name;
-}
-
-function getFqnOfResourceType(type: ClassType, valueEvaluator: ValueEvaluator) {
-  const fqnMember = type.details.fields.get("fqn");
-  if (fqnMember === undefined) {
-    throw new Error(`The resource type ${type.details.name} does not have a 'fqn' field.`);
-  }
-
-  if (fqnMember.getDeclarations().length !== 1) {
-    throw new Error(
-      `The 'fqn' field of the resource type ${type.details.name} must be assigned only once.`
-    );
-  }
-
-  const decl = fqnMember.getDeclarations()[0];
-  if (decl.type !== DeclarationType.Variable) {
-    throw new Error(
-      `The 'fqn' field of the resource type ${type.details.name} must be a variable.`
-    );
-  }
-
-  const assignmentNode = decl.node.parent;
-  if (!assignmentNode || assignmentNode.nodeType !== ParseNodeType.Assignment) {
-    throw new Error(
-      `The 'fqn' field of the resource type ${type.details.name} must be a variable assignment.`
-    );
-  }
-
-  const value = valueEvaluator.evaluate(assignmentNode.rightExpression);
-  const stringifiedFqn = Value.toString(value);
-  return JSON.parse(stringifiedFqn);
+  return Array.from(customInfraFns.values());
 }

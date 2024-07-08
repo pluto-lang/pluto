@@ -67,7 +67,7 @@ export function getSpecialNodeMap(program: Program, sourceFile: SourceFile) {
   expect(parseResult).toBeDefined();
   const parseTree = parseResult!.parseTree;
 
-  const walker = new TypeSearcher(program.evaluator!, sourceFile);
+  const walker = new TypeSearcher(program.evaluator!);
   walker.walk(parseTree);
   return walker.specialNodeMap;
 }
