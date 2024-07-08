@@ -1,22 +1,14 @@
-import * as os from "os";
-import * as path from "path";
 import * as fs from "fs-extra";
-import { randomUUID } from "crypto";
+import { getTmpDir } from "../test-utils";
 import { Runtime } from "../../module-bundler";
 import { bundleModules } from "../../module-bundler/bundle-module";
 import * as CommandUtils from "../../module-bundler/command-utils";
-
-function getTmpDir() {
-  const tmpdir = path.join(os.tmpdir(), "pluto-test-" + randomUUID());
-  fs.ensureDirSync(tmpdir);
-  return { tmpdir, cleanup: () => fs.removeSync(tmpdir) };
-}
 
 describe("bundleModules", () => {
   test("should bundle modules and remove useless files", async () => {
     const { tmpdir, cleanup } = getTmpDir();
 
-    const runtime = CommandUtils.getDefaultPythonRuntime();
+    const runtime = await CommandUtils.getDefaultPythonRuntime();
     const architecture = "x86_64";
     const modules = [
       { name: "numpy", version: "1.26.4" },
@@ -39,7 +31,7 @@ describe("bundleModules", () => {
     } finally {
       cleanup();
     }
-  });
+  }, /* timeout */ 60000);
 
   test("should throw an error if operating system is not Linux and Docker is disabled", async () => {
     if (process.platform === "linux") {
@@ -49,7 +41,7 @@ describe("bundleModules", () => {
 
     const { tmpdir, cleanup } = getTmpDir();
 
-    const runtime = CommandUtils.getDefaultPythonRuntime();
+    const runtime = await CommandUtils.getDefaultPythonRuntime();
     const architecture = "x86_64";
     const modules = [
       { name: "numpy", version: "1.26.4" },
@@ -82,7 +74,7 @@ describe("bundleModules", () => {
     let runtime: Runtime | undefined;
     for (let i = 12; i >= 8; i--) {
       const version = `3.${i}`;
-      if (!CommandUtils.existCommand(`python${version}`)) {
+      if (!(await CommandUtils.existCommand(`python${version}`))) {
         runtime = `python${version}` as Runtime;
         break;
       }

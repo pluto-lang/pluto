@@ -45,7 +45,7 @@ export class ImportFinder {
     ["python3.12", extractRawAwsModules(allAwsLambdaModulesPython312)],
   ]);
 
-  private readonly runtime: string;
+  private readonly runtime?: string;
 
   constructor(
     private readonly importResolver: ImportResolver,
@@ -53,16 +53,16 @@ export class ImportFinder {
     private readonly platform?: PlatformType,
     runtime?: string
   ) {
-    this.runtime = runtime || getDefaultPythonRuntime();
+    this.runtime = runtime;
   }
 
-  public getImportedModulesForSingleFile(sourceFilepath: string): Module[] {
+  public async getImportedModulesForSingleFile(sourceFilepath: string): Promise<Module[]> {
     const imports = this.getImportsOfFile(sourceFilepath);
 
     const importedModules: { name: string; version?: string }[] = [];
     for (const imp of imports) {
       const moduleName = imp.importName;
-      if (this.shouldIgnore(imp)) {
+      if (await this.shouldIgnore(imp)) {
         debugPrint("Ignoring import:", moduleName);
         continue;
       }
@@ -76,13 +76,13 @@ export class ImportFinder {
     return importedModules;
   }
 
-  private shouldIgnore(importInfo: ImportResult, modulePath?: string) {
+  private async shouldIgnore(importInfo: ImportResult, modulePath?: string) {
     const moduleName = importInfo.importName;
 
     if (
       this.platform &&
       this.platform === PlatformType.AWS &&
-      this.shouldIgnoreForAWS(importInfo)
+      (await this.shouldIgnoreForAWS(importInfo))
     ) {
       // Ignore the modules that are already included in AWS Lambda environment.
       return true;
@@ -98,9 +98,11 @@ export class ImportFinder {
     );
   }
 
-  private shouldIgnoreForAWS(importInfo: ImportResult) {
+  private async shouldIgnoreForAWS(importInfo: ImportResult) {
     const moduleName = importInfo.importName;
-    const containedModules = ImportFinder.awsLambdaContainedModules.get(this.runtime);
+    const containedModules = ImportFinder.awsLambdaContainedModules.get(
+      this.runtime ?? (await getDefaultPythonRuntime())
+    );
     return (
       containedModules &&
       (containedModules.includes(moduleName) || containedModules.includes(moduleName + ".__init__"))

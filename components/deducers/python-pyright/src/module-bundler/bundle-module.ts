@@ -39,7 +39,7 @@ export async function bundleModules(
     options.dockerPip = true;
   }
 
-  if (!options.dockerPip && !CmdUtils.existCommand(runtime)) {
+  if (!options.dockerPip && !(await CmdUtils.existCommand(runtime))) {
     // The Python runtime isn't installed, and the user hasn't enabled Docker. Throw an error.
     throw new Error(
       `${runtime} is not installed. Please install it first, or use Docker to bundle modules instead.`
