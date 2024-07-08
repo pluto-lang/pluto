@@ -13,7 +13,7 @@ import {
   FunctionNode,
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
-import { core, arch } from "@plutolang/base";
+import { core, arch, PlatformType } from "@plutolang/base";
 import packageJson from "../package.json";
 import { TypeSearcher } from "./type-searcher";
 import { ImportFinder } from "./import-finder";
@@ -266,24 +266,32 @@ export default class PyrightDeducer extends core.Deducer {
 
   private async prepareDependencies(closures: readonly arch.Closure[]) {
     console.log(`Bundling dependencies, this may take a while...`);
-    for (const closure of closures) {
-      const destBaseDir = path.resolve(closure.path, "site-packages");
 
+    const runtime = await getDefaultPythonRuntime();
+    await Promise.all(
+      closures.map((closure) => bundleOne(closure, this.stack.platformType, this.importFinder!))
+    );
+
+    async function bundleOne(
+      closure: arch.Closure,
+      platformType: PlatformType,
+      importFinder: ImportFinder
+    ) {
+      const destBaseDir = path.resolve(closure.path, "site-packages");
       const closureFile = path.resolve(closure.path, "__init__.py");
-      const modules = this.importFinder!.getImportedModulesForSingleFile(closureFile);
+      const modules = await importFinder!.getImportedModulesForSingleFile(closureFile);
 
       // TODO: Make the Python version and architecture configurable. These values will be used in
       // multiple places, including the Deducer and the infrastructure SDK. The former determines
       // the Python version and architecture for bundling dependencies, while the latter sets the
       // cloud runtime environment.
-      const runtime = getDefaultPythonRuntime();
       await bundleModules(runtime, "x86_64", modules, destBaseDir, {
         slim: true,
         // By default, we'll delete the `dist-info` directory, but LangChain needs it, so we'll just
         // delete the `.pyc` and `__pycache__` files.
         uselessFilesPatterns: ["**/*.pyc", "**/__pycache__"],
         cache: true,
-        platform: this.stack.platformType,
+        platform: platformType,
       });
     }
   }

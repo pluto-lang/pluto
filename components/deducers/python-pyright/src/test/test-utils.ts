@@ -1,13 +1,13 @@
 import * as os from "os";
-import * as fs from "fs-extra";
 import * as path from "path";
+import * as fs from "fs-extra";
+import { randomUUID } from "crypto";
 import { Uri } from "pyright-internal/dist/common/uri/uri";
-import { Program } from "pyright-internal/dist/analyzer/program";
 import { LogLevel } from "pyright-internal/dist/common/console";
+import { Program } from "pyright-internal/dist/analyzer/program";
 import { SourceFile } from "pyright-internal/dist/analyzer/sourceFile";
-
-import * as ProgramUtils from "../program-utils";
 import { TypeSearcher } from "../type-searcher";
+import * as ProgramUtils from "../program-utils";
 
 export interface ParseResult {
   program: Program;
@@ -42,7 +42,7 @@ export function parseCode(code: string, filename: string = "tmp.py") {
     ],
   });
 
-  const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), "pyright-deducer-"));
+  const { tmpdir, cleanup } = getTmpDir();
   const tmpfile = path.join(tmpdir, filename);
   fs.writeFileSync(tmpfile, code);
 
@@ -57,7 +57,7 @@ export function parseCode(code: string, filename: string = "tmp.py") {
     program,
     sourceFile,
     clean: () => {
-      fs.rmSync(path.dirname(sourceFile.getUri().key), { recursive: true });
+      cleanup();
     },
   };
 }
@@ -70,4 +70,10 @@ export function getSpecialNodeMap(program: Program, sourceFile: SourceFile) {
   const walker = new TypeSearcher(program.evaluator!);
   walker.walk(parseTree);
   return walker.specialNodeMap;
+}
+
+export function getTmpDir() {
+  const tmpdir = path.join(os.tmpdir(), "pluto-test-" + randomUUID());
+  fs.ensureDirSync(tmpdir);
+  return { tmpdir, cleanup: () => fs.removeSync(tmpdir) };
 }

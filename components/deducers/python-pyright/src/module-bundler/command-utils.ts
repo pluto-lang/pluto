@@ -19,51 +19,60 @@ export function mergeCommands(commands: string[][]) {
 }
 
 /**
- * Execute a command and return the output.
+ * Execute a command and return the output asynchronously.
  * @param cmd The command to execute.
  * @param args The arguments to pass to the command.
- * @returns The output of the command.
+ * @returns A promise that resolves with the output of the command.
  */
-export function runCommand(cmd: string, args: string[]) {
-  try {
-    const result = spawn.sync(cmd, args, { encoding: "utf-8" });
+export function runCommand(cmd: string, args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const process = spawn(cmd, args);
 
-    if (result.error) {
-      throw result.error;
-    }
+    let stdout = "";
+    let stderr = "";
 
-    if (result.status !== 0) {
-      throw new Error(`Command failed with status ${result.status}, stderr: ${result.stderr}`);
-    }
+    process.stdout?.on("data", (data) => {
+      stdout += data.toString();
+    });
 
-    return result.stdout;
-  } catch (e: any) {
-    if (
-      (e.code && e.code === "ENOENT") ||
-      (e instanceof Error && e.message.includes("command not found"))
-    ) {
-      throw new Error(cmd + " is not installed. Please install it to continue.");
-    }
-    throw e;
-  }
+    process.stderr?.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    process.on("close", (status) => {
+      if (status === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(`Command failed with status ${status}, stderr: ${stderr}`));
+      }
+    });
+
+    process.on("error", (e) => {
+      if (e.message && e.message.includes("command not found")) {
+        reject(new Error(`${cmd} is not installed. Please install it to continue.`));
+      } else {
+        reject(e);
+      }
+    });
+  });
 }
 
 /**
  * Check if a command exists.
  */
-export function existCommand(cmd: string) {
+export async function existCommand(cmd: string) {
   try {
-    runCommand("which", [cmd]);
+    await runCommand("which", [cmd]);
     return true;
   } catch (e) {
     return false;
   }
 }
 
-export function getDefaultPythonRuntime(): Runtime {
+export async function getDefaultPythonRuntime(): Promise<Runtime> {
   let output: string;
   try {
-    output = runCommand("python3", ["--version"]);
+    output = await runCommand("python3", ["--version"]);
   } catch (error) {
     throw new Error("Python 3 is not installed");
   }

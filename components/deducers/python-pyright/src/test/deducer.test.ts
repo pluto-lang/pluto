@@ -137,7 +137,7 @@ async function getArchRefForInline(code: string, filename: string = "tmp.py") {
     project: "test",
     rootpath: __dirname,
     closureDir: closureDir,
-    stack: { configs: [] } as any,
+    stack: { configs: { bundleWithDependencies: false } } as any,
   });
 
   return {
