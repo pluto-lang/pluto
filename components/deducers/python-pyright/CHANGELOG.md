@@ -1,5 +1,13 @@
 # @plutolang/pyright-deducer
 
+## 0.1.20
+
+### Patch Changes
+
+- 83f5d44: feat(deducer): speed up bundling by parallelizing package installation
+
+  By installing packages in parallel, the bundling process is accelerated.
+
 ## 0.1.19
 
 ### Patch Changes
