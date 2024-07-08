@@ -1,5 +1,13 @@
 # @plutolang/pyright-deducer
 
+## 0.1.18
+
+### Patch Changes
+
+- b7c9d45: feat(deducer): add option to disable dependency bundling
+
+  Add a configuration option `bundleWithDependencies` to disable automatic bundling of dependencies in the Pyright deducer. When set to `false`, dependency bundling is turned off.
+
 ## 0.1.17
 
 ### Patch Changes
