@@ -1,11 +1,68 @@
 import * as fs from "fs-extra";
 import { getTmpDir } from "../test-utils";
-import { Runtime } from "../../module-bundler";
+import { Module, Runtime } from "../../module-bundler";
 import { bundleModules } from "../../module-bundler/bundle-module";
 import * as CommandUtils from "../../module-bundler/command-utils";
 
-describe("bundleModules", () => {
-  test("should bundle modules and remove useless files", async () => {
+describe("bundle with the local modules", () => {
+  test("should correctly bundle with a local module", async () => {
+    const { tmpdir, cleanup } = getTmpDir();
+
+    await fs.writeFile(`${tmpdir}/module.py`, "def hello():\n  return 'Hello, world!'\n");
+
+    const runtime = await CommandUtils.getDefaultPythonRuntime();
+    const architecture = "x86_64";
+    const modules: Module[] = [{ name: "module", packageDir: `${tmpdir}/module.py` }];
+
+    const targetFolder = `${tmpdir}/bundle`;
+    fs.ensureDirSync(targetFolder);
+    const bundleDir = targetFolder;
+    const sitePackagesDir = `${bundleDir}/site-packages`;
+    const options = { dockerPip: false };
+
+    try {
+      await expect(
+        bundleModules(runtime, architecture, modules, bundleDir, sitePackagesDir, options)
+      ).resolves.not.toThrow();
+
+      const files = await fs.readdir(bundleDir);
+      expect(files).toContain("module.py");
+    } finally {
+      cleanup();
+    }
+  });
+
+  test("should correctly bundle a local package", async () => {
+    const { tmpdir, cleanup } = getTmpDir();
+
+    await fs.ensureDir(`${tmpdir}/module`);
+    await fs.writeFile(`${tmpdir}/module/__init__.py`, "def hello():\n  return 'Hello, world!'\n");
+
+    const runtime = await CommandUtils.getDefaultPythonRuntime();
+    const architecture = "x86_64";
+    const modules: Module[] = [{ name: "module", packageDir: `${tmpdir}/module` }];
+
+    const targetFolder = `${tmpdir}/bundle`;
+    fs.ensureDirSync(targetFolder);
+    const bundleDir = targetFolder;
+    const sitePackagesDir = `${targetFolder}/site-packages`;
+    const options = { dockerPip: false };
+
+    try {
+      await expect(
+        bundleModules(runtime, architecture, modules, bundleDir, sitePackagesDir, options)
+      ).resolves.not.toThrow();
+
+      const files = await fs.readdir(bundleDir);
+      expect(files).toContain("module");
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe("bundle with the packages that need to install", () => {
+  test("should bundle packages and remove useless files", async () => {
     const { tmpdir, cleanup } = getTmpDir();
 
     const runtime = await CommandUtils.getDefaultPythonRuntime();
@@ -19,7 +76,7 @@ describe("bundleModules", () => {
     const options = { slim: true };
 
     try {
-      await bundleModules(runtime, architecture, modules, targetFolder, options);
+      await bundleModules(runtime, architecture, modules, targetFolder, targetFolder, options);
 
       const files = fs.readdirSync(targetFolder);
       expect(files).toContain("requirements.txt");
@@ -53,7 +110,7 @@ describe("bundleModules", () => {
 
     try {
       await expect(
-        bundleModules(runtime, architecture, modules, targetFolder, options)
+        bundleModules(runtime, architecture, modules, targetFolder, targetFolder, options)
       ).rejects.toThrow(
         "Docker is required to bundle modules on non-Linux platforms, or for cross-architecture."
       );
@@ -96,7 +153,7 @@ describe("bundleModules", () => {
 
     try {
       await expect(
-        bundleModules(runtime, architecture, modules, targetFolder, options)
+        bundleModules(runtime, architecture, modules, targetFolder, targetFolder, options)
       ).rejects.toThrow(
         `${runtime} is not installed. Please install it first, or use Docker to bundle modules instead.`
       );

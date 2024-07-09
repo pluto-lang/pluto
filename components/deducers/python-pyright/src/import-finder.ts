@@ -50,6 +50,7 @@ export class ImportFinder {
   constructor(
     private readonly importResolver: ImportResolver,
     private readonly execEnv: ExecutionEnvironment,
+    private readonly projectRoot: string,
     private readonly platform?: PlatformType,
     runtime?: string
   ) {
@@ -59,18 +60,27 @@ export class ImportFinder {
   public async getImportedModulesForSingleFile(sourceFilepath: string): Promise<Module[]> {
     const imports = this.getImportsOfFile(sourceFilepath);
 
-    const importedModules: { name: string; version?: string }[] = [];
+    const importedModules: Module[] = [];
     for (const imp of imports) {
       const moduleName = imp.importName;
       if (await this.shouldIgnore(imp)) {
         debugPrint("Ignoring import:", moduleName);
         continue;
       }
-      const installedPkgs = getInstallableModule(imp);
-      importedModules.push(installedPkgs);
-      debugPrint(
-        `Found installable module ${installedPkgs.name}==${installedPkgs.version} for ${moduleName}`
-      );
+
+      const pkgDir = getModulePath(imp);
+      if (pkgDir?.startsWith(`${this.projectRoot}/app`)) {
+        // Local module
+        debugPrint("Found a local module:", moduleName, pkgDir);
+        importedModules.push({ name: moduleName, packageDir: pkgDir });
+      } else {
+        // Installable module
+        const installedPkgs = getInstallableModule(imp);
+        importedModules.push(installedPkgs);
+        debugPrint(
+          `Found installable module ${installedPkgs.name}==${installedPkgs.version} for ${moduleName}`
+        );
+      }
     }
 
     return importedModules;
@@ -90,7 +100,6 @@ export class ImportFinder {
 
     return (
       moduleName === "" || // private module
-      moduleName.startsWith(".") || // relative import
       modulePath?.endsWith(".so") || // native module
       !importInfo.isImportFound || // not found
       importInfo.importType === ImportType.BuiltIn || // built-in
@@ -165,11 +174,8 @@ class ImportVisitor extends ParseTreeWalker {
   public readonly moduleNames: string[] = [];
 
   visitModuleName(node: ModuleNameNode): boolean {
-    if (node.leadingDots === 0) {
-      // Only consider the absolute import.
-      const moduleName = node.nameParts.map((part) => part.value).join(".");
-      this.moduleNames.push(moduleName);
-    }
+    const moduleName = node.nameParts.map((part) => part.value).join(".");
+    this.moduleNames.push(moduleName);
     return false;
   }
 }

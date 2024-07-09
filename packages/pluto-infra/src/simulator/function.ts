@@ -139,6 +139,8 @@ def serialize_result(result):
 
 
 sys.path.insert(0, "{CLOSURE_BASE}")
+sys.path.insert(0, "{CLOSURE_BASE}/{CLOSURE_NAME}")
+sys.path.insert(0, "{CLOSURE_BASE}/{CLOSURE_NAME}/site-packages")
 from {CLOSURE_NAME} import {EXPORT_NAME}
 
 args = process_args([{ARGS}])
