@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/simulator-adapter",
-  "version": "0.3.25",
+  "version": "0.3.26",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",

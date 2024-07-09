@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/pluto-infra",
-  "version": "0.4.20",
+  "version": "0.4.21",
   "description": "",
   "scripts": {
     "build": "node scripts/copy-assets.js && tsc",
