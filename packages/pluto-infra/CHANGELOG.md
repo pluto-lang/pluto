@@ -1,5 +1,13 @@
 # @plutolang/pluto-infra
 
+## 0.4.21
+
+### Patch Changes
+
+- a11206f: feat(deducer): enable relative imports for local modules
+
+  Users can now perform relative imports of local modules within the app directory. The Pyright deducer has been updated to copy these modules to the root of each bundle directory for seamless integration.
+
 ## 0.4.20
 
 ### Patch Changes

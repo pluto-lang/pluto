@@ -1,5 +1,13 @@
 # @plutolang/cli
 
+## 0.4.37
+
+### Patch Changes
+
+- Updated dependencies [a11206f]
+  - @plutolang/pyright-deducer@0.1.21
+  - @plutolang/simulator-adapter@0.3.26
+
 ## 0.4.36
 
 ### Patch Changes
