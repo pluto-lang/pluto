@@ -9,6 +9,10 @@ import * as MetadataUtils from "./metadata";
 import { Architecture, Module, Runtime } from "./types";
 
 export interface BundleModulesOptions {
+  /**
+   * Whether to install the modules. If false, the installation is skipped. @default true
+   */
+  install?: boolean;
   dockerPip?: boolean;
   platform?: PlatformType;
   slim?: boolean;
@@ -20,13 +24,10 @@ export async function bundleModules(
   runtime: Runtime,
   architecture: Architecture,
   modules: readonly Module[],
-  targetFolder: string,
+  bundleDir: string,
+  sitePackagesDir: string,
   options: BundleModulesOptions = {}
 ): Promise<void> {
-  if (!path.isAbsolute(targetFolder)) {
-    targetFolder = path.resolve(targetFolder);
-  }
-
   // When running on non-Linux platforms or packaging for cross-architecture, the Docker is
   // required. If the user has explicitly disabled Docker, throw an error.
   const currentArch = process.arch === "x64" ? "x86_64" : process.arch;
@@ -51,17 +52,53 @@ export async function bundleModules(
     options.cache = true;
   }
 
+  // Copy the local packages to the target folder.
+  await copyLocalModules(modules, bundleDir);
+
   const currentMeta = { runtime, architecture, platform: options.platform, modules, done: false };
-  if (isCompleted(targetFolder, currentMeta)) {
+  if (isCompleted(sitePackagesDir, currentMeta)) {
     // If the installation is already done, skip it.
     return;
   }
 
+  if (options.install !== false) {
+    // Clean the target folder and dump the metadata file.
+    fs.removeSync(sitePackagesDir);
+    fs.ensureDirSync(sitePackagesDir);
+    MetadataUtils.dumpMetaFile(sitePackagesDir, currentMeta);
+
+    // Install the installable modules.
+    await installModules(modules, sitePackagesDir, runtime, architecture, options);
+
+    // Mark the installation as done. This is used to skip the installation if the metadata hasn't
+    // changed.
+    currentMeta.done = true;
+    MetadataUtils.dumpMetaFile(sitePackagesDir, currentMeta);
+  }
+}
+
+async function copyLocalModules(modules: readonly Module[], bundleDir: string) {
+  for (const module of modules) {
+    if (!module.packageDir) {
+      // Skip the installable modules.
+      continue;
+    }
+
+    const suffix = (await fs.stat(module.packageDir)).isFile() ? ".py" : "";
+    const destDir = path.join(bundleDir, module.name) + suffix;
+    await fs.copy(module.packageDir, destDir);
+  }
+}
+
+async function installModules(
+  modules: readonly Module[],
+  targetFolder: string,
+  runtime: Runtime,
+  architecture: Architecture,
+  options: BundleModulesOptions
+) {
   // Generate requirements.txt file in the target folder.
-  fs.removeSync(targetFolder);
-  fs.ensureDirSync(targetFolder);
   generateRequirements(modules, targetFolder);
-  MetadataUtils.dumpMetaFile(targetFolder, currentMeta);
 
   const hostCacheDir = await getCacheDir();
   const cacheDir = options.dockerPip ? "/var/pipCache" : hostCacheDir;
@@ -99,11 +136,6 @@ export async function bundleModules(
     // __pycache__, and etc.
     SlimUtils.removeUselessFiles(targetFolder, options.uselessFilesPatterns);
   }
-
-  // Mark the installation as done. This is used to skip the installation if the metadata hasn't
-  // changed.
-  currentMeta.done = true;
-  MetadataUtils.dumpMetaFile(targetFolder, currentMeta);
 }
 
 function isCompleted(targetFolder: string, meta: MetadataUtils.Metadata) {
@@ -180,6 +212,7 @@ function getPipInstallCommand(
  */
 function generateRequirements(modules: readonly Module[], targetFolder: string) {
   const requirements = modules
+    .filter((m) => m.packageDir === undefined)
     .map((m) => {
       if (m.version) {
         return `${m.name}==${m.version}`;

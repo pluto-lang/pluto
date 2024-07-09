@@ -4,4 +4,5 @@ export type Architecture = "x86_64" | "arm64";
 export interface Module {
   name: string;
   version?: string;
+  packageDir?: string;
 }

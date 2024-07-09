@@ -159,13 +159,13 @@ export default class PyrightDeducer extends core.Deducer {
     const execEnv = program.importResolver
       .getConfigOptions()
       .findExecEnvironment(Uri.file(entrypoints[0]))!;
-    this.importFinder = new ImportFinder(program.importResolver, execEnv, this.stack.platformType);
-    if (
-      this.stack.configs["bundleWithDependencies"] === undefined ||
-      this.stack.configs["bundleWithDependencies"] === true
-    ) {
-      await this.prepareDependencies(archRef.closures);
-    }
+    this.importFinder = new ImportFinder(
+      program.importResolver,
+      execEnv,
+      this.rootpath,
+      this.stack.platformType
+    );
+    await this.prepareDependencies(archRef.closures);
 
     program.dispose();
 
@@ -248,6 +248,7 @@ export default class PyrightDeducer extends core.Deducer {
   private pyrightAnalyze(entrypoints: string[]) {
     const program = ProgramUtils.createProgram({
       logLevel: LogLevel.Warn,
+      extraPaths: [path.join(this.rootpath, "app")],
     });
 
     const fileUris = entrypoints.map((name) => Uri.file(name));
@@ -267,7 +268,9 @@ export default class PyrightDeducer extends core.Deducer {
   private async prepareDependencies(closures: readonly arch.Closure[]) {
     console.log(`Bundling dependencies, this may take a while...`);
 
+    const installPkg = this.stack.configs["bundleWithDependencies"] !== false;
     const runtime = await getDefaultPythonRuntime();
+
     await Promise.all(
       closures.map((closure) => bundleOne(closure, this.stack.platformType, this.importFinder!))
     );
@@ -285,7 +288,8 @@ export default class PyrightDeducer extends core.Deducer {
       // multiple places, including the Deducer and the infrastructure SDK. The former determines
       // the Python version and architecture for bundling dependencies, while the latter sets the
       // cloud runtime environment.
-      await bundleModules(runtime, "x86_64", modules, destBaseDir, {
+      await bundleModules(runtime, "x86_64", modules, closure.path, destBaseDir, {
+        install: installPkg,
         slim: true,
         // By default, we'll delete the `dist-info` directory, but LangChain needs it, so we'll just
         // delete the `.pyc` and `__pycache__` files.
