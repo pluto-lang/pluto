@@ -41,17 +41,24 @@ export interface EvaluateResult {
   readonly resourceMapping: ReadonlyMap<ParseNodeId, arch.Resource>;
 }
 
+export interface EvaluateGraphOptions {
+  readonly resourceFillings?: ReadonlyMap<ParseNodeId, arch.Resource>;
+  readonly argumentFillings?: ReadonlyMap<ParseNodeId, ArgumentNode>;
+
+  readonly bundleFilename?: string;
+  readonly exportName?: string;
+  readonly bundleIdSuffix?: string;
+}
+
 export function evaluateGraph(
   graph: ResourceGraph,
-  resourceFillings: ReadonlyMap<ParseNodeId, arch.Resource>,
-  argumentFillings: ReadonlyMap<ParseNodeId, ArgumentNode>,
   projectInfo: ProjectInfo,
   sourceFile: SourceFile,
   typeEvaluator: TypeEvaluator,
   valueEvaluator: ValueEvaluator,
   codeExtractor: CodeExtractor,
   resourceObjectTracker: ResourceObjectTracker,
-  closureSuffix?: string
+  options: EvaluateGraphOptions = {}
 ): EvaluateResult {
   const evaluator = new GraphEvaluator(
     projectInfo,
@@ -61,9 +68,11 @@ export function evaluateGraph(
     resourceObjectTracker,
     sourceFile,
     graph,
-    resourceFillings,
-    argumentFillings,
-    closureSuffix
+    options.resourceFillings ?? new Map(),
+    options.argumentFillings ?? new Map(),
+    options.bundleFilename ?? "__init__.py",
+    options.exportName ?? "_default",
+    options.bundleIdSuffix
   );
   return evaluator.evaluate();
 }
@@ -90,7 +99,9 @@ class GraphEvaluator {
     private readonly graph: ResourceGraph,
     private readonly resourceFillings: ReadonlyMap<ParseNodeId, arch.Resource>,
     private readonly argumentFillings: ReadonlyMap<ParseNodeId, ArgumentNode>,
-    private readonly closureSuffix?: string
+    private readonly bundleFilename: string,
+    private readonly exportName: string,
+    private readonly bundleIdSuffix?: string
   ) {}
 
   public evaluate() {
@@ -230,12 +241,12 @@ class GraphEvaluator {
       this.argumentFillings
     );
 
-    if (this.closureSuffix) {
-      bundleId = `${bundleId}_${this.closureSuffix}`;
+    if (this.bundleIdSuffix) {
+      bundleId = `${bundleId}_${this.bundleIdSuffix}`;
     }
 
-    const bundleText = CodeSegment.toString(codeSegment, /* exportName */ "_default");
-    const bundleFile = path.resolve(this.projectInfo.bundleBaseDir, bundleId, "__init__.py");
+    const bundleText = CodeSegment.toString(codeSegment, this.exportName);
+    const bundleFile = path.resolve(this.projectInfo.bundleBaseDir, bundleId, this.bundleFilename);
     fs.ensureFileSync(bundleFile);
     fs.writeFileSync(bundleFile, bundleText);
 

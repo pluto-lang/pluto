@@ -52,9 +52,22 @@ export default class PyrightDeducer extends core.Deducer {
   private extractor?: CodeExtractor;
   private importFinder?: ImportFinder;
 
+  private readonly bundleFilename: string;
+  private readonly handlerName: string;
+
   constructor(args: core.NewDeducerArgs) {
     super(args);
     this.closureDir = args.closureDir;
+
+    if (this.stack.configs["entrypoint"]) {
+      const parts = this.stack.configs["entrypoint"].split(".");
+      assert(parts.length === 2, "The entrypoint must be in the format of 'filename.handler'.");
+      this.bundleFilename = parts[0] + ".py";
+      this.handlerName = parts[1];
+    } else {
+      this.bundleFilename = "__init__.py";
+      this.handlerName = "_default";
+    }
   }
 
   public async deduce(entrypoints: string[]): Promise<core.DeduceResult> {
@@ -103,14 +116,16 @@ export default class PyrightDeducer extends core.Deducer {
     );
     const { archRef: globalArchRef, resourceMapping: globalResourceMapping } = evaluateGraph(
       globalGraph,
-      new Map(),
-      new Map(),
       projectInfo,
       sourceFile,
       this.typeEvaluator!,
       this.valueEvaluator!,
       this.extractor!,
-      this.tracker!
+      this.tracker!,
+      {
+        bundleFilename: this.bundleFilename,
+        exportName: this.handlerName,
+      }
     );
 
     const partialArchRefs: arch.Architecture[] = [];
@@ -131,15 +146,19 @@ export default class PyrightDeducer extends core.Deducer {
 
       const partialArchRef = evaluateGraph(
         graph,
-        globalResourceMapping,
-        argumentFillings,
         projectInfo,
         sourceFile,
         this.typeEvaluator!,
         this.valueEvaluator!,
         this.extractor!,
         this.tracker!,
-        `custom_infra_fn_${i}`
+        {
+          resourceFillings: globalResourceMapping,
+          argumentFillings: argumentFillings,
+          bundleFilename: this.bundleFilename,
+          exportName: this.handlerName,
+          bundleIdSuffix: `custom_infra_fn_${i}`,
+        }
       );
       partialArchRefs.push(partialArchRef.archRef);
     }
@@ -163,7 +182,7 @@ export default class PyrightDeducer extends core.Deducer {
     this.importFinder = new ImportFinder(
       program.importResolver,
       execEnv,
-      this.rootpath + "/app",
+      this.stack.configs["codebase"] /* used as a splitting tool */ ?? this.rootpath + "/app",
       this.stack.platformType
     );
     await this.prepareDependencies(archRef.closures);
@@ -273,16 +292,19 @@ export default class PyrightDeducer extends core.Deducer {
     const runtime = await getDefaultPythonRuntime();
 
     await Promise.all(
-      closures.map((closure) => bundleOne(closure, this.stack.platformType, this.importFinder!))
+      closures.map((closure) =>
+        bundleOne(closure, this.stack.platformType, this.importFinder!, this.bundleFilename)
+      )
     );
 
     async function bundleOne(
       closure: arch.Closure,
       platformType: PlatformType,
-      importFinder: ImportFinder
+      importFinder: ImportFinder,
+      bundleFilename: string
     ) {
       const destBaseDir = path.resolve(closure.path, "site-packages");
-      const closureFile = path.resolve(closure.path, "__init__.py");
+      const closureFile = path.resolve(closure.path, bundleFilename);
       const modules = await importFinder!.getImportedModulesForSingleFile(closureFile);
 
       // The process of bundling may eliminate some files that were previously there. Therefore, we

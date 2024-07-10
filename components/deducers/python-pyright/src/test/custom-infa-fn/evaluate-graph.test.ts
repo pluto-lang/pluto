@@ -45,8 +45,6 @@ custom_infra_fn(router_global, "path")
     const globalGraph = buildGraphForModule(program.evaluator!, tracker, parseTree);
     const { resourceMapping: resourceFillings } = evaluateGraph(
       globalGraph,
-      new Map(),
-      new Map(),
       {
         projectName: "project",
         stackName: "stack",
@@ -83,8 +81,6 @@ custom_infra_fn(router_global, "path")
     expect(() =>
       evaluateGraph(
         graph,
-        resourceFillings,
-        argumentFillings,
         {
           projectName: "project",
           stackName: "stack",
@@ -94,7 +90,11 @@ custom_infra_fn(router_global, "path")
         program.evaluator!,
         valueEvaluator,
         new CodeExtractor(program.evaluator!, specialNodeMap),
-        tracker
+        tracker,
+        {
+          resourceFillings,
+          argumentFillings,
+        }
       )
     ).not.toThrow();
   } finally {

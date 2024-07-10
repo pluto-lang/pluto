@@ -1,5 +1,5 @@
 import fs from "fs";
-import path, { resolve } from "path";
+import path from "path";
 import { arch, core } from "@plutolang/base";
 import logger from "../log";
 import { buildDeducer, buildGenerator, getDefaultDeducerPkg, getDefaultEntrypoint } from "./utils";
@@ -16,7 +16,7 @@ export interface CompileOptions {
 
 export async function compile(entrypoint: string, opts: CompileOptions) {
   // get current stack, and set the output directory
-  const projectRoot = resolve("./");
+  const projectRoot = path.resolve("./");
   if (!isPlutoProject(projectRoot)) {
     logger.error("The current location is not located at the root of a Pluto project.");
     logger.debug(`Current directory: ${projectRoot}`);
