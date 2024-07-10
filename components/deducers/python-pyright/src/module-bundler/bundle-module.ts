@@ -6,7 +6,7 @@ import * as SlimUtils from "./slim";
 import * as AwsUtils from "./aws-utils";
 import * as CmdUtils from "./command-utils";
 import * as MetadataUtils from "./metadata";
-import { Architecture, Module, Runtime } from "./types";
+import { Architecture, InstalledModule, Module, ModuleType, Runtime } from "./types";
 
 export interface BundleModulesOptions {
   /**
@@ -79,14 +79,14 @@ export async function bundleModules(
 
 async function copyLocalModules(modules: readonly Module[], bundleDir: string) {
   for (const module of modules) {
-    if (!module.packageDir) {
+    if (ModuleType.Local !== module.type) {
       // Skip the installable modules.
       continue;
     }
 
-    const suffix = (await fs.stat(module.packageDir)).isFile() ? ".py" : "";
+    const suffix = (await fs.stat(module.modulePath)).isFile() ? ".py" : "";
     const destDir = path.join(bundleDir, module.name) + suffix;
-    await fs.copy(module.packageDir, destDir);
+    await fs.copy(module.modulePath, destDir);
   }
 }
 
@@ -140,7 +140,11 @@ async function installModules(
 
 function isCompleted(targetFolder: string, meta: MetadataUtils.Metadata) {
   const lastMeta = MetadataUtils.loadMetaFile(targetFolder);
-  if (lastMeta && lastMeta.done && MetadataUtils.sameMetadata(meta, lastMeta)) {
+  if (
+    lastMeta &&
+    lastMeta.done &&
+    MetadataUtils.sameMetadata(meta, lastMeta, /* careType */ ModuleType.Installed)
+  ) {
     // If the metadata is the same as the last time, and the installation is done, skip it.
     return true;
   }
@@ -212,7 +216,7 @@ function getPipInstallCommand(
  */
 function generateRequirements(modules: readonly Module[], targetFolder: string) {
   const requirements = modules
-    .filter((m) => m.packageDir === undefined)
+    .filter<InstalledModule>((m): m is InstalledModule => ModuleType.Installed === m.type)
     .map((m) => {
       if (m.version) {
         return `${m.name}==${m.version}`;
