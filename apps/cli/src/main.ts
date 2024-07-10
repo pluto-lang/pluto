@@ -163,6 +163,19 @@ async function main() {
       .action(cmd.compile);
   }
 
+  program
+    .command("split")
+    .description(
+      "Split the source code to sperate directories.\nNOTE: this command may be removed in the future."
+    )
+    .argument("<entrypoint>", "The file need to be splitted.")
+    .option(
+      "-o, --outdir <outdir>",
+      "The folder where the split files will be stored. Its contents will be erased before splitting starts.",
+      "output"
+    )
+    .action(cmd.split);
+
   program.addHelpText(
     "after",
     `
