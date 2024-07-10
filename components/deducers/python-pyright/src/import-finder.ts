@@ -1,3 +1,4 @@
+import { glob } from "glob";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { ParseOptions, Parser } from "pyright-internal/dist/parser/parser";
@@ -12,7 +13,7 @@ import { ParseTreeWalker } from "pyright-internal/dist/analyzer/parseTreeWalker"
 import { ExecutionEnvironment } from "pyright-internal/dist/common/configOptions";
 import { ImportResult, ImportType } from "pyright-internal/dist/analyzer/importResult";
 import { PlatformType } from "@plutolang/base";
-import { Module } from "./module-bundler";
+import { InstalledModule, LocalModule, Module, ModuleSet } from "./module-bundler";
 import { getDefaultPythonRuntime } from "./module-bundler/command-utils";
 
 import allAwsLambdaModulesPython38 from "./all_aws_lambda_modules_python3.8.txt";
@@ -47,10 +48,13 @@ export class ImportFinder {
 
   private readonly runtime?: string;
 
+  // Cache for the imported modules of each file or directory.
+  private readonly cache: Map<string, Module[]> = new Map();
+
   constructor(
     private readonly importResolver: ImportResolver,
     private readonly execEnv: ExecutionEnvironment,
-    private readonly projectRoot: string,
+    private readonly codebase: string,
     private readonly platform?: PlatformType,
     runtime?: string
   ) {
@@ -58,32 +62,66 @@ export class ImportFinder {
   }
 
   public async getImportedModulesForSingleFile(sourceFilepath: string): Promise<Module[]> {
-    const imports = this.getImportsOfFile(sourceFilepath);
+    const modules = await this.getImportedModules(sourceFilepath, new Set());
+    return modules;
+  }
 
-    const importedModules: Module[] = [];
-    for (const imp of imports) {
-      const moduleName = imp.importName;
-      if (await this.shouldIgnore(imp)) {
+  private async getImportedModules(
+    fileOrDirPath: string,
+    visitedPaths: Set<string>
+  ): Promise<Module[]> {
+    if (this.cache.has(fileOrDirPath)) {
+      return this.cache.get(fileOrDirPath)!;
+    }
+
+    const importedModules = new ModuleSet();
+
+    const importResults = this.getImports(fileOrDirPath);
+    for (const importResult of importResults) {
+      const moduleName = importResult.importName;
+      if (await this.shouldIgnore(importResult)) {
         debugPrint("Ignoring import:", moduleName);
         continue;
       }
 
-      const pkgDir = getModulePath(imp);
-      if (pkgDir?.startsWith(`${this.projectRoot}/app`)) {
+      const pkgDir = getModulePath(importResult);
+      if (pkgDir && this.isLocalModule(pkgDir)) {
+        if (pkgDir.startsWith(fileOrDirPath)) {
+          debugPrint("Ignoring subdirectory:", moduleName, pkgDir);
+          // This import is importing a module in the same directory or its subdirectory. This root
+          // module is already included in the importedModules. So, we don't need to include it
+          // again.
+          continue;
+        }
+
+        if (visitedPaths.has(pkgDir)) {
+          // This module is already visited. Avoid infinite loop.
+          continue;
+        }
+        visitedPaths.add(pkgDir);
+
         // Local module
         debugPrint("Found a local module:", moduleName, pkgDir);
-        importedModules.push({ name: moduleName, packageDir: pkgDir });
+
+        importedModules.add(LocalModule.create(moduleName, pkgDir));
+        const subImportedModules = await this.getImportedModules(pkgDir, visitedPaths);
+        subImportedModules.forEach((m) => importedModules.add(m));
       } else {
         // Installable module
-        const installedPkgs = getInstallableModule(imp);
-        importedModules.push(installedPkgs);
+        const installedPkg = getInstallableModule(importResult);
+        importedModules.add(installedPkg);
         debugPrint(
-          `Found installable module ${installedPkgs.name}==${installedPkgs.version} for ${moduleName}`
+          `Found installable module ${installedPkg.name}==${installedPkg.version} for ${moduleName}`
         );
       }
     }
 
-    return importedModules;
+    this.cache.set(fileOrDirPath, importedModules.toArray());
+    return importedModules.toArray();
+  }
+
+  private isLocalModule(modulePath: string) {
+    return modulePath.startsWith(this.codebase);
   }
 
   private async shouldIgnore(importInfo: ImportResult, modulePath?: string) {
@@ -118,12 +156,31 @@ export class ImportFinder {
     );
   }
 
+  private getImports(fileOrDirPath: string): ImportResult[] {
+    const imports = fs.statSync(fileOrDirPath).isDirectory()
+      ? this.getImportsOfDirectory(fileOrDirPath)
+      : this.getImportsOfFile(fileOrDirPath);
+    return imports;
+  }
+
+  private getImportsOfDirectory(dirpath: string): ImportResult[] {
+    const files = glob.sync(path.join(dirpath, "**/*.py"));
+    const imports: Map<string, ImportResult> = new Map();
+    for (const file of files) {
+      const importResults = this.getImportsOfFile(file);
+      for (const importResult of importResults) {
+        imports.set(importResult.importName, importResult);
+      }
+    }
+    return Array.from(imports.values());
+  }
+
   /**
    * Retrieves the top-level modules for each module imported in the given file.
    * @param filepath - The path of the file to retrieve imports from.
    * @returns An array of ImportResult objects representing the imports.
    */
-  private getImportsOfFile(filepath: string): readonly ImportResult[] {
+  private getImportsOfFile(filepath: string): ImportResult[] {
     const importResults: ImportResult[] = [];
 
     const included = new Set<string>();
@@ -192,7 +249,7 @@ function getModulePath(module: ImportResult) {
  * @param {ImportResult} module - The import result, which contains the import name and module path.
  * @returns {Module} - The installable module.
  */
-function getInstallableModule(module: ImportResult): Module {
+function getInstallableModule(module: ImportResult): InstalledModule {
   const pkgName = module.importName;
   const pkgPath = getModulePath(module);
 
@@ -200,12 +257,12 @@ function getInstallableModule(module: ImportResult): Module {
     const distInfos = getAllDistInfos(path.dirname(pkgPath));
     for (const distInfo of distInfos) {
       if (distInfo.topLevel.includes(pkgName)) {
-        return distInfo;
+        return InstalledModule.create(pkgName, distInfo.version);
       }
     }
   }
 
-  return { name: pkgName };
+  return InstalledModule.create(pkgName);
 }
 
 interface DistInfo {

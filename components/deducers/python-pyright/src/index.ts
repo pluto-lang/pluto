@@ -1,4 +1,5 @@
 import assert from "assert";
+import { glob } from "glob";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { Uri } from "pyright-internal/dist/common/uri/uri";
@@ -162,7 +163,7 @@ export default class PyrightDeducer extends core.Deducer {
     this.importFinder = new ImportFinder(
       program.importResolver,
       execEnv,
-      this.rootpath,
+      this.rootpath + "/app",
       this.stack.platformType
     );
     await this.prepareDependencies(archRef.closures);
@@ -248,7 +249,7 @@ export default class PyrightDeducer extends core.Deducer {
   private pyrightAnalyze(entrypoints: string[]) {
     const program = ProgramUtils.createProgram({
       logLevel: LogLevel.Warn,
-      extraPaths: [path.join(this.rootpath, "app")],
+      extraPaths: [this.rootpath, path.join(this.rootpath, "app")],
     });
 
     const fileUris = entrypoints.map((name) => Uri.file(name));
@@ -283,6 +284,16 @@ export default class PyrightDeducer extends core.Deducer {
       const destBaseDir = path.resolve(closure.path, "site-packages");
       const closureFile = path.resolve(closure.path, "__init__.py");
       const modules = await importFinder!.getImportedModulesForSingleFile(closureFile);
+
+      // The process of bundling may eliminate some files that were previously there. Therefore, we
+      // tidy up the  folder, leaving only the entrypoint file and the directory that stores the
+      // installed dependencies.
+      for (const file of await glob("*", { cwd: closure.path })) {
+        const fullpath = path.resolve(closure.path, file);
+        if (fullpath !== destBaseDir && fullpath !== closureFile) {
+          await fs.remove(fullpath);
+        }
+      }
 
       // TODO: Make the Python version and architecture configurable. These values will be used in
       // multiple places, including the Deducer and the infrastructure SDK. The former determines

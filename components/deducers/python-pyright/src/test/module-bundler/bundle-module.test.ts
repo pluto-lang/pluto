@@ -1,6 +1,6 @@
 import * as fs from "fs-extra";
 import { getTmpDir } from "../test-utils";
-import { Module, Runtime } from "../../module-bundler";
+import { InstalledModule, LocalModule, Module, Runtime } from "../../module-bundler";
 import { bundleModules } from "../../module-bundler/bundle-module";
 import * as CommandUtils from "../../module-bundler/command-utils";
 
@@ -12,7 +12,7 @@ describe("bundle with the local modules", () => {
 
     const runtime = await CommandUtils.getDefaultPythonRuntime();
     const architecture = "x86_64";
-    const modules: Module[] = [{ name: "module", packageDir: `${tmpdir}/module.py` }];
+    const modules: Module[] = [LocalModule.create("module", `${tmpdir}/module.py`)];
 
     const targetFolder = `${tmpdir}/bundle`;
     fs.ensureDirSync(targetFolder);
@@ -40,7 +40,7 @@ describe("bundle with the local modules", () => {
 
     const runtime = await CommandUtils.getDefaultPythonRuntime();
     const architecture = "x86_64";
-    const modules: Module[] = [{ name: "module", packageDir: `${tmpdir}/module` }];
+    const modules: Module[] = [LocalModule.create("module", `${tmpdir}/module`)];
 
     const targetFolder = `${tmpdir}/bundle`;
     fs.ensureDirSync(targetFolder);
@@ -67,10 +67,10 @@ describe("bundle with the packages that need to install", () => {
 
     const runtime = await CommandUtils.getDefaultPythonRuntime();
     const architecture = "x86_64";
-    const modules = [
-      { name: "numpy", version: "1.26.4" },
-      { name: "pandas" },
-      { name: "pydantic" },
+    const modules: Module[] = [
+      InstalledModule.create("numpy", "1.26.4"),
+      InstalledModule.create("pandas"),
+      InstalledModule.create("pydantic"),
     ];
     const targetFolder = tmpdir;
     const options = { slim: true };
@@ -100,10 +100,10 @@ describe("bundle with the packages that need to install", () => {
 
     const runtime = await CommandUtils.getDefaultPythonRuntime();
     const architecture = "x86_64";
-    const modules = [
-      { name: "numpy", version: "1.26.4" },
-      { name: "pandas" },
-      { name: "pydantic" },
+    const modules: Module[] = [
+      InstalledModule.create("numpy", "1.26.4"),
+      InstalledModule.create("pandas"),
+      InstalledModule.create("pydantic"),
     ];
     const targetFolder = tmpdir;
     const options = { dockerPip: false };
@@ -143,10 +143,10 @@ describe("bundle with the packages that need to install", () => {
     }
 
     const architecture = "x86_64";
-    const modules = [
-      { name: "numpy", version: "1.26.4" },
-      { name: "pandas" },
-      { name: "pydantic" },
+    const modules: Module[] = [
+      InstalledModule.create("numpy", "1.26.4"),
+      InstalledModule.create("pandas"),
+      InstalledModule.create("pydantic"),
     ];
     const targetFolder = tmpdir;
     const options = { dockerPip: false };

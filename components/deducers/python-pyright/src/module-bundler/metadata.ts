@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs-extra";
 import { PlatformType } from "@plutolang/base";
-import { Architecture, Module, Runtime } from "./types";
+import { Architecture, Module, ModuleType, Runtime } from "./types";
 
 export interface Metadata {
   readonly runtime: Runtime;
@@ -28,14 +28,25 @@ export function loadMetaFile(targetFolder: string): Metadata | undefined {
   return JSON.parse(content);
 }
 
-export function sameMetadata(meta1: Metadata, meta2: Metadata) {
+export function sameMetadata(meta1: Metadata, meta2: Metadata, caredType?: ModuleType) {
+  if (
+    meta1.runtime !== meta2.runtime ||
+    meta1.architecture !== meta2.architecture ||
+    meta1.platform !== meta2.platform
+  )
+    return false;
+
+  if (!caredType) {
+    return (
+      meta1.modules.length === meta2.modules.length &&
+      meta1.modules.every((m1) => meta2.modules.some((m2) => Module.same(m1, m2)))
+    );
+  }
+
+  const caredModules1 = meta1.modules.filter((m) => m.type === caredType);
+  const caredModules2 = meta2.modules.filter((m) => m.type === caredType);
   return (
-    meta1.runtime === meta2.runtime &&
-    meta1.architecture === meta2.architecture &&
-    meta1.platform === meta2.platform &&
-    meta1.modules.length === meta2.modules.length &&
-    meta1.modules.every((m1) =>
-      meta2.modules.some((m2) => m1.name === m2.name && m1.version === m2.version)
-    )
+    caredModules1.length === caredModules2.length &&
+    caredModules1.every((m1) => caredModules2.some((m2) => Module.same(m1, m2)))
   );
 }
