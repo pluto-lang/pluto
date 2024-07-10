@@ -1,5 +1,13 @@
 # @plutolang/pyright-deducer
 
+## 0.1.22
+
+### Patch Changes
+
+- 5f58b7c: feat(deducer): enable recursive local module imports
+
+  Previously, the pyright deducer would only bundle modules imported in main.py. With this commit, it now recursively searches and bundles all local modules.
+
 ## 0.1.21
 
 ### Patch Changes
