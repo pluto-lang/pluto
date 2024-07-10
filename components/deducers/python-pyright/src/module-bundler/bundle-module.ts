@@ -54,6 +54,7 @@ export async function bundleModules(
 
   // Copy the local packages to the target folder.
   await copyLocalModules(modules, bundleDir);
+  generateRequirements(modules, bundleDir);
 
   const currentMeta = { runtime, architecture, platform: options.platform, modules, done: false };
   if (isCompleted(sitePackagesDir, currentMeta)) {
@@ -143,7 +144,7 @@ function isCompleted(targetFolder: string, meta: MetadataUtils.Metadata) {
   if (
     lastMeta &&
     lastMeta.done &&
-    MetadataUtils.sameMetadata(meta, lastMeta, /* careType */ ModuleType.Installed)
+    MetadataUtils.sameMetadata(meta, lastMeta, /* caredType */ ModuleType.Installed)
   ) {
     // If the metadata is the same as the last time, and the installation is done, skip it.
     return true;
