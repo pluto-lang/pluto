@@ -1,5 +1,13 @@
 # @plutolang/cli
 
+## 0.4.39
+
+### Patch Changes
+
+- 885864f: feat(cli): add split command
+- Updated dependencies [2afed38]
+  - @plutolang/pyright-deducer@0.1.23
+
 ## 0.4.38
 
 ### Patch Changes

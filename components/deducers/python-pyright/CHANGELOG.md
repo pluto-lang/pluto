@@ -1,5 +1,11 @@
 # @plutolang/pyright-deducer
 
+## 0.1.23
+
+### Patch Changes
+
+- 2afed38: feat(deducer): add custom entrypoint support for outputs
+
 ## 0.1.22
 
 ### Patch Changes
