@@ -7,6 +7,8 @@ export class Project {
   /** The name of the current specified stack. */
   public current?: string;
 
+  public readonly configs: Record<string, any> = {};
+
   constructor(
     /**
      * The project name from package.json.
