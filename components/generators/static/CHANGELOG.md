@@ -1,5 +1,12 @@
 # @plutolang/static-generator
 
+## 0.4.6
+
+### Patch Changes
+
+- Updated dependencies [4e5b0b1]
+  - @plutolang/base@0.4.6
+
 ## 0.4.5
 
 ### Patch Changes

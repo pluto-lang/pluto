@@ -1,5 +1,12 @@
 # @plutolang/graphviz-generator
 
+## 0.4.8
+
+### Patch Changes
+
+- Updated dependencies [4e5b0b1]
+  - @plutolang/base@0.4.6
+
 ## 0.4.7
 
 ### Patch Changes

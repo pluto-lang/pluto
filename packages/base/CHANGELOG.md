@@ -1,5 +1,13 @@
 # @plutolang/base
 
+## 0.4.6
+
+### Patch Changes
+
+- 4e5b0b1: feat(base): add extraConfigs attribute for project-level config support
+
+  Introduced an extraConfigs attribute in core components to enable additional project-level configurations.
+
 ## 0.4.5
 
 ### Patch Changes
