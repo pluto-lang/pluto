@@ -61,6 +61,7 @@ export class Project {
     const clonedProject = new Project(this.name, this.rootpath, this.language);
     this.stacks.forEach((stack) => clonedProject.addStack(stack.deepCopy()));
     clonedProject.current = this.current;
+    (clonedProject as any).configs = { ...this.configs };
     return clonedProject;
   }
 
