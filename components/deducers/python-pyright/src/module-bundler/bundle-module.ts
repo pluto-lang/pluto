@@ -6,6 +6,7 @@ import * as SlimUtils from "./slim";
 import * as AwsUtils from "./aws-utils";
 import * as CmdUtils from "./command-utils";
 import * as MetadataUtils from "./metadata";
+import { getIndexUrls, IndexUrl } from "./pyproject";
 import { Architecture, InstalledModule, Module, ModuleType, Runtime } from "./types";
 
 export interface BundleModulesOptions {
@@ -105,9 +106,18 @@ async function installModules(
   const cacheDir = options.dockerPip ? "/var/pipCache" : hostCacheDir;
   const workDir = options.dockerPip ? "/var/task" : targetFolder;
 
+  const indexUrls = await getIndexUrls();
+
   let commands: string[][] = [];
   commands.push(
-    getPipInstallCommand(runtime, workDir, `${workDir}/requirements.txt`, !!options.cache, cacheDir)
+    getPipInstallCommand(
+      runtime,
+      workDir,
+      `${workDir}/requirements.txt`,
+      !!options.cache,
+      cacheDir,
+      indexUrls
+    )
   );
 
   if (options.slim) {
@@ -200,9 +210,19 @@ function getPipInstallCommand(
   targetFolder: string,
   requirementsPath: string,
   enableCache: boolean,
-  cacheDir: string
+  cacheDir: string,
+  indexUrls?: IndexUrl[]
 ): string[] {
   const pipCmd = [pythonBin, "-m", "pip", "install", "-t", targetFolder, "-r", requirementsPath];
+
+  indexUrls?.forEach((indexUrl) => {
+    if (indexUrl.primary) {
+      pipCmd.push("--index-url", indexUrl.url);
+    } else {
+      pipCmd.push("--extra-index-url", indexUrl.url);
+    }
+  });
+
   if (enableCache) {
     pipCmd.push("--cache-dir", cacheDir);
   } else {
