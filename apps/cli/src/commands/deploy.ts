@@ -2,10 +2,11 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import { table, TableUserConfig } from "table";
 import { confirm } from "@inquirer/prompts";
-import { arch, config, core } from "@plutolang/base";
+import { arch, config, core, ProvisionType } from "@plutolang/base";
 import logger from "../log";
 import { loadAndDeduce, loadAndGenerate } from "./compile";
 import {
+  buildAdapter,
   buildAdapterByProvisionType,
   getDefaultDeducerPkg,
   getDefaultEntrypoint,
@@ -62,16 +63,22 @@ export async function deploy(entrypoint: string, opts: DeployOptions) {
     stack.provisionFile = infraEntrypoint;
     dumpStackState(stackStateFile(stateDir), stack.state);
 
-    // Build the adapter and deploy the stack.
-    const adapter = await buildAdapterByProvisionType(stack.provisionType, {
+    const newAdapterArgs: core.NewAdapterArgs = {
       project: project.name,
+      extraConfigs: project.configs,
       rootpath: project.rootpath,
       language: project.language,
       stack: stack,
       archRef: archRef,
       entrypoint: infraEntrypoint!,
       stateDir: stateDir,
-    });
+    };
+
+    const adapter =
+      stack.provisionType === ProvisionType.Custom
+        ? await buildAdapter(project.configs["adapter"], newAdapterArgs)
+        : await buildAdapterByProvisionType(stack.provisionType, newAdapterArgs);
+
     await deployWithAdapter(adapter, stack, opts.force);
 
     // Save the stack state after the deployment.

@@ -9,9 +9,10 @@ import { isPlutoProject, loadProject } from "../utils";
 /**
  * load the default export of the target package.
  */
-async function loadPackage(pkgName: string): Promise<any> {
+async function loadComponent(pkgName: string): Promise<any> {
   try {
-    require.resolve(pkgName);
+    const pkgPath = require.resolve(pkgName, { paths: [process.cwd(), __dirname] });
+    return (await import(pkgPath)).default;
   } catch (e) {
     if (process.env.DEBUG) {
       console.error(e);
@@ -20,14 +21,13 @@ async function loadPackage(pkgName: string): Promise<any> {
       `'${pkgName}' doesn't exists. Have you provided a correct package name and installed it?`
     );
   }
-  return (await import(pkgName)).default;
 }
 
 export async function buildDeducer(
   deducerPkg: string,
   deducerArgs: core.NewDeducerArgs
 ): Promise<core.Deducer> {
-  const deducer = new (await loadPackage(deducerPkg))(deducerArgs);
+  const deducer = new (await loadComponent(deducerPkg))(deducerArgs);
   if (isDeducer(deducer)) {
     return deducer;
   }
@@ -45,7 +45,7 @@ export async function buildGenerator(
   generatorPkg: string,
   generatorArgs: core.NewGeneratorArgs
 ): Promise<core.Generator> {
-  const generator = new (await loadPackage(generatorPkg))(generatorArgs);
+  const generator = new (await loadComponent(generatorPkg))(generatorArgs);
   if (generator instanceof core.Generator) {
     return generator;
   }
@@ -62,8 +62,12 @@ export async function buildAdapterByProvisionType(
     throw new Error(`There is no adapter for type ${provisionType}.`);
   }
 
-  const adapter = new (await loadPackage(adapterPkg))(adapterArgs);
-  if (adapter instanceof core.Adapter) {
+  return buildAdapter(adapterPkg, adapterArgs);
+}
+
+export async function buildAdapter(adapterPkg: string, adapterArgs: core.NewAdapterArgs) {
+  const adapter = new (await loadComponent(adapterPkg))(adapterArgs);
+  if (core.isAdapter(adapter)) {
     return adapter;
   }
   throw new Error(`The default export of '${adapterPkg}' package is not a valid Adapter.`);

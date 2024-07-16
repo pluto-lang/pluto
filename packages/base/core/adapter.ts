@@ -1,3 +1,4 @@
+import _ from "lodash";
 import { LanguageType } from "../language";
 import { Architecture } from "../arch";
 import { BaseComponent, BasicArgs } from "./base-component";
@@ -93,4 +94,18 @@ export abstract class Adapter extends BaseComponent {
   public abstract state(): Promise<StateResult>;
   public abstract deploy(options?: DeployOptions): Promise<DeployResult>;
   public abstract destroy(options?: DestroyOptions): Promise<void>;
+}
+
+export function isAdapter(obj: any): obj is Adapter {
+  // Check if obj is not null or undefined
+  if (!obj) return false;
+
+  // Check for characteristic properties of Adapter
+  const methods = ["state", "deploy", "destroy"];
+  for (const method of methods) {
+    if (!_.isFunction(obj[method])) {
+      return false;
+    }
+  }
+  return true;
 }
