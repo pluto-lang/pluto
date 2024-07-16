@@ -1,5 +1,13 @@
 # @plutolang/pyright-deducer
 
+## 0.1.25
+
+### Patch Changes
+
+- 3dc4015: feat(deducer): add detection of pip index URLs from pyproject.toml
+
+  This commit introduces functionality within the deducer to identify and extract index URLs specified in the pyproject.toml file when managed by Poetry.
+
 ## 0.1.24
 
 ### Patch Changes
