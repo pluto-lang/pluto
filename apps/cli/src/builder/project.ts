@@ -44,9 +44,19 @@ export async function createProject(args: CreateProjectArgs): Promise<config.Pro
     provisionType: args.provisionType,
   });
 
+  let customAdapter: string | undefined;
+  if (sta.provisionType === ProvisionType.Custom) {
+    customAdapter = await input({
+      message: "Please provide the adapter package name for the custom stack",
+    }).catch(handleIquirerError);
+  }
+
   const projectRoot = resolve(args.rootpath ?? `./${args.name}`);
   const proj = new config.Project(args.name!, projectRoot, args.language!);
   proj.addStack(sta);
   proj.current = sta.name;
+
+  customAdapter ? (proj.configs["adapter"] = customAdapter) : null;
+
   return proj;
 }

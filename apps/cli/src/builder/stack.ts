@@ -35,13 +35,12 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
           value: PlatformType.AliCloud,
         },
         {
-          name: "GCP",
-          value: PlatformType.GCP,
-          disabled: "(Coming soon)",
-        },
-        {
           name: "Custom",
           value: PlatformType.Custom,
+        },
+        {
+          name: "GCP",
+          value: PlatformType.GCP,
           disabled: "(Coming soon)",
         },
       ],
@@ -57,6 +56,10 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
           value: ProvisionType.Pulumi,
         },
         {
+          name: "Custom",
+          value: ProvisionType.Custom,
+        },
+        {
           name: "Terraform",
           value: ProvisionType.Terraform,
           disabled: "(Coming soon)",
@@ -64,5 +67,6 @@ export async function createStack(args: CreateStackArgs): Promise<config.Stack> 
       ],
     }).catch(handleIquirerError));
 
-  return new config.Stack(args.name!, args.platformType!, args.provisionType!);
+  const stack = new config.Stack(args.name!, args.platformType!, args.provisionType!);
+  return stack;
 }

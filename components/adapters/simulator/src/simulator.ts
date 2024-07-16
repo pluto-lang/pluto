@@ -79,7 +79,7 @@ export class Simulator {
     const pkgName = resourceTypeFqn.substring(0, dotPos);
     const resourceType = resourceTypeFqn.substring(dotPos + 1);
     // TODO: check if the package exists, and import from user project
-    const infraPkg = (await import(`${pkgName}-infra`)) as any;
+    const infraPkg = (await import(resolvePkg(`${pkgName}-infra`))) as any;
     const resourceInfraClass = infraPkg[resourceType];
     if (!resourceInfraClass) {
       throw new Error(
@@ -322,5 +322,14 @@ function isValidJson(str: string): boolean {
     return true;
   } catch (e) {
     return false;
+  }
+}
+
+function resolvePkg(pkgName: string): string {
+  try {
+    const pkgPath = require.resolve(pkgName, { paths: [process.cwd(), __dirname] });
+    return pkgPath;
+  } catch (e) {
+    throw new Error(`Cannot find package ${pkgName}`);
   }
 }
