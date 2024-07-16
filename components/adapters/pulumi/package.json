@@ -20,7 +20,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@aws-sdk/credential-providers": "^3.445.0",
+    "@aws-sdk/credential-providers": "^3.614.0",
     "@esm2cjs/execa": "6.1.1-cjs.1",
     "@plutolang/base": "workspace:^",
     "@pulumi/pulumi": "^3.88.0",

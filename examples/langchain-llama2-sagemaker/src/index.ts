@@ -1,7 +1,7 @@
 import { SageMaker, Function } from "@plutolang/pluto";
 import { loadQAChain } from "langchain/chains";
-import { Document } from "langchain/document";
-import { PromptTemplate } from "langchain/prompts";
+import { Document } from "@langchain/core/documents";
+import { PromptTemplate } from "@langchain/core/prompts";
 import {
   SageMakerEndpoint,
   SageMakerLLMContentHandler,
