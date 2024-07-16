@@ -1,4 +1,5 @@
 import * as os from "os";
+import assert from "assert";
 import * as path from "path";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
@@ -16,7 +17,12 @@ export const version = packageJson.version;
 export const PLUTO_PROJECT_OUTPUT_DIR = ".pluto";
 
 /** The relative path from the project's root directory to the pluto configuration file. */
-export const PLUTO_PROJECT_CONFIG_PATH = ".pluto/pluto.yml";
+export const PLUTO_PROJECT_CONFIG_PATHS = [
+  "pluto.yml",
+  "pluto.yaml",
+  ".pluto/pluto.yml",
+  ".pluto/pluto.yaml",
+];
 
 /** The pluto system configuration file's absolute path. */
 export const PLUTO_SYSTEM_CONFIG_DIR = path.resolve(os.homedir(), ".pluto");
@@ -36,7 +42,10 @@ export function getProjectName(projectRoot: string): string {
  * @param projectRoot The root directory of the project.
  */
 export function loadProject(projectRoot: string): config.Project {
-  const content = fs.readFileSync(path.join(projectRoot, PLUTO_PROJECT_CONFIG_PATH));
+  const plutoConfigFile = locateConfigFile(projectRoot);
+  assert(plutoConfigFile, "The project configuration file is not found.");
+
+  const content = fs.readFileSync(plutoConfigFile);
   const projectName = getProjectName(projectRoot);
   const project = config.Project.loadFromYaml(projectName, projectRoot, content.toString());
 
@@ -90,10 +99,11 @@ export function dumpProject(project: config.Project) {
   delete (proj as any).name;
   delete (proj as any).rootpath;
 
-  const content = yaml.dump(proj, { sortKeys: true });
-
-  const configFile = path.join(rootpath, PLUTO_PROJECT_CONFIG_PATH);
+  const configFile =
+    locateConfigFile(rootpath) ?? path.join(rootpath, PLUTO_PROJECT_CONFIG_PATHS[0]);
   fs.ensureFileSync(configFile);
+
+  const content = yaml.dump(proj, { sortKeys: true });
   fs.writeFileSync(configFile, content);
 }
 
@@ -103,7 +113,7 @@ export function dumpProject(project: config.Project) {
  */
 export function isPlutoProject(rootpath: string): boolean {
   return (
-    fs.existsSync(path.resolve(rootpath, PLUTO_PROJECT_CONFIG_PATH)) &&
+    locateConfigFile(rootpath) &&
     fs.existsSync(path.resolve(rootpath, "package.json")) &&
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     require(path.resolve(rootpath, "package.json")).name
@@ -144,4 +154,14 @@ export async function prepareStackDirs(projectRoot: string, stackName: string) {
   fs.ensureDirSync(generatedDir);
   fs.ensureDirSync(stateDir);
   return { baseDir, closuresDir, generatedDir, stateDir };
+}
+
+function locateConfigFile(rootpath: string) {
+  for (const configPath of PLUTO_PROJECT_CONFIG_PATHS) {
+    const configFile = path.join(rootpath, configPath);
+    if (fs.existsSync(configPath)) {
+      return configFile;
+    }
+  }
+  return;
 }
