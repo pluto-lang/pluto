@@ -1,5 +1,18 @@
 # @plutolang/pyright-deducer
 
+## 0.1.26
+
+### Patch Changes
+
+- b277a26: feat(deducer): add support for custom runtime adapter
+
+  Add functionality to handle a custom adapter in the stack configuration.
+
+  When the 'provision type' option is set to 'Custom', users are now prompted to enter the name of their adapter package. Once supplied, it is included in the project's configuration, enabling the use of a bespoke adapter.
+
+- Updated dependencies [b277a26]
+  - @plutolang/base@0.4.7
+
 ## 0.1.25
 
 ### Patch Changes
