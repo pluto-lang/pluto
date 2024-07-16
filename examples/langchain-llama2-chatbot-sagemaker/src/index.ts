@@ -1,6 +1,6 @@
 import { SageMaker, KVStore, Router, HttpRequest, HttpResponse } from "@plutolang/pluto";
 import { BufferMemory } from "langchain/memory";
-import { PromptTemplate } from "langchain/prompts";
+import { PromptTemplate } from "@langchain/core/prompts";
 import { ConversationChain } from "langchain/chains";
 import {
   SageMakerEndpoint,
