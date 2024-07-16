@@ -1,5 +1,13 @@
 # @plutolang/base
 
+## 0.4.8
+
+### Patch Changes
+
+- c8dfa7a: fix(base): fix project configs dumping issue
+
+  Resolved a bug where the configs of a project were not being dumped.
+
 ## 0.4.7
 
 ### Patch Changes

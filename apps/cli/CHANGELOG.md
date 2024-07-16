@@ -1,5 +1,22 @@
 # @plutolang/cli
 
+## 0.4.43
+
+### Patch Changes
+
+- 714a952: feat(cli): support pluto.yml at project root with higher priority
+
+  pluto.yml at the project root is now prioritized over .pluto directory configuration.
+
+- Updated dependencies [c8dfa7a]
+  - @plutolang/base@0.4.8
+  - @plutolang/pulumi-adapter@0.4.12
+  - @plutolang/simulator-adapter@0.3.29
+  - @plutolang/pyright-deducer@0.1.27
+  - @plutolang/static-deducer@0.4.11
+  - @plutolang/graphviz-generator@0.4.10
+  - @plutolang/static-generator@0.4.8
+
 ## 0.4.42
 
 ### Patch Changes
