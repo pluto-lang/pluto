@@ -112,12 +112,20 @@ export type Value =
 export namespace Value {
   // export function toJson(value: Value): string {}
 
-  export function isStringLiteral(value: Value): value is LiteralValue {
-    return value.valueType === ValueType.Literal && typeof value.value === "string";
+  export function isLiteral(value: Value): value is LiteralValue {
+    return value.valueType === ValueType.Literal;
   }
 
-  export function isNumberLiteral(value: Value): value is LiteralValue {
-    return value.valueType === ValueType.Literal && typeof value.value === "number";
+  export function isStringLiteral(value: LiteralValue) {
+    return typeof value.value === "string";
+  }
+
+  export function isNumberLiteral(value: LiteralValue) {
+    return typeof value.value === "number";
+  }
+
+  export function isBooleanLiteral(value: LiteralValue) {
+    return typeof value.value === "boolean";
   }
 
   interface ToStringOptions {

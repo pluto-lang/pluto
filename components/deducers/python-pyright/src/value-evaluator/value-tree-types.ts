@@ -14,6 +14,7 @@ import {
   StringListNode,
   StringNode,
   TupleNode,
+  UnaryOperationNode,
 } from "pyright-internal/dist/parser/parseNodes";
 import * as AnalyzerNodeInfo from "pyright-internal/dist/analyzer/analyzerNodeInfo";
 import { convertOffsetToPosition } from "pyright-internal/dist/common/positionUtils";
@@ -149,6 +150,26 @@ export namespace CallTreeNode {
   }
 }
 
+export interface UnaryOperationTreeNode extends TreeNodeBase {
+  readonly nodeType: ParseNodeType.UnaryOperation;
+  readonly node: UnaryOperationNode;
+  readonly expression: TreeNode;
+}
+
+export namespace UnaryOperationTreeNode {
+  export function create(parseNode: UnaryOperationNode, expression: TreeNode) {
+    const node: UnaryOperationTreeNode = {
+      nodeType: ParseNodeType.UnaryOperation,
+      node: parseNode,
+      expression: expression,
+      print: () =>
+        `${getNodeText(parseNode, `UnaryOperation#${parseNode.operator}`)}(${expression.node.id})`,
+    };
+
+    return node;
+  }
+}
+
 export interface BinaryOperationTreeNode extends TreeNodeBase {
   readonly nodeType: ParseNodeType.BinaryOperation;
   readonly node: BinaryOperationNode;
@@ -270,6 +291,7 @@ export type TreeNode =
   | TupleTreeNode
   | DictionaryTreeNode
   | CallTreeNode
+  | UnaryOperationTreeNode
   | BinaryOperationTreeNode
   | StringListTreeNode
   | StringTreeNode
