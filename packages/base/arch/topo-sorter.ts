@@ -1,6 +1,5 @@
 import { createHash } from "crypto";
 import { Resource } from "./resource";
-import { BundleArgument } from "./argument";
 import { Architecture } from "./architecture";
 import { BundleEntity, Entity, EntityType, RelationshipEntity, ResourceEntity } from "./types";
 import {
@@ -119,20 +118,40 @@ export class TopoSorter {
   // Constructor: A resource depends on its parameters.
   // Thus, the edge originates from the parameter nodes and points towards the resource node.
   private addEdgesOfConstructor() {
-    this.archRef.resources.forEach((resource) => {
+    const addEdgesForOneResource = (resource: Resource) => {
       const targetNode = resource;
-      resource.arguments
-        .filter<BundleArgument>((arg): arg is BundleArgument => arg.type === "closure")
-        .forEach((arg) => {
-          const sourceNode = this.archRef.findClosure(arg.closureId);
-          if (sourceNode == undefined) {
-            throw Error(
-              `The architecture is invalid, the closure '${arg.closureId}' cannot be found.`
-            );
+
+      for (const arg of resource.arguments) {
+        switch (arg.type) {
+          case "closure": {
+            const sourceNode = this.archRef.findClosure(arg.closureId);
+            if (sourceNode == undefined) {
+              throw Error(
+                `The architecture is invalid, the closure '${arg.closureId}' cannot be found.`
+              );
+            }
+            this.addOneEdge(BundleEntity.create(sourceNode), ResourceEntity.create(targetNode));
+            break;
           }
-          this.addOneEdge(BundleEntity.create(sourceNode), ResourceEntity.create(targetNode));
-        });
-    });
+          case "resource":
+          case "capturedProperty":
+            {
+              const sourceNode = this.archRef.findResource(arg.resourceId);
+              if (sourceNode == undefined) {
+                throw Error(
+                  `The architecture is invalid, the resource '${arg.resourceId}' cannot be found.`
+                );
+              }
+              this.addOneEdge(ResourceEntity.create(sourceNode), ResourceEntity.create(targetNode));
+            }
+            break;
+          case "text":
+            break;
+        }
+      }
+    };
+
+    this.archRef.resources.forEach(addEdgesForOneResource);
   }
 
   // Create: The 'Create' relationship node depends on both the 'from' and 'to' properties.
