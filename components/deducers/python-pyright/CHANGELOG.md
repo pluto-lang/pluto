@@ -1,5 +1,12 @@
 # @plutolang/pyright-deducer
 
+## 0.1.29
+
+### Patch Changes
+
+- 0d2f967: feat(deducer): generate the requirements with index urls
+- 1a89ae8: feat(deducer): support basic unary operation
+
 ## 0.1.28
 
 ### Patch Changes
