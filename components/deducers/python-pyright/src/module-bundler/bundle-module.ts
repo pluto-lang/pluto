@@ -55,7 +55,7 @@ export async function bundleModules(
 
   // Copy the local packages to the target folder.
   await copyLocalModules(modules, bundleDir);
-  generateRequirements(modules, bundleDir);
+  await generateRequirements(modules, bundleDir);
 
   const currentMeta = { runtime, architecture, platform: options.platform, modules, done: false };
   if (isCompleted(sitePackagesDir, currentMeta)) {
@@ -100,24 +100,15 @@ async function installModules(
   options: BundleModulesOptions
 ) {
   // Generate requirements.txt file in the target folder.
-  generateRequirements(modules, targetFolder);
+  await generateRequirements(modules, targetFolder);
 
   const hostCacheDir = await getCacheDir();
   const cacheDir = options.dockerPip ? "/var/pipCache" : hostCacheDir;
   const workDir = options.dockerPip ? "/var/task" : targetFolder;
 
-  const indexUrls = await getIndexUrls();
-
   let commands: string[][] = [];
   commands.push(
-    getPipInstallCommand(
-      runtime,
-      workDir,
-      `${workDir}/requirements.txt`,
-      !!options.cache,
-      cacheDir,
-      indexUrls
-    )
+    getPipInstallCommand(runtime, workDir, `${workDir}/requirements.txt`, !!options.cache, cacheDir)
   );
 
   if (options.slim) {
@@ -235,8 +226,15 @@ function getPipInstallCommand(
 /**
  * Generate a requirements.txt file in the target folder.
  */
-function generateRequirements(modules: readonly Module[], targetFolder: string) {
-  const requirements = modules
+async function generateRequirements(modules: readonly Module[], targetFolder: string) {
+  const indexUrls = await getIndexUrls();
+  const indexUrlLines = indexUrls
+    .map((indexUrl) => {
+      return indexUrl.primary ? `--index-url ${indexUrl.url}` : `--extra-index-url ${indexUrl.url}`;
+    })
+    .join("\n");
+
+  const requiredModules = modules
     .filter<InstalledModule>((m): m is InstalledModule => ModuleType.Installed === m.type)
     .map((m) => {
       if (m.version) {
@@ -246,5 +244,5 @@ function generateRequirements(modules: readonly Module[], targetFolder: string) 
     })
     .join("\n");
 
-  fs.writeFileSync(`${targetFolder}/requirements.txt`, requirements);
+  await fs.writeFile(`${targetFolder}/requirements.txt`, `${indexUrlLines}\n${requiredModules}`);
 }
