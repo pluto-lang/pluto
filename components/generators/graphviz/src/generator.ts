@@ -33,6 +33,8 @@ function archToGraphviz(archRef: arch.Architecture): string {
     for (const arg of res.arguments) {
       if (arg.type === "closure") {
         dotSource += `  ${res.id} -> ${arg.closureId} [color="black"];\n`;
+      } else if (arg.type === "resource" || arg.type === "capturedProperty") {
+        dotSource += `  ${res.id} -> ${arg.resourceId} [color="black"];\n`;
       }
     }
   }
