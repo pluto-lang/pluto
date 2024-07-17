@@ -1,5 +1,12 @@
 # @plutolang/pluto
 
+## 0.4.16
+
+### Patch Changes
+
+- Updated dependencies [8f0e48d]
+  - @plutolang/base@0.4.9
+
 ## 0.4.15
 
 ### Patch Changes
