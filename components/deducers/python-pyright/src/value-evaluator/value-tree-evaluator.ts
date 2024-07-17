@@ -18,6 +18,7 @@ import {
   TreeNodeBase,
   TreeNodeFlags,
   TupleTreeNode,
+  UnaryOperationTreeNode,
 } from "./value-tree-types";
 import { getNodeText } from "./utils";
 import {
@@ -43,7 +44,7 @@ export class TreeEvaluator {
 
   private readonly createNodeFunctions: { [NodeType in ParseNodeType]?: EvaluateFunction<any> } = {
     [ParseNodeType.Error]: this.unimplementedNode,
-    [ParseNodeType.UnaryOperation]: this.unimplementedNode,
+    [ParseNodeType.UnaryOperation]: this.evaluateForUnaryOperation,
     [ParseNodeType.BinaryOperation]: this.evaluateForBinaryOperation,
     [ParseNodeType.Assignment]: this.unimplementedNode,
     [ParseNodeType.TypeAnnotation]: this.unimplementedNode,
@@ -113,7 +114,7 @@ export class TreeEvaluator {
     // Currently, we only support the environment variable access using the index node.
     if (node.flags && node.flags & TreeNodeFlags.AccessEnvVar) {
       const value = this.evaluate(node.items[0], fillings);
-      if (!Value.isStringLiteral(value)) {
+      if (!Value.isLiteral(value) || !Value.isStringLiteral(value)) {
         throw new Error(`${getNodeText(node.node)}: Only support string literal access as index.`);
       }
 
@@ -140,7 +141,7 @@ export class TreeEvaluator {
     const result = node.strings
       .map((str) => {
         const part = this.evaluate(str, fillings);
-        if (!Value.isStringLiteral(part)) {
+        if (!Value.isLiteral(part) || !Value.isStringLiteral(part)) {
           throw new Error(`${getNodeText(str.node)}: Only support string literal in string list.`);
         }
         return part.value;
@@ -169,16 +170,22 @@ export class TreeEvaluator {
         (middleIdx >= node.node.middleTokens.length ||
           node.node.fieldExpressions[fieldIdx].start < node.node.middleTokens[middleIdx].start);
 
-      if (isField && !Value.isStringLiteral(fieldValues[fieldIdx])) {
-        // prettier-ignore
-        throw new Error(
-          `${getNodeText(node.node)}: Only support string literal, not including the string returned by a function, in the format string.`
-        );
+      // Check if the field is a string literal; if not, throw an error.
+      if (isField) {
+        const fieldValue = fieldValues[fieldIdx];
+        if (!Value.isLiteral(fieldValue) || !Value.isStringLiteral(fieldValue)) {
+          // prettier-ignore
+          throw new Error(
+            `${getNodeText(node.node)}: Only support string literal, not including the string returned by a function, in the format string.`
+          );
+        }
+        // Append the string literal value to the result.
+        result += fieldValue.value;
+        fieldIdx++; // Move to the next field index.
+      } else {
+        // If not a field, append the middle token's escaped value to the result.
+        result += node.node.middleTokens[middleIdx++].escapedValue;
       }
-
-      result += isField
-        ? (fieldValues[fieldIdx++] as LiteralValue).value
-        : node.node.middleTokens[middleIdx++].escapedValue;
     }
 
     return LiteralValue.create(result);
@@ -188,12 +195,15 @@ export class TreeEvaluator {
     if (node.flags && node.flags & TreeNodeFlags.AccessEnvVar) {
       // This expression is an environment variable access.
       const envVarName = this.evaluate(node.args[0], fillings);
-      if (!Value.isStringLiteral(envVarName)) {
+      if (!Value.isLiteral(envVarName) || !Value.isStringLiteral(envVarName)) {
         throw new Error(`${getNodeText(node.node)}: Only support string literal access as index.`);
       }
 
       const defaultValue = node.args[1] ? this.evaluate(node.args[1], fillings) : undefined;
-      if (defaultValue && !Value.isStringLiteral(defaultValue)) {
+      if (
+        defaultValue &&
+        (!Value.isLiteral(defaultValue) || !Value.isStringLiteral(defaultValue))
+      ) {
         throw new Error(
           `${getNodeText(
             node.node
@@ -236,6 +246,52 @@ export class TreeEvaluator {
 
   private evaluatorForNumber(node: NumberTreeNode) {
     return LiteralValue.create(node.node.value);
+  }
+
+  private evaluateForUnaryOperation(node: UnaryOperationTreeNode, fillings: Fillings) {
+    const value = this.evaluate(node.expression, fillings);
+
+    if (!Value.isLiteral(value)) {
+      throw new Error(`${getNodeText(node.node)}: Only support literal values in unary operation.`);
+    }
+
+    if (Value.isNumberLiteral(value)) {
+      const numberValue = value.value as number;
+      switch (node.node.operator) {
+        case OperatorType.Add:
+          return LiteralValue.create(numberValue);
+        case OperatorType.Subtract:
+          return LiteralValue.create(-numberValue);
+        default:
+          throw new Error(
+            `The operator '${node.node.operator}' is not supported yet. If you need this feature, please submit an issue.`
+          );
+      }
+    }
+
+    if (Value.isStringLiteral(value)) {
+      if (node.node.operator === OperatorType.Add) {
+        return value;
+      }
+
+      throw new Error(
+        `${getNodeText(node.node)}: Only support the unary operation '+' for string literal.`
+      );
+    }
+
+    if (Value.isBooleanLiteral(value)) {
+      if (node.node.operator === OperatorType.Not) {
+        return LiteralValue.create(!value);
+      }
+
+      throw new Error(
+        `${getNodeText(node.node)}: Only support the unary operation 'not' for boolean literal.`
+      );
+    }
+
+    throw new Error(
+      `${getNodeText(node.node)}: The unary operation is not supported for the value type.`
+    );
   }
 
   private evaluateForBinaryOperation(

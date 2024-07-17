@@ -15,6 +15,7 @@ import {
   StringNode,
   TupleNode,
   TypeAnnotationNode,
+  UnaryOperationNode,
 } from "pyright-internal/dist/parser/parseNodes";
 import { KeywordType } from "pyright-internal/dist/parser/tokenizerTypes";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
@@ -32,6 +33,7 @@ import {
   StringTreeNode,
   TreeNode,
   TupleTreeNode,
+  UnaryOperationTreeNode,
 } from "./value-tree-types";
 import { getNodeText } from "./utils";
 
@@ -50,7 +52,7 @@ export class TreeBuilder {
   private readonly createNodeFunctions: { [NodeType in ParseNodeType]?: CreateNodeFunction<any> } =
     {
       [ParseNodeType.Error]: this.unimplementedNode,
-      [ParseNodeType.UnaryOperation]: this.unimplementedNode,
+      [ParseNodeType.UnaryOperation]: this.createNodeForUnaryOperation,
       [ParseNodeType.BinaryOperation]: this.createNodeForBinaryOperation,
       [ParseNodeType.Assignment]: this.unimplementedNode,
       [ParseNodeType.TypeAnnotation]: this.createNodeForTypeAnnotation,
@@ -217,6 +219,11 @@ export class TreeBuilder {
     return DictionaryTreeNode.create(node, items);
   }
 
+  private createNodeForUnaryOperation(node: UnaryOperationNode): UnaryOperationTreeNode {
+    const expression = this.createNode(node.expression);
+    return UnaryOperationTreeNode.create(node, expression);
+  }
+
   private createNodeForBinaryOperation(node: BinaryOperationNode): BinaryOperationTreeNode {
     const leftNode = this.createNode(node.leftExpression);
     const rightNode = this.createNode(node.rightExpression);
@@ -245,7 +252,9 @@ export class TreeBuilder {
 
   private unimplementedNode(node: ParseNode): never {
     throw new Error(
-      `The creation of node type '${node.nodeType}' is not implemented yet. If you need this feature, please submit an issue.`
+      `${getNodeText(node)}: The creation of node type '${
+        node.nodeType
+      }' is not implemented yet. If you need this feature, please submit an issue.`
     );
   }
 }
