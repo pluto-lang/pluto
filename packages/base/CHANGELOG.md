@@ -1,5 +1,13 @@
 # @plutolang/base
 
+## 0.4.9
+
+### Patch Changes
+
+- 8f0e48d: fix: resolve topo sort failure by adding missing resource edge
+
+  The topological sort was wrong due to a missing edge related to the resource argument. This commit adds the required edge to ensure correct sorting order.
+
 ## 0.4.8
 
 ### Patch Changes
