@@ -1,11 +1,11 @@
 import fs from "fs";
 import http from "http";
 import path from "path";
+import express from "express";
 import { currentLanguage } from "@plutolang/base/utils";
 import { LanguageType, arch, simulator } from "@plutolang/base";
 import { ComputeClosure, AnyFunction, createClosure } from "@plutolang/base/closure";
-
-const SIM_HANDLE_PATH = "/call";
+import { MethodNotFound, ResourceNotFound } from "./errors";
 
 export class Simulator {
   private readonly projectRoot: string;
@@ -200,90 +200,21 @@ export class Simulator {
   }
 
   public async start(): Promise<void> {
-    const requestHandler = async (req: http.IncomingMessage, res: http.ServerResponse) => {
-      if (!req.url?.startsWith(SIM_HANDLE_PATH)) {
-        res.writeHead(404);
-        res.end();
-        return;
+    const expressApp = this.createExpress();
+    for (let port = 9001; ; port++) {
+      const server = await tryListen(expressApp, port);
+      if (server === undefined) {
+        continue;
       }
 
-      let body = "";
-      req.on("data", (chunk) => {
-        body += chunk;
-      });
+      const addr = server.address();
+      if (addr && typeof addr === "object" && addr.port) {
+        this._serverUrl = `http://${addr.address}:${addr.port}`;
+      }
+      this._server = server;
 
-      req.on("end", () => {
-        const request: simulator.ServerRequest = JSON.parse(body);
-        const { resourceId, op, args } = request;
-        if (process.env.DEBUG) {
-          console.info(`Simulator: receive a request: ${resourceId}.${op}(${args})`);
-        }
-
-        // find the resource
-        const resource = this.resources.get(resourceId);
-        if (!resource) {
-          throw new Error(`Resource ${resourceId} not found.`);
-        }
-
-        let result: any;
-        try {
-          // invoke the method
-          result = (resource as any)[op](...args);
-        } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
-          const replyError = err instanceof Error ? err : new Error(`${err}`);
-          res.end(
-            JSON.stringify({
-              error: {
-                message: replyError.message,
-                stack: replyError.stack,
-                name: replyError.name,
-              },
-            }),
-            "utf-8"
-          );
-          return;
-        }
-
-        if (!(result instanceof Promise)) {
-          // The called method is not async.
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ result }), "utf-8");
-        } else {
-          // The called method is async.
-          result
-            .then((result: any) => {
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ result }), "utf-8");
-            })
-            .catch((err: any) => {
-              res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(
-                JSON.stringify({
-                  error: {
-                    message: err.message,
-                    stack: err.stack,
-                    name: err.name,
-                  },
-                }),
-                "utf-8"
-              );
-            });
-        }
-      });
-    };
-
-    const server = http.createServer(requestHandler);
-    await new Promise<void>((resolve) => {
-      server!.listen(0, "127.0.0.1", () => {
-        const addr = server.address();
-        if (addr && typeof addr === "object" && addr.port) {
-          this._serverUrl = `http://${addr.address}:${addr.port}`;
-        }
-        this._server = server;
-        resolve();
-      });
-    });
+      break;
+    }
   }
 
   public async stop(): Promise<void> {
@@ -304,6 +235,95 @@ export class Simulator {
       throw new Error("Simulator server is not running.");
     }
     return this._serverUrl;
+  }
+
+  private createExpress() {
+    const invokeAndReply = async (
+      resourceId: string,
+      method: string,
+      args: any[],
+      res: express.Response
+    ) => {
+      try {
+        const result = await this.invokeMethod(resourceId, method, args);
+        res.status(200).json({ result });
+      } catch (err: any) {
+        if (err instanceof MethodNotFound || err instanceof ResourceNotFound) {
+          res.status(404).json({
+            error: {
+              message: err.message,
+              stack: err.message,
+              name: err.name,
+            },
+          });
+        } else {
+          const replyError = err instanceof Error ? err : new Error(`${err}`);
+          res.status(500).json({
+            error: {
+              message: replyError.message,
+              stack: replyError.stack,
+              name: replyError.name,
+            },
+          });
+        }
+      }
+    };
+
+    const app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+
+    app.post("/call", async (req: express.Request, res: express.Response) => {
+      const { resourceId, op, args } = req.body;
+      await invokeAndReply(resourceId, op, args, res);
+    });
+
+    app.post("/:resourceId/:method", async (req: express.Request, res: express.Response) => {
+      const { resourceId, method } = req.params;
+      const args = req.body;
+      await invokeAndReply(resourceId, method, args, res);
+    });
+
+    return app;
+  }
+
+  /**
+   * Invokes a method on a resource instance. The resource Id can be a partial ID. But if multiple
+   * resources are found for the given ID, an error is thrown.
+   *
+   * @param resourceId - The ID of the resource instance. It can be a partial ID.
+   * @param method - The name of the method to invoke.
+   * @param payload - An array of arguments to pass to the method.
+   * @returns A promise that resolves to the result of the method invocation.
+   * @throws {ResourceNotFound} If the resource instance with the given ID is not found.
+   * @throws {Error} If multiple resource instances are found for the given ID.
+   * @throws {MethodNotFound} If the method is not found on the resource instance.
+   */
+  private async invokeMethod(resourceId: string, method: string, payload: any[]): Promise<any> {
+    let candidates: simulator.IResourceInstance[] = [];
+    if (this.resources.has(resourceId)) {
+      candidates = [this.resources.get(resourceId)!];
+    } else {
+      for (const [id, resource] of this.resources) {
+        if (id.includes(resourceId) && typeof (resource as any)[method] === "function") {
+          candidates.push(resource);
+        }
+      }
+    }
+
+    if (candidates.length === 0) {
+      throw new ResourceNotFound(resourceId);
+    }
+    if (candidates.length > 1) {
+      throw new Error(`Multiple resources were found for ${resourceId}`);
+    }
+
+    const methodFn = (candidates[0] as any)[method];
+    if (typeof methodFn !== "function") {
+      throw new MethodNotFound(method);
+    }
+
+    return methodFn.apply(candidates[0], payload);
   }
 }
 
@@ -332,4 +352,25 @@ function resolvePkg(pkgName: string): string {
   } catch (e) {
     throw new Error(`Cannot find package ${pkgName}`);
   }
+}
+
+async function tryListen(
+  server: express.Express,
+  port: number,
+  hostname = "0.0.0.0"
+): Promise<http.Server | undefined> {
+  return new Promise((resolve) => {
+    const httpServer = server.listen(port, hostname);
+
+    httpServer.on("listening", () => {
+      resolve(httpServer);
+    });
+
+    httpServer.on("error", (e) => {
+      if (process.env.DEBUG) {
+        console.error(`Failed to listen on port ${port}: ${e}`);
+      }
+      resolve(undefined);
+    });
+  });
 }
