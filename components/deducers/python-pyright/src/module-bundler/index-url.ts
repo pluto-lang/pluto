@@ -22,16 +22,18 @@ export async function getIndexUrls(): Promise<IndexUrl[]> {
   // to find a way to get the root of the workspace.
   const rootpath = process.cwd();
 
+  let indexUrls: IndexUrl[] = [];
   const pyprojectToml = await loadPyprojectToml(rootpath);
-  if (!pyprojectToml || !isManagedByPoetry(pyprojectToml)) {
-    return [];
+  if (pyprojectToml && isManagedByPoetry(pyprojectToml)) {
+    indexUrls = getPoetrySources(pyprojectToml);
+  } else if (await fs.exists(path.join(rootpath, "requirements.txt"))) {
+    const requirements = await fs.readFile(path.join(rootpath, "requirements.txt"), "utf-8");
+    indexUrls = getIndexUrlsFromRequirements(requirements);
   }
-
-  const sources = getPoetrySources(pyprojectToml);
 
   // ensure there is only one primary source
   let hasPrimary = false;
-  for (const source of sources) {
+  for (const source of indexUrls) {
     if (!source.primary) continue;
 
     if (hasPrimary) {
@@ -41,7 +43,7 @@ export async function getIndexUrls(): Promise<IndexUrl[]> {
     }
   }
 
-  return sources;
+  return indexUrls;
 }
 
 async function loadPyprojectToml(rootpath: string) {
@@ -74,4 +76,19 @@ function getPoetrySources(pyprojectToml: any): IndexUrl[] {
   return sources.map((s) => {
     return { url: s.url, primary: s.priority === "primary" || s.priority === "default" };
   });
+}
+
+function getIndexUrlsFromRequirements(requirements: string): IndexUrl[] {
+  const lines = requirements.split("\n");
+  const indexUrls: IndexUrl[] = [];
+  for (const line of lines) {
+    const match = line.match(/--(extra-)?index-url\s+(.+)/);
+    if (!match) continue;
+
+    const primary = !match[1];
+    const url = match[2];
+    indexUrls.push({ url, primary });
+  }
+
+  return indexUrls;
 }

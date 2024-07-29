@@ -6,7 +6,7 @@ import * as SlimUtils from "./slim";
 import * as AwsUtils from "./aws-utils";
 import * as CmdUtils from "./command-utils";
 import * as MetadataUtils from "./metadata";
-import { getIndexUrls, IndexUrl } from "./pyproject";
+import { getIndexUrls, IndexUrl } from "./index-url";
 import { Architecture, InstalledModule, Module, ModuleType, Runtime } from "./types";
 
 export interface BundleModulesOptions {
