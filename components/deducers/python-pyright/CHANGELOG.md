@@ -1,5 +1,13 @@
 # @plutolang/pyright-deducer
 
+## 0.1.30
+
+### Patch Changes
+
+- 86cb072: feat(deducer): parse index URLs from requirements.txt
+
+  The deducer now parses index URLs specified in the project's root requirements.txt file. These URLs are utilized for dependency installation and are also included in the generated requirements.txt file.
+
 ## 0.1.29
 
 ### Patch Changes
