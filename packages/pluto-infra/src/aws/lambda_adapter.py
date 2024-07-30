@@ -2,9 +2,10 @@ import os
 import json
 import base64
 import traceback
+from typing import Any
 
 
-def is_http_payload(payload):
+def is_http_payload(payload: Any):
     return (
         payload is not None
         and isinstance(payload, dict)
@@ -14,7 +15,7 @@ def is_http_payload(payload):
     )
 
 
-def handler(payload, context):
+def handler(payload: Any, context: Any) -> Any:
     account_id = context.invoked_function_arn.split(":")[4]
     os.environ["AWS_ACCOUNT_ID"] = account_id
     try:

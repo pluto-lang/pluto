@@ -1,10 +1,10 @@
 import json
 import os
-from typing import Callable
+from typing import Any, Callable
 from pluto_client import CloudEvent
 
 
-def handler(event, context):
+def handler(event: Any, context: Any):
     account_id = context.invoked_function_arn.split(":")[4]
     os.environ["AWS_ACCOUNT_ID"] = account_id
 

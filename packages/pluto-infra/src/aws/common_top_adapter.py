@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import Any, Dict, List
 
 # We've placed the dependent modules in the child directory, but the interpreter isn't aware of
 # their location. Therefore, we include the child directory in the system path.
@@ -24,6 +25,6 @@ if os.environ.get("DEBUG"):
     print("The system path is:", sys.path)
 
 
-def handler(*args, **kwargs):
+def handler(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
     inner_handler = globals()["__handler_"]
     return inner_handler(*args, **kwargs)
