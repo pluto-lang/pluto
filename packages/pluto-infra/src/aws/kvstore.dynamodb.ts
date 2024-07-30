@@ -34,8 +34,9 @@ export class DynamoKVStore
           },
         ],
         hashKey: "Id",
-        readCapacity: 10,
-        writeCapacity: 10,
+        // TODO: make the capacity configurable
+        readCapacity: 1,
+        writeCapacity: 1,
       },
       { parent: this }
     );
