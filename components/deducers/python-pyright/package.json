@@ -1,6 +1,6 @@
 {
   "name": "@plutolang/pyright-deducer",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pluto-lang/pluto.git",
