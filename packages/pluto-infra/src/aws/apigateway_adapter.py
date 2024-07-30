@@ -1,10 +1,11 @@
 import os
+import json
 import base64
-from typing import Callable
+from typing import Any, Callable
 from pluto_client import HttpRequest, HttpResponse
 
 
-def handler(event, context):
+def handler(event: Any, context: Any):
     account_id = context.invoked_function_arn.split(":")[4]
     os.environ["AWS_ACCOUNT_ID"] = account_id
 
@@ -14,11 +15,21 @@ def handler(event, context):
     else:
         payload = req_body
 
+    headers = event.get("headers", {})
+    if headers.get("Content-Type") == "application/json":
+        try:
+            payload = json.loads(payload)
+        except json.JSONDecodeError:
+            return {
+                "statusCode": 400,
+                "body": "Invalid JSON payload",
+            }
+
     request = HttpRequest(
         path=event.get("resource", ""),
         method=event.get("httpMethod", ""),
-        headers=event.get("headers", {}) or {},
-        query=event.get("queryStringParameters", {}) or {},
+        headers=headers,
+        query=event.get("queryStringParameters", {}),
         body=payload,
     )
     if os.environ.get("DEBUG"):
@@ -30,7 +41,10 @@ def handler(event, context):
         return {"statusCode": result.status_code, "body": result.body}
 
     except Exception as e:
-        print("Failed to handle http request: ", e)
+        import traceback
+
+        print("Failed to handle http request: ")
+        traceback.print_exception(type(e), e, e.__traceback__)
         return {
             "statusCode": 500,
             "body": "Something wrong. Please contact the administrator.",
