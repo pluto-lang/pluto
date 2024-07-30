@@ -32,7 +32,13 @@ export interface RequestHandler extends FnResource {
  * The options for instantiating an infrastructure implementation class or a client implementation
  * class.
  */
-export interface RouterOptions {}
+export interface RouterOptions {
+  /**
+   * Whether to enable CORS for the router. If true, the router will respond to preflight requests
+   * and include the appropriate CORS headers in responses. @default true
+   */
+  cors?: boolean;
+}
 
 /**
  * Define the access methods for Router that operate during runtime.
