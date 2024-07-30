@@ -200,15 +200,6 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
       return object.key;
     }
 
-    const kms = new aws.kms.Key(
-      this.lambdaName,
-      {
-        description: `KMS key for ${this.lambdaName} lambda function`,
-        enableKeyRotation: true,
-      },
-      { parent: this }
-    );
-
     return new aws.lambda.Function(
       this.lambdaName,
       {
@@ -222,7 +213,6 @@ export class Lambda extends pulumi.ComponentResource implements IResourceInfra, 
         environment: {
           variables: envs,
         },
-        kmsKeyArn: kms.arn,
         timeout: 10 * 60,
       },
       { parent: this }
