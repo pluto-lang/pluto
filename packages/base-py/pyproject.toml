@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pluto-base"
-version = "0.0.4"
+version = "0.0.5"
 description = "The Base Library for Pluto Programming Language."
 authors = ["Jade Zheng <zheng.shoujian@outlook.com>"]
 license = "Apache-2.0"
@@ -26,3 +26,8 @@ Issues = "https://github.com/pluto-lang/pluto/issues"
 [tool.poetry.dependencies]
 python = "^3.10"
 requests = "^2.32.3"
+
+[[tool.poetry.source]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+priority = "supplemental"

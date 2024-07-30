@@ -53,16 +53,10 @@ class Bucket(IResource, IBucketClient, IBucketInfra):
     fqn = "@plutolang/pluto.Bucket"
 
     def __init__(self, name: str, opts: Optional[BucketOptions] = None):
-        raise NotImplementedError(
-            "cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(name: str, opts: Optional[BucketOptions] = None) -> IBucketClient:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
             from .clients import aws
 
-            return aws.S3Bucket(name, opts)
+            self._client = aws.S3Bucket(name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")
