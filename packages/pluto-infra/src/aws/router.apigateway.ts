@@ -26,31 +26,52 @@ export class ApiGatewayRouter
 {
   public readonly id: string;
 
-  public _url: pulumi.Output<string>;
+  public readonly _url: pulumi.Output<string>;
 
-  private apiGateway: Api;
-  private routes: Route[];
+  private readonly apiGateway: Api;
+  private readonly routes: Route[];
 
-  public outputs?: pulumi.Output<any>;
+  public readonly outputs?: pulumi.Output<any>;
 
   constructor(name: string, opts?: RouterOptions) {
     super("pluto:router:aws/ApiGateway", name, opts);
     this.id = genResourceId(Router.fqn, name);
 
+    const enableCORS = opts?.cors ?? true;
     this.apiGateway = new aws.apigatewayv2.Api(
       genAwsResourceName(this.id, "api"),
       {
         name: genAwsResourceName(this.id, "api"),
         protocolType: "HTTP",
+        corsConfiguration: enableCORS
+          ? {
+              allowMethods: ["*"],
+              allowOrigins: ["*"],
+              allowHeaders: ["*"],
+            }
+          : undefined,
       },
       { parent: this }
     );
 
+    this.routes = [];
+
+    if (enableCORS) {
+      // If CORS is enabled, create a default route to handle preflight requests.
+      const route = new aws.apigatewayv2.Route(
+        genAwsResourceName(this.id, "default-route"),
+        {
+          apiId: this.apiGateway.id,
+          routeKey: "$default",
+        },
+        { parent: this }
+      );
+      this.routes.push(route);
+    }
+
     const region = currentAwsRegion();
     this._url = pulumi.interpolate`https://${this.apiGateway.id}.execute-api.${region}.amazonaws.com/${DEFAULT_STAGE_NAME}`;
     this.outputs = this._url;
-
-    this.routes = [];
   }
 
   public url(): string {
