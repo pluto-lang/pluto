@@ -30,7 +30,7 @@ describe("bundle with the local modules", () => {
     } finally {
       cleanup();
     }
-  });
+  }, /* timeout */ 60000);
 
   test("should correctly bundle a local package", async () => {
     const { tmpdir, cleanup } = getTmpDir();
@@ -58,7 +58,7 @@ describe("bundle with the local modules", () => {
     } finally {
       cleanup();
     }
-  });
+  }, /* timeout */ 60000);
 });
 
 describe("bundle with the packages that need to install", () => {

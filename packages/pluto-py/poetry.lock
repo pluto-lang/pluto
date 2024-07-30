@@ -123,13 +123,13 @@ files = [
 
 [[package]]
 name = "pluto-base"
-version = "0.0.4"
+version = "0.0.5"
 description = "The Base Library for Pluto Programming Language."
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "pluto_base-0.0.4-py3-none-any.whl", hash = "sha256:52c9024f97690f659fb0c5336cb8b4e9efe81795bddc9ba06b98d7a3ed73aac5"},
-    {file = "pluto_base-0.0.4.tar.gz", hash = "sha256:c34c389a1e7404fa1fc6816d00b81f3294c6ed6ad222e468d343eaed90c8f055"},
+    {file = "pluto_base-0.0.5-py3-none-any.whl", hash = "sha256:7a6c62a04cb53eff7f8806f8d8c3ab5acdee03a1f899208a4a9285e1da51a942"},
+    {file = "pluto_base-0.0.5.tar.gz", hash = "sha256:f5f1cd36d9c8fb9304c3c9abb63b1c4fb71e2997730791e9955235dada5bb979"},
 ]
 
 [package.dependencies]
@@ -176,4 +176,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "1da3b8d5f7d5930f91cd81626480e6d600815f401a014b0510d419861bc39159"
+content-hash = "00abe309b4899372e3f3ddfca3e399e999a43ed8f52cfb857425dd85c737fc60"

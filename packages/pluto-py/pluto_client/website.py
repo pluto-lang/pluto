@@ -50,20 +50,10 @@ class Website(IResource, IWebsiteClient, IWebsiteInfra):
         name: Optional[str] = None,
         opts: Optional[WebsiteOptions] = None,
     ):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(
-        path: str,
-        name: Optional[str] = None,
-        opts: Optional[WebsiteOptions] = None,
-    ) -> IWebsiteClient:
         platform_type = utils.current_platform_type()
         if platform_type in [PlatformType.AWS]:
             from .clients import shared
 
-            return shared.WebsiteClient(path, name, opts)
+            self._client = shared.WebsiteClient(path, name, opts)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

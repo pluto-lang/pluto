@@ -54,23 +54,15 @@ class KVStore(IResource, IKVStoreClient, IKVStoreInfra):
     fqn = "@plutolang/pluto.KVStore"
 
     def __init__(self, name: str, opts: Optional[KVStoreOptions] = None):
-        raise NotImplementedError(
-            "cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(
-        name: str, opts: Optional[KVStoreOptions] = None
-    ) -> IKVStoreClient:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
             from .clients import aws
 
-            return aws.DynamoKVStore(name, opts)
+            self._client = aws.DynamoKVStore(name, opts)
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(KVStore.fqn, name)
-            return create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

@@ -92,17 +92,10 @@ class SageMaker(IResource, ISageMakerClient, ISageMakerInfra):
     def __init__(
         self, name: str, image_uri: str, opts: Optional[SageMakerOptions] = None
     ):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(
-        name: str, image_uri: str, opts: Optional[SageMakerOptions] = None
-    ) -> "ISageMakerClient":
         platform_type = utils.current_platform_type()
         if platform_type != PlatformType.AWS:
             raise NotImplementedError("SageMaker is only supported on AWS")
+
         from .clients import aws
 
-        return aws.SageMaker(name, image_uri, opts)
+        self._client = aws.SageMaker(name, image_uri, opts)

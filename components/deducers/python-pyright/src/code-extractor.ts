@@ -436,8 +436,8 @@ export class CodeExtractor {
     const segment = this.extractExpressionRecursively(rightExpression, sourceFile, fillings);
 
     // We cannot use the source code of the assignment statement directly, as it may contain the
-    // creation of a resource object, which the constructor call should be replaced with the
-    // `build_client` method.
+    // creation of a resource object, which the constructor call might be different from the
+    // original code.
     const statement = `${node.value} = ${segment.code}`;
     return CodeSegment.buildWithChildren(
       {
@@ -536,13 +536,7 @@ export class CodeExtractor {
     const methodCode = methodSegment.code;
     children.push(methodSegment);
 
-    // If the call node is for creating a resource object, we should add the `.build_client` suffix
-    // to the method (the constructor for the resource type). This is because this code will be sent
-    // to the cloud and executed there. During execution, the client of the resource type is
-    // required. The `build_client` method is utilized to create the client of the resource type
-    // based on the platform type.
-    const middle = isConstructedNode ? ".build_client" : "";
-    const statement = `${methodCode}${middle}(${argumentCodes.join(", ")})`;
+    const statement = `${methodCode}(${argumentCodes.join(", ")})`;
     return CodeSegment.buildWithChildren(
       {
         node: node,

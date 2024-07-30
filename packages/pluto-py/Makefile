@@ -18,4 +18,4 @@ publish:
 
 # publish to testpypi
 publish-to-testpypi:
-	poetry publish -r test-pypi
+	poetry publish -r testpypi

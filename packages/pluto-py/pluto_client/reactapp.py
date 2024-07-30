@@ -29,14 +29,4 @@ class ReactApp(Website):
         name: Optional[str] = None,
         options: Optional[ReactAppOptions] = None,
     ):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(
-        project_path: str,
-        name: Optional[str] = None,
-        options: Optional[ReactAppOptions] = None,
-    ) -> IWebsiteClient:
-        Website.build_client(project_path, name, options)
+        self._client = Website(project_path, name, options)

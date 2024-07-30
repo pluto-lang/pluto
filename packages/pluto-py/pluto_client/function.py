@@ -60,25 +60,15 @@ class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
         name: Optional[str] = None,
         opts: Optional[FunctionOptions] = None,
     ):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(
-        func: FnHandler,
-        name: Optional[str] = None,
-        opts: Optional[FunctionOptions] = None,
-    ) -> IFunctionClient[FnHandler]:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
             from .clients import aws
 
-            return aws.LambdaFunction(func, name, opts)
+            self._client = aws.LambdaFunction(func, name, opts)
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Function.fqn, name)
-            return create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

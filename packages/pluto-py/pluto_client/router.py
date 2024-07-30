@@ -66,21 +66,15 @@ class Router(resource.IResource, IRouterClient, IRouterInfra):
     fqn = "@plutolang/pluto.Router"
 
     def __init__(self, name: str, opts: Optional[RouterOptions] = None):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(name: str, opts: Optional[RouterOptions] = None) -> IRouterClient:
         platform_type = utils.current_platform_type()
         if platform_type in [PlatformType.AWS, PlatformType.K8s, PlatformType.AliCloud]:
             from .clients import shared
 
-            return shared.RouterClient(name, opts)
+            self._client = shared.RouterClient(name, opts)
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Router.fqn, name)
-            return create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

@@ -54,15 +54,9 @@ class Tester(IResource, ITesterClient, ITesterInfra):
     fqn = "@plutolang/pluto.Tester"
 
     def __init__(self, name: str, opts: Optional[TesterOptions] = None):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
-
-    @staticmethod
-    def build_client(name: str, opts: Optional[TesterOptions] = None) -> ITesterClient:
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Tester.fqn, name)
-            return create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

@@ -256,7 +256,7 @@ foo()
   const segment = extractor.extractExpressionRecursively(callNode, sourceFile);
 
   expect(CodeSegment.getCalledClientApis(segment)).toHaveLength(1);
-  expect(CodeSegment.toString(segment)).toContain("Queue.build_client");
+  expect(CodeSegment.toString(segment)).toContain("Queue(");
 
   clean();
 });
