@@ -1,5 +1,11 @@
 # @plutolang/pluto
 
+## 0.4.17
+
+### Patch Changes
+
+- 24186fd: feat(sdk): add CORS support for AWS ApiGateway
+
 ## 0.4.16
 
 ### Patch Changes

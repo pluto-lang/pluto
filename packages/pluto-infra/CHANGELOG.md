@@ -1,5 +1,17 @@
 # @plutolang/pluto-infra
 
+## 0.4.26
+
+### Patch Changes
+
+- 24186fd: feat(sdk): add CORS support for AWS ApiGateway
+- 6895856: fix(infra): parse JSON body correctly
+
+  Previously, failure to parse the JSON body led to user code errors. Now, if the 'Content-Type' header is 'application/json', the body is parsed as JSON before passing it to user code.
+
+- Updated dependencies [24186fd]
+  - @plutolang/pluto@0.4.17
+
 ## 0.4.25
 
 ### Patch Changes
