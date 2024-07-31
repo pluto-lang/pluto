@@ -1,5 +1,19 @@
 # @plutolang/cli
 
+## 0.4.50
+
+### Patch Changes
+
+- 268f936: feat(cli): beautify deployment outputs
+- 41c8538: feat(cli): add --live flag to pluto run for live reloading
+
+  The --live flag has been introduced to the 'pluto run' command to enable live reloading.
+
+  When this flag is active, it monitors file changes in the directory containing the entrypoint and automatically re-executes the project if any modifications are detected.
+
+- Updated dependencies [41c8538]
+  - @plutolang/simulator-adapter@0.3.33
+
 ## 0.4.49
 
 ### Patch Changes
