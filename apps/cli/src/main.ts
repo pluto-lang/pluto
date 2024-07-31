@@ -93,6 +93,7 @@ async function main() {
     .command("run")
     .description("Run the application in the local simulator environment")
     .argument("[entrypoint]", "The files need to be compiled.")
+    .option("--live", "Run the application in live mode", false)
     .action(cmd.run);
 
   program

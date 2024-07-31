@@ -16,19 +16,22 @@ export class Simulator {
   private _serverUrl?: string;
   private _server?: http.Server;
 
+  private readonly exitHandler = async () => {};
+
   constructor(projectRoot: string) {
     this.projectRoot = projectRoot;
     this.resources = new Map();
     this.closures = new Map();
 
-    const exitHandler = async () => {
+    this.exitHandler = async () => {
       if (process.env.DEBUG) {
         console.log("Received SIGINT, stopping the simulator...");
       }
       await this.stop();
     };
-    process.on("SIGINT", exitHandler);
-    process.on("SIGTERM", exitHandler);
+
+    process.on("SIGINT", this.exitHandler);
+    process.on("SIGTERM", this.exitHandler);
   }
 
   public async loadApp(archRef: arch.Architecture) {
@@ -221,6 +224,11 @@ export class Simulator {
     this._server?.close();
     this._server = undefined;
     this._serverUrl = undefined;
+
+    // Remove the exit handler to avoid too many listeners.
+    process.off("SIGINT", this.exitHandler);
+    process.off("SIGTERM", this.exitHandler);
+
     for (const resource of this.resources.values()) {
       try {
         await resource.cleanup();

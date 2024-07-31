@@ -68,9 +68,15 @@ importers:
       '@plutolang/static-generator':
         specifier: workspace:^
         version: link:../../components/generators/static
+      async-mutex:
+        specifier: ^0.5.0
+        version: 0.5.0
       chalk:
         specifier: ^4.1.2
         version: 4.1.2
+      chokidar:
+        specifier: ^3.6.0
+        version: 3.6.0
       commander:
         specifier: ^11.0.0
         version: 11.0.0
@@ -368,7 +374,7 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.16
+        version: 0.4.17
       openai:
         specifier: ^4.13.0
         version: 4.13.0
@@ -378,7 +384,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -393,7 +399,7 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.16
+        version: 0.4.17
       '@slack/web-api':
         specifier: ^6.9.0
         version: 6.9.0
@@ -403,7 +409,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -421,7 +427,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -439,7 +445,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -454,14 +460,14 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.16
+        version: 0.4.17
     devDependencies:
       '@plutolang/base':
         specifier: latest
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -516,7 +522,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -568,14 +574,14 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.16
+        version: 0.4.17
     devDependencies:
       '@plutolang/base':
         specifier: latest
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -593,7 +599,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -611,7 +617,7 @@ importers:
         version: 0.4.9
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.25
+        version: 0.4.26
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -2488,11 +2494,11 @@ packages:
   '@plutolang/base@0.4.9':
     resolution: {integrity: sha512-1x5wAZ0dfqe68vVHBBMZpH0XVjy6UFK2huYUrpKntkWZmysflSgsxf7AK756PVzPEh3oILiWxFdEdL6+2jRCug==}
 
-  '@plutolang/pluto-infra@0.4.25':
-    resolution: {integrity: sha512-7ziGq2oe35yXJb+npIck7iWy2ry/TzsRJg66KHFZrEnUnlsn4EVQ4/sI3W3zdzlOlU/Qv64tNqfW88F5Ez/6eQ==}
+  '@plutolang/pluto-infra@0.4.26':
+    resolution: {integrity: sha512-/ZieLfJG1g4YDJluP+876pF8TUkLYZya3I8gMl42T0IQLtjR2CPYcwD3s6MEr+hnz7HrF4hkxF29EKeafBNjag==}
 
-  '@plutolang/pluto@0.4.16':
-    resolution: {integrity: sha512-KqczdJTqSkeosq5MQGe6IHQGhO9eu7zwVukN4Wjk3ltObt4uEE3Q1s+w+DxrbF4s8gXJouMyqbEdJH650lKflA==}
+  '@plutolang/pluto@0.4.17':
+    resolution: {integrity: sha512-aCFyHbZ+aurUuhSFFo/5fddk8RyA5XHQOFfTZezkq+aA3Q4zb0JQYRsWb0XN9UYoXi/5mAceMYFmN7Jty+/g/w==}
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -3349,6 +3355,9 @@ packages:
   astral-regex@2.0.0:
     resolution: {integrity: sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==}
     engines: {node: '>=8'}
+
+  async-mutex@0.5.0:
+    resolution: {integrity: sha512-1A94B18jkJ3DYq284ohPxoXbfTA5HsQ7/Mf4DEhcyLx3Bz27Rh59iScbB6EPiP+B+joue6YCxcMXSbFC1tZKwA==}
 
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
@@ -7067,13 +7076,13 @@ snapshots:
     dependencies:
       '@aws-crypto/util': 5.2.0
       '@aws-sdk/types': 3.609.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-crypto/crc32c@5.2.0':
     dependencies:
       '@aws-crypto/util': 5.2.0
       '@aws-sdk/types': 3.609.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-crypto/sha1-browser@5.2.0':
     dependencies:
@@ -7082,7 +7091,7 @@ snapshots:
       '@aws-sdk/types': 3.609.0
       '@aws-sdk/util-locate-window': 3.568.0
       '@smithy/util-utf8': 2.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-crypto/sha256-browser@5.2.0':
     dependencies:
@@ -7102,7 +7111,7 @@ snapshots:
 
   '@aws-crypto/supports-web-crypto@5.2.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-crypto/util@3.0.0':
     dependencies:
@@ -7115,7 +7124,7 @@ snapshots:
     dependencies:
       '@aws-sdk/types': 3.609.0
       '@smithy/util-utf8': 2.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/client-cloudwatch-logs@3.614.0':
     dependencies:
@@ -7209,7 +7218,7 @@ snapshots:
       '@smithy/util-middleware': 3.0.3
       '@smithy/util-retry': 3.0.3
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
     transitivePeerDependencies:
       - aws-crt
 
@@ -7603,7 +7612,7 @@ snapshots:
       '@smithy/util-middleware': 3.0.3
       '@smithy/util-retry': 3.0.3
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
     transitivePeerDependencies:
       - aws-crt
 
@@ -7668,7 +7677,7 @@ snapshots:
       '@aws-sdk/types': 3.609.0
       '@smithy/property-provider': 3.1.3
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
     transitivePeerDependencies:
       - aws-crt
 
@@ -7677,7 +7686,7 @@ snapshots:
       '@aws-sdk/types': 3.609.0
       '@smithy/property-provider': 3.1.3
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/credential-provider-http@3.614.0':
     dependencies:
@@ -7689,7 +7698,7 @@ snapshots:
       '@smithy/smithy-client': 3.1.8
       '@smithy/types': 3.3.0
       '@smithy/util-stream': 3.1.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/credential-provider-ini@3.614.0(@aws-sdk/client-sso-oidc@3.614.0(@aws-sdk/client-sts@3.614.0))(@aws-sdk/client-sts@3.614.0)':
     dependencies:
@@ -7704,7 +7713,7 @@ snapshots:
       '@smithy/property-provider': 3.1.3
       '@smithy/shared-ini-file-loader': 3.1.4
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
     transitivePeerDependencies:
       - '@aws-sdk/client-sso-oidc'
       - aws-crt
@@ -7734,7 +7743,7 @@ snapshots:
       '@smithy/property-provider': 3.1.3
       '@smithy/shared-ini-file-loader': 3.1.4
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/credential-provider-sso@3.614.0(@aws-sdk/client-sso-oidc@3.614.0(@aws-sdk/client-sts@3.614.0))':
     dependencies:
@@ -7744,7 +7753,7 @@ snapshots:
       '@smithy/property-provider': 3.1.3
       '@smithy/shared-ini-file-loader': 3.1.4
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
     transitivePeerDependencies:
       - '@aws-sdk/client-sso-oidc'
       - aws-crt
@@ -7755,7 +7764,7 @@ snapshots:
       '@aws-sdk/types': 3.609.0
       '@smithy/property-provider': 3.1.3
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/credential-providers@3.614.0(@aws-sdk/client-sso-oidc@3.614.0(@aws-sdk/client-sts@3.614.0))':
     dependencies:
@@ -7782,7 +7791,7 @@ snapshots:
   '@aws-sdk/endpoint-cache@3.572.0':
     dependencies:
       mnemonist: 0.38.3
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/lib-dynamodb@3.614.0(@aws-sdk/client-dynamodb@3.614.0)':
     dependencies:
@@ -7800,7 +7809,7 @@ snapshots:
       '@smithy/protocol-http': 4.0.4
       '@smithy/types': 3.3.0
       '@smithy/util-config-provider': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-endpoint-discovery@3.614.0':
     dependencies:
@@ -7809,14 +7818,14 @@ snapshots:
       '@smithy/node-config-provider': 3.1.4
       '@smithy/protocol-http': 4.0.4
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-expect-continue@3.609.0':
     dependencies:
       '@aws-sdk/types': 3.609.0
       '@smithy/protocol-http': 4.0.4
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-flexible-checksums@3.614.0':
     dependencies:
@@ -7827,7 +7836,7 @@ snapshots:
       '@smithy/protocol-http': 4.0.4
       '@smithy/types': 3.3.0
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-host-header@3.609.0':
     dependencies:
@@ -7840,7 +7849,7 @@ snapshots:
     dependencies:
       '@aws-sdk/types': 3.609.0
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-logger@3.609.0':
     dependencies:
@@ -7865,7 +7874,7 @@ snapshots:
       '@smithy/smithy-client': 3.1.8
       '@smithy/types': 3.3.0
       '@smithy/util-config-provider': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-signing@3.609.0':
     dependencies:
@@ -7875,13 +7884,13 @@ snapshots:
       '@smithy/signature-v4': 3.1.2
       '@smithy/types': 3.3.0
       '@smithy/util-middleware': 3.0.3
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-ssec@3.609.0':
     dependencies:
       '@aws-sdk/types': 3.609.0
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/middleware-user-agent@3.614.0':
     dependencies:
@@ -7907,7 +7916,7 @@ snapshots:
       '@smithy/protocol-http': 4.0.4
       '@smithy/signature-v4': 3.1.2
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/token-providers@3.614.0(@aws-sdk/client-sso-oidc@3.614.0(@aws-sdk/client-sts@3.614.0))':
     dependencies:
@@ -7916,7 +7925,7 @@ snapshots:
       '@smithy/property-provider': 3.1.3
       '@smithy/shared-ini-file-loader': 3.1.4
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/types@3.609.0':
     dependencies:
@@ -7925,12 +7934,12 @@ snapshots:
 
   '@aws-sdk/util-arn-parser@3.568.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/util-dynamodb@3.614.0(@aws-sdk/client-dynamodb@3.614.0)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.614.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/util-endpoints@3.614.0':
     dependencies:
@@ -7941,7 +7950,7 @@ snapshots:
 
   '@aws-sdk/util-locate-window@3.568.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@aws-sdk/util-user-agent-browser@3.609.0':
     dependencies:
@@ -7965,7 +7974,7 @@ snapshots:
   '@aws-sdk/xml-builder@3.609.0':
     dependencies:
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@babel/code-frame@7.23.5':
     dependencies:
@@ -9137,10 +9146,10 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@plutolang/pluto-infra@0.4.25':
+  '@plutolang/pluto-infra@0.4.26':
     dependencies:
       '@plutolang/base': 0.4.9
-      '@plutolang/pluto': 0.4.16
+      '@plutolang/pluto': 0.4.17
       '@pulumi/alicloud': 3.45.0
       '@pulumi/archive': 0.0.2
       '@pulumi/aws': 6.34.1
@@ -9160,7 +9169,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@plutolang/pluto@0.4.16':
+  '@plutolang/pluto@0.4.17':
     dependencies:
       '@alicloud/credentials': 2.3.0
       '@alicloud/fc-open20210406': 2.0.13
@@ -9348,16 +9357,16 @@ snapshots:
   '@smithy/abort-controller@3.1.1':
     dependencies:
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/chunked-blob-reader-native@3.0.0':
     dependencies:
       '@smithy/util-base64': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/chunked-blob-reader@3.0.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/config-resolver@3.0.5':
     dependencies:
@@ -9384,7 +9393,7 @@ snapshots:
       '@smithy/property-provider': 3.1.3
       '@smithy/types': 3.3.0
       '@smithy/url-parser': 3.0.3
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/eventstream-codec@2.0.16':
     dependencies:
@@ -9399,7 +9408,7 @@ snapshots:
       '@aws-crypto/crc32': 5.2.0
       '@smithy/types': 3.3.0
       '@smithy/util-hex-encoding': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/eventstream-serde-browser@3.0.4':
     dependencies:
@@ -9422,7 +9431,7 @@ snapshots:
     dependencies:
       '@smithy/eventstream-codec': 3.1.2
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/fetch-http-handler@3.2.2':
     dependencies:
@@ -9437,7 +9446,7 @@ snapshots:
       '@smithy/chunked-blob-reader': 3.0.0
       '@smithy/chunked-blob-reader-native': 3.0.0
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/hash-node@3.0.3':
     dependencies:
@@ -9450,7 +9459,7 @@ snapshots:
     dependencies:
       '@smithy/types': 3.3.0
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/invalid-dependency@3.0.3':
     dependencies:
@@ -9459,17 +9468,17 @@ snapshots:
 
   '@smithy/is-array-buffer@2.2.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/is-array-buffer@3.0.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/md5-js@3.0.3':
     dependencies:
       '@smithy/types': 3.3.0
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/middleware-content-length@3.0.4':
     dependencies:
@@ -9527,7 +9536,7 @@ snapshots:
   '@smithy/property-provider@3.1.3':
     dependencies:
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/protocol-http@3.3.0':
     dependencies:
@@ -9544,12 +9553,12 @@ snapshots:
     dependencies:
       '@smithy/types': 3.3.0
       '@smithy/util-uri-escape': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/querystring-parser@3.0.3':
     dependencies:
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/service-error-classification@3.0.3':
     dependencies:
@@ -9563,7 +9572,7 @@ snapshots:
   '@smithy/shared-ini-file-loader@3.1.4':
     dependencies:
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/signature-v4@2.0.19':
     dependencies:
@@ -9585,7 +9594,7 @@ snapshots:
       '@smithy/util-middleware': 3.0.3
       '@smithy/util-uri-escape': 3.0.0
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/smithy-client@3.1.8':
     dependencies:
@@ -9603,7 +9612,7 @@ snapshots:
 
   '@smithy/types@2.8.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/types@3.3.0':
     dependencies:
@@ -9632,16 +9641,16 @@ snapshots:
   '@smithy/util-buffer-from@2.2.0':
     dependencies:
       '@smithy/is-array-buffer': 2.2.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-buffer-from@3.0.0':
     dependencies:
       '@smithy/is-array-buffer': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-config-provider@3.0.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-defaults-mode-browser@3.0.10':
     dependencies:
@@ -9674,7 +9683,7 @@ snapshots:
 
   '@smithy/util-hex-encoding@3.0.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-middleware@2.2.0':
     dependencies:
@@ -9702,7 +9711,7 @@ snapshots:
       '@smithy/util-buffer-from': 3.0.0
       '@smithy/util-hex-encoding': 3.0.0
       '@smithy/util-utf8': 3.0.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-uri-escape@2.2.0':
     dependencies:
@@ -9711,12 +9720,12 @@ snapshots:
 
   '@smithy/util-uri-escape@3.0.0':
     dependencies:
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-utf8@2.3.0':
     dependencies:
       '@smithy/util-buffer-from': 2.2.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@smithy/util-utf8@3.0.0':
     dependencies:
@@ -9727,7 +9736,7 @@ snapshots:
     dependencies:
       '@smithy/abort-controller': 3.1.1
       '@smithy/types': 3.3.0
-      tslib: 2.6.2
+      tslib: 2.6.3
 
   '@szmarczak/http-timer@1.1.2':
     dependencies:
@@ -10330,6 +10339,10 @@ snapshots:
   assertion-error@1.1.0: {}
 
   astral-regex@2.0.0: {}
+
+  async-mutex@0.5.0:
+    dependencies:
+      tslib: 2.6.3
 
   asynckit@0.4.0: {}
 
