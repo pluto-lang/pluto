@@ -1,10 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { PlatformType, ProvisionType, config, core } from "@plutolang/base";
+import { PlatformType, ProvisionType, config } from "@plutolang/base";
 import logger from "../log";
 import { prepareStackDirs } from "../utils";
 import { loadDotEnvs } from "./env";
 import { loadAndDeduce } from "./compile";
+import { deployWithAdapter } from "./deploy";
 import {
   buildAdapterByProvisionType,
   getDefaultDeducerPkg,
@@ -59,16 +60,4 @@ export async function run(entrypoint: string) {
     stateDir: stateDir,
   });
   await deployWithAdapter(adapter, stack);
-}
-
-async function deployWithAdapter(adapter: core.Adapter, stack: config.Stack) {
-  logger.info("Applying...");
-  const applyResult = await adapter.deploy();
-  stack.setDeployed();
-  logger.info("Successfully applied!");
-
-  logger.info("Here are the resource outputs:");
-  for (const key in applyResult.outputs) {
-    logger.info(`${key}:`, applyResult.outputs[key]);
-  }
 }
