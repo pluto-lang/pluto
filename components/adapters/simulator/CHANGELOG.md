@@ -1,5 +1,11 @@
 # @plutolang/simulator-adapter
 
+## 0.3.33
+
+### Patch Changes
+
+- 41c8538: fix(simulator): remove the exit handler after handling the signal to avoid too many listeners
+
 ## 0.3.32
 
 ### Patch Changes
