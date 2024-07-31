@@ -161,20 +161,35 @@ async function buildArchRefAndInfraEntrypoint(
   return { archRef, infraEntrypoint };
 }
 
-async function deployWithAdapter(
-  adapter: core.Adapter,
-  stack: config.Stack,
-  force: boolean = false
-) {
+export async function deployWithAdapter(adapter: core.Adapter, stack: config.Stack, force = false) {
   logger.info("Applying...");
   const applyResult = await adapter.deploy({ force });
   stack.setDeployed();
   logger.info("Successfully applied!");
 
-  logger.info("Here are the resource outputs:");
-  for (const key in applyResult.outputs) {
-    logger.info(`${key}:`, applyResult.outputs[key]);
+  if (applyResult.outputs.length === 0) {
+    return;
   }
+
+  const tableData = [["Resource ID", "Output"]];
+  for (const key in applyResult.outputs) {
+    tableData.push([key, applyResult.outputs[key]]);
+  }
+  const tableConfig: TableUserConfig = {
+    drawHorizontalLine: (lineIndex: number, rowCount: number) => {
+      return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
+    },
+    header: {
+      content: "Deployment Outputs",
+    },
+    columns: {
+      1: {
+        wrapWord: true,
+      },
+    },
+  };
+
+  console.log(table(tableData, tableConfig));
 }
 
 async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Promise<boolean> {
