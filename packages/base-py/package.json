@@ -1,0 +1,8 @@
+{
+    "name": "base-py",
+    "private": true,
+    "version": "0.0.0",
+    "scripts": {
+        "test": "PYTHONPATH=$(pwd) pytest tests"
+    }
+}
