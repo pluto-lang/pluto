@@ -57,6 +57,6 @@ class Tester(IResource, ITesterClient, ITesterInfra):
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Tester.fqn, name)
-            self._client = create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)  # type: ignore
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

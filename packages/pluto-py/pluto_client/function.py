@@ -30,7 +30,7 @@ class FunctionOptions:
 
 
 class IFunctionClientApi(Generic[FnHandler], IResourceClientApi):
-    def invoke(self, *args, **kwargs) -> Any:
+    def invoke(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError
 
 
@@ -60,6 +60,8 @@ class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
         name: Optional[str] = None,
         opts: Optional[FunctionOptions] = None,
     ):
+        name = name or DEFAULT_FUNCTION_NAME
+
         platform_type = utils.current_platform_type()
         if platform_type == PlatformType.AWS:
             from .clients import aws
@@ -68,7 +70,7 @@ class Function(IResource, IFunctionClient[FnHandler], IFunctionInfra):
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Function.fqn, name)
-            self._client = create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)  # type: ignore
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

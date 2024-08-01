@@ -47,6 +47,4 @@ class Schedule(IResource, IScheduleClient, IScheduleInfra):
     fqn = "@plutolang/pluto.Schedule"
 
     def __init__(self, name: str, opts: Optional[ScheduleOptions] = None):
-        raise NotImplementedError(
-            "Cannot instantiate this class, instead of its subclass depending on the target runtime."
-        )
+        pass
