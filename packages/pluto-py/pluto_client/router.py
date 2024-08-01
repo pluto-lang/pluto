@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
+
 from pluto_base.platform import PlatformType
 from pluto_base import utils, resource
 from .utils import create_simulator_client
@@ -33,19 +34,19 @@ class IRouterClientApi(resource.IResourceClientApi):
 
 
 class IRouterInfraApi(resource.IResourceInfraApi):
-    def get(self, path: str, fn: RequestHandler):
+    def get(self, path: str, fn: RequestHandler) -> None:
         raise NotImplementedError
 
-    def post(self, path: str, fn: RequestHandler):
+    def post(self, path: str, fn: RequestHandler) -> None:
         raise NotImplementedError
 
-    def put(self, path: str, fn: RequestHandler):
+    def put(self, path: str, fn: RequestHandler) -> None:
         raise NotImplementedError
 
-    def delete(self, path: str, fn: RequestHandler):
+    def delete(self, path: str, fn: RequestHandler) -> None:
         raise NotImplementedError
 
-    def all(self, path: str, fn: Callable, raw: bool = False):
+    def all(self, path: str, fn: Callable[..., Any], raw: bool = False) -> None:
         raise NotImplementedError
 
 
@@ -74,7 +75,7 @@ class Router(resource.IResource, IRouterClient, IRouterInfra):
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Router.fqn, name)
-            self._client = create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)  # type: ignore
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

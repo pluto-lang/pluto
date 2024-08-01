@@ -30,7 +30,7 @@ class IKVStoreClientApi(IResourceClientApi):
     def get(self, key: str) -> str:
         raise NotImplementedError
 
-    def set(self, key: str, val: str):
+    def set(self, key: str, val: str) -> None:
         raise NotImplementedError
 
 
@@ -62,7 +62,7 @@ class KVStore(IResource, IKVStoreClient, IKVStoreInfra):
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(KVStore.fqn, name)
-            self._client = create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)  # type: ignore
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

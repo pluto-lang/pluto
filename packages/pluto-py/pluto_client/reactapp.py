@@ -1,6 +1,6 @@
 from typing import Optional
 from dataclasses import dataclass
-from .website import Website, WebsiteOptions, IWebsiteClient
+from .website import Website, WebsiteOptions
 
 
 @dataclass

@@ -1,5 +1,9 @@
 # pluto-client
 
+## 0.0.18
+
+chore: lint and format code
+
 ## 0.0.17
 
 refactor: replace build_client with constructor usage

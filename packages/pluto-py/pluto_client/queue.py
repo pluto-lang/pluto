@@ -63,7 +63,7 @@ class Queue(IResource, IQueueClient, IQueueInfra):
 
         elif platform_type == PlatformType.Simulator:
             resource_id = utils.gen_resource_id(Queue.fqn, name)
-            self._client = create_simulator_client(resource_id)
+            self._client = create_simulator_client(resource_id)  # type: ignore
 
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")
