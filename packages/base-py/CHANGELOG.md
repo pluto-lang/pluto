@@ -1,5 +1,13 @@
 # pluto-base
 
+## 0.0.6
+
+feat: add no-op infrastructure API to client SDK
+
+To prevent runtime errors, a no-op (no operation) implementation of the infrastructure API has been introduced in the client SDK. This ensures that when pytest is run locally, calls to the infrastructure API do not result in errors.
+
+Future plans may involve bundling the entire user code, not just the business logic, which further necessitates a no-op infrastructure API in the SDK to avoid runtime exceptions.
+
 ## 0.0.5
 
 refactor: replace build_client with constructor usage

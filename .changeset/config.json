@@ -8,6 +8,7 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": [
+    "base-py",
     "tester",
     "tester-py",
     "app-with-prop-access",

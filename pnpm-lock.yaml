@@ -686,6 +686,8 @@ importers:
         specifier: ^0.34.6
         version: 0.34.6(terser@5.30.0)
 
+  packages/base-py: {}
+
   packages/pluto:
     dependencies:
       '@alicloud/credentials':
