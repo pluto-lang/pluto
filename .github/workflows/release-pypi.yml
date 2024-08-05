@@ -1,0 +1,115 @@
+name: Release to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions: {} #reset
+env:
+  CI: true
+  RELEASE: true
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+        package-name: [pluto-base, pluto-client]
+    environment:
+      name: pypi
+      url: https://pypi.org/project/${{ matrix.package-name }}/
+    env:
+      PACKAGE_DIRS: "pluto-base:packages/base-py,pluto-client:packages/pluto-py"
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Set working directory
+        id: set-working-directory
+        run: |
+          package_name="${{ matrix.package-name }}"
+          for mapping in $(echo $PACKAGE_DIRS | tr "," "\n"); do
+            IFS=':' read -r name dir <<< "$mapping"
+            if [[ "$name" == "$package_name" ]]; then
+              echo "Working directory: $dir"
+              echo "workingDirectory=$dir" >> "$GITHUB_ENV"
+              break
+            fi
+          done
+
+      - name: Get latest version
+        id: get-latest-version
+        run: |
+          package_name="${{ matrix.package-name }}"
+          url="https://pypi.org/pypi/$package_name/json"
+
+          response=$(curl -s "$url")
+
+          if [[ $? -ne 0 ]]; then
+              echo "Error: Failed to fetch data from PyPI."
+              exit 1
+          fi
+
+          latest_version=$(echo "$response" | jq -r '.info.version')
+
+          if [[ "$latest_version" == "null" ]]; then
+              echo "Error: Package '$package_name' not found."
+              exit 1
+          else
+              echo "The latest version of '$package_name' is: $latest_version"
+              echo "latestVersion=$latest_version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if there's a need to publish
+        id: check-if-need-publish
+        working-directory: ${{ env.workingDirectory }}
+        run: |
+          current_version=$(poetry version | awk '{print $2}')
+          latest_version=${{ steps.get-latest-version.outputs.latestVersion }}
+
+          if [[ "$current_version" == "$latest_version" ]]; then
+              echo "No need to publish"
+              echo "needPublish=false" >> "$GITHUB_OUTPUT"
+          else
+              echo "Need to publish"
+              echo "needPublish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update Poetry configuration
+        if: steps.check-if-need-publish.outputs.needPublish == 'true'
+        working-directory: ${{ env.workingDirectory }}
+        run: poetry config virtualenvs.create false
+
+      - name: Install dependencies
+        if: steps.check-if-need-publish.outputs.needPublish == 'true'
+        working-directory: ${{ env.workingDirectory }}
+        run: poetry install --sync --no-interaction
+
+      - name: Package project
+        if: steps.check-if-need-publish.outputs.needPublish == 'true'
+        working-directory: ${{ env.workingDirectory }}
+        run: poetry build
+
+      - name: Publish package distributions to PyPI
+        if: steps.check-if-need-publish.outputs.needPublish == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.workingDirectory }}/dist/
+          # repository-url: https://test.pypi.org/legacy/
