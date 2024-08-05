@@ -162,3 +162,21 @@ export function exitGracefully(sig?: string) {
   console.log("Bye~ 👋");
   process.exit(1);
 }
+
+export const DuplexTableChars = {
+  top: "═",
+  "top-mid": "┬",
+  "top-left": "╔",
+  "top-right": "╗",
+  bottom: "═",
+  "bottom-mid": "╧",
+  "bottom-left": "╚",
+  "bottom-right": "╝",
+  left: "║",
+  "left-mid": "╟",
+  mid: "─",
+  "mid-mid": "┼",
+  right: "║",
+  "right-mid": "╢",
+  middle: "│",
+};
