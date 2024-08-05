@@ -35,7 +35,7 @@ export function genResourceId(...args: readonly string[]): string {
     args = [currentProjectName(), currentStackName()].concat(args);
   }
 
-  const resourceFullId = args.join("_").replace(/[^_0-9a-zA-Z]+/g, "_");
+  const resourceFullId = encodeUnicode(args.join("_")).replace(/[^_0-9a-zA-Z]+/g, "_");
   if (resourceFullId.length <= RESOURCE_ID_MAX_LENGTH) {
     return resourceFullId;
   } else {
@@ -46,4 +46,11 @@ export function genResourceId(...args: readonly string[]): string {
     const end = resourceFullId.length;
     return resourceFullId.substring(start, end) + hash;
   }
+}
+
+function encodeUnicode(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/[^\x00-\xff]/g, (c) => {
+    return "\\u" + c.charCodeAt(0).toString(16);
+  });
 }
