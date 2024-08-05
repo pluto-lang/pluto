@@ -30,7 +30,7 @@ def gen_resource_id(
         resource_type,
         provided_name,
     )
-    resource_full_id = re.sub(r"[^_0-9a-zA-Z]+", "_", "_".join(args))
+    resource_full_id = re.sub(r"[^_0-9a-zA-Z]+", "_", encode_unicode("_".join(args)))
 
     if len(resource_full_id) <= RESOURCE_ID_MAX_LENGTH:
         return resource_full_id
@@ -41,3 +41,7 @@ def gen_resource_id(
         start = len(resource_full_id) - (RESOURCE_ID_MAX_LENGTH - len(hash_digest))
         end = len(resource_full_id)
         return resource_full_id[start:end] + hash_digest
+
+
+def encode_unicode(s: str) -> str:
+    return "".join(f"\\u{ord(c):04x}" if ord(c) > 255 else c for c in s)
