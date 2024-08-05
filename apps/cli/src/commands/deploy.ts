@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs-extra";
-import { table, TableUserConfig } from "table";
+import Table from "cli-table3";
 import { confirm } from "@inquirer/prompts";
 import { arch, config, core, ProvisionType } from "@plutolang/base";
 import logger from "../log";
@@ -8,6 +8,7 @@ import { loadAndDeduce, loadAndGenerate } from "./compile";
 import {
   buildAdapter,
   buildAdapterByProvisionType,
+  DuplexTableChars,
   getDefaultDeducerPkg,
   getDefaultEntrypoint,
   loadArchRef,
@@ -171,89 +172,84 @@ export async function deployWithAdapter(adapter: core.Adapter, stack: config.Sta
     return;
   }
 
-  const tableData = [["Resource ID", "Output"]];
-  for (const key in applyResult.outputs) {
-    tableData.push([key, applyResult.outputs[key]]);
-  }
-  const tableConfig: TableUserConfig = {
-    drawHorizontalLine: (lineIndex: number, rowCount: number) => {
-      return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
-    },
-    header: {
-      content: "Deployment Outputs",
-    },
-    columns: {
-      1: {
-        wrapWord: true,
-      },
-    },
-  };
+  const table = new Table({
+    chars: DuplexTableChars,
+  });
 
-  console.log(table(tableData, tableConfig));
+  table.push(
+    [{ colSpan: 2, content: "Deployment Outputs", hAlign: "center" }],
+    ["Resource ID", "Output"]
+  );
+
+  for (const key in applyResult.outputs) {
+    table.push([key, applyResult.outputs[key]]);
+  }
+
+  console.log(table.toString());
 }
 
 async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Promise<boolean> {
   // Create the resource table for printing.
-  const resData = [
-    ["ID", "Name", "Resource Type", "Entity Type"],
-    ...archRef.resources.map((resource) => [resource.id, resource.name, resource.type, "Resource"]),
-    ...archRef.closures.map((closure) => [closure.id, "-", "-", "Closure"]),
-  ];
+  const resourceTable = new Table({});
 
-  // To display the resource table, which includes the resources in the arch ref
-  const resConfig: TableUserConfig = {
-    drawHorizontalLine: (lineIndex: number, rowCount: number) => {
-      return (
-        lineIndex === 0 ||
-        lineIndex === 2 ||
-        lineIndex === 1 ||
-        lineIndex === rowCount ||
-        lineIndex === archRef.resources.length + 2
-      );
-    },
-    header: {
-      content: "Architecture Entities",
-    },
-  };
-  console.log(table(resData, resConfig));
+  resourceTable.push(
+    [{ colSpan: 4, content: "Architecture Entities", hAlign: "center" }],
+    ["ID", "Name", "Resource Type", "Entity Type"]
+  );
+  for (let i = 0; i < archRef.resources.length; i++) {
+    const resource = archRef.resources[i];
+    const row: any[] = [resource.id, resource.name, resource.type];
+    if (i == 0) {
+      row.push({ content: "Resource", rowSpan: archRef.resources.length });
+    }
+    resourceTable.push(row);
+  }
+  for (let i = 0; i < archRef.closures.length; i++) {
+    const closure = archRef.closures[i];
+    const row: any[] = [closure.id, "-", "-"];
+    if (i == 0) {
+      row.push({ content: "Closure", rowSpan: archRef.closures.length });
+    }
+    resourceTable.push(row);
+  }
+
+  console.log(resourceTable.toString());
 
   // Create the relationship table for printing.
-  const relatData = [["Source Entity ID", "Target Entity ID", "Relationship Type", "Operation"]];
+  const relatTable = new Table({});
+
+  relatTable.push(
+    [{ colSpan: 4, content: "Entity Relationships", hAlign: "center" }],
+    ["Source Entity ID", "Target Entity ID", "Relationship Type", "Operation"]
+  );
+
   for (const relat of archRef.relationships) {
     switch (relat.type) {
       case arch.RelationshipType.Infrastructure: {
         for (const arg of relat.arguments) {
           if (arg.type === "resource") {
-            relatData.push([relat.caller.id, arg.resourceId, "Infra", arg.name]);
+            relatTable.push([relat.caller.id, arg.resourceId, "Infra", arg.name]);
           } else if (arg.type === "closure") {
-            relatData.push([relat.caller.id, arg.closureId, "Infra", arg.name]);
+            relatTable.push([relat.caller.id, arg.closureId, "Infra", arg.name]);
           } else if (arg.type === "capturedProperty") {
-            relatData.push([relat.caller.id, arg.resourceId, "Infra", arg.name]);
+            relatTable.push([relat.caller.id, arg.resourceId, "Infra", arg.name]);
           }
         }
         break;
       }
       case arch.RelationshipType.Client: {
-        relatData.push([relat.bundle.id, relat.resource.id, "Client", relat.operation]);
+        relatTable.push([relat.bundle.id, relat.resource.id, "Client", relat.operation]);
         break;
       }
       case arch.RelationshipType.CapturedProperty: {
-        relatData.push([relat.bundle.id, relat.resource.id, "Property", relat.property]);
+        relatTable.push([relat.bundle.id, relat.resource.id, "Property", relat.property]);
         break;
       }
     }
   }
 
   // To display the relationship table, which includes the relationships among resources in the arch ref.
-  const relatConfig: TableUserConfig = {
-    drawHorizontalLine: (lineIndex: number, rowCount: number) => {
-      return lineIndex === 0 || lineIndex === 2 || lineIndex === 1 || lineIndex === rowCount;
-    },
-    header: {
-      content: "Entity Relationships",
-    },
-  };
-  console.log(table(relatData, relatConfig));
+  console.log(relatTable.toString());
 
   const result =
     confirmed ||
