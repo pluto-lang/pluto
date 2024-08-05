@@ -1,5 +1,12 @@
 # @plutolang/pluto
 
+## 0.4.18
+
+### Patch Changes
+
+- Updated dependencies [dbbfde4]
+  - @plutolang/base@0.4.10
+
 ## 0.4.17
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @plutolang/cli
 
+## 0.4.51
+
+### Patch Changes
+
+- faf87ff: fix(cli): replace `table` with `cli-table3` for better Unicode support
+
+  Switched to `cli-table3` as it provides enhanced support for Unicode characters, which was lacking in the `table` package.
+
+- Updated dependencies [c45700e]
+- Updated dependencies [dbbfde4]
+  - @plutolang/static-generator@0.4.10
+  - @plutolang/base@0.4.10
+  - @plutolang/pulumi-adapter@0.4.14
+  - @plutolang/simulator-adapter@0.3.34
+  - @plutolang/pyright-deducer@0.1.32
+  - @plutolang/static-deducer@0.4.13
+  - @plutolang/graphviz-generator@0.4.12
+
 ## 0.4.50
 
 ### Patch Changes
