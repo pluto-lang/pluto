@@ -79,7 +79,7 @@ ${infraCode}
   }
 
   private generateInfraCode_Resource(resource: arch.Resource): string {
-    const dotPos = resource.type.lastIndexOf(".");
+    const dotPos = resource.type.indexOf(".");
     const pkgName = dotPos == -1 ? "@plutolang/pluto" : resource.type.substring(0, dotPos);
     const typeName = dotPos == -1 ? resource.type : resource.type.substring(dotPos + 1);
     const parameterString = resource.arguments
