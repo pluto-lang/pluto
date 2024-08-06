@@ -1,3 +1,4 @@
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
 import { createHash } from "crypto";
 
 const RESOURCE_NAME_MAX_LENGTH = 50;
@@ -19,4 +20,17 @@ export function genAwsResourceName(...parts: string[]): string {
     const end = resourceFullId.length;
     return (resourceFullId.substring(start, end) + hash).replace(/^-+|-+$/g, "");
   }
+}
+
+export async function getAwsAccountId(): Promise<string> {
+  const client = new STSClient({});
+
+  const command = new GetCallerIdentityCommand({});
+  const response = await client.send(command);
+
+  const accountId = response.Account;
+  if (!accountId) {
+    throw new Error("Missing AWS Account ID");
+  }
+  return accountId;
 }

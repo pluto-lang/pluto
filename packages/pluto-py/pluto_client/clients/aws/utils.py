@@ -1,6 +1,7 @@
 import re
-import hashlib
 import json
+import boto3
+import hashlib
 
 RESOURCE_NAME_MAX_LENGTH = 50
 
@@ -15,3 +16,8 @@ def gen_aws_resource_name(*parts: str) -> str:
         start = len(resource_full_id) - (RESOURCE_NAME_MAX_LENGTH - len(hash))
         end = len(resource_full_id)
         return (resource_full_id[start:end] + hash).strip("-")
+
+
+def get_aws_account_id() -> str:
+    client = boto3.client("sts")  # type: ignore
+    return client.get_caller_identity().get("Account")  # type: ignore

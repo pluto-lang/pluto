@@ -193,22 +193,19 @@ export class SNSQueue implements IQueueClient {
     };
     await this.client.send(
       new PublishCommand({
-        TopicArn: this.buildARN(this.topicName),
+        TopicArn: await this.buildARN(this.topicName),
         Message: JSON.stringify(evt),
       })
     );
   }
 
-  private buildARN(topicName: string): string {
+  private async buildARN(topicName: string): Promise<string> {
     const region = process.env.AWS_REGION;
     if (!region) {
       throw new Error("Missing AWS Region");
     }
 
-    const accountId = process.env.AWS_ACCOUNT_ID;
-    if (!accountId) {
-      throw new Error("Missing AWS Account ID");
-    }
+    const accountId = await getAwsAccountId();
 
     return `arn:aws:sns:${region}:${accountId}:${topicName}`;
   }
