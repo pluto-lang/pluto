@@ -200,7 +200,7 @@ async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Prom
     const resource = archRef.resources[i];
     const row: any[] = [resource.id, resource.name, resource.type];
     if (i == 0) {
-      row.push({ content: "Resource", rowSpan: archRef.resources.length });
+      row.push({ content: "Resource", rowSpan: archRef.resources.length, vAlign: "center" });
     }
     resourceTable.push(row);
   }
@@ -208,7 +208,7 @@ async function confirmArch(archRef: arch.Architecture, confirmed: boolean): Prom
     const closure = archRef.closures[i];
     const row: any[] = [closure.id, "-", "-"];
     if (i == 0) {
-      row.push({ content: "Closure", rowSpan: archRef.closures.length });
+      row.push({ content: "Closure", rowSpan: archRef.closures.length, vAlign: "center" });
     }
     resourceTable.push(row);
   }
