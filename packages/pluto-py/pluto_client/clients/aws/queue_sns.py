@@ -4,7 +4,7 @@ import time
 import boto3
 from typing import Optional
 from pluto_base.utils.resource_id import gen_resource_id
-from pluto_client.clients.aws.utils import gen_aws_resource_name
+from pluto_client.clients.aws.utils import gen_aws_resource_name, get_aws_account_id
 from ...queue import CloudEvent, IQueueClient, Queue, QueueOptions
 
 
@@ -26,8 +26,6 @@ class SNSQueue(IQueueClient):
         if not region:
             raise EnvironmentError("Missing AWS Region")
 
-        account_id = os.environ.get("AWS_ACCOUNT_ID")
-        if not account_id:
-            raise EnvironmentError("Missing AWS Account ID")
+        account_id = get_aws_account_id()
 
         return f"arn:aws:sns:{region}:{account_id}:{topic_name}"

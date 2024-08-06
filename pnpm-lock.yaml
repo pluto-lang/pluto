@@ -374,17 +374,17 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.17
+        version: 0.4.18
       openai:
         specifier: ^4.13.0
         version: 4.13.0
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -399,17 +399,17 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.17
+        version: 0.4.18
       '@slack/web-api':
         specifier: ^6.9.0
         version: 6.9.0
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -424,10 +424,10 @@ importers:
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -442,10 +442,10 @@ importers:
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -460,14 +460,14 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.17
+        version: 0.4.18
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -519,10 +519,10 @@ importers:
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -574,14 +574,14 @@ importers:
     dependencies:
       '@plutolang/pluto':
         specifier: latest
-        version: 0.4.17
+        version: 0.4.18
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -595,11 +595,11 @@ importers:
   examples/quickstart-python:
     devDependencies:
       '@plutolang/base':
-        specifier: latest
-        version: 0.4.9
+        specifier: workspace:*
+        version: link:../../packages/base
       '@plutolang/pluto-infra':
-        specifier: latest
-        version: 0.4.26
+        specifier: workspace:*
+        version: link:../../packages/pluto-infra
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -614,10 +614,10 @@ importers:
     devDependencies:
       '@plutolang/base':
         specifier: latest
-        version: 0.4.9
+        version: 0.4.10
       '@plutolang/pluto-infra':
         specifier: latest
-        version: 0.4.26
+        version: 0.4.27
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
@@ -718,6 +718,9 @@ importers:
         specifier: ^3.614.0
         version: 3.614.0
       '@aws-sdk/client-sns':
+        specifier: ^3.614.0
+        version: 3.614.0
+      '@aws-sdk/client-sts':
         specifier: ^3.614.0
         version: 3.614.0
       '@aws-sdk/lib-dynamodb':
@@ -2497,14 +2500,14 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@plutolang/base@0.4.9':
-    resolution: {integrity: sha512-1x5wAZ0dfqe68vVHBBMZpH0XVjy6UFK2huYUrpKntkWZmysflSgsxf7AK756PVzPEh3oILiWxFdEdL6+2jRCug==}
+  '@plutolang/base@0.4.10':
+    resolution: {integrity: sha512-r+6BngsJHj58fVoppHkCYFyCMYEyBzIhbDYiOAZMhVVapFtoXi8GLzsLXZTKv7mmNzPw/PwoIPdYOKhU13pRsA==}
 
-  '@plutolang/pluto-infra@0.4.26':
-    resolution: {integrity: sha512-/ZieLfJG1g4YDJluP+876pF8TUkLYZya3I8gMl42T0IQLtjR2CPYcwD3s6MEr+hnz7HrF4hkxF29EKeafBNjag==}
+  '@plutolang/pluto-infra@0.4.27':
+    resolution: {integrity: sha512-22uQud0cVGls0HhtyeULki8zlqjm23NcjLQ03G94OCB6z5lLESefYjGvyLTS0K4ocHWE1r5m+snTgDBd0f9QCA==}
 
-  '@plutolang/pluto@0.4.17':
-    resolution: {integrity: sha512-aCFyHbZ+aurUuhSFFo/5fddk8RyA5XHQOFfTZezkq+aA3Q4zb0JQYRsWb0XN9UYoXi/5mAceMYFmN7Jty+/g/w==}
+  '@plutolang/pluto@0.4.18':
+    resolution: {integrity: sha512-x8cdRH8cdHJAjUo8N8FA4/norEN7S5GNqNm/jW22ndqKmlz9ORwT7KBkilDN4IntPl4UWhW3rRsAejAD8m/S3w==}
 
   '@protobufjs/aspromise@1.1.2':
     resolution: {integrity: sha512-j+gKExEuLmKwvz3OgROXtrJ2UG2x8Ch2YZUxahh+s1F2HZ+wAceUNLkvy6zKCPVRkU++ZWQrdxsUeQXmcg4uoQ==}
@@ -9135,7 +9138,7 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@plutolang/base@0.4.9':
+  '@plutolang/base@0.4.10':
     dependencies:
       fs-extra: 11.1.1
       js-yaml: 4.1.0
@@ -9144,10 +9147,10 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@plutolang/pluto-infra@0.4.26':
+  '@plutolang/pluto-infra@0.4.27':
     dependencies:
-      '@plutolang/base': 0.4.9
-      '@plutolang/pluto': 0.4.17
+      '@plutolang/base': 0.4.10
+      '@plutolang/pluto': 0.4.18
       '@pulumi/alicloud': 3.45.0
       '@pulumi/archive': 0.0.2
       '@pulumi/aws': 6.34.1
@@ -9167,7 +9170,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@plutolang/pluto@0.4.17':
+  '@plutolang/pluto@0.4.18':
     dependencies:
       '@alicloud/credentials': 2.3.0
       '@alicloud/fc-open20210406': 2.0.13
@@ -9180,7 +9183,7 @@ snapshots:
       '@aws-sdk/client-secrets-manager': 3.614.0
       '@aws-sdk/client-sns': 3.614.0
       '@aws-sdk/lib-dynamodb': 3.614.0(@aws-sdk/client-dynamodb@3.614.0)
-      '@plutolang/base': 0.4.9
+      '@plutolang/base': 0.4.10
       redis: 4.6.10
     transitivePeerDependencies:
       - aws-crt
