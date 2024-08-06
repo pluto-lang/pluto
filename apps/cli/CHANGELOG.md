@@ -1,5 +1,11 @@
 # @plutolang/cli
 
+## 0.4.52
+
+### Patch Changes
+
+- 5a09178: chore(cli): update table alignment in deploy command
+
 ## 0.4.51
 
 ### Patch Changes
