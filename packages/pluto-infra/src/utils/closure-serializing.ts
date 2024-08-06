@@ -182,13 +182,13 @@ function modifyEntrypointFile(entrypointFilePath: string, closure: ComputeClosur
   // replaces the placeholder "__handler_: undefined" in the entrypoint file with "__handler_:
   // __handler_".
   //
-  // We postpone the require statement by placing it within an asynchronous function. This approach
-  // is necessary because the module being imported might need information from the environment,
-  // which is initialized in the platform adaptation function, such as the AWS_ACCOUNT_ID.
+  // We postpone the require statement outside the function to ensure that the import process
+  // completes during container initialization.
+  const uniqueFnName = `handler_${path.basename(closureDirpath)}`;
   const userClosureImportStat = `
+const ${uniqueFnName} = require("./${path.basename(closureDirpath)}").default;
 var __handler_ = async (...args) => {
-  const handler = require("./${path.basename(closureDirpath)}").default;
-  return await handler(...args);
+  return await ${uniqueFnName}(...args);
 };\n`;
   const entrypointFileContent = fs
     .readFileSync(entrypointFilePath, "utf-8")
@@ -225,13 +225,17 @@ export async function dumpClosureToDir_python(
       throw new Error(`This closure has a placeholder but no child closure.`);
     }
 
+    // Append the closure import snippet to the end of the entrypoint file. Place the import
+    // statement outside the function to ensure the import process completes during container
+    // initialization.
+    const uniqueFnName = `__child_${depth}_${child.exportName}`;
     const closureImportStat = `
+from child_${depth} import ${child.exportName} as ${uniqueFnName}
 def ${closure.placeholder}(*args, **kwargs):
-    from child_${depth} import ${child.exportName}
-    return ${child.exportName}(*args, **kwargs)
+    return ${uniqueFnName}(*args, **kwargs)
 `;
     const content = fs.readFileSync(entrypoint, "utf-8");
-    fs.writeFileSync(entrypoint, closureImportStat + content);
+    fs.writeFileSync(entrypoint, content + "\n\n" + closureImportStat);
   }
 
   return entrypoint;

@@ -9,13 +9,13 @@
     "destroy": "pluto destroy"
   },
   "dependencies": {
-    "@plutolang/pluto": "latest"
+    "@plutolang/pluto": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",
     "typescript": "^5.2.2",
-    "@plutolang/base": "latest",
-    "@plutolang/pluto-infra": "latest",
+    "@plutolang/base": "workspace:*",
+    "@plutolang/pluto-infra": "workspace:*",
     "@pulumi/pulumi": "^3.88.0"
   },
   "main": "dist/index.js"
