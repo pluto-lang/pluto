@@ -1,5 +1,12 @@
 # @plutolang/pluto-infra
 
+## 0.4.28
+
+### Patch Changes
+
+- Updated dependencies [cdf966f]
+  - @plutolang/pluto@0.4.19
+
 ## 0.4.27
 
 ### Patch Changes
