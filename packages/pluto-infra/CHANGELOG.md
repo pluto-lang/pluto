@@ -1,5 +1,15 @@
 # @plutolang/pluto-infra
 
+## 0.4.29
+
+### Patch Changes
+
+- ba661d2: feat(sdk): optimize cold-start performance
+
+  Move import statements to container initialization to enhance runtime performance.
+
+  By shifting import statements to container initialization rather than at invocation time, we ensure that the import process is completed with more resources available, leading to improved cold-start performance.
+
 ## 0.4.28
 
 ### Patch Changes
