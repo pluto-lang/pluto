@@ -573,15 +573,15 @@ importers:
   examples/quickstart:
     dependencies:
       '@plutolang/pluto':
-        specifier: latest
-        version: 0.4.18
+        specifier: workspace:*
+        version: link:../../packages/pluto
     devDependencies:
       '@plutolang/base':
-        specifier: latest
-        version: 0.4.10
+        specifier: workspace:*
+        version: link:../../packages/base
       '@plutolang/pluto-infra':
-        specifier: latest
-        version: 0.4.27
+        specifier: workspace:*
+        version: link:../../packages/pluto-infra
       '@pulumi/pulumi':
         specifier: ^3.88.0
         version: 3.88.0
