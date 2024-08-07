@@ -257,7 +257,7 @@ function getInstallableModule(module: ImportResult): InstalledModule {
     const distInfos = getAllDistInfos(path.dirname(pkgPath));
     for (const distInfo of distInfos) {
       if (distInfo.topLevel.includes(pkgName)) {
-        return InstalledModule.create(pkgName, distInfo.version);
+        return InstalledModule.create(distInfo.name, distInfo.version);
       }
     }
   }
