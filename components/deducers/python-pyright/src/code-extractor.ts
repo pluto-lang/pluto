@@ -965,6 +965,16 @@ class OutsideSymbolFinder extends ParseTreeWalker {
     return Array.from(this._envVarNames);
   }
 
+  public override visitImport(): boolean {
+    // Ignore the import statement. We don't need to extract the imported modules.
+    return false;
+  }
+
+  public override visitImportFrom(): boolean {
+    // Ignore the import-from statement. We don't need to extract the imported modules.
+    return false;
+  }
+
   public override visitName(node: NameNode): boolean {
     if (node !== this.rootNode && !this.shouldIgnore(node)) {
       const symbol = this.typeEvaluator.lookUpSymbolRecursive(node, node.value, false);

@@ -325,6 +325,66 @@ foo()
   clean();
 });
 
+describe("Code segment extraction with import statements", () => {
+  const code = `
+def foo1():
+  import pluto_client
+
+def foo2():
+  import pluto_client as pc
+
+def foo3():
+  from pluto_client import Router
+
+def foo4():
+  from pluto_client import Router as R
+
+foo1()
+foo2()
+foo3()
+foo4()
+`;
+  let program: Program;
+  let sourceFile: SourceFile;
+  let clean: () => void;
+  let extractor: CodeExtractor;
+  let fetchedNodes: ParseNode[] = [];
+
+  beforeAll(() => {
+    ({ program, sourceFile, clean } = TestUtils.parseCode(code));
+    ({ extractor } = createTools(program, sourceFile));
+  });
+
+  afterAll(() => clean());
+
+  beforeEach(() => {
+    const walker = new NodeFetcher((node) => {
+      return (
+        node.nodeType === ParseNodeType.Call &&
+        node.leftExpression.nodeType === ParseNodeType.Name &&
+        node.leftExpression.value.startsWith("foo")
+      );
+    });
+    walker.walk(sourceFile.getParseResults()!.parseTree!);
+    fetchedNodes = walker.nodes;
+  });
+
+  test("should fetch 4 nodes", () => {
+    expect(fetchedNodes).toHaveLength(4);
+  });
+
+  for (let i = 0; i < 4; i++) {
+    const caseIdx = i;
+
+    test(`should not throw for foo${caseIdx + 1}`, () => {
+      const callNode = fetchedNodes[caseIdx] as ExpressionNode;
+      expect(() => {
+        extractor.extractExpressionRecursively(callNode, sourceFile);
+      }).not.toThrow();
+    });
+  }
+});
+
 test("should correctly extract the code segment for the closure created within local scope", () => {
   const code = `
 plain_string = "Hello, world"
