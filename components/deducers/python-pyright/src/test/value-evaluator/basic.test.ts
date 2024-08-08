@@ -5,7 +5,7 @@ import {
   ParseNodeType,
 } from "pyright-internal/dist/parser/parseNodes";
 import * as TextUtils from "../../text-utils";
-import { Value, ValueEvaluator } from "../../value-evaluator";
+import { genEnvVarAccessTextForPython, Value, ValueEvaluator } from "../../value-evaluator";
 import { DATACLASS_DEF } from "./dataclass.test";
 import { testInlineCode, testPyFile } from "./utils";
 
@@ -181,12 +181,16 @@ var_dataclass = Base("name", common_var_1)
             expect(Value.toString(value)).toEqual("2");
             break;
           case "var_tuple":
-            expect(Value.toString(value)).toEqual(
+            expect(
+              Value.toString(value, { genEnvVarAccessText: genEnvVarAccessTextForPython })
+            ).toEqual(
               '(1, 2, tmp.Model(nullable=None, tup=(1, 2, 3), base=tmp.Base(name="name", age=25), gender=os.environ.get("KEY")))'
             );
             break;
           case "var_dict":
-            expect(Value.toString(value)).toEqual(
+            expect(
+              Value.toString(value, { genEnvVarAccessText: genEnvVarAccessTextForPython })
+            ).toEqual(
               '{"key": 1, "key2": 2, "key3": tmp.Model(nullable=None, tup=(1, 2, 3), base=tmp.Base(name="name", age=25), gender=os.environ.get("KEY"))}'
             );
             break;

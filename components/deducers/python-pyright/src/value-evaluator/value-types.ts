@@ -133,6 +133,11 @@ export namespace Value {
      * Whether to contain the module name in the output string. @default true
      */
     containModuleName?: boolean;
+    /**
+     * Generate the text for accessing the environment variable. If not provided, it will try to get
+     * the value directly from the environment variable.
+     */
+    genEnvVarAccessText?: (value: EnvVarAccessValue) => string;
   }
 
   export function toString(value: Value, options: ToStringOptions = {}): string {
@@ -165,11 +170,17 @@ export namespace Value {
         return `${type}(${params})`;
       },
       [ValueType.EnvVarAccess]: (value: EnvVarAccessValue) => {
-        const envVarName = value.envVarName;
-        if (value.defaultEnvVarValue) {
-          return `os.environ.get("${envVarName}", "${value.defaultEnvVarValue}")`;
+        if (options.genEnvVarAccessText) {
+          return options.genEnvVarAccessText(value);
         }
-        return `os.environ.get("${envVarName}")`;
+
+        const envVarName = value.envVarName;
+        const envVarValue = process.env[envVarName] ?? value.defaultEnvVarValue;
+        if (envVarValue) {
+          return `"${envVarValue}"`;
+        } else {
+          return "null";
+        }
       },
     };
 

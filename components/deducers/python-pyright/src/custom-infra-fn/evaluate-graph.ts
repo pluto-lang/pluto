@@ -9,7 +9,7 @@ import { ClassType, TypeCategory } from "pyright-internal/dist/analyzer/types";
 import { TypeEvaluator } from "pyright-internal/dist/analyzer/typeEvaluatorTypes";
 import { ArgumentNode, CallNode, ParseNodeType } from "pyright-internal/dist/parser/parseNodes";
 import { ValueEvaluator } from "../value-evaluator/value-evaluator";
-import { Value, ValueType, genEnvVarAccessTextForPython } from "../value-evaluator";
+import { Value, ValueType, genEnvVarAccessTextForTypeScript } from "../value-evaluator";
 import {
   Argument,
   ArgumentType,
@@ -157,7 +157,7 @@ class GraphEvaluator {
           if (arg.node) {
             const argValue = this.valueEvaluator.evaluate(arg.node, this.argumentFillings);
             const stringified = Value.toJson(argValue, {
-              genEnvVarAccessText: genEnvVarAccessTextForPython,
+              genEnvVarAccessText: genEnvVarAccessTextForTypeScript,
             });
             return JSON.parse(stringified);
           }
@@ -392,8 +392,11 @@ class GraphEvaluator {
     if (argument.node) {
       const argValue = this.valueEvaluator.evaluate(argument.node, this.argumentFillings);
       if (argValue.valueType !== ValueType.None) {
+        // The generator will use the constructed argument to generate the infrastructure code,
+        // which is in TypeScript. Therefore, we need to generate the environment variable access
+        // text in TypeScript format.
         content = Value.toJson(argValue, {
-          genEnvVarAccessText: genEnvVarAccessTextForPython,
+          genEnvVarAccessText: genEnvVarAccessTextForTypeScript,
         });
       }
     }
