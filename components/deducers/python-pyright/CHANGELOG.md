@@ -1,5 +1,13 @@
 # @plutolang/pyright-deducer
 
+## 0.1.35
+
+### Patch Changes
+
+- 78a976b: fix(deducer): correct environment variable access code format
+
+  The code generation for environment variable access within the infrastructure code, which is written in TypeScript, was incorrectly producing Python format. This change ensures the code is now generated in the proper TypeScript format, resolving the error.
+
 ## 0.1.34
 
 ### Patch Changes
