@@ -1,5 +1,20 @@
 # @plutolang/pyright-deducer
 
+## 0.1.36
+
+### Patch Changes
+
+- f6b3536: fix(deducer): correct package directory resolution and METADATA parsing
+
+  This commit addresses two separate issues identified in the deducer:
+
+  - The deducer incorrectly searched for distribution information within the stub type directory, which lacks the required dist info. The resolution has been updated to check for the presence of `nonStubImportResult` within the `ImportResult`. If present, it is now utilized to determine the correct package directory.
+  - The parsing of the `dist-info/METADATA` file was flawed due to the possibility of encountering multiple `Name` lines. The parser has been adjusted to only consider lines that begin with `Name:` and are not preceded by any spaces.
+
+- 5e7702e: fix(deducer): avoid retrieving declarations for non-infrastructure call nodes
+
+  Previously, the deducer attempted to retrieve all call node declarations and match them against custom infrastructure functions. This method was flawed as functions with multiple declarations caused the deducer to fail. To address this, we now first verify that a call node pertains to a custom infrastructure function by comparing function names. Only then do we fetch the call node's declaration, effectively bypassing the collection of extraneous call node declarations.
+
 ## 0.1.35
 
 ### Patch Changes
