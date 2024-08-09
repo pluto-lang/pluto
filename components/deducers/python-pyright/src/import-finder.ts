@@ -238,6 +238,10 @@ class ImportVisitor extends ParseTreeWalker {
 }
 
 function getModulePath(module: ImportResult) {
+  if (module.nonStubImportResult) {
+    module = module.nonStubImportResult;
+  }
+
   const dirpath = module.packageDirectory?.key;
   const filepath = module.resolvedUris.length > 0 ? module.resolvedUris[0].key : undefined;
   return dirpath || filepath;
@@ -293,17 +297,13 @@ function getAllDistInfos(pkgPath: string): DistInfo[] {
     // Read the "METADATA" file to get the distribution's name and version.
     const metadataPath = path.join(pkgPath, distInfoDirName, "METADATA");
     const metadata = fs.readFileSync(metadataPath);
-    const lines = metadata.toString().split("\n");
-    for (const line of lines) {
-      const [key, value] = line.split(":");
-      switch (key.trim()) {
-        case "Name":
-          distName = value.trim();
-          break;
-        case "Version":
-          distVersion = value.trim();
-          break;
-      }
+
+    // Fetch the name and version from the "METADATA" file using RegExp.
+    const nameMatch = metadata.toString().match(/^Name: (.*)/m);
+    const versionMatch = metadata.toString().match(/^Version: (.*)/m);
+    if (nameMatch && versionMatch) {
+      distName = nameMatch[1].trim();
+      distVersion = versionMatch[1].trim();
     }
 
     if (!distName || !distVersion) {
