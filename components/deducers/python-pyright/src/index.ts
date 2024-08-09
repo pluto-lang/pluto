@@ -210,12 +210,22 @@ export default class PyrightDeducer extends core.Deducer {
         }
 
         const fnName = statement.leftExpression;
-        const decls = this.typeEvaluator!.getDeclarationsForNameNode(fnName);
-        assert(decls?.length === 1, "The function name must be declared only once.");
 
-        const customInfraFn = customInfraFns.find((fn) => fn.topNode.id === decls[0].node.id);
-        if (customInfraFn) {
-          // This call node is a call to a custom infrastructure function.
+        // First, check if the function name is same as one custom infrastructure function name.
+        const infraFn = customInfraFns.find((fn) => fn.topNode.name.value === fnName.value);
+        if (!infraFn) {
+          continue;
+        }
+
+        // Find the declaration of the called function.
+        const decls = this.typeEvaluator!.getDeclarationsForNameNode(fnName);
+        assert(
+          decls?.length === 1,
+          `The function name \`${fnName.value}\` must be declared only once.`
+        );
+
+        // Second, check if the call node is calling the found custom infrastructure function.
+        if (infraFn.topNode.id === decls[0].node.id) {
           customInfraFnCallNodes.push({
             callNode: statement,
             functionNode: decls[0].node as FunctionNode,
@@ -365,6 +375,10 @@ function findCandidateInfraFns(
     const topNode = ScopeUtils.findTopNodeInScope(node, scopeHierarchy[0]);
     assert(topNode, `No top node found in scope.`);
     if (!customInfraFns.has(topNode.id)) {
+      assert(
+        topNode.nodeType === ParseNodeType.Function,
+        `The custom infra fn must be a function.`
+      );
       customInfraFns.set(topNode.id, { topNode, sourceFile, hierarchy: scopeHierarchy });
     }
   }
