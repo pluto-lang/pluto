@@ -78,16 +78,24 @@ export class Simulator {
 
   private async createResource(resource: arch.Resource): Promise<simulator.IResourceInstance> {
     const resourceTypeFqn = resource.type;
-    const dotPos = resourceTypeFqn.lastIndexOf(".");
+
+    const dotPos = resourceTypeFqn.indexOf(".");
     const pkgName = resourceTypeFqn.substring(0, dotPos);
     const resourceType = resourceTypeFqn.substring(dotPos + 1);
-    // TODO: check if the package exists, and import from user project
+
     const infraPkg = (await import(resolvePkg(`${pkgName}-infra`))) as any;
-    const resourceInfraClass = infraPkg[resourceType];
-    if (!resourceInfraClass) {
-      throw new Error(
-        "Cannot find the infrastructure implementation class of the resource type " + resourceType
-      );
+    const importLevels = resourceType.split(".");
+
+    let resourceInfraClass: any;
+    for (let i = 0; i < importLevels.length; i++) {
+      resourceInfraClass = i == 0 ? infraPkg[importLevels[i]] : resourceInfraClass[importLevels[i]];
+
+      if (!resourceInfraClass) {
+        throw new Error(
+          "Cannot find the infrastructure implementation class of the resource type " +
+            resourceTypeFqn
+        );
+      }
     }
 
     const args = new Array(resource.arguments.length);
