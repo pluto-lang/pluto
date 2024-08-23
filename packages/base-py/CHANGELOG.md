@@ -1,5 +1,9 @@
 # pluto-base
 
+## 0.0.8
+
+chore: add some debug logs
+
 ## 0.0.7
 
 feat: update resource ID generation to handle Unicode characters
