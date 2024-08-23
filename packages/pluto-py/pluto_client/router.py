@@ -26,7 +26,21 @@ RequestHandler = Callable[[HttpRequest], HttpResponse]
 
 @dataclass
 class RouterOptions:
-    pass
+    cors: Optional[bool] = None
+    """
+    Currently, only support Vercel. If an invalid value is provided, or if no value is provided at
+    all, it will default to your specified platform.
+    """
+    sim_host: Optional[str] = None
+    """
+    Host address for simulating the website when running the project with `pluto run`. If not
+    provided, it will be `localhost`.
+    """
+    sim_port: Optional[str] = None
+    """
+    Port number for simulating the website when running the project with `pluto run`. If not
+    provided, it will be randomly assigned.
+    """
 
 
 class IRouterClientApi(resource.IResourceClientApi):

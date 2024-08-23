@@ -17,38 +17,81 @@ import { SimFunction } from "./function";
 
 const VALID_HTTP_METHODS = ["get", "post", "put", "delete"];
 
+/**
+ * Adapts the options to the correct names for TypeScript.
+ * The option names for TypeScript and Python are different, so this function converts Python-style
+ * option names to TypeScript-style option names.
+ *
+ * @param opts - The options object that may contain Python-style option names.
+ * @returns The adapted options object with TypeScript-style option names.
+ */
+function adaptOptions(opts?: any): RouterOptions | undefined {
+  if (opts === undefined) {
+    return;
+  }
+
+  if (opts.sim_host) {
+    opts.simHost = opts.sim_host;
+  }
+  if (opts.sim_port) {
+    opts.simPort = opts.sim_port;
+  }
+  return opts;
+}
+
 export class SimRouter implements IResourceInfra, IRouterInfra, IRouterClient {
   public readonly id: string;
 
-  private readonly expressApp: express.Application;
-  private httpServer: http.Server;
+  private expressApp?: express.Express;
+  private httpServer?: http.Server;
+  private host: string;
   private port: number;
 
-  public outputs: string;
+  public outputs?: string;
 
   constructor(name: string, opts?: RouterOptions) {
+    opts = adaptOptions(opts);
+
     this.id = genResourceId(Router.fqn, name);
 
+    this.host = opts?.simHost ?? "localhost";
+    this.port = parseInt(opts?.simPort ?? "0");
+  }
+
+  public async init() {
     this.expressApp = express();
     this.expressApp.use(cors());
     this.expressApp.use(bodyParser.urlencoded({ extended: false }));
     this.expressApp.use(bodyParser.json());
 
-    this.httpServer = this.expressApp.listen(0);
-    const address = this.httpServer.address();
-    if (address && typeof address !== "string") {
-      this.port = address.port;
-    } else {
-      throw new Error(`Failed to obtain the port for the router: ${name}`);
-    }
-    this.outputs = this.url();
+    const httpServer = this.expressApp.listen(this.port, this.host);
+    this.httpServer = httpServer;
 
-    name;
-    opts;
+    async function waitForServerReady() {
+      return await new Promise<number>((resolve, reject) => {
+        httpServer.on("listening", () => {
+          const address = httpServer.address();
+          if (address && typeof address !== "string") {
+            resolve(address.port);
+          } else {
+            reject(new Error(`Failed to obtain the port for the router`));
+          }
+        });
+
+        httpServer.on("error", (err) => {
+          console.error(err);
+          reject(err);
+        });
+      });
+    }
+    const realPort = await waitForServerReady();
+    this.port = realPort;
+
+    this.outputs = this.url();
   }
 
   public url(): string {
-    return `http://localhost:${this.port}`;
+    return `http://${this.host}:${this.port}`;
   }
 
   public async setup() {}
@@ -85,7 +128,7 @@ export class SimRouter implements IResourceInfra, IRouterInfra, IRouterClient {
 
     const func = new SimFunction(closure);
 
-    this.expressApp[method](
+    this.expressApp![method](
       path,
       async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const reqPluto: HttpRequest = {

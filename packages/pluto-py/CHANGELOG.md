@@ -1,5 +1,11 @@
 # pluto-client
 
+## 0.0.20
+
+feat(sdk): add support for configuring host and port for website and router resource
+
+This change introduces the ability to specify custom host and port settings for website and router resources, enhancing flexibility during local development.
+
 ## 0.0.19
 
 feat: remove runtime dependency for AWS account ID retrieval
