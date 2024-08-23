@@ -1,5 +1,15 @@
 # @plutolang/simulator-adapter
 
+## 0.3.38
+
+### Patch Changes
+
+- abc80a8: feat(simulator): support custom address configuration
+- Updated dependencies [03f1602]
+- Updated dependencies [ee30573]
+  - @plutolang/pluto-infra@0.4.30
+  - @plutolang/pluto@0.4.20
+
 ## 0.3.37
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @plutolang/pluto-infra
 
+## 0.4.30
+
+### Patch Changes
+
+- 03f1602: feat(sdk): add support for configuring host and port for website resource
+
+  This change introduces the ability to specify custom host and port settings for website resources, enhancing flexibility during local development.
+
+- ee30573: feat(sdk): add support for configuring host and port for router resource
+
+  This change introduces the ability to specify custom host and port settings for router resources, enhancing flexibility during local development.
+
+- Updated dependencies [03f1602]
+- Updated dependencies [ee30573]
+  - @plutolang/pluto@0.4.20
+
 ## 0.4.29
 
 ### Patch Changes
