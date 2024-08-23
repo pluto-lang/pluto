@@ -1,5 +1,14 @@
 # @plutolang/cli
 
+## 0.4.60
+
+### Patch Changes
+
+- abc80a8: feat(simulator): support custom address configuration
+- Updated dependencies [abc80a8]
+  - @plutolang/simulator-adapter@0.3.38
+  - @plutolang/static-deducer@0.4.13
+
 ## 0.4.59
 
 ### Patch Changes
