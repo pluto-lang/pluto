@@ -1,3 +1,4 @@
+import os
 from abc import ABC
 from typing import Callable, List, Type
 
@@ -107,13 +108,19 @@ class IResource(ABC):
         # Check if the attribute is an infrastructure API, if it is, return an empty lambda.
         infra_apis = self.__get_infra_apis()
         if name in infra_apis:
+            if os.getenv("DEBUG", False):
+                print(f"Skipping infrastructure API: {name}")
             return _empty_lambda
 
         # Try to get the attribute from the client, if it doesn't exist, return the attribute of
         # self. This is to make sure that the client is the first priority.
         try:
+            if os.getenv("DEBUG", False):
+                print(f"Getting attribute from _client: {name}")
             return getattr(self._client, name)
         except:
             # If the _client doesn't exist, or the attribute doesn't exist in the client, return the
             # attribute of self.
+            if os.getenv("DEBUG", False):
+                print(f"Getting attribute from self: {name}")
             return super().__getattribute__(name)

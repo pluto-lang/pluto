@@ -9,7 +9,7 @@ from pluto_base.resource import (
     IResourceInfraApi,
 )
 
-from .universal_class import UniversalClass
+from .utils import create_simulator_client
 
 
 @dataclass
@@ -67,7 +67,8 @@ class Website(IResource, IWebsiteClient, IWebsiteInfra):
             from .clients import shared
 
             self._client = shared.WebsiteClient(path, name, opts)
-        if platform_type in [PlatformType.Simulator]:
-            self._client = UniversalClass() # type: ignore
+        if platform_type == PlatformType.Simulator:
+            resource_id = utils.gen_resource_id(Website.fqn, name or "default")
+            self._client = create_simulator_client(resource_id)  # type: ignore
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

@@ -38,6 +38,18 @@ export interface RouterOptions {
    * and include the appropriate CORS headers in responses. @default true
    */
   cors?: boolean;
+
+  /**
+   * Host address for simulating the website when running the project with `pluto run`. If not
+   * provided, it will be `localhost`.
+   */
+  simHost?: string;
+
+  /**
+   * Port number for simulating the website when running the project with `pluto run`. If not
+   * provided, it will be a random port.
+   */
+  simPort?: string;
 }
 
 /**

@@ -1,4 +1,5 @@
 import fs from "fs";
+import http from "http";
 import path from "path";
 import cors from "cors";
 import express from "express";
@@ -37,6 +38,7 @@ export class SimWebsite implements IResourceInfra, IWebsiteInfra, IWebsiteClient
 
   private host: string;
   private port: number;
+  private httpServer?: http.Server;
 
   public outputs?: string;
 
@@ -57,6 +59,7 @@ export class SimWebsite implements IResourceInfra, IWebsiteInfra, IWebsiteClient
     expressApp.use(express.static(this.websiteDir));
 
     const httpServer = expressApp.listen(this.port, this.host);
+    this.httpServer = httpServer;
 
     async function waitForServerReady() {
       return await new Promise<number>((resolve, reject) => {
@@ -111,6 +114,10 @@ export class SimWebsite implements IResourceInfra, IWebsiteInfra, IWebsiteClient
     fs.rmSync(plutoJsPath);
     if (this.originalPlutoJs) {
       fs.writeFileSync(plutoJsPath, this.originalPlutoJs);
+    }
+
+    if (this.httpServer) {
+      this.httpServer.close();
     }
   }
 }
