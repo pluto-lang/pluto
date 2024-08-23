@@ -38,7 +38,12 @@ export class SimulatorAdapter extends core.Adapter {
       WORK_DIR: this.stateDir,
     };
 
-    this.simulator = new Simulator(this.rootpath);
+    let address: string | undefined;
+    if (this.extraConfigs?.simulator) {
+      address = this.extraConfigs.simulator.address;
+    }
+
+    this.simulator = new Simulator(this.rootpath, address);
     await this.simulator.start();
     envs.PLUTO_SIMULATOR_URL = this.simulator.serverUrl;
 
