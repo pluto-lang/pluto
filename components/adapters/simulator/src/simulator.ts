@@ -8,8 +8,6 @@ import { ComputeClosure, AnyFunction, createClosure } from "@plutolang/base/clos
 import { MethodNotFound, ResourceNotFound } from "./errors";
 
 export class Simulator {
-  private readonly projectRoot: string;
-
   private resources: Map<string, simulator.IResourceInstance>;
   private closures: Map<string, ComputeClosure<AnyFunction>>;
 
@@ -18,8 +16,10 @@ export class Simulator {
 
   private readonly exitHandler = async () => {};
 
-  constructor(projectRoot: string) {
-    this.projectRoot = projectRoot;
+  constructor(
+    private readonly projectRoot: string,
+    private readonly address?: string
+  ) {
     this.resources = new Map();
     this.closures = new Map();
 
@@ -212,19 +212,35 @@ export class Simulator {
 
   public async start(): Promise<void> {
     const expressApp = this.createExpress();
-    for (let port = 9001; ; port++) {
-      const server = await tryListen(expressApp, port);
+
+    if (this.address) {
+      const [host, port] = this.address.split(":");
+      const server = await tryListen(expressApp, parseInt(port), host);
       if (server === undefined) {
-        continue;
+        throw new Error(`Failed to listen on ${this.address}`);
       }
 
-      const addr = server.address();
-      if (addr && typeof addr === "object" && addr.port) {
-        this._serverUrl = `http://${addr.address}:${addr.port}`;
-      }
+      this._serverUrl = `http://${host}:${port}`;
       this._server = server;
+    } else {
+      if (process.env.DEBUG) {
+        console.log("Starting simulator on a random port...");
+      }
 
-      break;
+      for (let port = 9001; ; port++) {
+        const server = await tryListen(expressApp, port);
+        if (server === undefined) {
+          continue;
+        }
+
+        const addr = server.address();
+        if (addr && typeof addr === "object" && addr.port) {
+          this._serverUrl = `http://localhost:${addr.port}`;
+        }
+        this._server = server;
+
+        break;
+      }
     }
   }
 

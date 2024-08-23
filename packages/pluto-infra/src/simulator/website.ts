@@ -1,11 +1,32 @@
 import fs from "fs";
-import http from "http";
 import path from "path";
 import cors from "cors";
 import express from "express";
 import { IResourceInfra } from "@plutolang/base";
 import { IWebsiteClient, IWebsiteInfra, Website, WebsiteOptions } from "@plutolang/pluto";
 import { genResourceId } from "@plutolang/base/utils";
+
+/**
+ * Adapts the options to the correct names for TypeScript.
+ * The option names for TypeScript and Python are different, so this function converts Python-style
+ * option names to TypeScript-style option names.
+ *
+ * @param opts - The options object that may contain Python-style option names.
+ * @returns The adapted options object with TypeScript-style option names.
+ */
+function adaptOptions(opts?: any): WebsiteOptions | undefined {
+  if (opts === undefined) {
+    return;
+  }
+
+  if (opts.sim_host) {
+    opts.simHost = opts.sim_host;
+  }
+  if (opts.sim_port) {
+    opts.simPort = opts.sim_port;
+  }
+  return opts;
+}
 
 export class SimWebsite implements IResourceInfra, IWebsiteInfra, IWebsiteClient {
   public id: string;
@@ -14,36 +35,54 @@ export class SimWebsite implements IResourceInfra, IWebsiteInfra, IWebsiteClient
   private envs: { [key: string]: string } = {};
   private originalPlutoJs: string | undefined;
 
-  private expressApp: express.Application;
-  private httpServer: http.Server;
+  private host: string;
   private port: number;
 
-  public outputs: string;
+  public outputs?: string;
 
   constructor(path: string, name?: string, options?: WebsiteOptions) {
     name = name ?? "default";
+    options = adaptOptions(options);
+
     this.id = genResourceId(Website.fqn, name);
     this.websiteDir = path;
 
-    this.expressApp = express();
-    this.expressApp.use(cors());
-    this.expressApp.use(express.static(this.websiteDir));
+    this.host = options?.simHost ?? "localhost";
+    this.port = parseInt(options?.simPort ?? "0");
+  }
 
-    this.httpServer = this.expressApp.listen(0);
-    const address = this.httpServer.address();
-    if (address && typeof address !== "string") {
-      this.port = address.port;
-    } else {
-      throw new Error(`Failed to obtain the port for the router: ${name}`);
+  public async init() {
+    const expressApp = express();
+    expressApp.use(cors());
+    expressApp.use(express.static(this.websiteDir));
+
+    const httpServer = expressApp.listen(this.port, this.host);
+
+    async function waitForServerReady() {
+      return await new Promise<number>((resolve, reject) => {
+        httpServer.on("listening", () => {
+          const address = httpServer.address();
+          if (address && typeof address !== "string") {
+            resolve(address.port);
+          } else {
+            reject(new Error(`Failed to obtain the port for the router`));
+          }
+        });
+
+        httpServer.on("error", (err) => {
+          console.error(err);
+          reject(err);
+        });
+      });
     }
+    const realPort = await waitForServerReady();
+    this.port = realPort;
 
     this.outputs = this.url();
-
-    options;
   }
 
   public url(): string {
-    return `http://localhost:${this.port}`;
+    return `http://${this.host}:${this.port}`;
   }
 
   public addEnv(key: string, value: string): void {

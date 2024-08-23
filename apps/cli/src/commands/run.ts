@@ -76,6 +76,7 @@ async function executeOnce(project: config.Project, stack: config.Stack, entrypo
     archRef: archRef,
     entrypoint: "",
     stateDir: stateDir,
+    extraConfigs: project.configs,
   });
   await deployWithAdapter(adapter, stack);
 }

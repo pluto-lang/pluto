@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import  Optional
 from dataclasses import dataclass
 from pluto_base import utils
 from pluto_base.platform import PlatformType
@@ -9,6 +9,8 @@ from pluto_base.resource import (
     IResourceInfraApi,
 )
 
+from .universal_class import UniversalClass
+
 
 @dataclass
 class WebsiteOptions:
@@ -16,6 +18,16 @@ class WebsiteOptions:
     """
     Currently, only support Vercel. If an invalid value is provided, or if no value is provided at
     all, it will default to your specified platform.
+    """
+    sim_host: Optional[str] = None
+    """
+    Host address for simulating the website when running the project with `pluto run`. If not
+    provided, it will be `localhost`.
+    """
+    sim_port: Optional[str] = None
+    """
+    Port number for simulating the website when running the project with `pluto run`. If not
+    provided, it will be randomly assigned.
     """
 
 
@@ -55,5 +67,7 @@ class Website(IResource, IWebsiteClient, IWebsiteInfra):
             from .clients import shared
 
             self._client = shared.WebsiteClient(path, name, opts)
+        if platform_type in [PlatformType.Simulator]:
+            self._client = UniversalClass() # type: ignore
         else:
             raise ValueError(f"not support this runtime '{platform_type}'")

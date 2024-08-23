@@ -17,6 +17,18 @@ export interface WebsiteOptions {
    * all, it will default to your specified platform.
    */
   platform?: "Vercel";
+
+  /**
+   * Host address for simulating the website when running the project with `pluto run`. If not
+   * provided, it will be `localhost`.
+   */
+  simHost?: string;
+
+  /**
+   * Port number for simulating the website when running the project with `pluto run`. If not
+   * provided, it will be a random port.
+   */
+  simPort?: string;
 }
 
 /**

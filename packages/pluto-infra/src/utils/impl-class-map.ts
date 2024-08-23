@@ -79,6 +79,14 @@ export class ImplClassMap<T, K extends new (...args: any[]) => T> {
     ...args: any[]
   ): Promise<T> {
     const implClass = await this.loadImplClassOrThrow(platformType, provisionType);
-    return new implClass(...args);
+
+    const instance = new implClass(...args);
+
+    // If there is the `init` method in the implementation class, use it to initialize the instance.
+    if (typeof implClass.prototype.init === "function") {
+      await (instance as any).init();
+    }
+
+    return instance;
   }
 }
