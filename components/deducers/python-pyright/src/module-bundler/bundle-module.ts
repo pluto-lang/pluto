@@ -7,6 +7,7 @@ import * as AwsUtils from "./aws-utils";
 import * as CmdUtils from "./command-utils";
 import * as MetadataUtils from "./metadata";
 import { getIndexUrls, IndexUrl } from "./index-url";
+import { getCurrentArch, getCurrentPlatform } from "../common/os-utils";
 import { Architecture, InstalledModule, Module, ModuleType, Runtime } from "./types";
 
 export interface BundleModulesOptions {
@@ -23,20 +24,29 @@ export interface BundleModulesOptions {
 
 export async function bundleModules(
   runtime: Runtime,
+  platform: typeof process.platform,
   architecture: Architecture,
   modules: readonly Module[],
   bundleDir: string,
   sitePackagesDir: string,
   options: BundleModulesOptions = {}
 ): Promise<void> {
-  // When running on non-Linux platforms or packaging for cross-architecture, the Docker is
-  // required. If the user has explicitly disabled Docker, throw an error.
-  const currentArch = process.arch === "x64" ? "x86_64" : process.arch;
-  if (process.platform !== "linux" || currentArch !== architecture) {
-    if (options.dockerPip === false) {
+  if (getCurrentPlatform() !== platform || getCurrentArch() !== architecture) {
+    // In this case, the user is trying to bundle the modules for a different platform or
+    // architecture. We need to check if the Docker can meet the requirement.
+
+    if (platform !== "linux") {
+      throw new Error("Only Linux is supported for cross-platfrom.");
+    }
+
+    if (!Architecture.isSupported(architecture)) {
       throw new Error(
-        "Docker is required to bundle modules on non-Linux platforms, or for cross-architecture."
+        `The architecture '${architecture}' is not supported for cross-architecture.`
       );
+    }
+
+    if (options.dockerPip === false) {
+      throw new Error("Docker is required to bundle modules for cross-architecture.");
     }
     options.dockerPip = true;
   }

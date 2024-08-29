@@ -9,8 +9,6 @@ deployUrl: https://codesandbox.io/p/devbox/pluto-doc-qa-bot-forked-8njh42
 
 Let me introduce you to an incredibly simple way to build a document Q&A bot, which allows you to create a personalized Web Q&A bot based on your GitHub documentation repository in **just 5 minutes**.
 
-First, let's take a look at the result. You can also experience it by opening [this link](https://xw3vdvjmyp7jig7tmrvrqbisiu0peosf.lambda-url.us-east-1.on.aws/).
-
 <p align="center">
   <img src="./assets/doc-qa-bot-web-show-en.png" alt="Demo" width="500" />
 </p>

@@ -301,6 +301,20 @@ export default class PyrightDeducer extends core.Deducer {
     const installPkg = this.stack.configs["bundleWithDependencies"] !== false;
     const runtime = await getDefaultPythonRuntime();
 
+    const targetArch = this.stack.configs["targetArch"] ?? "x86_64";
+    if (targetArch !== "x86_64" && this.stack.name !== "local_run") {
+      throw new Error(
+        `The non-x86_64 architecture is only supported when the 'pluto run' command is executed locally. The current stack is ${this.stack.name}.`
+      );
+    }
+
+    const targetPlatform = this.stack.configs["targetPlatform"] ?? "linux";
+    if (targetPlatform !== "linux" && this.stack.name !== "local_run") {
+      throw new Error(
+        `The non-linux platform is only supported iwhen the 'pluto run' command is executed locally. The current stack is ${this.stack.name}.`
+      );
+    }
+
     await Promise.all(
       closures.map((closure) =>
         bundleOne(closure, this.stack.platformType, this.importFinder!, this.bundleFilename)
@@ -331,7 +345,7 @@ export default class PyrightDeducer extends core.Deducer {
       // multiple places, including the Deducer and the infrastructure SDK. The former determines
       // the Python version and architecture for bundling dependencies, while the latter sets the
       // cloud runtime environment.
-      await bundleModules(runtime, "x86_64", modules, closure.path, destBaseDir, {
+      await bundleModules(runtime, targetPlatform, targetArch, modules, closure.path, destBaseDir, {
         install: installPkg,
         slim: true,
         // By default, we'll delete the `dist-info` directory, but LangChain needs it, so we'll just

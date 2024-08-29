@@ -5,12 +5,15 @@ import { bundleModules } from "../../module-bundler/bundle-module";
 import * as CommandUtils from "../../module-bundler/command-utils";
 
 describe("bundle with the local modules", () => {
+  const platform = "linux";
+
   test("should correctly bundle with a local module", async () => {
     const { tmpdir, cleanup } = getTmpDir();
 
     await fs.writeFile(`${tmpdir}/module.py`, "def hello():\n  return 'Hello, world!'\n");
 
     const runtime = await CommandUtils.getDefaultPythonRuntime();
+
     const architecture = "x86_64";
     const modules: Module[] = [LocalModule.create("module", `${tmpdir}/module.py`)];
 
@@ -22,7 +25,7 @@ describe("bundle with the local modules", () => {
 
     try {
       await expect(
-        bundleModules(runtime, architecture, modules, bundleDir, sitePackagesDir, options)
+        bundleModules(runtime, platform, architecture, modules, bundleDir, sitePackagesDir, options)
       ).resolves.not.toThrow();
 
       const files = await fs.readdir(bundleDir);
@@ -50,7 +53,7 @@ describe("bundle with the local modules", () => {
 
     try {
       await expect(
-        bundleModules(runtime, architecture, modules, bundleDir, sitePackagesDir, options)
+        bundleModules(runtime, platform, architecture, modules, bundleDir, sitePackagesDir, options)
       ).resolves.not.toThrow();
 
       const files = await fs.readdir(bundleDir);
@@ -62,6 +65,8 @@ describe("bundle with the local modules", () => {
 });
 
 describe("bundle with the packages that need to install", () => {
+  const platform = "linux";
+
   test("should bundle packages and remove useless files", async () => {
     const { tmpdir, cleanup } = getTmpDir();
 
@@ -76,7 +81,15 @@ describe("bundle with the packages that need to install", () => {
     const options = { slim: true };
 
     try {
-      await bundleModules(runtime, architecture, modules, targetFolder, targetFolder, options);
+      await bundleModules(
+        runtime,
+        platform,
+        architecture,
+        modules,
+        targetFolder,
+        targetFolder,
+        options
+      );
 
       const files = fs.readdirSync(targetFolder);
       expect(files).toContain("requirements.txt");
@@ -110,7 +123,7 @@ describe("bundle with the packages that need to install", () => {
 
     try {
       await expect(
-        bundleModules(runtime, architecture, modules, targetFolder, targetFolder, options)
+        bundleModules(runtime, platform, architecture, modules, targetFolder, targetFolder, options)
       ).rejects.toThrow(
         "Docker is required to bundle modules on non-Linux platforms, or for cross-architecture."
       );
@@ -153,7 +166,7 @@ describe("bundle with the packages that need to install", () => {
 
     try {
       await expect(
-        bundleModules(runtime, architecture, modules, targetFolder, targetFolder, options)
+        bundleModules(runtime, platform, architecture, modules, targetFolder, targetFolder, options)
       ).rejects.toThrow(
         `${runtime} is not installed. Please install it first, or use Docker to bundle modules instead.`
       );

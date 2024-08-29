@@ -7,6 +7,23 @@ import { ExitError } from "../errors";
 import { isPlutoProject, loadProject } from "../utils";
 
 /**
+ * Get the architecture of the current system.
+ * @returns The architecture of the current system.
+ */
+export function getCurrentArch() {
+  const currentArch = process.arch === "x64" ? "x86_64" : process.arch;
+  return currentArch;
+}
+
+/**
+ * Get the platform of the current system.
+ * @returns The platform of the current system.
+ */
+export function getCurrentPlatform() {
+  return process.platform;
+}
+
+/**
  * load the default export of the target package.
  */
 async function loadComponent(pkgName: string): Promise<any> {
