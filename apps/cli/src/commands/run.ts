@@ -10,6 +10,8 @@ import { loadAndDeduce } from "./compile";
 import { deployWithAdapter } from "./deploy";
 import {
   buildAdapterByProvisionType,
+  getCurrentArch,
+  getCurrentPlatform,
   getDefaultDeducerPkg,
   getDefaultEntrypoint,
   loadProjectAndStack,
@@ -27,6 +29,8 @@ export async function run(entrypoint: string, options: RunOptions) {
   const projectRoot = loadProjectRoot();
   const { project } = loadProjectAndStack(projectRoot);
   const stack = new config.Stack("local_run", PlatformType.Simulator, ProvisionType.Simulator);
+  stack.configs["targetArch"] = getCurrentArch();
+  stack.configs["targetPlatform"] = getCurrentPlatform();
 
   // Load the environment variables from the `.env` files.
   loadDotEnvs(projectRoot, stack.name, false);

@@ -9,8 +9,6 @@ deployUrl: https://codesandbox.io/p/devbox/pluto-doc-qa-bot-forked-8njh42
 
 这里给大家介绍一种非常简单的构建文档问答机器人的方式，**只需要 5 分钟**就可以基于你的 GitHub 文档仓库创建一个专属的问答机器人，并且将其部署到 AWS 上（免费），让你的用户可以通过 Web 界面来提问。
 
-首先看一下效果，你也可以打开[这个链接](https://xw3vdvjmyp7jig7tmrvrqbisiu0peosf.lambda-url.us-east-1.on.aws/)来体验。
-
 <p align="center">
   <img src="./assets/doc-qa-bot-web-show.png" alt="Demo" width="500" />
 </p>
